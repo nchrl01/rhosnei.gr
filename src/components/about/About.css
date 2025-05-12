@@ -1,0 +1,28 @@
+@font-face {
+    font-family: 'BiancoSans';
+    src: url('../../font/BiancoSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'BiancoSans';
+    src: url('../../font/BiancoSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+  }
+
+  @font-face {
+    font-family: 'BiancoSans';
+    src: url('../../font/BiancoSans-ExtraBold.ttf') format('truetype');
+    font-weight: extra-bold;
+    font-style: normal;
+}
+      
+  @font-face {
+    font-family: 'BiancoSans';
+    src: url('../../font/BiancoSans-Heavy.ttf') format('truetype');
+    font-weight: heavy;
+    font-style: normal;
+}    
+

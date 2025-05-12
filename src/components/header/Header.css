@@ -1,0 +1,65 @@
+@font-face {
+    font-family: 'BiancoSans';
+    src: url('../../font/BiancoSans-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: 'BiancoSans';
+    src: url('../../font/BiancoSans-Bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+  }
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.header--scrolled {
+  background: white;
+}
+
+.header--colored {
+  background-color: #d66c7a;
+}
+
+.header--colored .header__link {
+  color: white;
+}
+
+.header--colored .header__logo-img {
+  filter: brightness(0) invert(1);
+}
+
+.header--colored .header__hamburger div {
+  background-color: white;
+}
+
+.header--colored.header--scrolled {
+  background-color: white;
+}
+
+.header--colored.header--scrolled .header__link {
+  color: #d66c7a;
+}
+
+.header--colored.header--scrolled .header__logo-img {
+  filter: none;
+}
+
+.header--colored.header--scrolled .header__hamburger div {
+  background-color: #d66c7a;
+}
+      

@@ -1,0 +1,29 @@
+@font-face {
+  font-family: 'BiancoSans';
+  src: url('../../font/BiancoSans-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'BiancoSans';
+  src: url('../../font/BiancoSans-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+:root {
+  /* Primary */
+  --primary-color: #d66c7a;
+  
+  /* Complementary & Accent */
+  --blush-pink: #f2b5bd;
+  --deep-merlot: #9b4d56;
+  --warm-beige: #f7e1d7;
+  --muted-taupe: #8a7368;
+  
+  /* Supporting Neutrals */
+  --soft-sand: #e5d5c5;
+  --chocolate-brown: #5a3e36;
+  --charcoal-black: #2e2520;
+}

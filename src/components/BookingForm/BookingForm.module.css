@@ -1,0 +1,186 @@
+.bookingFormContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: white;
+  padding: 2rem;
+  border: none;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.bookingFormContainer::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  background-image: url('../../torodilogo.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bookingFormContainer > * {
+  position: relative;
+  z-index: 1;
+}
+
+.backButton {
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'BiancoSans', sans-serif;
+  font-size: 0.9rem;
+  align-self: flex-start;
+}
+
+.backButton:hover {
+  opacity: 0.8;
+}
+
+.backButton svg {
+  width: 16px;
+  height: 16px;
+}
+
+.formTitle {
+  font-family: 'BiancoSans', sans-serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: normal;
+  margin-bottom: 1rem;
+  text-align: center;
+  color: #d66c7a;
+}
+
+.formSubtitle {
+  font-family: 'BiancoSans', sans-serif;
+  font-size: clamp(0.8rem, 2vw, 0.9rem);
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #666;
+  line-height: 1.6;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.label {
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+  color: #666;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.input {
+  padding: 0.8rem;
+  background: white;
+  border: 1px solid rgba(214, 108, 122, 0.2);
+  color: #666;
+  font-family: inherit;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+  transition: all 0.2s ease;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #d66c7a;
+}
+
+.textArea {
+  padding: 0.8rem;
+  background: white;
+  border: 1px solid rgba(214, 108, 122, 0.2);
+  color: #666;
+  font-family: inherit;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+  min-height: 150px;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #d66c7a;
+}
+
+.submitButton {
+  font-family: 'BiancoSans', sans-serif;
+  background: transparent;
+  border: 2px solid #d66c7a;
+  color: #d66c7a;
+  padding: 0.8rem;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.submitButton:hover {
+  background: #d66c7a;
+  color: white;
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.dateRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.datePickerWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.datePickerButton {
+  width: 100%;
+  padding: 0.8rem;
+  background: white;
+  border: 1px solid rgba(214, 108, 122, 0.2);
+  color: #666;
+  font-family: inherit;
+  font-size: clamp(0.75rem, 1.8vw, 0.85rem);
+  transition: all 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+}
+
+.datePickerButton:hover,
+.datePickerButton:focus {
+  outline: none;
+  border-color: #d66c7a;
+}
+
+.datePicker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+} 
