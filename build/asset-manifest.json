@@ -1,0 +1,30 @@
+{
+  "files": {
+    "main.css": "/rhosnei.gr/static/css/main.f08829da.css",
+    "main.js": "/rhosnei.gr/static/js/main.79ff5d8f.js",
+    "static/media/IMG_3492.jpeg": "/rhosnei.gr/static/media/IMG_3492.a0e6b7dd2c45bea2ccf6.jpeg",
+    "static/media/IMG_3546.jpeg": "/rhosnei.gr/static/media/IMG_3546.c394420e88d592cad45b.jpeg",
+    "static/media/IMG_3547.jpeg": "/rhosnei.gr/static/media/IMG_3547.23041214e5ecaefae2be.jpeg",
+    "static/media/IMG_3555.jpeg": "/rhosnei.gr/static/media/IMG_3555.88014c6a225e38f5ab48.jpeg",
+    "static/media/IMG_3558.jpeg": "/rhosnei.gr/static/media/IMG_3558.92a93ece32e15711a9bc.jpeg",
+    "static/media/IMG_3128.jpeg": "/rhosnei.gr/static/media/IMG_3128.96b296d006d8f31f4ce2.jpeg",
+    "static/media/IMG_3550.jpeg": "/rhosnei.gr/static/media/IMG_3550.f1c6e6b4721ac1d8b656.jpeg",
+    "static/media/triple.jpeg": "/rhosnei.gr/static/media/triple.4c3b1755bd98df6eafca.jpeg",
+    "static/media/suite.jpeg": "/rhosnei.gr/static/media/suite.43bc064c2c18b761111a.jpeg",
+    "static/media/double.jpeg": "/rhosnei.gr/static/media/double.af458f62bedf3647a0bb.jpeg",
+    "static/media/IMG_3221.jpeg": "/rhosnei.gr/static/media/IMG_3221.4cffa2acd109a3659258.jpeg",
+    "static/media/IMG_3490.jpeg": "/rhosnei.gr/static/media/IMG_3490.25bf22a022877072642d.jpeg",
+    "static/media/wtbg.png": "/rhosnei.gr/static/media/wtbg.e94a4458f37a63dd1d6f.png",
+    "static/media/BiancoSans-Bold.ttf": "/rhosnei.gr/static/media/BiancoSans-Bold.8c3bfbb09cd462e71899.ttf",
+    "static/media/BiancoSans-Regular.ttf": "/rhosnei.gr/static/media/BiancoSans-Regular.5fd30f58583f5fd3f20f.ttf",
+    "static/media/crown.png": "/rhosnei.gr/static/media/crown.4953de96e47db2a13c20.png",
+    "static/media/torodilogo.svg": "/rhosnei.gr/static/media/torodilogo.af414128aa3fafb944e8aa65553b7ff1.svg",
+    "index.html": "/rhosnei.gr/index.html",
+    "main.f08829da.css.map": "/rhosnei.gr/static/css/main.f08829da.css.map",
+    "main.79ff5d8f.js.map": "/rhosnei.gr/static/js/main.79ff5d8f.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f08829da.css",
+    "static/js/main.79ff5d8f.js"
+  ]
+}
