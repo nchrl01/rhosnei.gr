@@ -125,3 +125,14 @@ The ranking-period selector supports 5m, 1h, 6h and 24h. The initial list appear
 ## Minimal Pure Data interface
 
 The interface uses a white patch-canvas palette, monospace type, thin black rectangular controls, a small coin → market → sound connection strip and grayscale coin artwork. Chart candles are hollow for up and black for down, with grayscale volume. The introductory copy is compact; origin context, automatic layer details and mapping explanations live in expandable sections. Feed freshness and listening volume remain directly visible. This is a Pure Data-inspired web interface rather than an editable Pd patch canvas. No tests or browser verification were run for the design update.
+
+
+## Current engine: Gameta / market adaptation
+
+The current source replaces the earlier ambient/break draft with Rolando Rampoldi's visible genotype/codon/phenotype rules: https://www.youtube.com/watch?v=Atttrb0hoEc . Twenty resonant string voices and six PWM pad voices follow a Pd clock. Repeated states produce pauses. Existing price, activity, volume, volatility, liquidity and buy/sell balance controls are retained; the former drum layer is removed. Full attribution and deviations are in `public/patches/REFERENCE.md`.
+
+Open `public/patches/av-desktop.pd` in Pure Data. Run `npm start`, visit http://localhost:4173, choose Native Pd, select the token and Listen. The local server validates and forwards the market controls to Pd over loopback UDP. The desktop patch acknowledges its presence; a 2.5-second heartbeat watchdog mutes abandoned sessions. The browser version loads the same synthesis and sequencer files with libpd. GitHub Pages offers Browser Pd; Native Pd requires the local server. Download the complete `public/patches/av-gameta.zip`, since market.pd needs its sibling abstractions. Native audio is not recorded by the page's browser recorder.
+
+Validation: `python3 checks/gameta.py` passed against Pd 0.56.2: thirty exact reference states, eighteen notes after repeat suppression, changed sequences under volatility, stereo rendering, and zero-master silence. Twelve-second render at master 0.3: RMS 0.01533, peak 0.09265. This is an adaptation, not a verified perceptual match to the reference recording.
+
+Native bridge integration was exercised from Helium with the user's HOOD token: the direct Robinhood feed reported a swap, and Pd acknowledged run=1, tempo=90, master=0.35 and texture=0.578406 while its DNA state advanced. The watchdog returned run/master to zero after heartbeats stopped. Browser Pd also loaded and entered audio playback in Helium. Native control packets contain one newline-terminated FUDI message each; batching several commands into one UDP packet was corrected during integration.

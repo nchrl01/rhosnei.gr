@@ -1,3 +1,4 @@
+import {createNativePd} from './native-pd.js?v=15';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
 import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
@@ -45,7 +46,7 @@ function displayCoinImage(){
  img.onerror=()=>{if(coinImageURL===url){img.hidden=true;fallback.hidden=false;}};
  img.src=url;
 }
-const levels={melody:0,pad:0,drums:0,bass:0,space:0};
+const levels={melody:0,pad:0,space:0};
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
@@ -69,7 +70,7 @@ function metrics(){
 }
 function syncLevels(m){
  const activity=m.activity*(streamConnected?1:m.fresh);
- const target={melody:(.12+.58*m.motion)*Math.sqrt(activity)*m.fresh,pad:.48*m.texture*Math.sqrt(activity)*m.fresh,drums:.7*activity,bass:.55*activity*(.4+.6*Math.abs(m.balance-.5)*2)*m.fresh,space:.75*m.texture*m.fresh};
+ const target={melody:(.12+.58*m.motion)*Math.sqrt(activity)*m.fresh,pad:.48*m.texture*Math.sqrt(activity)*m.fresh,space:.75*m.texture*m.fresh};
  for(const name of Object.keys(levels)){if(name!=='space')target[name]*=Math.sqrt(m.volume*m.fresh);levels[name]+=(target[name]-levels[name])*.2;send(name,levels[name]);$(name).value=levels[name];$(name+'-value').textContent=Math.round(levels[name]*100)+'%';}
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
  $('volume').textContent=market?cash(m.decoded?m.observedVolume:market.volume?.m5):'DEMO';
@@ -108,7 +109,7 @@ function setupStream(){
    $('last-event').textContent=e.side.toUpperCase()+' · block '+e.block;display();
   }else{poolEvents.push(e);if(streamKind==='pool')$('last-event').textContent='Pool event · slot '+e.slot;}
   session?.events?.push(e);
-  if(playing&&performance.now()-lastExcitation>=40&&(e.kind==='swap'||streamKind==='pool')){lastExcitation=performance.now();syncLevels(metrics());const root=marketRoot();const previous=tradeEvents.at(-2);const delta=previous&&e.priceQuote?Math.log(e.priceQuote/previous.priceQuote):0;send('note',root+12+clamp(Math.round(delta*1200),-12,12));event('pluck');}
+  if(playing&&performance.now()-lastExcitation>=40){lastExcitation=performance.now();tick();}
  };
  if(market.chainId==='solana'){
   if(market.dexId==='orca'){
@@ -121,32 +122,32 @@ function setupStream(){
  stopStream=()=>{stopNative?.();stopFallback?.();};
 }
 function tick(){
- const m=metrics(),energy=m.volume*m.fresh;syncLevels(m);bpm=Math.round(80+m.activity*70+energy*40);$('tempo').textContent=bpm+' BPM';
- const root=marketRoot();const phrase=Math.floor(step/32)%4;const variation=phrase===1?2:0;
- const motif=[0,2,4,2,1,3,5,3];const index=(motif[Math.floor(step/2)%8]+variation+Math.round(m.motion*2))%7;
- if(step%2===0&&rand()<.25+m.activity*.55+energy*.2){send('note',root+12+scale[index]);event('pluck');}
- if(step%8===0){send('root',root+scale[phrase===3?0:phrase%3]);send('bassnote',root-12+(m.balance>.6?7:0));event('basshit');}
- if(step%8===0||(step%16===14&&rand()<m.activity)){event('kick');}
- if(step%8===4||(step%16>11&&rand()<m.motion*.55*energy)){event('snare');}
- if(rand()<.15+m.activity*.6+energy*.2){event('hat');}
- send('cutoff',900+m.texture*3100+energy*1800);step++;
+ const m=metrics(),energy=m.volume*m.fresh;syncLevels(m);
+ bpm=Math.round(80+m.activity*70+energy*40);$('tempo').textContent=bpm+' BPM';
+ send('tempo',bpm);send('activity',m.activity);send('motion',m.motion);send('energy',energy);
+ send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot());send('cutoff',900+m.texture*3100+energy*1800);
 }
-function loop(){if(!playing)return;const now=performance.now();if(now>=next){tick();next=Math.max(next+60000/bpm/4,now+5);}timer=setTimeout(loop,12);}
+// Browser updates market controls; the Pd worklet schedules musical events.
+function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
+ if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');});for(const id of controls)send(id,Number($(id).value));return;}
  ctx=new AudioContext();await ctx.resume();
- const source=await fetch('patches/market.pd').then(r=>{if(!r.ok)throw Error('Cannot load instrument patch');return r.text();});
- pd=await createPd({audioContext:ctx,packages:['vanilla'],files:{'market.pd':source},entry:'market.pd',workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
+ const names=['market.pd','av-sequencer.pd','av-genome.pd','av-pluck.pd','av-pad.pd'];
+ const files=Object.fromEntries(await Promise.all(names.map(async name=>{const r=await fetch('patches/'+name+'?v=15');if(!r.ok)throw Error('Cannot load '+name);return [name,await r.text()];})));
+ pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'market.pd',workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
  gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);gain.connect(ctx.destination);
  for(const id of controls)send(id,Number($(id).value));
 }
 $('play').onclick=async()=>{
  if(starting)return;
- if(playing){playing=false;clearTimeout(timer);gain.gain.setTargetAtTime(0,ctx.currentTime,.025);$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status('Paused');return;}
+ if(playing){playing=false;send('run',0);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status('Paused');return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!pd)await initialize();await ctx.resume();gain.gain.setTargetAtTime(1,ctx.currentTime,.04);playing=true;next=performance.now();loop();$('play').textContent='Ⅱ Pause';$('record').disabled=false;status(mode==='demo'?'Playing · synthetic demo signals':'Playing · live market snapshots');}
- catch(e){status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
+ try{if(!pd)await initialize();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;send('seed',seed%16777216);loop();send('run',1);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(mode==='demo'?'Playing · synthetic demo signals':'Playing · live market snapshots');}
+ catch(e){$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
  finally{starting=false;$('play').disabled=false;}
 };
+if(!['localhost','127.0.0.1'].includes(location.hostname))$('native-option').disabled=true;
+$('audio-output').onchange=async()=>{if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;gain=null;status($('audio-output').value==='native'?'Open av-desktop.pd · then Listen':'Browser instrument ready');};
 for(const id of controls)$(id).addEventListener('input',()=>{send(id,Number($(id).value));session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
@@ -210,7 +211,7 @@ function applySnapshot(pair){
 }
 function chooseMarket(pair){
  generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
- mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
+ mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
  $('network').value=pair.chainId;renderPools(pair);$('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
@@ -243,7 +244,7 @@ $('coin-form').onsubmit=async e=>{
 };
 $('network').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value);if(pair)chooseMarket(pair);};
 $('pool').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value&&p.pairAddress===$('pool').value);if(pair)chooseMarket(pair);};
-$('demo').onclick=()=>{imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
+$('demo').onclick=()=>{imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.textContent='Download '+name;a.style.color='var(--accent)';a.style.fontSize='11px';a.style.display='block';$('downloads').append(a);}
 const downloads=document.createElement('div');downloads.id='downloads';$('record').parentElement.after(downloads);
 $('record').onclick=()=>{
@@ -253,7 +254,7 @@ $('record').onclick=()=>{
  const destination=ctx.createMediaStreamDestination();gain.connect(destination);chunks=[];
  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
  recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined);
- session={version:4,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'market.pd / 001',mapping:'automatic-v4-history',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
+ session={version:4,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'market.pd / 003 gameta',mapping:'automatic-v6-genotype-phenotype',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
  recorder.onstop=()=>{const name='AV-'+new Date(session.started).toISOString().replace(/[:.]/g,'-');download(new Blob(chunks,{type:recorder.mimeType}),name+(recorder.mimeType.includes('mp4')?'.m4a':'.webm'));download(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}),name+'.json');gain.disconnect(destination);session=null;$('record').textContent='● Record';status('Recording ready to download · session log included');};
  recorder.start(1000);$('record').textContent='■ Finish';status('Recording audio and session changes…');
