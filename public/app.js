@@ -4,12 +4,14 @@ import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
 import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
+import {startTrending} from './trending.js?v=1';
 import {MarketChart} from './chart.js?v=9';
 import {loadHistory} from './history.js?v=8';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let pd,ctx,gain,playing=false,starting=false,poll,market=null,mode='demo',generation=0,loading=false;
+let requestedNetwork=null;
 let seed=1917,state=1917,step=0,timer,next=0,bpm=120,recorder,chunks=[],session=null;
 const controls=['master'];
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='';
@@ -226,6 +228,7 @@ function renderPools(pair){
 }
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();if(loading)return;
+ const wantedNetwork=requestedNetwork;requestedNetwork=null;
  const address=$('address').value.trim();if(address.length<5||address.length>250||/\s/.test(address)){status('Enter a token address or chain-specific token identifier.');return;}
  loading=true;$('load').disabled=true;status('Looking up indexed markets…');
  try{
@@ -233,7 +236,8 @@ $('coin-form').onsubmit=async e=>{
   const pairs=(data.pairs||[]).map(p=>orientPair(p,address)).filter(Boolean);pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0));
   if(!pairs.length)throw Error('No indexed market found for this token identifier.');
   discovered=pairs;$('network').replaceChildren();for(const chain of [...new Set(pairs.map(p=>p.chainId))]){const o=document.createElement('option');o.value=chain;o.textContent=chain.toUpperCase()+' · '+(chain==='solana'?'Orca swaps / pool activity + cached trade polling':chain==='robinhood'?'v4 direct RPC polling':EVM_RPC[chain]?'V2/V3 swap adapter':'trade polling / snapshots');$('network').append(o);}
-  $('market-selectors').hidden=false;chooseMarket(pairs[0]);
+  const selection=wantedNetwork?pairs.find(p=>p.chainId===wantedNetwork):pairs[0];if(!selection)throw Error('No DEX Screener market found on the trending coin’s network.');
+  $('market-selectors').hidden=false;chooseMarket(selection);
  }catch(e){status(e.message);$('lookup').textContent=e.message;}
  finally{loading=false;$('load').disabled=false;}
 };
@@ -256,6 +260,7 @@ $('record').onclick=()=>{
  }catch(e){status('Recording unavailable: '+e.message);}
 };
 display();
+startTrending(item=>{if(loading)return;requestedNetwork=item.chain;if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);$('address').value=item.address;$('coin-form').requestSubmit();});
 setInterval(()=>{if(!playing)syncLevels(metrics());},250);
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
