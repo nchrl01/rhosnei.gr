@@ -10,6 +10,16 @@ Run `python3 build-patch.py` after editing the patch builder, then `npm start`. 
 
 Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
 
+## Historical market context (v5)
+
+The chart opens in Origin context and appends incoming observations to available GeckoTerminal OHLC history for the selected pool. Live detail remains selectable. First known market creation is the earliest pool creation date in the discovered results on the selected chain; those results are not exhaustive, and this is not a verified token mint or launch date. Earliest available price is shown separately. Gaps before available history remain empty.
+
+Readings show current price relative to the earliest available candle open and to the highest loaded historical price. The instrument's melodic register uses the same historical open: a bounded offset of `round(12 * tanh(log(current / firstOpen)))` semitones. Immediate accents and layer activity retain their live market inputs. Partial history can change the baseline as older pages arrive; unavailable history leaves the original seeded register.
+
+History uses minute candles for pools younger than one day, hourly candles below thirty days, otherwise daily candles. Requests paginate backward with up to 1,000 candles per page, ten seconds between pages, and a twenty-page limit. Completed results are cached locally for ten minutes. Provider retention, indexing and throttling can prevent reaching pool creation; status reports partial or unavailable coverage. Pool history does not reconstruct a coin's earlier trading on other pools or chains, and loading history does not reduce live-feed latency.
+
+Implementation reviewed from source; no automated tests or browser verification were run for this change.
+
 ## Responsiveness and timing indicators (v4)
 
 Default chart view now shows every received price observation as a tick trace; observed ten-second candles remain an option. The old candle interval grouped observations but did not delay incoming updates. Telemetry shows the age and count of received trades, and timestamp-to-receipt delay where available. Native EVM block timestamps are fetched asynchronously after the trade has already been emitted; block-to-receipt values are approximate and include block timestamp granularity and local clock differences. They are not measured audio latency. Polled trades use the provider's trade timestamp. Unknown timing is shown explicitly.
@@ -20,7 +30,7 @@ Immediate note accents now use the logarithmic change between received execution
 
 The UI discovers networks and pools for an exact token identifier from DEX Screener search results. It supports chain-specific identifiers beyond EVM/Solana address shapes and matches either side of a pair. Quote-side selections invert the displayed pair price and buy/sell counts; their five-minute change is marked unavailable because it cannot be inferred from the original base-token change. Results remain provider-limited; this is not an exhaustive registry of all blockchains or tokens. Users choose the network and pool, which remain pinned during polling.
 
-The session chart groups received observations into ten-second candles. No historical candles are fabricated or loaded. The graph is a view of data received by this browser, not complete exchange OHLCV history. It shares trade observations with the music. Snapshot-only sources plot snapshots. Rendering is coalesced through animation frames; chart samples are bounded. EVM reorganization removals remove matching observations, though already-played sound cannot be reversed.
+The live-detail chart groups received observations into ten-second candles. Origin context also loads available historical provider candles as described above. Received observations do not constitute complete exchange OHLCV history. It shares trade observations with the music. Snapshot-only sources plot snapshots. Rendering is coalesced through animation frames; chart samples are bounded. EVM reorganization removals remove matching observations, though already-played sound cannot be reversed.
 
 Native EVM swap adapters: Ethereum, Base, BNB Smart Chain, Arbitrum One, Polygon, Optimism and Avalanche C-Chain, using free PublicNode WebSockets and standard JSON-RPC. The adapter checks pool token0/token1 and decimals before subscribing to standard V2/V3 Swap topics. It decodes amounts, derives executed quote-per-base price, base size, and buy/sell direction. Prices in USD use the current snapshot quote conversion and are estimates. Nonstandard pool ABIs (including V4 pool managers) require another decoder. Unsupported pools keep the fallback feeds.
 
