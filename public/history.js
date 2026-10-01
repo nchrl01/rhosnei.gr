@@ -13,7 +13,7 @@ export function loadHistory(market,onUpdate){
  async function page(){
   if(closed)return;controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);let delay=10000;
   try{
-   const query=new URLSearchParams({aggregate:'1',limit:'1000',currency:'usd',token:market.historyTokenSide||'base',before_timestamp:String(before),include_empty_intervals:'false'});
+   const query=new URLSearchParams({aggregate:'1',limit:'1000',currency:'usd',token:market.baseToken.address,before_timestamp:String(before),include_empty_intervals:'false'});
    const r=await fetch(base+'?'+query,{signal:controller.signal});if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
    const data=await r.json();if(closed)return;const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
    let added=0;
