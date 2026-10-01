@@ -6,17 +6,17 @@ export class MarketChart{
   this.points=[];this.history=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
-   autoSize:true,layout:{background:{color:'#181b17'},textColor:'#929987',fontSize:11,attributionLogo:true},
-   grid:{vertLines:{color:'#242a21'},horzLines:{color:'#343a30'}},
-   rightPriceScale:{borderColor:'#343a30',scaleMargins:{top:.1,bottom:.25}},
-   timeScale:{borderColor:'#343a30',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
+   autoSize:true,layout:{background:{color:'#ffffff'},textColor:'#666666',fontSize:11,attributionLogo:true},
+   grid:{vertLines:{visible:false},horzLines:{color:'#eeeeee'}},
+   rightPriceScale:{borderColor:'#dddddd',scaleMargins:{top:.1,bottom:.25}},
+   timeScale:{borderColor:'#dddddd',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
    localization:{timeFormatter:time=>new Date(time*1000).toLocaleString(undefined,{timeZoneName:'short'}),priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9})},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
   const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9}),minMove:1e-12};
-  this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#d4ed98',downColor:'#c79b94',wickUpColor:'#d4ed98',wickDownColor:'#c79b94',borderVisible:false,priceFormat});
-  this.line=this.chart.addSeries(LineSeries,{color:'#d4ed98',lineWidth:2,visible:false,priceFormat});
+  this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#ffffff',downColor:'#111111',wickUpColor:'#111111',wickDownColor:'#111111',borderVisible:true,borderUpColor:'#111111',borderDownColor:'#111111',priceFormat});
+  this.line=this.chart.addSeries(LineSeries,{color:'#111111',lineWidth:2,visible:false,priceFormat});
   this.volume=this.chart.addSeries(HistogramSeries,{priceScaleId:'volume',priceFormat:{type:'volume'},lastValueVisible:false,priceLineVisible:false});
   this.volume.priceScale().applyOptions({scaleMargins:{top:.8,bottom:0},visible:false});
   this.chart.subscribeCrosshairMove(param=>{
@@ -64,7 +64,7 @@ export class MarketChart{
   const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);
   if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.rebuild=false;return;}
   const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});
-  const volume=b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#52683d':'#71514b'}:{time:b.time/1000};
+  const volume=b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#cccccc':'#555555'}:{time:b.time/1000};
   const last=bars.at(-1).time;
   if(this.rebuild||[...this.dirty].some(t=>t<last)){
    const gap=this.origin&&this.origin<bars[0].time?[{time:Math.floor(this.origin/1000)}]:[];
