@@ -109,3 +109,7 @@ Recording saves browser-supported audio and a separate JSON log of snapshots and
 Vendored `libpd-wasm` browser artifacts from https://github.com/hyrfilm/libpd-wasm, commit recorded in `public/vendor/SOURCE.txt`. Preserve its LICENSE.txt when distributing. PlugData is an optional desktop Pd/plugin host; it is not required for this web version.
 
 Computer Use could not connect to its native service during creation, so local Pd UI interaction was unavailable. Browser/audio behavior has not been manually verified.
+
+## Coin image beside title
+
+The market title now displays a circular coin image from provider token/pair metadata, with a symbol-initial fallback when no image exists or loading fails. Quote-side selections only reuse an image from an original base-side market of the selected token, so the other token's logo is not shown. Images use HTTPS and omit the referrer. Image requests are changed only when the image URL changes. When pair metadata lacks a logo, a GeckoTerminal token-info lookup uses the shared request budget and caches the result for the session. Returning to demo cancels pending image work. No browser verification or tests were run for this UI change.
