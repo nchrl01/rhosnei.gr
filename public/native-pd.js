@@ -3,6 +3,13 @@ export async function createNativePd(onError){
  const health=await fetch('/pd/status').then(r=>r.ok?r.json():Promise.reject(Error('Start the local AV server to use Native Pd')));
  if(!health.connected)throw Error('Open av-desktop.pd in Pure Data first');
  let pending=new Map(),busy=false,closed=false,failed=false;
+ const subscribers=new Map();let telemetryBusy=false;
+ const telemetry=setInterval(async()=>{
+  if(closed||telemetryBusy||!subscribers.size)return;telemetryBusy=true;
+  try{const r=await fetch('/pd/status',{signal:AbortSignal.timeout(1500)});if(!r.ok)return;const report=await r.json();if(!report.connected)return;
+   for(const [name,callbacks] of subscribers){const value=report.state[name];if(Number.isFinite(value))for(const callback of callbacks)callback({receiver:name,selector:'float',values:[value]});}
+  }catch{}finally{telemetryBusy=false;}
+ },250);
  async function flush(){
   if(busy||closed||!pending.size)return;busy=true;
   const messages=[...pending];pending.clear();
@@ -12,6 +19,7 @@ export async function createNativePd(onError){
  }
  const timer=setInterval(flush,25);
  return {native:true,sendFloat(name,value){pending.set(name,value);},flush,
-  async close(){pending.set('run',0);pending.set('master',0);await flush();closed=true;clearInterval(timer);}
+  subscribe(name,callback){if(!subscribers.has(name))subscribers.set(name,new Set());subscribers.get(name).add(callback);return()=>subscribers.get(name)?.delete(callback);},
+  async close(){pending.set('run',0);pending.set('master',0);await flush();closed=true;clearInterval(timer);clearInterval(telemetry);subscribers.clear();}
  };
 }

@@ -71,12 +71,12 @@ s.write('av-sequencer')
 k=Patch(); k.obj('block~ 16'); inlet=k.obj('inlet'); order=k.obj('t b f'); hz=k.obj('mtof'); period=k.obj('expr 1000 / $f1'); sig=k.obj('sig~'); read=k.obj(r'delread4~ \$0-string'); low=k.obj('lop~ 6000'); feedback=k.obj('*~'); k.chain(inlet,order); k.link(order,hz,out=1); k.chain(hz,period,sig,read,low,feedback)
 liquidity=k.obj('r texture'); decay=k.obj('expr 0.94 + 0.055*$f1'); pack=k.obj('pack f 200'); line=k.obj('line~'); k.chain(liquidity,decay,pack,line); k.link(line,feedback,inp=1)
 noise=k.obj('noise~'); excitefilter=k.obj('lop~ 1000'); envmsg=k.msg(r'1 1 \, 0 3 1'); env=k.obj('vline~'); burst=k.obj('*~'); k.chain(noise,excitefilter,burst); k.chain(order,envmsg,env); k.link(env,burst,inp=1)
-sum_=k.obj('+~'); limiter=k.obj('clip~ -0.8 0.8'); delay=k.obj(r'delwrite~ \$0-string 100'); out=k.obj('outlet~'); k.link(feedback,sum_); k.link(burst,sum_,inp=1); k.chain(sum_,limiter,delay); k.link(low,out); k.write('av-pluck')
+sum_=k.obj('+~'); limiter=k.obj('clip~ -0.8 0.8'); delay=k.obj(r'delwrite~ \$0-string 100'); out=k.obj('outlet~'); k.link(feedback,sum_); k.link(burst,sum_,inp=1); k.chain(sum_,limiter,delay); k.link(low,out); voice_id=k.obj(r'f \$1'); report=k.obj('s av-string-voice'); k.link(order,voice_id); k.chain(voice_id,report); k.write('av-pluck')
 
 # Six triggered PWM pad voices with long releases, replacing the previous continuous drone.
 a=Patch(); inlet=a.obj('inlet'); order=a.obj('t b f'); hz=a.obj('mtof'); osc=a.obj('phasor~'); a.chain(inlet,order); a.link(order,hz,out=1); a.chain(hz,osc)
 lfo=a.obj('osc~ 0.13'); width=a.obj('*~ 0.35'); center=a.obj('+~ 0.5'); pwm=a.obj('expr~ if($v1>$v2 \\, 0.5 \\, -0.5)'); a.chain(lfo,width,center); a.link(osc,pwm); a.link(center,pwm,inp=1)
-texture=a.obj('r texture'); release=a.obj('expr 1200 + 4800*$f1'); duration=a.obj('f 4000'); a.chain(texture,release); a.link(release,duration,inp=1); a.link(order,duration); envelope=a.msg(r'0.5 600 \, 0 \$1 600'); ramp=a.obj('vline~'); square=a.obj('*~'); voice=a.obj('*~'); filter_=a.obj('lop~ 1800'); a.chain(duration,envelope,ramp); a.link(ramp,square); a.link(ramp,square,inp=1); a.link(pwm,voice); a.link(square,voice,inp=1); a.chain(voice,filter_); a.receiver('cutoff',filter_,1); a.link(filter_,a.obj('outlet~')); a.write('av-pad')
+texture=a.obj('r texture'); release=a.obj('expr 1200 + 4800*$f1'); duration=a.obj('f 4000'); a.chain(texture,release); a.link(release,duration,inp=1); a.link(order,duration); envelope=a.msg(r'0.5 600 \, 0 \$1 600'); ramp=a.obj('vline~'); square=a.obj('*~'); voice=a.obj('*~'); filter_=a.obj('lop~ 1800'); a.chain(duration,envelope,ramp); a.link(ramp,square); a.link(ramp,square,inp=1); a.link(pwm,voice); a.link(square,voice,inp=1); a.chain(voice,filter_); a.receiver('cutoff',filter_,1); a.link(filter_,a.obj('outlet~')); voice_id=a.obj(r'f \$1'); report=a.obj('s av-pad-voice'); a.link(order,voice_id); a.chain(voice_id,report); a.write('av-pad')
 
 p=Patch(); p.comment('AV / GAMETA - adapted from Rolando Rampoldi - market-controlled Pd instrument',30,10); p.obj('av-sequencer')
 note=p.obj('r note'); store=p.obj('f 60'); hit=p.obj('r pluck'); dispatch=p.msg(r'next \$1'); strings=p.obj('clone av-pluck 20'); p.link(note,store,inp=1); p.chain(hit,store,dispatch,strings); mel=p.gain(strings,'melody',2)
@@ -98,7 +98,7 @@ for i,name in enumerate(controls): b.link(route,b.obj('s '+name),out=i)
 heartbeat=b.obj('r heartbeat'); order=b.obj('t b b'); stop=b.msg('stop'); watchdog=b.obj('delay 2500'); silence=b.msg(r'\; run 0 \; master 0'); b.chain(heartbeat,order); b.link(order,stop,out=1); b.chain(stop,watchdog); b.link(order,watchdog); b.chain(watchdog,silence)
 alive=b.obj('netsend -u'); lb=b.obj('loadbang'); connect=b.msg('connect 127.0.0.1 3002'); b.chain(lb,connect,alive)
 start=b.msg('1'); beat=b.obj('metro 1000'); ping=b.msg('send alive'); b.chain(lb,start,beat,ping,alive)
-for name in ['texture','tempo','master','run','av-dna']:
+for name in ['texture','tempo','master','run','av-dna','av-codon','av-phenotype','generation','note','pad-note','av-string-voice','av-pad-voice']:
     receive=b.obj('r '+name); report=b.msg(r'send '+name+r' \$1'); b.chain(receive,report,alive)
 b.write('av-bridge')
 

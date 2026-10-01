@@ -17,6 +17,8 @@
 #X obj 30 565 lop~ 1800;
 #X obj 290 40 r cutoff;
 #X obj 290 75 outlet~;
+#X obj 290 110 f \$1;
+#X obj 290 145 s av-pad-voice;
 #X connect 0 0 1 0;
 #X connect 1 1 2 0;
 #X connect 2 0 3 0;
@@ -36,3 +38,5 @@
 #X connect 14 0 15 0;
 #X connect 16 0 15 1;
 #X connect 15 0 17 0;
+#X connect 1 0 18 0;
+#X connect 18 0 19 0;

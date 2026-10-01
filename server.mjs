@@ -4,7 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
 const root=resolve('public'),port=Number(process.env.PORT)||4173;
 const udp=dgram.createSocket('udp4');let lastPd=0;const pdState={};
-udp.on('message',(data,remote)=>{if(remote.address!=='127.0.0.1')return;const text=data.toString().trim();if(text==='alive;')lastPd=Date.now();else{const match=text.match(/^(texture|tempo|master|run|av-dna) ([-+0-9.e]+);$/);if(match)pdState[match[1]]=Number(match[2]);}});
+udp.on('message',(data,remote)=>{if(remote.address!=='127.0.0.1')return;const text=data.toString().trim();if(text==='alive;')lastPd=Date.now();else{const match=text.match(/^(texture|tempo|master|run|av-dna|av-codon|av-phenotype|generation|note|pad-note|av-string-voice|av-pad-voice) ([-+0-9.e]+);$/);if(match&&Number.isFinite(Number(match[2])))pdState[match[1]]=Number(match[2]);}});
 udp.on('error',e=>console.error('Pd bridge:',e.message));udp.bind(3002,'127.0.0.1');
 const ranges={run:[0,1],tempo:[40,240],tonic:[24,96],seed:[0,16777215],activity:[0,1],motion:[0,1],energy:[0,1],balance:[0,1],texture:[0,1],melody:[0,1],pad:[0,1],space:[0,1],master:[0,.8],cutoff:[100,12000],heartbeat:[0,1]};
 const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.pd':'text/plain','.txt':'text/plain','.md':'text/plain','.zip':'application/zip'};

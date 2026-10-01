@@ -1,4 +1,5 @@
-import {createNativePd} from './native-pd.js?v=15';
+import {createSignalMap} from './signal-map.js?v=16';
+import {createNativePd} from './native-pd.js?v=16';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
 import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
@@ -47,6 +48,9 @@ function displayCoinImage(){
  img.src=url;
 }
 const levels={melody:0,pad:0,space:0};
+const signalMap=createSignalMap($('signal-map'));
+function updateSignalMap(m){signalMap.update({m,levels,bpm:Math.round(80+m.activity*70+m.volume*m.fresh*40),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'});}
+function bindSignalMap(){signalMap.reset();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','pad-note','av-string-voice','av-pad-voice'])pd.subscribe?.(name,message=>signalMap.receive(name,Number(message.values[0])));}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
@@ -76,6 +80,7 @@ function syncLevels(m){
  $('volume').textContent=market?cash(m.decoded?m.observedVolume:market.volume?.m5):'DEMO';
  $('volume-window').textContent=m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
  $('signal-source').textContent=m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Synthetic demo signals';
+ updateSignalMap(m);
 }
 function setupStream(){
  const key=market?.chainId+':'+market?.pairAddress;if(key===streamPool)return;
@@ -130,19 +135,19 @@ function tick(){
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
- if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');});for(const id of controls)send(id,Number($(id).value));return;}
+ if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx=new AudioContext();await ctx.resume();
  const names=['market.pd','av-sequencer.pd','av-genome.pd','av-pluck.pd','av-pad.pd'];
- const files=Object.fromEntries(await Promise.all(names.map(async name=>{const r=await fetch('patches/'+name+'?v=15');if(!r.ok)throw Error('Cannot load '+name);return [name,await r.text()];})));
+ const files=Object.fromEntries(await Promise.all(names.map(async name=>{const r=await fetch('patches/'+name+'?v=16');if(!r.ok)throw Error('Cannot load '+name);return [name,await r.text()];})));
  pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'market.pd',workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
- gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);gain.connect(ctx.destination);
+ gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);gain.connect(ctx.destination);bindSignalMap();
  for(const id of controls)send(id,Number($(id).value));
 }
 $('play').onclick=async()=>{
  if(starting)return;
  if(playing){playing=false;send('run',0);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status('Paused');return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!pd)await initialize();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;send('seed',seed%16777216);loop();send('run',1);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(mode==='demo'?'Playing · synthetic demo signals':'Playing · live market snapshots');}
+ try{if(!pd)await initialize();signalMap.reset();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;send('seed',seed%16777216);loop();send('run',1);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(mode==='demo'?'Playing · synthetic demo signals':'Playing · live market snapshots');}
  catch(e){$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
  finally{starting=false;$('play').disabled=false;}
 };
