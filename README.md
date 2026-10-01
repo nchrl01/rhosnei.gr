@@ -10,6 +10,14 @@ Run `python3 build-patch.py` after editing the patch builder, then `npm start`. 
 
 Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
 
+## Standard chart controls (v6)
+
+TradingView Lightweight Charts 5.0.9 now supplies the chart UI, served from a local vendored ES module with its Apache 2.0 license and attribution notices. Candles are the default. Controls include 1m, 5m, 15m, 1h, 4h and 1d candles; closing-price line; crosshair OHLC and volume readings; mouse/touch zoom and pan; explicit zoom buttons; linear/log price scales; Fit history and Latest. Auto origin retains the age-based historical resolution. Selecting a timeframe fetches matching provider OHLCV, up to three pages, and never subdivides coarse historical candles into invented finer bars. Coverage messages stay visible. The chart timeframe does not change the music's origin baseline.
+
+Incoming observations update the current candle; reorganization removals rebuild affected observations. Provider trade timestamps locate polled trades; native swaps first use receipt time and are relocated when an approximate block timestamp arrives. Historical volume is provider OHLCV. A candle receiving live observations shows only received swap volume, labelled partial, to avoid counting provider volume twice. Snapshots have unknown volume. Live candles are not a complete exchange feed. Time axes use the library's trading-bar spacing, so missing periods are not proportional calendar gaps; coverage dates remain the reference for missing history.
+
+Chart data is bounded by the history pagination limit and 3,600 live observations. Browse/pan position is retained during updates; Fit history restores the full loaded range. This adds standard interaction but does not add TradingView drawing tools, token coverage or a faster market feed. No tests or browser verification were run for this update.
+
 ## Historical market context (v5)
 
 The chart opens in Origin context and appends incoming observations to available GeckoTerminal OHLC history for the selected pool. Live detail remains selectable. First known market creation is the earliest pool creation date in the discovered results on the selected chain; those results are not exhaustive, and this is not a verified token mint or launch date. Earliest available price is shown separately. Gaps before available history remain empty.

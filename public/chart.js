@@ -1,38 +1,76 @@
-// Historical provider candles and separately labelled live observations.
+import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
+
+// One series per view, with provider candles and explicitly partial live observations.
 export class MarketChart{
- constructor(canvas){this.canvas=canvas;this.points=[];this.history=[];this.mode='ticks';this.range='history';this.interval=86400000;this.origin=null;this.frame=null;this.observer=new ResizeObserver(()=>this.schedule());this.observer.observe(canvas);}
- setMode(mode){this.mode=mode;this.schedule();}
- setRange(range){this.range=range;this.schedule();}
- setHistory(candles,interval,origin){this.history=candles;this.interval=interval;this.origin=origin;this.schedule();}
+ constructor(container){
+  this.points=[];this.history=[];this.buckets=new Map();this.interval=60000;this.origin=null;
+  this.mode='candles';this.range='history';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();
+  this.chart=createChart(container,{
+   autoSize:true,layout:{background:{color:'#181b17'},textColor:'#929987',fontSize:11,attributionLogo:true},
+   grid:{vertLines:{color:'#242a21'},horzLines:{color:'#343a30'}},
+   rightPriceScale:{borderColor:'#343a30',scaleMargins:{top:.1,bottom:.25}},
+   timeScale:{borderColor:'#343a30',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true},
+   localization:{priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:7})},
+   handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
+   handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
+  });
+  const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:7}),minMove:1e-12};
+  this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#d4ed98',downColor:'#c79b94',wickUpColor:'#d4ed98',wickDownColor:'#c79b94',borderVisible:false,priceFormat});
+  this.line=this.chart.addSeries(LineSeries,{color:'#d4ed98',lineWidth:2,visible:false,priceFormat});
+  this.volume=this.chart.addSeries(HistogramSeries,{priceScaleId:'volume',priceFormat:{type:'volume'},lastValueVisible:false,priceLineVisible:false});
+  this.volume.priceScale().applyOptions({scaleMargins:{top:.8,bottom:0},visible:false});
+  this.chart.subscribeCrosshairMove(param=>{
+   const target=document.getElementById('chart-ohlc'),series=this.mode==='candles'?this.candles:this.line;
+   const data=param.seriesData.get(series),bar=typeof param.time==='number'?this.buckets.get(param.time*1000):null;
+   if(!data||!bar){target.textContent='Drag to pan · scroll or pinch to zoom · hover to inspect';return;}
+   const price=n=>'$'+Number(n).toLocaleString('en',{maximumSignificantDigits:7});
+   target.textContent=new Date(bar.time).toLocaleString()+' · O '+price(bar.open)+'  H '+price(bar.high)+'  L '+price(bar.low)+'  C '+price(bar.close)+(bar.volume!=null?' · USD volume '+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
+  });
+  const interaction=()=>{this.manual=true;this.needsFit=false;};
+  container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
+ }
+ setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
+ setScale(mode){this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
+ setRange(range){this.range=range;this.manual=false;this.needsFit=true;this.schedule();}
+ setHistory(candles,interval,origin){this.history=candles;this.interval=interval;this.origin=origin;this.rebuild=true;if(!this.manual&&this.range==='history')this.needsFit=true;this.schedule();}
+ setInterval(interval){this.history=[];this.interval=interval;this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
+ fit(){this.range='history';this.manual=false;this.needsFit=true;this.schedule();}
+ goLive(){this.range='live';this.manual=false;this.needsFit=true;this.schedule();}
+ zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.origin=null;this.schedule();}
- add(point){if(!(point.price>0)||!Number.isFinite(point.price))return;this.points.push(point);if(this.points.length>3600)this.points.shift();this.schedule();}
- remove(id){this.points=this.points.filter(p=>p.id!==id);this.schedule();}
+ reset(){this.points=[];this.history=[];this.origin=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
+ merge(point){
+  const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
+  if(!bar){bar={time,open:point.price,high:point.price,low:point.price,close:point.price,volume:null,firstAt:point.at,lastAt:point.at};this.buckets.set(time,bar);}
+  bar.high=Math.max(bar.high,point.price);bar.low=Math.min(bar.low,point.price);
+  if(bar.firstAt!=null&&point.at<bar.firstAt){bar.open=point.price;bar.firstAt=point.at;}
+  if(bar.lastAt==null||point.at>=bar.lastAt){bar.close=point.price;bar.lastAt=point.at;}
+  if(!bar.live){bar.volume=null;bar.live=true;}
+  if(Number.isFinite(point.volume)&&point.volume>=0)bar.volume=(bar.volume||0)+point.volume;
+  this.dirty.add(time);
+ }
+ add(point){
+  if(!(point.price>0)||!Number.isFinite(point.price))return;this.points.push(point);
+  if(this.points.length>3600){this.points.shift();this.rebuild=true;}
+  if(!this.rebuild)this.merge(point);this.schedule();
+ }
+ remove(id){this.points=this.points.filter(p=>p.id!==id);this.rebuild=true;this.schedule();}
+ retime(id,at){if(!Number.isFinite(at))return;const point=this.points.find(p=>p.id===id);if(point){point.at=at;this.rebuild=true;this.schedule();}}
  draw(){
-  const canvas=this.canvas,rect=canvas.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);if(rect.width===0)return;
-  canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);
-  const c=canvas.getContext('2d');c.scale(dpr,dpr);const w=rect.width,h=rect.height,L=8,R=100,T=20,B=32;
-  c.clearRect(0,0,w,h);c.font='10px monospace';c.fillStyle='#929987';
-  const historical=this.range==='history',points=historical?this.points:this.points.slice(-1200),candles=new Map();
-  if(historical)for(const bar of this.history)candles.set(bar.time,{...bar,historical:true});
-  const interval=historical&&this.history.length?this.interval:10000;
-  for(const p of points){const time=Math.floor(p.at/interval)*interval;let bar=candles.get(time);if(!bar){bar={time,open:p.price,high:p.price,low:p.price,close:p.price};candles.set(time,bar);}bar.high=Math.max(bar.high,p.price);bar.low=Math.min(bar.low,p.price);bar.close=p.price;}
-  const all=[...candles.values()].sort((a,b)=>a.time-b.time),bars=historical?all:all.slice(-100);
-  if(!bars.length){c.fillText('Loading price context…',L,40);return;}
-  const values=bars.flatMap(b=>[b.low,b.high]);let lo=Math.min(...values),hi=Math.max(...values);const margin=(hi-lo)*.15||hi*.002||.01;lo-=margin;hi+=margin;
-  const minTime=historical&&this.origin?Math.min(this.origin,bars[0].time):bars[0].time;
-  const latestTime=Math.max(bars.at(-1).time,points.at(-1)?.at||0),maxTime=Math.max(minTime+100000,latestTime+interval*.2);
-  const y=v=>T+(hi-v)/(hi-lo)*(h-T-B),x=t=>L+(t-minTime)/(maxTime-minTime)*(w-L-R);
-  c.strokeStyle='#343a30';c.lineWidth=1;for(let i=0;i<4;i++){const v=lo+(hi-lo)*i/3,py=y(v);c.beginPath();c.moveTo(L,py);c.lineTo(w-R,py);c.stroke();c.fillStyle='#929987';c.fillText('$'+v.toPrecision(5),w-R+10,py+4);}
-  const width=Math.max(1,Math.min(9,(w-L-R)*interval/(maxTime-minTime)*.65));
-  if(this.mode==='candles'){
-   for(const bar of bars){const px=x(bar.time);c.strokeStyle=c.fillStyle=bar.close>=bar.open?'#d4ed98':'#c79b94';c.beginPath();c.moveTo(px,y(bar.high));c.lineTo(px,y(bar.low));c.stroke();c.fillRect(px-width/2,Math.min(y(bar.open),y(bar.close)),width,Math.max(1,Math.abs(y(bar.open)-y(bar.close))));}
-  }else{
-   c.strokeStyle='#839868';c.lineWidth=1.3;c.beginPath();let previous=null;
-   if(historical)for(const bar of this.history){const px=x(bar.time),py=y(bar.close);if(!previous||bar.time-previous>interval*1.5)c.moveTo(px,py);else c.lineTo(px,py);previous=bar.time;}c.stroke();
-   c.strokeStyle='#d4ed98';c.lineWidth=1.5;c.beginPath();points.filter(p=>p.at>=minTime).forEach((p,i)=>{if(i===0)c.moveTo(x(p.at),y(p.price));else c.lineTo(x(p.at),y(p.price));});c.stroke();
-  }
-  const last=points.at(-1)||{price:bars.at(-1).close,at:bars.at(-1).time};c.fillStyle='#d4ed98';c.beginPath();c.arc(x(last.at),y(last.price),3,0,Math.PI*2);c.fill();
-  c.fillStyle='#929987';const label=t=>historical?new Date(t).toLocaleDateString():new Date(t).toLocaleTimeString();c.fillText(label(minTime),L,h-8);c.fillText(label(latestTime),Math.max(L,w-R-85),h-8);
+  const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
+  if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
+  const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);
+  if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.rebuild=false;return;}
+  const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});
+  const volume=b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#52683d':'#71514b'}:{time:b.time/1000};
+  const last=bars.at(-1).time;
+  if(this.rebuild||[...this.dirty].some(t=>t<last)){
+   const gap=this.origin&&this.origin<bars[0].time?[{time:Math.floor(this.origin/1000)}]:[];
+   this.candles.setData([...gap,...bars.map(candle)]);this.line.setData([...gap,...bars.map(b=>({time:b.time/1000,value:b.close}))]);this.volume.setData([...gap,...bars.map(volume)]);
+   if(visible&&!this.needsFit)scale.setVisibleRange(visible);
+  }else if(this.dirty.size){const bar=bars.at(-1);this.candles.update(candle(bar));this.line.update({time:last/1000,value:bar.close});this.volume.update(volume(bar));}
+  this.rebuild=false;this.dirty.clear();
+  if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}
+  else if(!this.manual&&this.range==='live'&&following)scale.scrollToRealTime();
  }
 }

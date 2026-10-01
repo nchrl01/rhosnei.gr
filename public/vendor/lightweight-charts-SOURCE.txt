@@ -1,0 +1,4 @@
+TradingView Lightweight Charts 5.0.9
+https://github.com/tradingview/lightweight-charts/tree/v5.0.9
+Standalone production ES module downloaded from https://unpkg.com/lightweight-charts@5.0.9/dist/lightweight-charts.standalone.production.mjs
+Apache-2.0; accompanying LICENSE and NOTICE files retained.
