@@ -33,7 +33,7 @@ export function subscribeEvm(market,onEvent,onState){
   if(closed)return;onState({connected:false,kind:'snapshot',message:'Connecting · '+market.chainId+' / PublicNode'});
   const ws=new WebSocket('wss://'+host+'.publicnode.com');socket=ws;
   let nextId=10,lastMessage=Date.now(),meta=null,ready=false,failure='',heartbeat;
-  const pending=new Map(),buffer=[];
+  const pending=new Map(),buffer=[],blockTimes=new Map();
   const openTimeout=setTimeout(()=>{failure='Connection timed out';ws.close();},15000);
   function request(method,params){return new Promise((resolve,reject)=>{
    const id=nextId++;const timeout=setTimeout(()=>{pending.delete(id);reject(Error(method+' timed out'));},10000);
@@ -46,7 +46,13 @@ export function subscribeEvm(market,onEvent,onState){
    if(seen.has(id))return;const trade=decodeSwap(log,meta);if(!trade)return;
    seen.add(id);if(seen.size>4096)seen.delete(seen.values().next().value);
    onState({connected:true,kind:'swap',message:'Connected · '+market.chainId+' · decoded '+trade.protocol.toUpperCase()+' swaps'});
-   onEvent({...trade,id,signature:log.transactionHash,block:Number(BigInt(log.blockNumber)),receivedAt:Date.now(),kind:'swap'});
+   const receivedAt=Date.now();onEvent({...trade,id,signature:log.transactionHash,block:Number(BigInt(log.blockNumber)),receivedAt,kind:'swap'});
+   // Fetch timestamp after emitting the trade; telemetry never delays sound.
+   if(!blockTimes.has(log.blockNumber)){
+    blockTimes.set(log.blockNumber,request('eth_getBlockByNumber',[log.blockNumber,false]).then(block=>Number(BigInt(block.timestamp))*1000));
+    if(blockTimes.size>64)blockTimes.delete(blockTimes.keys().next().value);
+   }
+   blockTimes.get(log.blockNumber).then(occurredAt=>{if(!closed)onEvent({kind:'timing',id,receivedAt,occurredAt,precision:'block-timestamp'});}).catch(()=>{});
   }
   ws.onopen=async()=>{
    lastMessage=Date.now();heartbeat=setInterval(()=>{

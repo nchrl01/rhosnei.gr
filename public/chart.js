@@ -1,6 +1,7 @@
 // Session observations only: no historical candles or interpolated prices.
 export class MarketChart{
- constructor(canvas){this.canvas=canvas;this.points=[];this.frame=null;this.observer=new ResizeObserver(()=>this.schedule());this.observer.observe(canvas);}
+ constructor(canvas){this.canvas=canvas;this.points=[];this.mode='ticks';this.frame=null;this.observer=new ResizeObserver(()=>this.schedule());this.observer.observe(canvas);}
+ setMode(mode){this.mode=mode;this.schedule();}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
  reset(){this.points=[];this.schedule();}
  add(point){if(!(point.price>0)||!Number.isFinite(point.price))return;this.points.push(point);if(this.points.length>3600)this.points.shift();this.schedule();}
@@ -20,7 +21,12 @@ export class MarketChart{
   c.strokeStyle='#343a30';c.lineWidth=1;
   for(let i=0;i<4;i++){const value=lo+(hi-lo)*i/3,py=y(value);c.beginPath();c.moveTo(L,py);c.lineTo(w-R,py);c.stroke();c.fillStyle='#929987';c.fillText('$'+value.toPrecision(5),w-R+10,py+4);}
   const width=Math.max(2,Math.min(9,(w-L-R)*10000/(maxTime-minTime)*.65));
-  for(const bar of bars){const px=x(bar.time)+width/2;c.strokeStyle=c.fillStyle=bar.close>=bar.open?'#d4ed98':'#c79b94';c.beginPath();c.moveTo(px,y(bar.high));c.lineTo(px,y(bar.low));c.stroke();c.fillRect(px-width/2,Math.min(y(bar.open),y(bar.close)),width,Math.max(1,Math.abs(y(bar.open)-y(bar.close))));}
+  if(this.mode==='candles'){
+   for(const bar of bars){const px=x(bar.time)+width/2;c.strokeStyle=c.fillStyle=bar.close>=bar.open?'#d4ed98':'#c79b94';c.beginPath();c.moveTo(px,y(bar.high));c.lineTo(px,y(bar.low));c.stroke();c.fillRect(px-width/2,Math.min(y(bar.open),y(bar.close)),width,Math.max(1,Math.abs(y(bar.open)-y(bar.close))));}
+  }else{
+   const visible=points.filter(p=>p.at>=minTime);c.strokeStyle='#d4ed98';c.lineWidth=1.5;c.beginPath();visible.forEach((p,i)=>{const px=x(p.at),py=y(p.price);if(i===0)c.moveTo(px,py);else c.lineTo(px,py);});c.stroke();
+   const p=visible.at(-1);if(p){c.fillStyle='#d4ed98';c.beginPath();c.arc(x(p.at),y(p.price),3,0,Math.PI*2);c.fill();}
+  }
   const last=points.at(-1);c.setLineDash([3,4]);c.strokeStyle='#697d50';c.beginPath();c.moveTo(L,y(last.price));c.lineTo(w-R,y(last.price));c.stroke();c.setLineDash([]);
   c.fillStyle='#929987';c.fillText(new Date(minTime).toLocaleTimeString(),L,h-8);c.fillText(new Date(bars.at(-1).time).toLocaleTimeString(),Math.max(L,w-R-80),h-8);
  }

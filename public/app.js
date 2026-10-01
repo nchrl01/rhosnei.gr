@@ -1,7 +1,7 @@
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
-import {subscribeEvm,EVM_RPC} from './evm.js?v=4';
-import {MarketChart} from './chart.js?v=4';
+import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
+import {MarketChart} from './chart.js?v=5';
 import {pollPoolTrades} from './trades.js?v=4';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -10,6 +10,7 @@ let seed=1917,state=1917,step=0,timer,next=0,bpm=120,recorder,chunks=[],session=
 const controls=['master'];
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='';
 let streamKind='snapshot',tradeEvents=[],lastTrade=null,discovered=[],lastDemoPrice=100,lastExcitation=0;
+let receivedTradeCount=0;
 const chart=new MarketChart($('market-chart'));
 const levels={melody:0,pad:0,drums:0,bass:0,space:0};
 const scale=[0,2,3,5,7,9,10];
@@ -53,6 +54,7 @@ function setupStream(){
  const startFallback=()=>{if(stopFallback)return;stopFallback=pollPoolTrades(market,receive,s=>{if(gen!==generation)return;fallbackState=s;publish();});};
  const receive=e=>{
   if(gen!==generation)return;
+  if(e.kind==='timing'){const trade=tradeEvents.find(t=>t.id===e.id)||(lastTrade?.id===e.id?lastTrade:null);if(trade){trade.occurredAt=e.occurredAt;trade.precision=e.precision;}session?.events?.push(e);return;}
   if(e.removed){tradeEvents=tradeEvents.filter(t=>t.id!==e.id);chart.remove(e.id);lastTrade=tradeEvents.at(-1)||null;session?.events?.push(e);$('last-event').textContent='Chain reorganization · removed swap';display();return;}
   if(e.kind==='swap'){
    const source=e.source||'rpc',other=source==='rpc'?'gecko':'rpc';
@@ -60,13 +62,13 @@ function setupStream(){
    signatures[source].add(e.signature);if(signatures[source].size>4096)signatures[source].delete(signatures[source].values().next().value);
    const quoteUsd=Number(market.priceUsd)/Number(market.priceNative);
    if(source==='rpc'){e.priceUsd=quoteUsd>0&&Number.isFinite(quoteUsd)?e.priceQuote*quoteUsd:null;e.usdVolume=e.priceUsd?e.baseAmount*e.priceUsd:0;}
-   tradeEvents.push(e);lastTrade=e;
+   tradeEvents.push(e);lastTrade=e;receivedTradeCount++;
    if(e.priceUsd)chart.add({at:e.receivedAt,price:e.priceUsd,id:e.id,source:'swap'});
    $('chart-source').textContent=source==='rpc'?'Streamed swap execution prices · USD estimated using latest quote conversion':'Observed trade prices · GeckoTerminal / 5s polling · provider USD values';
    $('last-event').textContent=e.side.toUpperCase()+' · block '+e.block;display();
   }else{poolEvents.push(e);if(streamKind==='pool')$('last-event').textContent='Pool event · slot '+e.slot;}
   session?.events?.push(e);
-  if(playing&&performance.now()-lastExcitation>=40&&(e.kind==='swap'||streamKind==='pool')){lastExcitation=performance.now();syncLevels(metrics());const root=45+seed%12;send('note',root+12+scale[step%7]);event('pluck');}
+  if(playing&&performance.now()-lastExcitation>=40&&(e.kind==='swap'||streamKind==='pool')){lastExcitation=performance.now();syncLevels(metrics());const root=45+seed%12;const previous=tradeEvents.at(-2);const delta=previous&&e.priceQuote?Math.log(e.priceQuote/previous.priceQuote):0;send('note',root+12+clamp(Math.round(delta*1200),-12,12));event('pluck');}
  };
  if(market.chainId==='solana'){
   stopNative=subscribePool(market.pairAddress,receive,message=>{if(gen!==generation)return;nativeState={connected:message.startsWith('Connected'),kind:message.startsWith('Connected')?'pool':'snapshot',message};publish();});startFallback();
@@ -127,7 +129,7 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair){
- generation++;clearTimeout(poll);stopStream?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;chart.reset();
+ generation++;clearTimeout(poll);stopStream?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;receivedTradeCount=0;chart.reset();
  mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;applySnapshot(pair);setupStream();
  $('network').value=pair.chainId;renderPools(pair);$('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
@@ -159,7 +161,7 @@ $('coin-form').onsubmit=async e=>{
 };
 $('network').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value);if(pair)chooseMarket(pair);};
 $('pool').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value&&p.pairAddress===$('pool').value);if(pair)chooseMarket(pair);};
-$('demo').onclick=()=>{generation++;clearTimeout(poll);stopStream?.();streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;display();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
+$('demo').onclick=()=>{generation++;clearTimeout(poll);stopStream?.();streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;display();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.textContent='Download '+name;a.style.color='var(--accent)';a.style.fontSize='11px';a.style.display='block';$('downloads').append(a);}
 const downloads=document.createElement('div');downloads.id='downloads';$('record').parentElement.after(downloads);
 $('record').onclick=()=>{
@@ -177,4 +179,10 @@ $('record').onclick=()=>{
 };
 display();
 setInterval(()=>{if(!playing)syncLevels(metrics());},250);
+$('chart-view').onchange=()=>chart.setMode($('chart-view').value);
+setInterval(()=>{
+ $('event-age').textContent=lastTrade?'Last trade received '+((Date.now()-lastTrade.receivedAt)/1000).toFixed(1)+'s ago':'Last trade: none received';
+ $('data-delay').textContent=lastTrade?.occurredAt?(lastTrade.precision==='block-timestamp'?'Block → receipt (approx.): ':'Trade timestamp → receipt: ')+Math.max(0,(lastTrade.receivedAt-lastTrade.occurredAt)/1000).toFixed(1)+'s':'Source delay: unknown (no trade timestamp)';
+ $('event-count').textContent=receivedTradeCount+' trades received';
+},100);
 setInterval(()=>{if(mode==='demo'){const t=performance.now()/1000;lastDemoPrice=100+2*Math.sin(t/19)+Math.sin(t/31);chart.add({at:Date.now(),price:lastDemoPrice,source:'demo'});$('chart-source').textContent='Synthetic demo prices · no market feed';}},1000);

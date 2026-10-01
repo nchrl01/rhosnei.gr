@@ -10,6 +10,12 @@ Run `python3 build-patch.py` after editing the patch builder, then `npm start`. 
 
 Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
 
+## Responsiveness and timing indicators (v4)
+
+Default chart view now shows every received price observation as a tick trace; observed ten-second candles remain an option. The old candle interval grouped observations but did not delay incoming updates. Telemetry shows the age and count of received trades, and timestamp-to-receipt delay where available. Native EVM block timestamps are fetched asynchronously after the trade has already been emitted; block-to-receipt values are approximate and include block timestamp granularity and local clock differences. They are not measured audio latency. Polled trades use the provider's trade timestamp. Unknown timing is shown explicitly.
+
+Immediate note accents now use the logarithmic change between received execution prices rather than the generative sequencer's step index. Continuous layers still express rolling market behavior. This does not make polled or cached data into a streaming source; exact-token diagnosis is needed to identify the active feed and its delay.
+
 ## Multi-chain chart and trades (v3)
 
 The UI discovers networks and pools for an exact token identifier from DEX Screener search results. It supports chain-specific identifiers beyond EVM/Solana address shapes and matches either side of a pair. Quote-side selections invert the displayed pair price and buy/sell counts; their five-minute change is marked unavailable because it cannot be inferred from the original base-token change. Results remain provider-limited; this is not an exhaustive registry of all blockchains or tokens. Users choose the network and pool, which remain pinned during polling.
