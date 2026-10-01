@@ -1,0 +1,1 @@
+{"name":"av-market-instrument","private":true,"type":"module","scripts":{"start":"node server.mjs"}}

@@ -1,0 +1,5 @@
+libpd-wasm browser runtime
+https://github.com/hyrfilm/libpd-wasm
+Commit: 5570d36ec99820b4c6fb9662be6ead7bfbd59572
+Artifacts: demo/libpd-wasm.js and demo/libpd-worklet.js
+License: LICENSE.txt alongside these files
