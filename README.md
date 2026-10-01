@@ -10,6 +10,28 @@ Run `python3 build-patch.py` after editing the patch builder, then `npm start`. 
 
 Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
 
+## Multi-chain chart and trades (v3)
+
+The UI discovers networks and pools for an exact token identifier from DEX Screener search results. It supports chain-specific identifiers beyond EVM/Solana address shapes and matches either side of a pair. Quote-side selections invert the displayed pair price and buy/sell counts; their five-minute change is marked unavailable because it cannot be inferred from the original base-token change. Results remain provider-limited; this is not an exhaustive registry of all blockchains or tokens. Users choose the network and pool, which remain pinned during polling.
+
+The session chart groups received observations into ten-second candles. No historical candles are fabricated or loaded. The graph is a view of data received by this browser, not complete exchange OHLCV history. It shares trade observations with the music. Snapshot-only sources plot snapshots. Rendering is coalesced through animation frames; chart samples are bounded. EVM reorganization removals remove matching observations, though already-played sound cannot be reversed.
+
+Native EVM swap adapters: Ethereum, Base, BNB Smart Chain, Arbitrum One, Polygon, Optimism and Avalanche C-Chain, using free PublicNode WebSockets and standard JSON-RPC. The adapter checks pool token0/token1 and decimals before subscribing to standard V2/V3 Swap topics. It decodes amounts, derives executed quote-per-base price, base size, and buy/sell direction. Prices in USD use the current snapshot quote conversion and are estimates. Nonstandard pool ABIs (including V4 pool managers) require another decoder. Unsupported pools keep the fallback feeds.
+
+Broad trade fallback: GeckoTerminal's public REST pool-trades API is polled every five seconds with a small network-ID alias map; otherwise the discovered chain ID is tried directly. It provides observed trade price, USD volume, and direction for pools it indexes across chains. Its initial response is a baseline; old trades are not sounded. HTTP 429 backs off, 404 stops the unavailable feed, and missing token-address/amount fields are not guessed. This route is polling, not streaming, and provider caching/indexing adds delay. Unknown or unindexed networks/pools remain snapshot-only. No API key is embedded and no additional server is required. The fallback is cancelled when native swaps begin and restarted after native disconnection.
+
+Events are deduplicated within a feed. Cross-feed handover uses transaction signatures to avoid replaying the same transaction; this may omit additional swaps within that transaction during handover. Reconnection gaps are not comprehensively backfilled. Trade metrics use thirty seconds of received observations, pool activity uses ten seconds, snapshot aggregates use five minutes. Activity and traded USD volume are normalized as per-second rates before setting musical levels. These are partial observed windows during warm-up. Snapshot-derived liquidity and USD conversion become stale after failed updates, causing levels to fade. High-rate events are coalesced to a maximum of 25 immediate melodic excitations per second while all received observations still affect activity metrics.
+
+Sources:
+
+- https://publicnode.com/
+- https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Pair.sol
+- https://github.com/Uniswap/v3-core/blob/main/contracts/interfaces/pool/IUniswapV3PoolEvents.sol
+- https://api.geckoterminal.com/docs/index.html
+- https://docs.dexscreener.com/api/reference
+
+This update has been reviewed by reading the implementation. No automated tests or browser playback verification were performed.
+
 ## Automatic mix and free streaming (v2)
 
 The instrument exposes one listening-volume slider. Melody, pad, drums, bass, space and energy follow market metrics automatically; read-only meters show their current normalized levels. Traded 5-minute USD volume controls musical energy and layer amplitudes. Activity controls density and loudness; price movement, liquidity and buy/sell balance distinguish layers. These are authored mappings with explicit fixed normalization ranges, not objective acoustic properties of a token. Snapshot-derived values fade when their data becomes stale.
