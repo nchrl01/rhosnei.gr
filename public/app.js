@@ -1,5 +1,5 @@
 import {createPd} from './vendor/libpd-wasm.js';
-import {subscribePool} from './realtime.js';
+import {subscribePool} from './realtime.js?v=3';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let pd,ctx,gain,playing=false,starting=false,poll,market=null,mode='demo',generation=0,loading=false;
