@@ -10,6 +10,20 @@ Run `python3 build-patch.py` after editing the patch builder, then `npm start`. 
 
 Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
 
+## Robinhood v4 direct RPC and chart timezone (v8)
+
+The token `0x87ec194b106f7a6a3bf8eb7cdd6cac0f5e9c5520` resolves to Robin Hood (HOOD) on Robinhood Chain. The selected high-liquidity Uniswap market is the 32-byte v4 pool identifier `0xa3fb3aef3524f8bf3a50024b6baa1d2cdca82c570952230929fcdb4cc458be67`. Prior adapters handled seven chains' V2/V3 pools and could not subscribe to this market. Indexed fallback did not establish real-time coverage here.
+
+`v4.js` adds Robinhood Chain direct HTTP RPC polling, using its documented public RPC, chain ID 4663 and Uniswap's deployed PoolManager/StateView. Startup checks the chain ID and verifies the pool's Initialize event currencies before reading decimals (native ETH uses 18). Initialize lookback is bounded to eight queries of up to ten million blocks. StateView supplies the current on-chain pool price immediately; startup does not sound historical swaps. New Swap logs are filtered by both manager and pool ID, decoded for amount/direction and Q64.96 post-swap price, and sent to the chart/music. The v4 caller-delta sign convention is distinct from V2/V3. USD conversion and liquidity still use market snapshots.
+
+The adapter checks the head and logs every two seconds after each successful poll, plus network time. It catches up in chunks of up to 10,000 blocks, overlaps 64 blocks for late log availability and deduplicates by transaction hash/log index. Block timestamps arrive asynchronously for telemetry and chart placement. Quiet periods query pool state about every ten seconds; these are explicit state observations, not manufactured trades, and never increase the trade count or trigger immediate trade accents. Failures back off and retain indexed fallback. This is direct chain polling, not a WebSocket stream, and provides no guaranteed end-to-end latency. Reorganization deletions are not comprehensively reconciled by the HTTP route; already-played audio cannot be reversed.
+
+Chart tick labels and crosshair timestamps now both use the browser's local timezone, displayed below the chart. The previous library defaults used UTC for axis labels while tooltip text used local time. No evidence established an exact two-hour transport delay; this mismatch could look like a fixed-hour lag independently of real source staleness.
+
+Read-only provider diagnostics returned: the official chain head; a matching pool Initialize event; valid StateView price; a real six-word v4 Swap log for this token; and 52 recent matching chain logs. The direct RPC returned 200 and wildcard CORS with AV's origin. The latest sampled chain swap was later than the latest sampled GeckoTerminal trade. These diagnostics check provider data, not the deployed browser adapter. No automated tests were added/run, and browser/audio verification remains unavailable.
+
+References: https://docs.robinhood.com/chain/connecting/ and https://developers.uniswap.org/docs/protocols/v4/deployments and https://github.com/Uniswap/v4-core/blob/main/src/interfaces/IPoolManager.sol.
+
 ## Direct Orca swaps and update visibility (v7)
 
 The supplied PSOL token `pSo1f9nQXWgXibFtKf7NWYxb5enAM4qfP6UJSiXRQfL` resolves to Phantom Staked SOL. Its highest-liquidity discovery result is the PSOL/SOL Orca Whirlpool `3XLkRVg69AgwKAbnSjJpm3PB4QgVeXFEjiXfw5shWMBT`. The former Solana adapter observed transaction activity without decoding prices; its chart still depended on cached polling.

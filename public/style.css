@@ -8,3 +8,5 @@ meter{display:block;width:100%;height:12px;margin-top:18px;accent-color:#d4ed98}
 .chart-options{flex-wrap:wrap;justify-content:flex-end}.chart-options select{background:#181b17;border:1px solid #343a30;color:#d4ed98;border-radius:4px;padding:7px;font:10px 'DM Sans',sans-serif}.chart-navigation{display:flex;gap:6px;margin-top:14px}.chart-navigation button{padding:6px 12px;font-size:11px}#market-chart{height:340px}#chart-ohlc,#chart-resolution,.chart-credit{font:10px 'Space Mono',monospace;color:#929987;line-height:1.8}#chart-ohlc{min-height:36px}.chart-credit a{color:#d4ed98}select:focus-visible{outline:2px solid #d4ed98;outline-offset:3px}@media(max-width:650px){.chart-heading{flex-direction:column}.chart-options{justify-content:flex-start}#market-chart{height:280px}}
 
 #chart-update{font:10px 'Space Mono',monospace;color:#d4ed98;line-height:1.8}
+
+#chart-timezone{font:10px 'Space Mono',monospace;color:#929987;line-height:1.8}

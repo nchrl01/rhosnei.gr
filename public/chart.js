@@ -9,8 +9,8 @@ export class MarketChart{
    autoSize:true,layout:{background:{color:'#181b17'},textColor:'#929987',fontSize:11,attributionLogo:true},
    grid:{vertLines:{color:'#242a21'},horzLines:{color:'#343a30'}},
    rightPriceScale:{borderColor:'#343a30',scaleMargins:{top:.1,bottom:.25}},
-   timeScale:{borderColor:'#343a30',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true},
-   localization:{priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9})},
+   timeScale:{borderColor:'#343a30',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
+   localization:{timeFormatter:time=>new Date(time*1000).toLocaleString(undefined,{timeZoneName:'short'}),priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9})},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
@@ -27,8 +27,9 @@ export class MarketChart{
    target.textContent=new Date(bar.time).toLocaleString()+' · O '+price(bar.open)+'  H '+price(bar.high)+'  L '+price(bar.low)+'  C '+price(bar.close)+(bar.volume!=null?' · USD volume '+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
   });
   const interaction=()=>{this.manual=true;this.needsFit=false;};
+  document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';
   container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
-  setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':' · received trade'):'Waiting for price observations';},500);
+  setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},500);
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
