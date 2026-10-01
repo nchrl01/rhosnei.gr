@@ -10,6 +10,20 @@ Run `python3 build-patch.py` after editing the patch builder, then `npm start`. 
 
 Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
 
+## Direct Orca swaps and update visibility (v7)
+
+The supplied PSOL token `pSo1f9nQXWgXibFtKf7NWYxb5enAM4qfP6UJSiXRQfL` resolves to Phantom Staked SOL. Its highest-liquidity discovery result is the PSOL/SOL Orca Whirlpool `3XLkRVg69AgwKAbnSjJpm3PB4QgVeXFEjiXfw5shWMBT`. The former Solana adapter observed transaction activity without decoding prices; its chart still depended on cached polling.
+
+`orca.js` now verifies the pool owner, 653-byte Whirlpool layout, account discriminator, mint addresses and parsed mint decimals via public Solana RPC. It subscribes to confirmed pool logs and decodes Orca's 121-byte Traded events only while Orca is the active program invocation and the embedded pool address matches. Swap amounts, direction and the post-swap Q64.64 square-root price feed the app directly, without requesting each transaction or waiting for REST trade polling. Multiple swaps within a transaction retain their log indexes. Amounts use the reported event amounts; prices/volumes in USD use snapshot quote conversion. Native event timestamps are receipt times; there is no measured end-to-end latency for this adapter. Unsupported Orca layouts retain fallback rather than guessed decoding. Other Solana DEXes still need their own decoders.
+
+The default chart now opens on the latest one-minute candles. Origin history loads separately and still sets the music's historical reference. Chart telemetry shows the most recently received price, age and observation count, including explicit snapshot/demo source labels. Prices display greater precision so small PSOL changes remain visible. Direct-route errors are visible alongside the fallback feed.
+
+GeckoTerminal's current free API docs state a one-minute response cache and an approximate ten-requests-per-minute limit: https://api.geckoterminal.com/docs/index.html. History and trade polling now share a request queue with at least eight seconds between requests; cancelled requests leave the queue. HTTP trade polling remains cached and must not be described as real-time streaming. Older sections below describing five-second trade polling refer to previous versions; market snapshot polling still uses five seconds.
+
+Read-only provider diagnostics: the pool account owner/layout and both nine-decimal token mints matched; a real confirmed transaction contained the expected 121-byte Traded event; metadata HTTP requests returned 200 with AV's origin and CORS support; the WebSocket handshake accepted that origin with HTTP 101. A separate Node subscription inspection received no events during its observation window, so live event delivery through the deployed adapter is not verified. No automated implementation tests were added or run. The browser plugin reported no available browser, preventing browser inspection and audio audition.
+
+Sources: Orca account and event definitions at https://github.com/orca-so/whirlpools/tree/main/programs/whirlpool/src and Solana logsSubscribe at https://solana.com/docs/rpc/websocket/logssubscribe.
+
 ## Standard chart controls (v6)
 
 TradingView Lightweight Charts 5.0.9 now supplies the chart UI, served from a local vendored ES module with its Apache 2.0 license and attribution notices. Candles are the default. Controls include 1m, 5m, 15m, 1h, 4h and 1d candles; closing-price line; crosshair OHLC and volume readings; mouse/touch zoom and pan; explicit zoom buttons; linear/log price scales; Fit history and Latest. Auto origin retains the age-based historical resolution. Selecting a timeframe fetches matching provider OHLCV, up to three pages, and never subdivides coarse historical candles into invented finer bars. Coverage messages stay visible. The chart timeframe does not change the music's origin baseline.

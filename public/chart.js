@@ -4,17 +4,17 @@ import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode}
 export class MarketChart{
  constructor(container){
   this.points=[];this.history=[];this.buckets=new Map();this.interval=60000;this.origin=null;
-  this.mode='candles';this.range='history';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();
+  this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
    autoSize:true,layout:{background:{color:'#181b17'},textColor:'#929987',fontSize:11,attributionLogo:true},
    grid:{vertLines:{color:'#242a21'},horzLines:{color:'#343a30'}},
    rightPriceScale:{borderColor:'#343a30',scaleMargins:{top:.1,bottom:.25}},
    timeScale:{borderColor:'#343a30',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true},
-   localization:{priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:7})},
+   localization:{priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9})},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
-  const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:7}),minMove:1e-12};
+  const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9}),minMove:1e-12};
   this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#d4ed98',downColor:'#c79b94',wickUpColor:'#d4ed98',wickDownColor:'#c79b94',borderVisible:false,priceFormat});
   this.line=this.chart.addSeries(LineSeries,{color:'#d4ed98',lineWidth:2,visible:false,priceFormat});
   this.volume=this.chart.addSeries(HistogramSeries,{priceScaleId:'volume',priceFormat:{type:'volume'},lastValueVisible:false,priceLineVisible:false});
@@ -28,6 +28,7 @@ export class MarketChart{
   });
   const interaction=()=>{this.manual=true;this.needsFit=false;};
   container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
+  setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':' · received trade'):'Waiting for price observations';},500);
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
@@ -38,7 +39,7 @@ export class MarketChart{
  goLive(){this.range='live';this.manual=false;this.needsFit=true;this.schedule();}
  zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.origin=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
+ reset(){this.points=[];this.history=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
   if(!bar){bar={time,open:point.price,high:point.price,low:point.price,close:point.price,volume:null,firstAt:point.at,lastAt:point.at};this.buckets.set(time,bar);}
@@ -50,7 +51,7 @@ export class MarketChart{
   this.dirty.add(time);
  }
  add(point){
-  if(!(point.price>0)||!Number.isFinite(point.price))return;this.points.push(point);
+  if(!(point.price>0)||!Number.isFinite(point.price))return;this.points.push(point);this.received++;this.lastReceived={...point,receivedAt:Date.now()};
   if(this.points.length>3600){this.points.shift();this.rebuild=true;}
   if(!this.rebuild)this.merge(point);this.schedule();
  }

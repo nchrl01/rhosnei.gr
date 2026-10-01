@@ -1,9 +1,10 @@
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
 import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
-import {MarketChart} from './chart.js?v=7';
-import {loadHistory} from './history.js?v=7';
-import {pollPoolTrades} from './trades.js?v=4';
+import {subscribeOrca} from './orca.js?v=1';
+import {MarketChart} from './chart.js?v=8';
+import {loadHistory} from './history.js?v=8';
+import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let pd,ctx,gain,playing=false,starting=false,poll,market=null,mode='demo',generation=0,loading=false;
@@ -52,7 +53,7 @@ function setupStream(){
  const signatures={rpc:new Set(),gecko:new Set()};
  const publish=()=>{
   const chosen=nativeState.connected&&nativeState.kind==='swap'?nativeState:fallbackState.connected&&fallbackState.kind==='trade-poll'?fallbackState:nativeState.connected&&nativeState.kind==='pool'?nativeState:fallbackState.message?fallbackState:nativeState;
-  streamConnected=chosen.connected;streamKind=chosen.kind;$('feed').textContent=chosen.message;display();
+  streamConnected=chosen.connected;streamKind=chosen.kind;$('feed').textContent=chosen.message+(chosen!==nativeState&&nativeState.message?' · direct route: '+nativeState.message:'');display();
  };
  const startFallback=()=>{if(stopFallback)return;stopFallback=pollPoolTrades(market,receive,s=>{if(gen!==generation)return;fallbackState=s;publish();});};
  const receive=e=>{
@@ -64,17 +65,19 @@ function setupStream(){
    if(!e.signature||signatures[other].has(e.signature))return;
    signatures[source].add(e.signature);if(signatures[source].size>4096)signatures[source].delete(signatures[source].values().next().value);
    const quoteUsd=Number(market.priceUsd)/Number(market.priceNative);
-   if(source==='rpc'){e.priceUsd=quoteUsd>0&&Number.isFinite(quoteUsd)?e.priceQuote*quoteUsd:null;e.usdVolume=e.priceUsd?e.baseAmount*e.priceUsd:0;}
+   if(source==='rpc'){e.priceUsd=quoteUsd>0&&Number.isFinite(quoteUsd)?(e.spotQuote||e.priceQuote)*quoteUsd:null;e.usdVolume=e.priceUsd?e.quoteAmount*quoteUsd:0;}
    tradeEvents.push(e);lastTrade=e;receivedTradeCount++;
    if(e.priceUsd)chart.add({at:Number.isFinite(e.occurredAt)?e.occurredAt:e.receivedAt,price:e.priceUsd,volume:e.usdVolume,id:e.id,source:'swap'});
-   $('chart-source').textContent=source==='rpc'?'Streamed swap execution prices · USD estimated using latest quote conversion':'Observed trade prices · GeckoTerminal / 5s polling · provider USD values';
+   $('chart-source').textContent=source==='rpc'?(e.protocol==='orca'?'Orca post-swap spot prices · confirmed WebSocket events · USD uses snapshot SOL/quote conversion':'Streamed swap execution prices · USD estimated using latest quote conversion'):'Observed trade prices · GeckoTerminal / ≥8s polling · upstream cached · provider USD values';
    $('last-event').textContent=e.side.toUpperCase()+' · block '+e.block;display();
   }else{poolEvents.push(e);if(streamKind==='pool')$('last-event').textContent='Pool event · slot '+e.slot;}
   session?.events?.push(e);
   if(playing&&performance.now()-lastExcitation>=40&&(e.kind==='swap'||streamKind==='pool')){lastExcitation=performance.now();syncLevels(metrics());const root=marketRoot();const previous=tradeEvents.at(-2);const delta=previous&&e.priceQuote?Math.log(e.priceQuote/previous.priceQuote):0;send('note',root+12+clamp(Math.round(delta*1200),-12,12));event('pluck');}
  };
  if(market.chainId==='solana'){
-  stopNative=subscribePool(market.pairAddress,receive,message=>{if(gen!==generation)return;nativeState={connected:message.startsWith('Connected'),kind:message.startsWith('Connected')?'pool':'snapshot',message};publish();});startFallback();
+  if(market.dexId==='orca'){
+   stopNative=subscribeOrca(market,receive,s=>{if(gen!==generation)return;nativeState=s;if(s.connected&&s.kind==='swap'){stopFallback?.();stopFallback=null;fallbackState={connected:false,kind:'snapshot',message:''};}else startFallback();publish();});
+  }else{stopNative=subscribePool(market.pairAddress,receive,message=>{if(gen!==generation)return;nativeState={connected:message.startsWith('Connected'),kind:message.startsWith('Connected')?'pool':'snapshot',message};publish();});startFallback();}
  }else{
   stopNative=subscribeEvm(market,receive,s=>{if(gen!==generation)return;nativeState=s;if(s.connected&&s.kind==='swap'){stopFallback?.();stopFallback=null;fallbackState={connected:false,kind:'snapshot',message:''};}else startFallback();publish();});
  }
@@ -108,7 +111,7 @@ $('play').onclick=async()=>{
  finally{starting=false;$('play').disabled=false;}
 };
 for(const id of controls)$(id).addEventListener('input',()=>{send(id,Number($(id).value));session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
-const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:5}).format(n):'—';
+const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
 function orientPair(pair,token){
  if(sameToken(pair.baseToken?.address,token))return {...pair,historyTokenSide:'base'};
@@ -118,7 +121,7 @@ function orientPair(pair,token){
  return {...pair,historyTokenSide:'quote',baseToken:pair.quoteToken,quoteToken:pair.baseToken,priceNative:native>0?String(1/native):null,priceUsd:native>0&&usd>0?String(usd/native):null,txns,priceChange:{}};
 }
 function display(){
- $('mode').textContent=mode==='demo'?'DEMO SIGNAL':streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'TRADE POLLING · 5 SEC':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
+ $('mode').textContent=mode==='demo'?'DEMO SIGNAL':streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
  $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'Untuned / Demo';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
  $('price').textContent=market?cash(streamConnected&&['swap','trade-poll'].includes(streamKind)&&lastTrade?.priceUsd?lastTrade.priceUsd:market.priceUsd):'—';$('change').textContent=market&&market.priceChange?.m5!=null?Number(market.priceChange.m5).toFixed(2)+'%':'—';
@@ -193,7 +196,7 @@ $('coin-form').onsubmit=async e=>{
   const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address));
   const pairs=(data.pairs||[]).map(p=>orientPair(p,address)).filter(Boolean);pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0));
   if(!pairs.length)throw Error('No indexed market found for this token identifier.');
-  discovered=pairs;$('network').replaceChildren();for(const chain of [...new Set(pairs.map(p=>p.chainId))]){const o=document.createElement('option');o.value=chain;o.textContent=chain.toUpperCase()+' · '+(chain==='solana'?'pool stream + trade polling':EVM_RPC[chain]?'V2/V3 swap adapter':'trade polling / snapshots');$('network').append(o);}
+  discovered=pairs;$('network').replaceChildren();for(const chain of [...new Set(pairs.map(p=>p.chainId))]){const o=document.createElement('option');o.value=chain;o.textContent=chain.toUpperCase()+' · '+(chain==='solana'?'Orca swaps / pool activity + cached trade polling':EVM_RPC[chain]?'V2/V3 swap adapter':'trade polling / snapshots');$('network').append(o);}
   $('market-selectors').hidden=false;chooseMarket(pairs[0]);
  }catch(e){status(e.message);$('lookup').textContent=e.message;}
  finally{loading=false;$('load').disabled=false;}

@@ -1,3 +1,4 @@
+import {fetchGecko} from './gecko.js?v=1';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
 export function loadHistory(market,onUpdate,options={}){
  let closed=false,timer,controller;const rows=new Map();
@@ -12,10 +13,10 @@ export function loadHistory(market,onUpdate,options={}){
  function report(state,message){onUpdate({candles:[...rows.values()].sort((a,b)=>a.time-b.time),interval,timeframe,state,message,created});}
  try{const cached=JSON.parse(localStorage.getItem(key));if(cached&&cached.timeframe===timeframe&&Date.now()-cached.saved<600000&&Array.isArray(cached.candles)){for(const bar of cached.candles)rows.set(bar.time,bar);report(cached.state,'Cached '+cached.timeframe+' history');return()=>{closed=true;};}}catch{}
  async function page(){
-  if(closed)return;controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);let delay=10000;
+  if(closed)return;controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=10000;
   try{
    const query=new URLSearchParams({aggregate:String(aggregate),limit:'1000',currency:'usd',token:market.baseToken.address,before_timestamp:String(before),include_empty_intervals:'false'});
-   const r=await fetch(base+'?'+query,{signal:controller.signal});if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
+   const r=await fetchGecko(base+'?'+query,{signal:controller.signal});if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
    const data=await r.json();if(closed)return;const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
    let added=0;
    for(const row of list){if(row.length<6||!row.every(v=>Number.isFinite(Number(v))))continue;const [seconds,open,high,low,close,volume]=row.map(Number);if(seconds<=0||open<=0||close<=0||low<=0||high<Math.max(open,close)||low>Math.min(open,close)||volume<0)continue;const bar={time:seconds*1000,open,high,low,close,volume};if(!rows.has(bar.time)){rows.set(bar.time,bar);added++;}}
