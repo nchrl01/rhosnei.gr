@@ -1,4 +1,5 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
+import {createChartTicks} from './chart-ticks.js?v=31';
 
 // One series per view, with provider candles and explicitly partial live observations.
 export class MarketChart{
@@ -30,6 +31,7 @@ export class MarketChart{
   document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';
   container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
   setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},500);
+  this.tickView=createChartTicks(this);
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.scale=mode;this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
@@ -40,7 +42,7 @@ export class MarketChart{
  goLive(){this.range='live';this.manual=false;this.needsFit=true;this.schedule();}
  zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
+ reset(){this.points=[];this.history=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.tickView?.update([]);this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
   // Provider coverage takes precedence over observations already included in
@@ -66,7 +68,7 @@ export class MarketChart{
   const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
   if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
   const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);
-  if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.rebuild=false;return;}
+  if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.tickView?.update([]);this.rebuild=false;return;}
   const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});
   const volume=b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#cccccc':'#555555'}:{time:b.time/1000};
   const last=bars.at(-1).time;
@@ -78,5 +80,6 @@ export class MarketChart{
   this.rebuild=false;this.dirty.clear();
   if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}
   else if(!this.manual&&this.range==='live'&&following)scale.scrollToRealTime();
+  this.tickView?.update(bars);
  }
 }

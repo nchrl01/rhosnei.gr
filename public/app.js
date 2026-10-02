@@ -10,8 +10,8 @@ import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
 import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
-import {startTrending} from './trending.js?v=1';
-import {MarketChart} from './chart.js?v=30';
+import {startTrending} from './trending.js?v=31';
+import {MarketChart} from './chart.js?v=31';
 import {loadHistory} from './history.js?v=30';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
@@ -268,9 +268,15 @@ function renderPools(pair){
   const option=document.createElement('option');option.value=p.pairAddress;option.textContent=p.dexId+' · '+p.baseToken.symbol+'/'+p.quoteToken.symbol+' · liquidity '+cash(p.liquidity?.usd);$('pool').append(option);
  }$('pool').value=pair.pairAddress;
 }
+const addressField=$('address').closest('.address-field');
+const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
+function syncAddressLabel(){addressField.classList.toggle('has-value',!!$('address').value.trim());}
+$('address').addEventListener('input',syncAddressLabel);
+$('address').addEventListener('change',syncAddressLabel);
+syncAddressLabel();
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
- if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;$('address').value='';status(show?'Pure Data view open':'Pure Data view hidden');return;}
+ if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const wantedNetwork=requestedNetwork;requestedNetwork=null;
  const address=$('address').value.trim();if(address.length<5||address.length>250||/\s/.test(address)){status('Enter a token address or chain-specific token identifier.');return;}
@@ -304,7 +310,7 @@ $('record').onclick=()=>{
  }catch(e){status('Recording unavailable: '+e.message);}
 };
 display();
-startTrending(item=>{if(loading)return;requestedNetwork=item.chain;if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);$('address').value=item.address;$('coin-form').requestSubmit();});
+startTrending(item=>{if(loading)return;requestedNetwork=item.chain;if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);$('address').value=item.address;syncAddressLabel();$('coin-form').requestSubmit();});
 setInterval(()=>{if(!playing)syncLevels(metrics());},250);
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
