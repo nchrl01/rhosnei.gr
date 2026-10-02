@@ -1,23 +1,24 @@
-import {createEnvion} from './envion.js?v=30';
+import {createEnvion} from './envion.js?v=33';
 import {createEngineView} from './engine-view.js?v=30';
 import {contextualizeMarket} from './market-state.js?v=30';
+import {createMarketReplay,candleEnd} from './market-replay.js?v=33';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=30';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {subscribePool} from './realtime.js?v=4';
-import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
+import {subscribeEvm} from './evm.js?v=5';
 import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
-import {startTrending} from './trending.js?v=31';
-import {MarketChart} from './chart.js?v=31';
+import {startTrending} from './trending.js?v=33';
+import {MarketChart} from './chart.js?v=33';
 import {loadHistory} from './history.js?v=30';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let pd,ctx,gain,outputTap,playing=false,starting=false,poll,market=null,mode='demo',generation=0,loading=false;
-let requestedNetwork=null;
+let requestedNetwork=null,requestedAutoplay=false;
 let seed=1917,state=1917,step=0,timer,next=0,bpm=120,recorder,chunks=[],session=null;
 const controls=['master'];
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='';
@@ -26,6 +27,7 @@ let receivedTradeCount=0;
 let stopMusicHistory,musicHistoryTimer,musicalCandles=[],musicalInterval=300000;
 let stopHistory,stopChartHistory,historyContext=null,originDate=null,contextCandles=[],contextInterval=60000,chartRequest=0;
 const chart=new MarketChart($('market-chart'));
+const replay=createMarketReplay();
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
 const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
 async function loadCoinImage(pair){
@@ -58,17 +60,22 @@ let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 const engineView=createEngineView($('engine-view'));
 const envion=createEnvion($('envion'),{onTransport:command=>{if((command==='start'&&!playing)||(command==='stop'&&playing))$('play').click();}});
 function resetEnsemble(){conductor.reset();for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
-function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:mode==='demo'?'Synthetic demo':streamKind,liquidity:market?.liquidity?.usd});}
+function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:mode==='demo'?'Synthetic demo':streamKind,liquidity:m.replay?m.observation?.liquidity:market?.liquidity?.usd});}
 function bindSignalMap(){resetEnsemble();for(const name of ['generation','av-envion-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);engineView.receive(name,value);});}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
 const status=s=>$('status').textContent=s;
 function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
-function marketRoot(){const current=currentPrice(),anchor=historyContext?.first?.open;const offset=current>0&&anchor>0?Math.round(12*Math.tanh(Math.log(current/anchor))):0;return 45+seed%12+offset;}
+function marketRoot(m){
+ const historical=m?.replay;
+ const current=historical?historical.price:currentPrice();
+ const anchor=historical?chart.renderedBars.find(bar=>bar.time<=historical.at)?.open:historyContext?.first?.open;
+ const offset=current>0&&anchor>0?Math.round(12*Math.tanh(Math.log(current/anchor))):0;return 45+seed%12+offset;
+}
 function send(name,value){if(pd){pd.sendFloat(name,value);engineView.sent(name,value);}}
 function event(name){pd?.sendBang(name);}
-function metrics(){
+function liveMetrics(){
  if(!market){const t=performance.now()/1000;const raw={motion:.3+.25*Math.sin(t/19),activity:.45+.25*Math.sin(t/31),balance:.5+.2*Math.sin(t/23),texture:.6,volume:.4+.3*Math.sin(t/27),fresh:1,snapshotFresh:1,snapshotAge:0};return contextualizeMarket(raw,{price:lastDemoPrice,history:chart.points.slice(-360).map(p=>({time:p.at,open:p.price,close:p.price,volume:0})),interval:1000,observedAt:chart.lastReceived?.at});}
  const tx=market.txns?.m5||{};const total=(tx.buys||0)+(tx.sells||0);
  tradeEvents=tradeEvents.filter(e=>Date.now()-e.receivedAt<30000);
@@ -82,23 +89,43 @@ function metrics(){
  const raw={motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:decoded?(tradeEvents.length?buys/tradeEvents.length:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,market.liquidity?.usd||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
  return contextualizeMarket(raw,{price:currentPrice(),marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(market.liquidity?.usd),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)});
 }
+function metrics(){
+ const live=liveMetrics();live.observation={liquidity:market?.liquidity?.usd,trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
+ replay.record(live,market?currentPrice():lastDemoPrice);
+ const ended=replay.advance(chart.renderedBars||[],chart.interval,playing);
+ const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
+ if(ended&&playing){$('play').onclick();status('History replay finished');}
+ return historical||live;
+}
+function updateReplayUI(m){
+ const active=replay.state.active,source=m.replay?.source;
+ $('replay-live').disabled=!active;
+ $('replay-play').disabled=!(chart.renderedBars?.length);
+ $('replay-play').textContent=active&&playing?'Ⅱ Pause':replay.state.ended?'↻ Replay':'▶ Replay';
+ const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
+ $('replay-state').textContent=active?(replay.state.ended?'END':playing?'REPLAY':'PAUSED')+' · '+rate+'×':'LIVE';
+ $('replay-info').textContent=!active?'Click a candle or drag the ticks to replay sound.':source==='recorded'?'Recorded market controls from this visit; Envion regenerates the sound.':'Candle reconstruction: price and available volume observed; activity estimated; buy/sell and liquidity unavailable. Market cap uses latest supply, when known. Envion regenerates the sound.';
+ $('replay-state').title=$('replay-info').textContent;
+ if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
+}
 function syncLevels(m){
  orchestraState=conductor.update(m,streamConnected);
  for(const name of Object.keys(levels)){levels[name]=orchestraState.levels[name];send(name,levels[name]);$(name).value=levels[name];$(name+'-value').textContent=Math.round(levels[name]*100)+'%';}
  for(const [name,value] of Object.entries(orchestraState.parameters))send(name,value);
  $('orchestra-state').textContent=orchestraState.state+' · PHRASE '+(orchestraState.phrase+1)+'/4';
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
- $('volume').textContent=market?cash(m.decoded?m.observedVolume:market.volume?.m5):'DEMO';
- $('volume-window').textContent=m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
+ $('volume').textContent=m.replay?cash(m.replay.volume):market?cash(m.decoded?m.observedVolume:market.volume?.m5):'DEMO';
+ $('volume-window').textContent=m.replay?'REPLAY USD VOLUME':m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
  $('signal-source').textContent=m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Synthetic demo signals';
  if(market&&m.snapshotAge>20000)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity held at last value'+(m.decoded&&['swap','rpc-poll'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
  const c=m.context;
  $('market-pressure').textContent=Math.round(m.pressure*100)+'%';
  $('market-baseline').textContent=c.ratio?c.ratio.toFixed(2)+'× typical loaded price':'History context pending';
  $('market-pace').textContent=c.winningWindow?c.winningWindow+' move · '+Math.round(c.pace*100)+'% pace':'No significant measured move';
- $('market-cap-context').textContent=c.latestCap?cash(c.latestCap)+(c.capEstimated?' estimated latest cap':' snapshot market cap')+(c.impliedBaselineCap?' · typical '+cash(c.impliedBaselineCap)+' (price-based estimate)':''):'Market cap unavailable';
- $('market-context-note').textContent=mode==='demo'?'Synthetic demo · latest frame drives Envion':c.historyAvailable?'Fixed 5-minute market history + latest received price. Typical cap is inferred from price using snapshot supply, not observed historical market cap. Recent moves cool over time; chart zoom and pan do not affect sound.':'Loading fixed historical context · latest observations and available provider changes drive the orchestra.';
+ $('market-cap-context').textContent=c.latestCap?cash(c.latestCap)+(m.replay?.source==='candles'?' estimated historical cap':c.capEstimated?' estimated latest cap':' snapshot market cap')+(c.impliedBaselineCap?' · typical '+cash(c.impliedBaselineCap)+' (price-based estimate)':''):'Market cap unavailable';
+ $('market-context-note').textContent=m.replay?$('replay-info').textContent:mode==='demo'?'Synthetic demo · latest frame drives Envion':c.historyAvailable?'Fixed 5-minute market history + latest received price. Typical cap is inferred from price using snapshot supply, not observed historical market cap. Recent moves cool over time; chart zoom and pan do not affect sound.':'Loading fixed historical context · latest observations and available provider changes drive the orchestra.';
  updateSignalMap(m);
+ updateReplayUI(m);
 }
 function setupStream(){
  const key=market?.chainId+':'+market?.pairAddress;if(key===streamPool)return;
@@ -148,13 +175,13 @@ function tick(){
  const m=metrics(),energy=m.volume*m.fresh;syncLevels(m);envion.market(m);
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM'+(m.context.latestCap?' · MCAP':market?' · MCAP UNKNOWN / FALLBACK':' · DEMO CLOCK');
  send('tempo',bpm);send('activity',m.activity);send('motion',m.motion);send('energy',energy);
- send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot());send('cutoff',900+m.texture*3100+energy*1800);
+ send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
 }
 // Browser updates market controls; the Pd worklet schedules musical events.
-function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
+function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);}
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
- ctx=new AudioContext({sampleRate:44100});await ctx.resume();
+ ctx??=new AudioContext({sampleRate:44100});await ctx.resume();
  const manifestResponse=await fetch('patches/orchestra/manifest.json?v=30');if(!manifestResponse.ok)throw Error('Cannot load Envion host manifest');
  const manifest=await manifestResponse.json();
  const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=30');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
@@ -167,9 +194,9 @@ async function initialize(){
 }
 $('play').onclick=async()=>{
  if(starting)return;
- if(playing){playing=false;send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status('Paused');return;}
+ if(playing){playing=false;send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!pd)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;send('seed',seed%16777216);loop();send('run',1);envion.setRunning(true);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(mode==='demo'?'Envion playing · synthetic demo signals':'Envion playing · market signals');}
+ try{if(!pd)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;replay.state.clock=performance.now();send('seed',seed%16777216);loop();send('run',1);envion.setRunning(true);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(replay.state.active?'Envion playing · history replay':mode==='demo'?'Envion playing · synthetic demo signals':'Envion playing · market signals');}
  catch(e){playing=false;envion.detach();$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
  finally{starting=false;$('play').disabled=false;}
 };
@@ -199,19 +226,29 @@ function orientPair(pair,token){
 }
 function display(){
  displayCoinImage();
- $('mode').textContent=mode==='demo'?'DEMO SIGNAL':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
+ const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
+ $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):mode==='demo'?'DEMO SIGNAL':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
  $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'Untuned / Demo';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
- $('price').textContent=market?cash(currentPrice()):'—';$('change').textContent=market&&market.priceChange?.m5!=null?Number(market.priceChange.m5).toFixed(2)+'%':'—';
- const tx=market?.txns?.m5;$('trades').textContent=tx?(tx.buys||0)+(tx.sells||0):'—';$('liquidity').textContent=market?cash(market.liquidity?.usd):'—';
+ $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
+ const bar=replay.state.bar,change=historical?(recorded?historical.observation?.change:bar?.open>0?(bar.close/bar.open-1)*100:null):market?.priceChange?.m5;
+ $('change').textContent=change!=null?Number(change).toFixed(2)+'%':'—';
+ $('change-window').textContent=historical&&!recorded?'CANDLE CHANGE':'CHANGE · 5 MIN';
+ const tx=historical?recorded?historical.observation?.trades:null:market?.txns?.m5;
+ $('trades').textContent=tx?(tx.buys||0)+(tx.sells||0):'—';
+ $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':'TRADES · 5 MIN';
+ const liquidity=historical?historical.observation?.liquidity:market?.liquidity?.usd;
+ $('liquidity').textContent=liquidity!=null?cash(liquidity):'—';
  updateContext();
 }
 function updateContext(){
- const current=currentPrice();
+ const historical=replay.state.active?replay.state.controls:null,current=historical?historical.replay.price:currentPrice();
+ const known=historical?chart.renderedBars.filter(bar=>candleEnd(bar,chart.interval)<=historical.replay.at):null;
+ const first=historical?known[0]:historyContext?.first,peak=historical&&known.length?Math.max(...known.map(bar=>bar.high)):historical?null:historyContext?.peak;
  $('origin-date').textContent=originDate?new Date(originDate).toLocaleDateString():'Unknown';
- $('history-date').textContent=historyContext?.first?new Date(historyContext.first.time).toLocaleDateString():'Not available';
- $('origin-multiple').textContent=current>0&&historyContext?.first?.open>0?(current/historyContext.first.open).toFixed(2)+'×':'—';
- $('peak-drawdown').textContent=current>0&&historyContext?.peak>0?((current/historyContext.peak-1)*100).toFixed(1)+'%':'—';
+ $('history-date').textContent=first?new Date(first.time).toLocaleDateString():'Not available';
+ $('origin-multiple').textContent=current>0&&first?.open>0?(current/first.open).toFixed(2)+'×':'—';
+ $('peak-drawdown').textContent=current>0&&peak>0?((current/peak-1)*100).toFixed(1)+'%':'—';
 }
 function startHistory(pair){
  const gen=generation;stopHistory?.();stopMusicHistory?.();clearTimeout(musicHistoryTimer);historyContext=null;contextCandles=[];musicalCandles=[];
@@ -251,9 +288,10 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair){
+ replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
- $('network').value=pair.chainId;renderPools(pair);$('last-event').textContent='Waiting for pool events';
+ $('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
  const refresh=async()=>{
@@ -262,11 +300,6 @@ function chooseMarket(pair){
   }catch(e){if(gen===generation)$('lookup').textContent='Snapshot delayed: '+e.message;}
   if(gen===generation)poll=setTimeout(refresh,5000);
  };poll=setTimeout(refresh,5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Listen');
-}
-function renderPools(pair){
- $('pool').replaceChildren();for(const p of discovered.filter(p=>p.chainId===pair.chainId)){
-  const option=document.createElement('option');option.value=p.pairAddress;option.textContent=p.dexId+' · '+p.baseToken.symbol+'/'+p.quoteToken.symbol+' · liquidity '+cash(p.liquidity?.usd);$('pool').append(option);
- }$('pool').value=pair.pairAddress;
 }
 const addressField=$('address').closest('.address-field');
 const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
@@ -278,24 +311,21 @@ $('coin-form').onsubmit=async e=>{
  e.preventDefault();
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
- const wantedNetwork=requestedNetwork;requestedNetwork=null;
+ const wantedNetwork=requestedNetwork,autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
  const address=$('address').value.trim();if(address.length<5||address.length>250||/\s/.test(address)){status('Enter a token address or chain-specific token identifier.');return;}
  loading=true;$('load').disabled=true;status('Looking up indexed markets…');
  try{
   const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address));
   const pairs=(data.pairs||[]).map(p=>orientPair(p,address)).filter(Boolean);pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0));
   if(!pairs.length)throw Error('No indexed market found for this token identifier.');
-  discovered=pairs;$('network').replaceChildren();for(const chain of [...new Set(pairs.map(p=>p.chainId))]){const o=document.createElement('option');o.value=chain;o.textContent=chain.toUpperCase()+' · '+(chain==='solana'?'Orca swaps / pool activity + cached trade polling':chain==='robinhood'?'v4 direct RPC polling':EVM_RPC[chain]?'V2/V3 swap adapter':'trade polling / snapshots');$('network').append(o);}
   const selection=wantedNetwork?pairs.find(p=>p.chainId===wantedNetwork):pairs[0];if(!selection)throw Error('No DEX Screener market found on the trending coin’s network.');
-  $('market-selectors').hidden=false;chooseMarket(selection);
+  discovered=[selection];chooseMarket(selection);if(autoPlay&&!playing)await $('play').onclick();
  }catch(e){status(e.message);$('lookup').textContent=e.message;}
  finally{loading=false;$('load').disabled=false;}
 };
-$('network').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value);if(pair)chooseMarket(pair);};
-$('pool').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value&&p.pairAddress===$('pool').value);if(pair)chooseMarket(pair);};
-$('demo').onclick=()=>{resetEnsemble();imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopMusicHistory?.();clearTimeout(musicHistoryTimer);musicalCandles=[];contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
+$('demo').onclick=()=>{replay.setMarket('demo');resetEnsemble();imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopMusicHistory?.();clearTimeout(musicHistoryTimer);musicalCandles=[];contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.textContent='Download '+name;a.style.color='var(--accent)';a.style.fontSize='11px';a.style.display='block';$('downloads').append(a);}
-const downloads=document.createElement('div');downloads.id='downloads';$('record').parentElement.after(downloads);
+const downloads=document.createElement('div');downloads.id='downloads';$('record').parentElement.append(downloads);
 $('record').onclick=()=>{
  if(recorder?.state==='recording'){recorder.stop();return;}
  if(!window.MediaRecorder){status('Audio recording is unavailable in this browser.');return;}
@@ -303,18 +333,50 @@ $('record').onclick=()=>{
  const destination=ctx.createMediaStreamDestination(),recordNode=outputTap||gain;recordNode.connect(destination);chunks=[];
  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
  recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined);
- session={version:8,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / Envion only',mapping:'historical-context-envion-v3',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
+ session={version:8,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / Envion only',mapping:'historical-context-envion-v3',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice(),replay:replay.state.active?{cursor:replay.state.cursor,source:replay.state.source,speed:replay.state.speed}:null};
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
  recorder.onstop=()=>{const name='AV-'+new Date(session.started).toISOString().replace(/[:.]/g,'-');download(new Blob(chunks,{type:recorder.mimeType}),name+(recorder.mimeType.includes('mp4')?'.m4a':'.webm'));download(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}),name+'.json');try{recordNode.disconnect(destination);}catch{}session=null;$('record').textContent='● Record';status('Recording ready to download · session log included');};
  recorder.start(1000);$('record').textContent='■ Finish';status('Recording audio and session changes…');
  }catch(e){status('Recording unavailable: '+e.message);}
 };
 display();
-startTrending(item=>{if(loading)return;requestedNetwork=item.chain;if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);$('address').value=item.address;syncAddressLabel();$('coin-form').requestSubmit();});
+startTrending(item=>{
+ if(loading)return;
+ // Resume in the coin click itself: market discovery completes asynchronously.
+ // The unlocked context stays silent until Listen opens the selected coin engine.
+ if(!playing)primeAudio();
+ requestedNetwork=item.chain;requestedAutoplay=true;
+ if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);
+ $('address').value=item.address;syncAddressLabel();$('coin-form').requestSubmit();
+});
 setInterval(()=>{if(!playing)syncLevels(metrics());},250);
+const chartStatus=document.querySelector('.chart-status');
+new MutationObserver(()=>{for(const item of chartStatus.children)item.title=item.textContent;}).observe(chartStatus,{childList:true,characterData:true,subtree:true});
+function primeAudio(){try{ctx??=new AudioContext({sampleRate:44100});ctx.resume().catch(()=>{});}catch{}}
+function seekHistory(bar,dragging=false){
+ if(!bar)return;
+ if(!playing)primeAudio();
+ if(!replay.state.active)resetEnsemble();
+ replay.seek(bar,chart.interval,dragging);
+ session?.controls.push({at:Date.now(),name:'history-seek',cursor:replay.state.cursor,source:'loaded-candle',speed:replay.state.speed});
+ if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(m);if(!starting)$('play').onclick();}
+}
+chart.onHistorySeek=seekHistory;
+chart.onHistorySeekEnd=()=>replay.release();
+$('replay-play').onclick=()=>{
+ if(replay.state.active&&!replay.state.ended){$('play').onclick();return;}
+ seekHistory(chart.renderedBars[0]);
+};
+$('replay-live').onclick=()=>{
+ replay.live();resetEnsemble();chart.tickView?.live();chart.goLive();$('chart-range').value='live';display();
+ session?.controls.push({at:Date.now(),name:'history-live'});
+ if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(m);}
+ status(playing?'Envion playing · live market signals':'Live market · press Listen');
+};
+$('replay-speed').onchange=()=>{replay.state.speed=$('replay-speed').value;replay.release();session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});};
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
-$('chart-timeframe').onchange=loadChartTimeframe;
+$('chart-timeframe').onchange=()=>{if(replay.state.active)$('replay-live').onclick();loadChartTimeframe();};
 $('chart-scale').onchange=()=>chart.setScale($('chart-scale').value);
 $('chart-fit').onclick=()=>{$('chart-range').value='history';chart.fit();};
 $('chart-live').onclick=()=>{$('chart-range').value='live';chart.goLive();};

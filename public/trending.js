@@ -11,32 +11,44 @@ export function startTrending(onPick){
  const items=new Map();
  const key=item=>item.chain+':'+(/^0x/i.test(item.address)?item.address.toLowerCase():item.address);
  function card(item,duplicate=false){
-  const article=node('article',null,'trending-card'),pick=node('button',null,'trending-pick');pick.type='button';pick.title='Load '+item.name+' on '+item.network;pick.setAttribute('aria-label',pick.title);
+  const article=node('article',null,'trending-card');article.dataset.tokenKey=key(item);
+  const pick=node('button',null,'trending-pick');pick.type='button';pick.title=item.name+' · '+item.network+' · '+item.address;
+  pick.setAttribute('aria-label','Play '+item.name+' on '+item.network+', market cap '+(money(item.marketCap)||'unknown'));
   const avatar=node('span',item.symbol.slice(0,2),'trending-avatar'),url=safeImage(item.image);
-  if(url){const img=node('img');img.src=url;img.alt='';img.width=32;img.height=32;img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{img.remove();avatar.textContent=item.symbol.slice(0,2);};avatar.textContent='';avatar.append(img);}
-  const title=node('span',null,'trending-title');title.append(node('b',item.symbol),node('small','#'+item.rank+' · '+item.network));pick.append(avatar,title,node('span','↗','trending-arrow'));pick.onclick=()=>onPick(item);article.append(pick);
-  const cap=node('div',null,'trending-cap'),marketCap=money(item.marketCap);cap.append(node('span','MCAP'),node('strong',marketCap||'Unknown'));
-  if(!marketCap&&money(item.fdv))cap.append(node('small','FDV '+money(item.fdv)));article.append(cap);
-  const ca=node('div',null,'trending-ca'),address=node('code',item.address);address.title=item.address;
-  const copy=node('button','Copy CA');copy.type='button';copy.setAttribute('aria-label','Copy '+item.symbol+' contract address');copy.onclick=async()=>{try{await navigator.clipboard.writeText(item.address);copy.textContent='Copied';}catch{copy.textContent='Select CA';address.focus();}setTimeout(()=>{copy.textContent='Copy CA';},1800);};
-  address.tabIndex=0;ca.append(address,copy);article.append(ca);if(duplicate){article.setAttribute('aria-hidden','true');for(const el of article.querySelectorAll('button,[tabindex]'))el.tabIndex=-1;}return article;
+  avatar.setAttribute('aria-hidden','true');
+  if(url){const img=node('img');img.src=url;img.alt='';img.width=24;img.height=24;img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{img.remove();avatar.textContent=item.symbol.slice(0,2);};avatar.textContent='';avatar.append(img);}
+  pick.append(avatar,node('b',item.symbol,'trending-name'),node('span',money(item.marketCap)||'MCAP —','trending-market-cap'));
+  pick.onclick=()=>onPick(item);article.append(pick);
+  if(duplicate){article.setAttribute('aria-hidden','true');pick.tabIndex=-1;}
+  return article;
  }
  const track=node('div',null,'ticker-track');list.replaceChildren(track);
  const resize=new ResizeObserver(()=>{width=track.firstElementChild?.getBoundingClientRect().width||0;offset=width?offset%width:0;});resize.observe(list);
+ function anchor(){
+  const group=track.firstElementChild;if(!group)return null;const left=group.getBoundingClientRect().left;
+  for(const card of group.children){const rect=card.getBoundingClientRect(),start=rect.left-left;if(start<=offset&&start+rect.width>offset)return {key:card.dataset.tokenKey,within:offset-start};}
+  return null;
+ }
  function render(){
-  const coins=[...items.values()],group=node('div',null,'ticker-group'),repeat=node('div',null,'ticker-group');
-  group.append(...coins.map(item=>card(item)));repeat.append(...coins.map(item=>card(item,true)));repeat.setAttribute('aria-hidden','true');
-  track.replaceChildren(group,repeat);width=group.getBoundingClientRect().width;offset=width?offset%width:0;
+  const held=anchor(),coins=[...items.values()],group=node('div',null,'ticker-group');
+  group.append(...coins.map(item=>card(item)));track.replaceChildren(group);
+  // A loop always covers the viewport, even when only a few coins exist.
+  if(coins.length)while(group.getBoundingClientRect().width<list.clientWidth){group.append(...coins.map(item=>card(item,true)));}
+  const repeat=node('div',null,'ticker-group');repeat.append(...[...group.children].map(cardNode=>{const item=items.get(cardNode.dataset.tokenKey);return card(item,true);}));repeat.setAttribute('aria-hidden','true');track.append(repeat);
+  width=group.getBoundingClientRect().width;
+  if(held){const match=[...group.children].find(card=>card.dataset.tokenKey===held.key);if(match){offset=match.getBoundingClientRect().left-group.getBoundingClientRect().left+Math.min(held.within,match.getBoundingClientRect().width);}}
+  offset=width?offset%width:0;track.style.transform=reduced.matches?'none':`translateX(${-offset}px)`;
  }
  list.addEventListener('pointerenter',()=>{hovered=true;});list.addEventListener('pointerleave',()=>{hovered=false;});
- list.addEventListener('focusin',e=>{focused=true;const card=e.target.closest('.trending-card');if(card&&width){offset=(card.getBoundingClientRect().left-track.getBoundingClientRect().left)%width;}});list.addEventListener('focusout',e=>{focused=list.contains(e.relatedTarget);});
+ list.addEventListener('focusin',e=>{focused=e.target.matches(':focus-visible');const card=e.target.closest('.trending-card');if(card&&width&&e.target.matches(':focus-visible')&&!dragging){offset=(card.getBoundingClientRect().left-track.getBoundingClientRect().left)%width;}});list.addEventListener('focusout',e=>{focused=!!e.relatedTarget?.matches?.(':focus-visible')&&list.contains(e.relatedTarget);});
  list.addEventListener('pointerdown',()=>{dragging=true;});window.addEventListener('pointerup',e=>{dragging=false;if(e.pointerType!=='mouse')hovered=false;});window.addEventListener('pointercancel',()=>{dragging=false;});
  list.addEventListener('wheel',e=>{if(Math.abs(e.deltaX)>Math.abs(e.deltaY)&&width){e.preventDefault();offset=((offset+e.deltaX)%width+width)%width;}},{passive:false});
  list.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)&&width){e.preventDefault();offset=((offset+(e.key==='ArrowRight'?180:-180))%width+width)%width;}});
  function animate(now){
   const elapsed=lastFrame?Math.min(100,now-lastFrame):0;lastFrame=now;
-  if(!document.hidden&&width&&!hovered&&!focused&&!dragging&&!reduced.matches&&!list.classList.contains('expanded'))offset=(offset+elapsed*.035)%width;
-  track.style.transform=reduced.matches||list.classList.contains('expanded')?'none':`translateX(${-offset}px)`;
+  if(!document.hidden&&width&&!hovered&&!focused&&!dragging&&!reduced.matches)offset=(offset+elapsed*.035)%width;
+  track.style.transform=reduced.matches?'none':`translateX(${-offset}px)`;
+  if(!reduced.matches)list.scrollLeft=0;
   requestAnimationFrame(animate);
  }
  requestAnimationFrame(animate);
@@ -64,7 +76,6 @@ export function startTrending(onPick){
   finally{clearTimeout(timeout);if(gen===generation){timer=setTimeout(refresh,300000);}}
  }
  document.getElementById('trending-refresh').onclick=refresh;
- duration.onchange=()=>{items.clear();render();refresh();};
- document.getElementById('trending-expand').onclick=e=>{const expanded=list.classList.toggle('expanded');e.currentTarget.textContent=expanded?'Ticker':'Show list';e.currentTarget.setAttribute('aria-expanded',String(expanded));};
+ duration.onchange=refresh;
  refresh();
 }

@@ -14,7 +14,7 @@ Source studies under `native/` are archival; they are not loaded by the app.
 Market cap sets tempo: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM.
 The market controls Envion's row/speed randomization, Nuke, grains, pan,
 echo, internal reverb and smoothed output gain. Chart pan/zoom do not schedule sound.
-Listening volume starts at 50%; the fixed upper-left button opens a 0–100% slider.
+Listening volume starts at 50%; the volume button at the right of the single-line trending header opens a 0–100% slider. Clicking a trending coin loads its market and starts playback.
 The interface has no dot grid. Enter `pdata` and submit to show/hide Pure Data.
 
 Chart, token lookup, market feeds and recording remain available.
@@ -72,3 +72,29 @@ and sample assets load through its own manifest. See
 Envion is MIT; Pd, Cyclone, ELSE and AudioLab retain their separate bundled notices.
 The full runtime includes mixed licenses and source/rebuild material in
 `public/vendor/licenses/`. TINY is SIL OFL 1.1; chart attribution is retained.
+
+
+## Compact chart and sound replay
+
+The main row places the coin image/name, compact chart, and Listen/Record in
+that order. The strongest indexed pool for the token (and the trending coin’s
+network when supplied) is selected automatically; network/pool selectors are
+removed. Feed, connection and playback status share one line below the chart,
+with full messages on hover. Standard chart controls and source details open under the ellipsis.
+Trending coins scroll continuously and start audio on selection; master volume
+remains at the right end of the header, initially 50%.
+
+Click a candle or drag the price-derived tick strip to replay market controls
+through Envion. Replay defaults to one loaded candle per second; the chart menu
+also provides 1× and 60× real time. Live returns to current market controls.
+Playback pauses at the latest loaded observation instead of silently switching
+sources. Ordinary chart zoom/pan still do not change live sound.
+
+During the current visit, one market-control frame per second is kept for up to
+one hour per pool, for eight pools. Replay uses a captured frame only when it is
+within 1.5 seconds of the selected timestamp. Older history uses completed OHLC
+candles and their volume: activity is a volume proxy, buy/sell is neutral, and
+reverb is dry because historical liquidity is unavailable. Cap is inferred from
+latest supply and historical price; supply changes make it uncertain. Missing
+candle volume is labelled unavailable. These modes regenerate Envion's sound;
+they do not reconstruct past random sample choices or an exact audio waveform.

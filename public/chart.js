@@ -1,13 +1,13 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
-import {createChartTicks} from './chart-ticks.js?v=31';
+import {createChartTicks} from './chart-ticks.js?v=33';
 
 // One series per view, with provider candles and explicitly partial live observations.
 export class MarketChart{
  constructor(container){
-  this.points=[];this.history=[];this.buckets=new Map();this.interval=60000;this.origin=null;
+  this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
-   autoSize:true,layout:{background:{color:'#ffffff'},textColor:'#666666',fontSize:18,fontFamily:'Tiny, monospace',attributionLogo:true},
+   autoSize:true,layout:{background:{color:'#ffffff'},textColor:'#666666',fontSize:14,fontFamily:'Tiny, monospace',attributionLogo:true},
    grid:{vertLines:{visible:false},horzLines:{color:'#eeeeee'}},
    rightPriceScale:{borderColor:'#dddddd',scaleMargins:{top:.1,bottom:.25}},
    timeScale:{borderColor:'#dddddd',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
@@ -32,6 +32,7 @@ export class MarketChart{
   container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
   setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},500);
   this.tickView=createChartTicks(this);
+  this.chart.subscribeClick(param=>{if(typeof param.time==='number'){const bar=this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.scale=mode;this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
@@ -42,7 +43,7 @@ export class MarketChart{
  goLive(){this.range='live';this.manual=false;this.needsFit=true;this.schedule();}
  zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.tickView?.update([]);this.schedule();}
+ reset(){this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
   // Provider coverage takes precedence over observations already included in
@@ -67,7 +68,7 @@ export class MarketChart{
   this.revision=(this.revision||0)+1;
   const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
   if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
-  const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);
+  const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);this.renderedBars=bars;
   if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.tickView?.update([]);this.rebuild=false;return;}
   const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});
   const volume=b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#cccccc':'#555555'}:{time:b.time/1000};

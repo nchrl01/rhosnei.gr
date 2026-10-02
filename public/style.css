@@ -85,3 +85,54 @@ button,input,select{font-size:20px}p,small,label,.eyebrow,.badge,.session,.feed-
 .chart-tick[data-cursor=true]{background:#777}
 @media(prefers-reduced-motion:reduce){#trending-list{overflow-x:auto}.ticker-track{transform:none!important;will-change:auto}.ticker-group[aria-hidden=true]{display:none}.chart-tick,.address-field,#address-label{transition:none}.address-field:focus-within #address-label span{animation:none}}
 @media(max-width:600px){#address-label{font-size:18px!important}#address{font-size:20px}.chart-ticks{padding:14px 12px}#tick-reading{font-size:17px}}
+
+/* One header row: trending label, continuous coin tape, then volume. */
+main{padding:0 16px 28px}
+.market-header{display:grid;grid-template-columns:max-content minmax(0,1fr) max-content;align-items:center;gap:0;margin:0 -16px 20px;padding:8px 0;border-top:0;border-bottom:1px solid #ddd;position:relative;z-index:20}
+.market-header .trending-heading{display:block;padding:0 14px;border-right:1px solid #111}
+.trending-menu{position:relative;margin:0;padding:0;border:0}
+.trending-menu>summary{font-size:24px;color:#111;line-height:1.2;white-space:nowrap}
+.trending-menu>summary::before{content:none}
+.trending-menu-panel{position:absolute;left:-6px;top:calc(100% + 14px);width:min(360px,calc(100vw - 24px));padding:14px;background:#fff;border:1px solid #111;z-index:30}
+.trending-menu-panel .trending-controls{display:flex;gap:8px}
+.market-header #trending-status{white-space:normal;margin-top:10px;font-size:16px!important}
+.market-header #trending-list{min-width:0;width:100%;margin:0;padding:0;border:0;height:38px;overflow:hidden}
+.market-header .ticker-group{align-items:center}
+.market-header .trending-card,.market-header .ticker-group .trending-card{flex:none;width:auto;min-width:0;padding:0 14px;border-right:1px solid #111}
+.market-header .trending-pick{display:flex;align-items:center;gap:10px;padding:0;border:0;height:38px;width:auto;white-space:nowrap}
+.market-header .trending-pick:hover{opacity:.6}
+.market-header .trending-avatar{flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#f4f4f4;font-size:15px}
+.market-header .trending-name,.market-header .trending-market-cap{font-family:Tiny,monospace;font-size:26px;line-height:1;font-weight:400;white-space:nowrap}
+.market-header .volume-widget{position:relative;top:auto;left:auto;z-index:30;margin:0;padding:0 10px;border-left:1px solid #111}
+.market-header #volume-button{height:34px;white-space:nowrap;font-size:20px;padding:6px 10px;gap:8px}
+.market-header #volume-panel{position:absolute;top:calc(100% + 12px);right:8px;margin:0}
+.coin-context{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.coin-context .badge{font-size:14px!important}
+@media(max-width:700px){main{padding:0 12px 24px}.market-header{margin-inline:-12px}.market-header .trending-heading{padding-inline:10px}.trending-menu>summary{font-size:20px}.market-header .trending-name,.market-header .trending-market-cap{font-size:22px}.market-header .trending-card,.market-header .ticker-group .trending-card{padding-inline:10px}.market-header .volume-widget{padding-inline:6px}.market-header #volume-button{font-size:18px;padding-inline:7px;gap:5px}}
+@media(prefers-reduced-motion:reduce){.market-header #trending-list{overflow-x:auto}}
+
+/* Coin identity → compact chart → transport, all in the same row. */
+.instrument-top{display:grid;grid-template-columns:minmax(220px,1fr) minmax(260px,560px) max-content;align-items:center;gap:20px;margin:20px 0}
+.coin-identity{min-width:0}.coin-title{margin:12px 0 0;gap:16px}.coin-avatar{flex-basis:96px;width:96px;height:96px}.coin-title h2{font-size:28px}
+.instrument-top .transport{display:flex;flex-direction:column;gap:8px;align-items:stretch}.instrument-top .transport button{min-width:96px;padding:8px 12px;font-size:20px}
+.instrument-top .chart-panel{min-width:0;width:100%;margin:0;padding:0;border:0;position:relative}
+#market-chart{height:136px;min-height:0;width:100%}
+.compact-chart-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px;margin-bottom:4px}
+#replay-state{font-size:16px;white-space:nowrap;color:#666}.replay-actions{display:flex;align-items:center;gap:6px}.replay-actions>button{font-size:16px;border:0;padding:3px 5px}
+.chart-menu{position:relative;border:0;padding:0;margin:0;z-index:15}.chart-menu>summary{font-size:24px;line-height:1;color:#111;padding:0 8px}.chart-menu>summary::before{content:none}
+.chart-menu-panel{position:absolute;right:0;top:calc(100% + 10px);width:min(440px,calc(100vw - 30px));max-height:70vh;overflow:auto;padding:14px;border:1px solid #111;background:#fff;box-shadow:2px 2px 0 #eee}
+.chart-menu-panel .chart-options{justify-content:flex-start}.chart-menu-panel .chart-options select,.chart-menu-panel .chart-navigation button,.chart-menu-panel select{font-size:17px;padding:4px 6px}
+.chart-menu-panel p{font-size:16px!important;line-height:1.4}.chart-menu-panel .timing{display:grid;gap:5px}.chart-menu-panel .timing span{font-size:16px}.chart-menu-panel .origin-readings{gap:10px}.chart-menu-panel .origin-readings strong{font-size:18px}
+.replay-speed-label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:16px!important}.replay-speed-label select{max-width:220px}
+.chart-ticks{margin:5px 0 0;border-radius:0;padding:0;background:transparent}.tick-heading{gap:6px;flex-wrap:nowrap;min-width:0}#tick-position{font-size:14px;white-space:nowrap}#tick-reading{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+#chart-tick-row{height:24px;margin-top:4px;gap:2px;border-radius:0;touch-action:none}.chart-tick{border-radius:0}
+.readings{padding:8px 0;gap:12px}.readings small{font-size:16px!important}.readings strong{font-size:22px;margin-top:4px}
+@media(max-width:900px){.instrument-top{grid-template-columns:minmax(170px,.7fr) minmax(220px,1fr) max-content;gap:12px}.coin-title{gap:10px}.coin-title h2{font-size:22px}.coin-avatar{flex-basis:80px;width:80px;height:80px}.instrument-top .transport button{min-width:76px;font-size:18px;padding:8px}.coin-context{gap:8px}.coin-context .badge{font-size:12px!important}.coin-context .eyebrow{font-size:16px!important}}
+@media(max-width:620px){.instrument-top{grid-template-columns:minmax(0,1fr) max-content;gap:12px}.instrument-top .coin-identity{grid-column:1;grid-row:1}.instrument-top .transport{grid-column:2;grid-row:1}.instrument-top .chart-panel{grid-column:1/-1;grid-row:2}#market-chart{height:126px}.coin-title{margin-top:8px}.readings{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.transport #downloads{max-width:150px;overflow-wrap:anywhere}.transport #downloads:empty{display:none}.transport #downloads a{font-size:16px!important;line-height:1.2;margin-top:6px}
+
+/* One unobtrusive status line next to the chart; full text on hover. */
+.chart-status{display:flex;align-items:center;gap:10px;margin:6px 0 0;min-width:0;max-width:100%;white-space:nowrap;line-height:1.2;color:#666}
+.chart-status>span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:14px!important}
+.chart-status #feed{flex:1.5}.chart-status #last-event{flex:1}.chart-status #status{flex:1;font-size:14px!important}.chart-status #tempo{flex:none;color:#111}

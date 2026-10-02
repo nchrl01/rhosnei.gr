@@ -75,6 +75,9 @@ export function applyEnvionMarket(pd,namespace,m){
   for(const name of ['delay-mix-l','delay-mix-r'])send(name,echo);
   for(const index of [355,356])pd.sendFloat('av-envion-ui-c0-'+index,motion>.3?1:0);
   const values={nuke:Math.round(cutoff)+' Hz',grains:grain?'ACTIVE · '+Math.round(activity*100)+'%':'QUIET · '+Math.round(activity*100)+'%',pan:Math.round(balance*100)+'% BUY',echo:Math.round(volume*65)+'%',reverb:Math.round(liquidity*25)+'%'};
+  if(m.availability?.balance===false)values.pan='CENTRE · NO HISTORY';
+  if(m.availability?.liquidity===false)values.reverb='DRY · NO HISTORY';
+  if(m.availability?.volume===false)values.echo='ESTIMATED · NO VOLUME';
   return values;
 }
 

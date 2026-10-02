@@ -26,6 +26,7 @@ export function createChartTicks(chart){
   const bar=samples[index];if(!bar)return;selectedTime=bar.time;chart.manual=true;chart.needsFit=false;
   const logical=bar.index+(chart.origin&&chart.origin<samples[0].time?1:0);
   chart.chart.timeScale().setVisibleLogicalRange({from:logical-windowSize/2,to:logical+windowSize/2});
+  chart.onHistorySeek?.(bar,dragging);
  }
  function at(event){const bounds=row.getBoundingClientRect();return clamp(Math.floor((event.clientX-bounds.left)/Math.max(1,bounds.width)*samples.length),0,samples.length-1);}
  row.addEventListener('pointerdown',event=>{
@@ -34,7 +35,7 @@ export function createChartTicks(chart){
   const index=at(event);preview(index);pan(index);
  });
  row.addEventListener('pointermove',event=>{if(!samples.length||event.pointerType!=='mouse'&&!dragging)return;const index=at(event);preview(index);if(dragging)pan(index);});
- const finish=()=>{dragging=false;hover=null;chart.chart.clearCrosshairPosition();paint();};
+ const finish=()=>{const wasDragging=dragging;dragging=false;hover=null;chart.chart.clearCrosshairPosition();paint();if(wasDragging)chart.onHistorySeekEnd?.();};
  row.addEventListener('pointerup',finish);row.addEventListener('pointercancel',finish);
  row.addEventListener('pointerleave',()=>{if(!dragging)finish();});
  row.addEventListener('keydown',event=>{
@@ -44,7 +45,7 @@ export function createChartTicks(chart){
   preview(index);pan(index);
  });
  row.addEventListener('blur',finish);
- return {update(bars){
+ return {setReplayTime(time){selectedTime=time;paint();},live(){selectedTime=null;hover=null;chart.chart.clearCrosshairPosition();paint();},update(bars){
   const count=Math.min(34,bars.length),next=[];
   for(let i=0;i<count;i++){const index=count===1?bars.length-1:Math.round(i/(count-1)*(bars.length-1));next.push({...bars[index],index});}
   samples=next;if(hover!=null)hover=clamp(hover,0,Math.max(0,count-1));
