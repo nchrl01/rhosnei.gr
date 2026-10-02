@@ -102,62 +102,6 @@ without inventing a spectrum. Pausing sound leaves the market path live.
 The implementation is independently written, inspired by SonicSketch’s drawn
 path/spectrum concept; its source, samples and synthesis are not included.
 
-## Wersi ROM 1 cartridge part
-
-Expand **WERSI ROM 1 · cartridge sounds**, choose your 16 KB MK1 .BIN file,
-then press Listen with Browser Pd. The import checks the header, pointers,
-linked voices and checksum. The verified supplied ROM has SHA-256
-`599d5e9d83355bb15ee3b36c938c11cfef63bc98ac3d745beb89c4e1879754a3`.
-The browser remembers it in IndexedDB; Unload removes that stored bank.
-The original ROM is never uploaded or bundled in the public site.
-
-Twenty patch definitions are decoded, including their linked layers and four
-waveform registers (64/64/32/16 samples per WAVE block). A bank of band-limited
-Web Audio oscillators uses the original cycles; DC removal and normalization
-are playback choices. These are not full sampled notes. Register boundaries,
-detune units, amplitude envelopes, low-pass filtering and effects are AV
-approximations. ROM amplitude/frequency envelopes, fixed-formant processing,
-keyboard hardware timing and original analog circuitry are not emulated.
-
-In Browser Pd mode the optional cartridge takes 20% of the existing shared
-market gain budget, with the five orchestra parts taking 80%. Gameta's actual
-note events trigger it, with the same pitch and clock. Movement and liquidity
-choose a patch family; token seed and musical phrase distribute patches.
-Liquidity shapes sustain and cutoff, and volume shapes note velocity.
-A shared browser compressor controls combined output peaks. The Pd branch
-meters exclude these Web Audio voices; the market sketch's spectrum includes
-both branches. Without a cartridge, or in Native Pd mode, the original
-orchestra gains stay intact. Native cartridge synthesis is not implemented.
-
-The audition workbench plays a separate C4 note for each patch, independently
-of the market. It uses the current listening volume and does not start the
-orchestra. This audition is not included in the orchestra recording.
-
-For this workspace only, `.local/wersi-rom1.bin` is the supplied private copy.
-The loopback server exposes it at `/cartridge/rom1` for local preload. `.local/`
-is excluded from Git and is outside the published public folder. Restart the
-local server after updating its code. Public Pages users use the file input.
-
-Cartridge binary-layout reference: https://github.com/ijsf/DMS-Toolbox.
-The browser decoder and synthesizer here are independently implemented;
-DMS-Toolbox code is not bundled. No GUI controls or desktop screenshots were
-used during this integration.
-
-Offline cartridge inspection and scheduling checks:
-
-```sh
-node checks/wersi.mjs "/path/to/your/ROM1.BIN"
-```
-
-With the supplied ROM these confirm checksum/hash, 20 patches, 39 referenced
-wave blocks, Fourier reconstruction error below 1e-5, linked-layer scheduling,
-voice stealing, stopping, native/zero-budget gating, and that paused control
-updates do not interrupt patch auditions. Web Audio nodes are modeled for
-these scheduling checks; they do not render audio or prove hardware fidelity.
-The existing real Pd/WASM check remains `node checks/orchestra.mjs`.
-Browser playback and visual layout have not been inspected through Computer
-Use under the current permission restriction.
-
 ## Envion gesture adaptation
 
 The active 20-string bank has been removed. Eight stereo fragment voices use
@@ -172,3 +116,19 @@ This is a portable core adaptation, not the full Envion PlugData ecosystem.
 The original string study remains archived; the downloadable active orchestra
 contains the replacement and Envion’s license. This revision has not had a new
 desktop or browser audio audition.
+
+## Liquidity-driven Freeverb
+
+The cartridge feature is removed from active playback and the interface.
+Freeverb processes the combined stereo orchestra before master volume and
+measured output, so recording and visualization include the reverb. It uses
+vanilla-Pd comb and diffusion abstractions derived from Jezar’s public-domain
+algorithm, with original delay timings converted from 44.1 kHz samples to ms.
+This is a portable algorithm port, not the compiled freeverb~ external.
+
+Normalized liquidity log10(USD)/7 controls wet mix (up to 55%) and room
+(0.35–0.95). Feedback remains below 0.966; damping is 0.20. Wet control
+uses the conductor’s 650 ms smoothing followed by a 500 ms Pd ramp; room
+feedback uses 500 ms. Freshness
+gates wet mix. Listening volume and Pause gate the whole output; starting
+playback clears the effect buffers. No new audio audition has been performed.

@@ -1,11 +1,14 @@
 {
-  "version": 3,
+  "version": 4,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
     "av-envion-triplets.pd",
     "av-envion-voice.pd",
     "av-envion.pd",
+    "av-freeverb-comb.pd",
+    "av-freeverb-diffuse.pd",
+    "av-freeverb.pd",
     "av-genome.pd",
     "av-orchestra-tables.pd",
     "av-random.pd",

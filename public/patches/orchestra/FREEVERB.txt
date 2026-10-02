@@ -1,0 +1,19 @@
+FREEVERB / AV VANILLA-PD PORT
+
+Algorithm: Jezar at Dreampoint, June 2000. Original code is public domain.
+Source: https://github.com/sinshu/freeverb/tree/master/Components
+AV implements the original damped comb and diffusion equations in vanilla Pd.
+Eight parallel comb filters feed four serial diffusion stages on each channel.
+Original 44.1 kHz tuning lengths are converted to milliseconds; the right side
+adds the original 23-sample stereo spread. Pd delay quantization and block
+scheduling can differ from the original sample-index C++ implementation.
+This is an algorithm port, not the compiled freeverb~ external.
+
+Input gain: 0.015 on summed stereo input. Diffusion feedback: 0.5.
+Damping: 0.20 (one-pole recurrence). Width: full stereo.
+Normalized liquidity T = clamp(log10(max(1, liquidity USD))/7, 0, 1).
+Room R = 0.35 + 0.60*T. Comb feedback = 0.70 + 0.28*R (<0.966).
+Wet mix = 0.55*T*freshness, with the conductor's 650 ms smoothing followed
+by a 500 ms Pd ramp. Dry mix = 1 - wet. Room feedback uses a 500 ms ramp.
+Missing or zero liquidity gives zero wet mix. Starting playback clears buffers.
+Reverb feeds the stereo master, measured output and browser recording.

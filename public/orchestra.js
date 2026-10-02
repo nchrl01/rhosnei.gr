@@ -23,7 +23,7 @@ export function orchestraTargets(input,connected,phrase=0){
  ].map((value,index)=>value*roles[index]);
  const total=weights.reduce((a,b)=>a+b,0);
  const result=Object.fromEntries(ORCHESTRA_LAYERS.map((name,index)=>[name,budget*weights[index]/total]));
- result.space=.7*m.texture*m.fresh*(1-.7*m.pressure);
+ result.space=.55*m.texture*m.fresh;
  return result;
 }
 

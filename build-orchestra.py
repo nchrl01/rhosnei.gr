@@ -200,6 +200,42 @@ for channel in range(2):
     out=p.obj('outlet~',25+channel*200,805);p.link(delay,out,out=channel)
 p.write('av-zero-ensemble')
 
+# Portable Freeverb algorithm (Jezar at Dreampoint, June 2000, public domain).
+# Delays are original 44.1 kHz tuning lengths converted to milliseconds.
+p=Patch('Freeverb damped feedback comb / vanilla Pd')
+incoming=p.obj('inlet~',25,70);read=p.obj(r'delread~ \$0-comb \$1')
+oneMinus=p.obj('*~ .8');pole=p.obj('rpole~ .2');p.chain(read,oneMinus,pole)
+feedback=p.obj(r'r~ \$2-fv-feedback');mul=p.obj('*~');p.link(pole,mul);p.link(feedback,mul,inp=1)
+add=p.obj('+~');p.link(incoming,add);p.link(mul,add,inp=1);write=p.obj(r'delwrite~ \$0-comb 100');p.chain(add,write)
+p.chain(read,p.obj('outlet~',25,805))
+seed=p.obj('r seed');clear=p.msg('clear');p.chain(seed,clear,write);p.link(clear,pole)
+p.write('av-freeverb-comb')
+
+p=Patch('Freeverb diffusion stage / original feedback 0.5 equation')
+incoming=p.obj('inlet~',25,70);read=p.obj(r'delread~ \$0-diffuse \$1');feedback=p.obj('*~ .5');p.chain(read,feedback)
+add=p.obj('+~');p.link(incoming,add);p.link(feedback,add,inp=1);write=p.obj(r'delwrite~ \$0-diffuse 100');p.chain(add,write)
+subtract=p.obj('-~');p.link(read,subtract);p.link(incoming,subtract,inp=1);p.chain(subtract,p.obj('outlet~',25,805))
+seed=p.obj('r seed');clear=p.msg('clear');p.chain(seed,clear,write)
+p.write('av-freeverb-diffuse')
+
+p=Patch('Freeverb stereo wet engine / eight combs and four diffusion stages per side')
+left=p.obj('inlet~',25,70);right=p.obj('inlet~',245,70)
+sumInput=p.obj('+~');p.link(left,sumInput);p.link(right,sumInput,inp=1);drive=p.obj('*~ .015');p.chain(sumInput,drive)
+texture=p.obj('r texture');bounded=p.obj(r'clip 0 1');room=p.obj('expr .70+.28*(.35+.60*$f1)');smooth=p.obj('pack f 500');line=p.obj('line~');send=p.obj(r's~ \$0-fv-feedback');p.chain(texture,bounded,room,smooth,line,send)
+lb=p.obj('loadbang');default=p.msg('.798');p.chain(lb,default,smooth)
+for channel in range(2):
+    summed=None
+    for length in [1116,1188,1277,1356,1422,1491,1557,1617]:
+        delay=(length+23*channel)/44.1
+        comb=p.obj(f'av-freeverb-comb {delay:.9f} '+r'\$0');p.link(drive,comb)
+        if summed is None:summed=comb
+        else:
+            add=p.obj('+~');p.link(summed,add);p.link(comb,add,inp=1);summed=add
+    for length in [556,441,341,225]:
+        stage=p.obj(f'av-freeverb-diffuse {(length+23*channel)/44.1:.9f}');p.chain(summed,stage);summed=stage
+    out=p.obj('outlet~',25+channel*220,805);p.chain(summed,out)
+p.write('av-freeverb')
+
 p=Patch('AV AUTO ORCHESTRA / one clock, harmony, automatic mix and stereo master.')
 p.obj(r'av-orchestra-tables \$0');p.obj(r'av-conductor \$0');p.obj('av-sequencer')
 envion=p.obj(r'av-envion \$0');mel=p.gain(envion,'melody',1)
@@ -210,13 +246,20 @@ readL=p.obj(r'delread~ \$0-gameta 263');readR=p.obj(r'delread~ \$0-gameta 431')
 fb=p.obj('+~');p.link(readL,fb);p.link(readR,fb,inp=1)
 damp=p.obj('lop~ 3200');trim=p.obj('*~ 0.24');p.chain(fb,damp,trim,write)
 zero=p.obj(r'av-zero-ensemble \$0');perc=p.obj(r'zp-perc \$0')
+mixes=[]
 for channel,wet in enumerate([readL,readR]):
     dry=[mel,melR][channel]
     space=p.gain(wet,'space',.45);base=p.obj('+~');p.link(dry,base);p.link(space,base,inp=1)
     together=p.obj('+~');p.link(base,together);p.link(zero,together,out=channel,inp=1)
     percussion=p.obj('*~');p.link(perc,percussion,out=channel);p.link(p.signal('percussion'),percussion,inp=1)
-    mix=p.obj('+~');p.link(together,mix);p.link(percussion,mix,inp=1)
-    hp=p.obj('hip~ 35');saturation=p.obj('expr~ tanh($v1*0.8)');p.chain(mix,hp,saturation)
+    mix=p.obj('+~');p.link(together,mix);p.link(percussion,mix,inp=1);mixes.append(mix)
+reverb=p.obj('av-freeverb');p.link(mixes[0],reverb);p.link(mixes[1],reverb,inp=1)
+wetControl=p.signal('space',500);dryControl=p.obj('expr~ 1-$v1');p.chain(wetControl,dryControl)
+for channel in range(2):
+    dry=p.obj('*~');p.link(mixes[channel],dry);p.link(dryControl,dry,inp=1)
+    wet=p.obj('*~');p.link(reverb,wet,out=channel);p.link(wetControl,wet,inp=1)
+    combined=p.obj('+~');p.link(dry,combined);p.link(wet,combined,inp=1)
+    hp=p.obj('hip~ 35');saturation=p.obj('expr~ tanh($v1*0.8)');p.chain(combined,hp,saturation)
     running=p.gain(saturation,'run',1);master=p.gain(running,'master')
     limit=p.obj('clip~ -0.85 0.85');p.chain(master,limit)
     dac=p.obj('dac~ '+str(channel+1));p.chain(limit,dac)
@@ -247,9 +290,9 @@ for name in ['av-envion-voice','av-tone-voice','av-poly-voice','av-perc-voice','
     r=bp.obj('r '+name);msg=bp.msg(r'send '+name+r' \$1');bp.chain(r,msg,alive)
 alive=next(i for i,line in enumerate(bp.nodes) if line.endswith('netsend -u;'))
 beat=next(i for i,line in enumerate(bp.nodes) if line.endswith('metro 1000;'))
-version=bp.msg('send orchestra-version 3');bp.chain(beat,version,alive)
+version=bp.msg('send orchestra-version 4');bp.chain(beat,version,alive)
 bp.write('av-bridge')
 
 files=sorted(path.name for path in ROOT.glob('*.pd') if path.name not in ['av-desktop.pd','av-bridge.pd'])
-(ROOT/'manifest.json').write_text(json.dumps({'version':3,'entry':'market.pd','files':files,'layers':['melody','tones','poly','filtered','percussion']},indent=2)+'\n')
+(ROOT/'manifest.json').write_text(json.dumps({'version':4,'entry':'market.pd','files':files,'layers':['melody','tones','poly','filtered','percussion']},indent=2)+'\n')
 print('Built orchestra:',len(files),'browser Pd files + desktop launcher')

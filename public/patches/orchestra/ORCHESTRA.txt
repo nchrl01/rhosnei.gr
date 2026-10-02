@@ -45,3 +45,9 @@ of chart zoom/pan. Return size/speed and recent shocks retain recent intensity;
 shocks cool with a two-hour time constant. Volume relative to loaded history and
 liquidity turnover also contribute. Missing context remains explicit. Typical
 market cap is a price-based estimate using snapshot supply, not historical cap.
+
+Freeverb processes the combined stereo orchestra before master output.
+Liquidity increases wet mix (up to 55%) and room decay (room 0.35 to 0.95).
+This vanilla-Pd algorithm port uses eight combs and four diffusion stages per
+channel. Original algorithm: Jezar at Dreampoint (2000), public domain.
+See FREEVERB.txt. The active cartridge feature has been removed.
