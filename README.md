@@ -5,7 +5,7 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
 ## Automatic orchestra
 
-The browser now combines Envion-shaped live-buffer fragments and Gameta pads, ZERO100 tonal lanes,
+The browser now combines Envion-shaped live-buffer fragments , ZERO100 tonal lanes,
 polyrhythms and resonant filtering, and Perc Generator synthesized percussion.
 All parts run together with one clock and pitch family. A rule-based conductor
 changes roles every two bars and allocates a shared gain budget from activity,
@@ -120,7 +120,7 @@ approximations. ROM amplitude/frequency envelopes, fixed-formant processing,
 keyboard hardware timing and original analog circuitry are not emulated.
 
 In Browser Pd mode the optional cartridge takes 20% of the existing shared
-market gain budget, with the original six parts taking 80%. Gameta's actual
+market gain budget, with the five orchestra parts taking 80%. Gameta's actual
 note events trigger it, with the same pitch and clock. Movement and liquidity
 choose a patch family; token seed and musical phrase distribute patches.
 Liquidity shapes sustain and cutoff, and volume shapes note velocity.

@@ -1,6 +1,6 @@
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
 export const orchestraTempo=m=>Math.round(80+70*unit(m.activity)+40*unit(m.volume)*unit(m.fresh)+30*unit(m.pressure)*unit(m.fresh));
-export const ORCHESTRA_LAYERS=['melody','pad','tones','poly','filtered','percussion'];
+export const ORCHESTRA_LAYERS=['melody','tones','poly','filtered','percussion'];
 
 // One market-driven ensemble. Roles change at musical phrase boundaries;
 // every part shares a mix budget so adding layers cannot multiply gain blindly.
@@ -9,14 +9,13 @@ export function orchestraTargets(input,connected,phrase=0){
  const activity=m.activity*(connected?1:m.fresh);
  const budget=.9*Math.sqrt(activity*m.volume)*m.fresh;
  const roles=[
-  [1.15,1.1,.9,.75,.75,.9],
-  [.9,1.1,1.15,.9,.8,.9],
-  [1,.8,.8,1.2,1.15,1.15],
-  [1.05,1.15,1,.85,.7,.8],
+  [1.15,.9,.75,.75,.9],
+  [.9,1.15,.9,.8,.9],
+  [1,.8,1.2,1.15,1.15],
+  [1.05,1,.85,.7,.8],
  ][((Math.floor(phrase)%4)+4)%4];
  const weights=[
   .35+.8*m.motion,
-  .25+.7*m.texture*(1-.5*m.motion)*(1-.8*m.pressure),
   .2+.6*m.texture*(1-.35*m.motion)*(1-.5*m.pressure),
   .12+.65*m.motion*m.activity,
   .08+.45*m.motion*m.volume,

@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
@@ -8,7 +8,6 @@
     "av-envion.pd",
     "av-genome.pd",
     "av-orchestra-tables.pd",
-    "av-pad.pd",
     "av-random.pd",
     "av-sequencer.pd",
     "av-zero-ensemble.pd",
@@ -27,7 +26,6 @@
   ],
   "layers": [
     "melody",
-    "pad",
     "tones",
     "poly",
     "filtered",

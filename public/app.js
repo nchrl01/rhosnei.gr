@@ -1,9 +1,9 @@
-import {contextualizeMarket} from './market-state.js?v=22';
+import {contextualizeMarket} from './market-state.js?v=23';
 import {createWersiBank} from './wersi-bank.js?v=21';
-import {createMarketSketch} from './market-sketch.js?v=22';
+import {createMarketSketch} from './market-sketch.js?v=23';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=22';
-import {createSignalMap} from './signal-map.js?v=22';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=23';
+import {createSignalMap} from './signal-map.js?v=23';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
@@ -13,7 +13,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=1';
 import {MarketChart} from './chart.js?v=19';
-import {loadHistory} from './history.js?v=22';
+import {loadHistory} from './history.js?v=23';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -61,7 +61,7 @@ let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 const signalMap=createSignalMap($('signal-map'));
 function resetEnsemble(){conductor.reset();for(const name of Object.keys(levels))levels[name]=0;signalMap.reset();marketSketch.reset();wersiBank.reset();}
 function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,cartridge:wersiBank.state,bpm:orchestraTempo(m),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'};signalMap.update(view);marketSketch.update(view);}
-function bindSignalMap(){resetEnsemble();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','pad-note','av-envion-voice','av-pad-voice','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);signalMap.receive(name,value);marketSketch.receive(name,value);wersiBank.receive(name,value);});}
+function bindSignalMap(){resetEnsemble();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','av-envion-voice','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);signalMap.receive(name,value);marketSketch.receive(name,value);wersiBank.receive(name,value);});}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
@@ -161,9 +161,9 @@ function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>signalMap.setTransport(state));for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx=new AudioContext();await ctx.resume();
- const manifestResponse=await fetch('patches/orchestra/manifest.json?v=22');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=23');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
  const manifest=await manifestResponse.json();
- const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=22');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=23');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
  pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
  gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;const limiter=ctx.createDynamicsCompressor();mixLimiter=limiter;limiter.threshold.value=0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;gain.connect(limiter);limiter.connect(analyser);analyser.connect(ctx.destination);outputTap=analyser;marketSketch.attachAudio(analyser);wersiBank.attach(ctx,gain);bindSignalMap();
  for(const id of controls)send(id,Number($(id).value));
@@ -291,7 +291,7 @@ $('record').onclick=()=>{
  const destination=ctx.createMediaStreamDestination(),recordNode=outputTap||gain;recordNode.connect(destination);chunks=[];
  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
  recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined);
- session={version:7,cartridge:wersiBank.state,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / 005 Envion ensemble',mapping:'historical-context-orchestra-v2',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
+ session={version:7,cartridge:wersiBank.state,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / 006 pad-free ensemble',mapping:'historical-context-orchestra-v2',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
  recorder.onstop=()=>{const name='AV-'+new Date(session.started).toISOString().replace(/[:.]/g,'-');download(new Blob(chunks,{type:recorder.mimeType}),name+(recorder.mimeType.includes('mp4')?'.m4a':'.webm'));download(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}),name+'.json');try{recordNode.disconnect(destination);}catch{}session=null;$('record').textContent='● Record';status('Recording ready to download · session log included');};
  recorder.start(1000);$('record').textContent='■ Finish';status('Recording audio and session changes…');

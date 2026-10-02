@@ -82,7 +82,7 @@
 #X msg 1345 535 send av-output-left \$1;
 #X obj 1345 575 r av-output-right;
 #X msg 1345 615 send av-output-right \$1;
-#X msg 1345 655 send orchestra-version 2;
+#X msg 1345 655 send orchestra-version 3;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
 #X connect 2 1 4 0;

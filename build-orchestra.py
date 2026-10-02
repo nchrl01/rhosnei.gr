@@ -21,9 +21,10 @@ for name in ['zp-clock','zp-lane','zp-tone','zp-poly','zp-band','zp-cross','zp-d
     (ROOT/(name+'.pd')).write_text((zero/(name+'.pd')).read_text())
 for name in ['zp-perc-clock','zp-perc-markov','zp-perc-voice','zp-perc']:
     (ROOT/(name+'.pd')).write_text((perc/(name+'.pd')).read_text())
-for name in ['av-genome','av-pad']:
+for name in ['av-genome']:
     (ROOT/(name+'.pd')).write_text((BASE/'public'/'patches'/(name+'.pd')).read_text())
-if (ROOT/'av-pluck.pd').exists(): (ROOT/'av-pluck.pd').unlink()
+for retired in ['av-pluck.pd','av-pad.pd']:
+    if (ROOT/retired).exists(): (ROOT/retired).unlink()
 
 # Keep Gameta's rule engine and note/rest behavior; drive it with the ensemble
 # audio-clock edge instead of an independent metro.
@@ -203,17 +204,14 @@ p=Patch('AV AUTO ORCHESTRA / one clock, harmony, automatic mix and stereo master
 p.obj(r'av-orchestra-tables \$0');p.obj(r'av-conductor \$0');p.obj('av-sequencer')
 envion=p.obj(r'av-envion \$0');mel=p.gain(envion,'melody',1)
 right=p.obj('+~ 0');p.link(envion,right,out=1);melR=p.gain(right,'melody',1)
-padnote=p.obj('r pad-note');padmsg=p.msg(r'next \$1');pads=p.obj('clone av-pad 6');p.chain(padnote,padmsg,pads)
-pad=p.gain(pads,'pad',.8)
 both=p.obj('+~');p.link(mel,both);p.link(melR,both,inp=1);center=p.obj('*~ .5');p.chain(both,center)
-gameta=p.obj('+~');p.link(center,gameta);p.link(pad,gameta,inp=1)
-write=p.obj(r'delwrite~ \$0-gameta 2000');p.link(gameta,write)
+write=p.obj(r'delwrite~ \$0-gameta 2000');p.link(center,write)
 readL=p.obj(r'delread~ \$0-gameta 263');readR=p.obj(r'delread~ \$0-gameta 431')
 fb=p.obj('+~');p.link(readL,fb);p.link(readR,fb,inp=1)
 damp=p.obj('lop~ 3200');trim=p.obj('*~ 0.24');p.chain(fb,damp,trim,write)
 zero=p.obj(r'av-zero-ensemble \$0');perc=p.obj(r'zp-perc \$0')
 for channel,wet in enumerate([readL,readR]):
-    dry=p.obj('+~');p.link([mel,melR][channel],dry);p.link(pad,dry,inp=1)
+    dry=[mel,melR][channel]
     space=p.gain(wet,'space',.45);base=p.obj('+~');p.link(dry,base);p.link(space,base,inp=1)
     together=p.obj('+~');p.link(base,together);p.link(zero,together,out=channel,inp=1)
     percussion=p.obj('*~');p.link(perc,percussion,out=channel);p.link(p.signal('percussion'),percussion,inp=1)
@@ -249,9 +247,9 @@ for name in ['av-envion-voice','av-tone-voice','av-poly-voice','av-perc-voice','
     r=bp.obj('r '+name);msg=bp.msg(r'send '+name+r' \$1');bp.chain(r,msg,alive)
 alive=next(i for i,line in enumerate(bp.nodes) if line.endswith('netsend -u;'))
 beat=next(i for i,line in enumerate(bp.nodes) if line.endswith('metro 1000;'))
-version=bp.msg('send orchestra-version 2');bp.chain(beat,version,alive)
+version=bp.msg('send orchestra-version 3');bp.chain(beat,version,alive)
 bp.write('av-bridge')
 
 files=sorted(path.name for path in ROOT.glob('*.pd') if path.name not in ['av-desktop.pd','av-bridge.pd'])
-(ROOT/'manifest.json').write_text(json.dumps({'version':2,'entry':'market.pd','files':files,'layers':['melody','pad','tones','poly','filtered','percussion']},indent=2)+'\n')
+(ROOT/'manifest.json').write_text(json.dumps({'version':3,'entry':'market.pd','files':files,'layers':['melody','tones','poly','filtered','percussion']},indent=2)+'\n')
 print('Built orchestra:',len(files),'browser Pd files + desktop launcher')

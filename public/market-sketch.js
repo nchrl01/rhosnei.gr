@@ -22,7 +22,7 @@ export function createMarketSketch(container,chart){
  const canvas=container.querySelector('canvas'),ctx=canvas.getContext('2d');
  const stateText=container.querySelector('[data-sketch-state]'),pathText=container.querySelector('[data-sketch-path]'),audioText=container.querySelector('[data-sketch-audio]');
  let width=640,height=320,analyser=null,spectrum=null,wave=null,playing=false,native=false,clock=0,metrics={},voices=[],lastTrade=0,tradeAt=-Infinity,lastDraw=0,path=[],pathVersion='',audioDb=-100,disposed=false;
- const groups={'av-wersi-voice':['cartridge',20],'av-envion-voice':['gestures',8],'av-pad-voice':['pads',6],'av-tone-voice':['tones',32],'av-poly-voice':['poly',12],'av-perc-voice':['percussion',32]};
+ const groups={'av-wersi-voice':['cartridge',20],'av-envion-voice':['gestures',8],'av-tone-voice':['tones',32],'av-poly-voice':['poly',12],'av-perc-voice':['percussion',32]};
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const resize=new ResizeObserver(entries=>{width=Math.max(240,entries[0].contentRect.width);height=width<500?270:340;const dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.height=height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);});resize.observe(canvas);
  function update(input){playing=input.playing;native=input.native;metrics=input.m;stateText.textContent=playing?(native?'PD CLOCK + NATIVE METERS':'PD CLOCK + MEASURED AUDIO'):'MARKET ONLY · SOUND PAUSED';}
@@ -58,7 +58,7 @@ export function createMarketSketch(container,chart){
   voices=voices.filter(v=>now-v.born<2200);
   if(playing&&path.length)for(const v of voices){
    const age=(now-v.born)/2200,p=path.at(-1),[x,y]=xy(p),offset=(v.index/Math.max(1,v.count-1)-.5)*50;
-   ctx.strokeStyle=`rgba(0,0,0,${(1-age)*.65})`;ctx.lineWidth=v.kind==='pads'?2:1;
+   ctx.strokeStyle=`rgba(0,0,0,${(1-age)*.65})`;ctx.lineWidth=1;
    ctx.beginPath();
    if(v.kind==='percussion'){const size=2+(1-age)*6;ctx.moveTo(x-size,y+offset);ctx.lineTo(x,y+offset-size);ctx.lineTo(x+size,y+offset);ctx.lineTo(x,y+offset+size);ctx.closePath();}
    else{ctx.moveTo(x,y);ctx.quadraticCurveTo(x+8+age*16,y+offset,x+18+age*28,y+offset*(1-age*.4));}

@@ -1,14 +1,14 @@
 AV / AUTO ORCHESTRA
 
 Browser: enter a contract, choose its indexed pool and press Listen.
-There is one ensemble. The six meters display automatic part gain, not selectors.
+There is one ensemble. The five meters display automatic part gain, not selectors.
 All parts share a sixteenth-note clock and the pitch family 0 2 3 5 7 9 10.
 Every 32 ticks (two bars) phrase roles change. Activity and USD volume set a
 bounded total gain budget; movement and liquidity distribute prominence.
 Mix changes use a 650 ms time constant. Missing snapshot-only signals fade.
 Master adjusts listening volume only. This is a rule-based conductor, not AI.
 
-Parts: Envion 8 stereo live-fragment gestures / Gameta 6 PWM pads; ZERO100 32 tonal lanes / 12 polyrhythms /
+Parts: Envion 8 stereo live-fragment gestures; ZERO100 32 tonal lanes / 12 polyrhythms /
 8 resonant bands; Perc Generator 32 synthesized percussion voices.
 The percussion uses FM and filtered noise, not sampled breaks or ZENOLOGY.
 ZENOLOGY remains a separately hosted local plugin companion.
