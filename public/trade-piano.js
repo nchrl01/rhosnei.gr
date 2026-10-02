@@ -28,7 +28,7 @@ export function marketResonance(cap){
  const value=Number(cap);
  return value>0&&Number.isFinite(value)?unit((Math.log10(value)-4)/4):0;
 }
-export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
+export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{}}={}){
  const downloaded=await preloadPianoSamples();
  const decoded=await Promise.allSettled(downloaded.map(async item=>({midi:item.midi,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
  const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>{
@@ -52,34 +52,65 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
   for(let i=0;i<data.length;i++){noise=(Math.imul(noise,1664525)+1013904223)>>>0;smooth=.88*smooth+.12*(noise/2147483648-1);data[i]=i<ctx.sampleRate*.025?0:smooth*Math.exp(-i/ctx.sampleRate*1.7);}
  }
  room.buffer=impulse;input.connect(filter);filter.connect(dry);filter.connect(room);room.connect(wet);dry.connect(master);wet.connect(master);master.connect(destination);
- let enabled=true,running=false,volume=.5,seed=1917,index=0,closed=false;
+ let enabled=true,running=false,volume=.5,seed=1917,closed=false,currentHarmony=null,arp=null,pattern=[],nextArp=0,lastArpBucket=null;
  const voices=new Set();
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.025);}
- function stopVoice(voice){try{voice.source.stop();}catch{}voice.source.disconnect();voice.gain.disconnect();voices.delete(voice);}
- function clear(){for(const voice of [...voices])stopVoice(voice);room.buffer=null;room.buffer=impulse;}
+ function stopVoice(voice,fade=false){
+  voices.delete(voice);
+  if(fade){const time=ctx.currentTime;voice.gain.gain.cancelScheduledValues(time);voice.gain.gain.setTargetAtTime(0,time,.009);try{voice.source.stop(time+.035);}catch{}}
+  else{try{voice.source.stop();}catch{}voice.source.disconnect();voice.gain.disconnect();}
+ }
+ function clear(){arp=null;currentHarmony=null;for(const voice of [...voices])stopVoice(voice);room.buffer=null;room.buffer=impulse;}
+ function note(midi,time,dynamics,duration=8,kind='chord'){
+  while(voices.size>=32)stopVoice(voices.values().next().value,true);
+  const sample=samples.reduce((a,b)=>Math.abs(a.midi-midi)<=Math.abs(b.midi-midi)?a:b);
+  const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi)/12);
+  duration=Math.min(duration,source.buffer.duration/source.playbackRate.value);
+  gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(dynamics*sample.trim,time+.015);gain.gain.setTargetAtTime(0,time+Math.max(.05,duration-.22),.055);
+  source.connect(gain);gain.connect(input);const voice={source,gain,kind};voices.add(voice);source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(time+duration);
+ }
+ // Audio-clock lookahead keeps attacks independent of the drawing frame rate.
+ // Only a triggered four-beat phrase is scheduled; this never free-runs.
+ const scheduler=setInterval(()=>{
+  if(!arp||closed||!running||!enabled||ctx.state!=='running')return;
+  while(arp.index<arp.notes.length&&arp.nextTime<ctx.currentTime+.12){
+   const [step,pitch]=arp.notes[arp.index++],time=arp.nextTime;arp.nextTime+=arp.step;if(time<ctx.currentTime-.08)continue;
+   const notes=currentHarmony?.notes;if(!notes?.length)break;
+   const target=notes.reduce((sum,n)=>sum+n,0)/notes.length+9+(pitch-66)*.5;
+   const candidates=notes.flatMap(n=>[n,n+12,n+24]).filter(n=>n>=48&&n<=81);
+   const midi=candidates.reduce((a,b)=>Math.abs(a-target)<=Math.abs(b-target)?a:b);
+   note(midi,Math.max(ctx.currentTime+.005,time),arp.gain,2.6,'arp');onArpeggio({midi,step,time,tempo:arp.tempo});
+  }
+  if(arp.index>=arp.notes.length)arp=null;
+ },25);
  return {
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){running=Boolean(value);updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();seed=Number(value)>>>0;index=0;},
+  reset(value=seed){clear();seed=Number(value)>>>0;nextArp=0;lastArpBucket=null;},
+  setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
+  setTempo(value){if(arp){arp.tempo=Math.max(40,Math.min(140,Number(value)||40));arp.step=30/arp.tempo;}},
   resonance(cap){const r=marketResonance(cap);filter.Q.setTargetAtTime(.5+2*r,ctx.currentTime,.6);wet.gain.setTargetAtTime(.2+.22*r,ctx.currentTime,.6);return r;},
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
+   this.setTempo(music.tempo);
    // Stable, consonant voicings change slowly; arrival timing remains untouched.
    const harmony=pianoHarmony(seed,event,music),notes=harmony.notes;
    const time=ctx.currentTime+.008;
-   const dynamics=.4*(.5+.5*unit(music.intensity))/(1+voices.size/18)/Math.sqrt(notes.length/3);
-   for(const midi of notes){
-    while(voices.size>=48)stopVoice(voices.values().next().value);
-    const sample=samples.reduce((a,b)=>Math.abs(a.midi-midi)<=Math.abs(b.midi-midi)?a:b);
-    const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi)/12);
-    const duration=Math.min(10,source.buffer.duration/source.playbackRate.value);
-    gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(dynamics*sample.trim,time+.012);gain.gain.setTargetAtTime(0,time+duration-.2,.045);
-    source.connect(gain);gain.connect(input);const voice={source,gain};voices.add(voice);source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(time+duration);
+   const intensity=unit(music.intensity),dynamics=.24*(.65+.35*intensity)/Math.sqrt(notes.length/3);
+   currentHarmony=harmony;
+   for(const midi of notes)note(midi,time,dynamics);
+   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(Number(event.occurredAt??event.at??event.receivedAt)/30000);
+   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
+   if(pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
+    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
+    // Compress the AI's contour to eight eighth-note slots; skip held repeats.
+    const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
+    arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity)};nextArp=time+beat*24;lastArpBucket=bucket;
    }
    onVoice({id:event.id,notes,harmony,resonance:marketResonance(cap),at:Date.now()});return true;
   },
-  close(){closed=true;clear();for(const node of [input,filter,dry,wet,room,master])node.disconnect();},
+  close(){closed=true;clearInterval(scheduler);clear();for(const node of [input,filter,dry,wet,room,master])node.disconnect();},
  };
 }

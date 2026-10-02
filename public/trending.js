@@ -22,7 +22,9 @@ export function startTrending(onPick){
   if(duplicate){article.setAttribute('aria-hidden','true');pick.tabIndex=-1;}
   return article;
  }
- const track=node('div',null,'ticker-track');list.replaceChildren(track);
+ const track=node('div',null,'ticker-track'),empty=node('button',null,'trending-empty');empty.type='button';empty.setAttribute('aria-live','polite');list.replaceChildren(track,empty);
+ function placeholder(message,busy=false){empty.hidden=items.size>0;empty.textContent=message;empty.disabled=busy;list.setAttribute('aria-busy',String(busy));empty.classList.toggle('is-loading',busy);}
+ empty.onclick=()=>refresh();
  const resize=new ResizeObserver(()=>{width=track.firstElementChild?.getBoundingClientRect().width||0;offset=width?offset%width:0;});resize.observe(list);
  function anchor(){
   const group=track.firstElementChild;if(!group)return null;const left=group.getBoundingClientRect().left;
@@ -54,8 +56,9 @@ export function startTrending(onPick){
  requestAnimationFrame(animate);
  async function refresh(){
   const gen=++generation;controller?.abort();clearTimeout(timer);controller=new AbortController();const signal=controller.signal;
-  const timeout=setTimeout(()=>controller.abort(),600000),next=new Map();let total=0;
+  let timeout=setTimeout(()=>controller.abort(),35000);const next=new Map();let total=0;
   status.textContent='Loading trending markets…';
+  placeholder('Loading trending coins',true);
   try{
    for(let page=1;page<=10;page++){
     const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,network&duration='+encodeURIComponent(duration.value)+'&page='+page,{signal,priority:5});
@@ -67,16 +70,17 @@ export function startTrending(onPick){
      const item={rank:total,chain:aliases[networkID]||networkID,network:network?.name||networkID,address:token.address,symbol:token.symbol||token.name||'TOKEN',name:token.name||token.symbol||'Token',image:token.image_url,marketCap:pool.attributes?.market_cap_usd,fdv:pool.attributes?.fdv_usd};
      if(!next.has(key(item)))next.set(key(item),item);
     }
-    items.clear();for(const [id,item] of next)items.set(id,item);updated=Date.now();render();
+    items.clear();for(const [id,item] of next)items.set(id,item);updated=Date.now();render();placeholder('',true);
+    if(page===1){clearTimeout(timeout);timeout=setTimeout(()=>controller.abort(),180000);}
     // Open the highest-ranked pool on first load. This is intentionally not an
     // autoplay action: mobile browsers require a direct tap before audio starts.
     if(initialPick&&items.size){initialPick=false;onPick([...items.values()][0],{initial:true,autoplay:false});}
     status.textContent=items.size+' coins · '+total+' trending pools · fetched '+new Date(updated).toLocaleTimeString()+(data.data.length<20||page===10?' · refresh every 5 min':' · loading more…');
     if(data.data.length<20)break;
    }
-   if(!items.size)status.textContent='No indexed trending coins returned';
-  }catch(error){if(gen!==generation)return;status.textContent=(items.size?items.size+' coins · retained '+(updated?new Date(updated).toLocaleTimeString():'earlier')+' data · ':'')+error.message+' · retry in 5 min';}
-  finally{clearTimeout(timeout);if(gen===generation){timer=setTimeout(refresh,300000);}}
+   if(!items.size){status.textContent='No indexed trending coins returned';placeholder('No trending coins · click this bar to refresh');}
+  }catch(error){if(gen!==generation)return;status.textContent=(items.size?items.size+' coins · retained '+(updated?new Date(updated).toLocaleTimeString():'earlier')+' data · ':'')+(error.name==='AbortError'?'Trending request timed out':error.message)+' · click Refresh to retry';placeholder('Trending unavailable · click this bar to refresh');}
+  finally{clearTimeout(timeout);if(gen===generation){list.setAttribute('aria-busy','false');empty.disabled=false;empty.classList.remove('is-loading');timer=setTimeout(refresh,items.size?300000:60000);}}
  }
  document.getElementById('trending-refresh').onclick=refresh;
  duration.onchange=refresh;

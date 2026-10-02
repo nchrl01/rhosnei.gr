@@ -180,3 +180,29 @@ details{border-top:1px solid #ddd;padding:12px 0}summary{font-size:12px;line-hei
 #coin-search-results{max-width:600px;padding:12px 0;border-bottom:1px solid #111}#coin-search-results[hidden]{display:none}#coin-search-results>p{font-size:9px;margin:0 0 8px}.coin-search-result{display:grid;grid-template-columns:1fr auto;gap:5px 12px;width:100%;background:transparent;border:0;border-top:1px solid #ddd;text-align:left;padding:10px 0;min-height:44px}.coin-search-result:hover,.coin-search-result:focus-visible{background:#ddd}.coin-search-result>span{display:flex;gap:8px;min-width:0}.coin-search-result>span span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.coin-search-result small{font-size:9px;color:#666}.coin-search-address{grid-column:1/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 button,summary,a{font-variant-emoji:text}
+
+/* Image dissolves through ordered pixels, with a mask for CORS-only hosts. */
+.coin-avatar{position:relative;border:0;background:transparent;overflow:visible}
+.coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:pixelated}
+.coin-avatar[data-dither=mask] img{filter:url('#coin-bayer-filter');mask-image:url('dither-mask.svg');-webkit-mask-image:url('dither-mask.svg');mask-size:100% 100%;-webkit-mask-size:100% 100%;animation:coin-reveal .4s ease-out}
+.coin-avatar #coin-image-fallback{grid-area:1/1}
+@keyframes coin-reveal{from{opacity:0}to{opacity:1}}
+.audio-visualizer{display:none}
+@media(min-width:1050px){
+ .audio-visualizer{display:block;position:fixed;left:660px;right:24px;top:76px;bottom:70px;pointer-events:none;z-index:0}
+ #audio-dots{display:block;width:100%;height:100%}
+ .visualizer-caption{position:absolute;bottom:22px;left:0;right:0;display:flex;justify-content:center;gap:16px;align-items:center;font-size:10px;color:#888;letter-spacing:.025em}
+ #visualizer-coin{font-weight:700;color:#555}#visualizer-state{font-weight:400;font-size:9px}
+ body.inspecting .audio-visualizer{display:none}
+ .instrument{position:relative;z-index:1}
+}
+.trending-empty{border:0;height:32px;min-height:32px;max-width:100%;font-size:11px;padding:0 12px;background:transparent;color:#666;text-align:left;justify-content:flex-start}
+.trending-empty:disabled{opacity:1}
+.is-loading::after{content:'···';display:inline-block;letter-spacing:3px;margin-left:6px;animation:loading-dots 1.2s ease-in-out infinite}
+@keyframes loading-dots{0%,100%{opacity:.25}50%{opacity:1}}
+.history-loading{position:absolute;inset:0;z-index:4;display:flex;align-items:center;justify-content:center;gap:6px;background:#ffffffed;color:#666;font-size:10px;padding:4px;text-align:center}
+.history-loading[data-partial=true]{inset:auto 0 0;background:#ffffffeb;padding:3px;font-size:8px}
+.history-loading button{min-height:24px;height:24px;padding:3px 7px;font-size:9px;border-color:#ccc}
+.ai-status{display:grid;gap:6px;font-size:10px;color:#666;padding:0 0 12px}
+.ai-status button{justify-self:start;font-size:10px;min-height:26px;height:26px;padding:4px 8px;border-color:#ccc}
+@media(prefers-reduced-motion:reduce){.is-loading::after,.coin-avatar[data-dither=mask] img{animation:none}}

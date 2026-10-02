@@ -1,0 +1,3 @@
+
+# Generated neural runtime embeds shaders with intentional trailing whitespace.
+public/vendor/ai/*.js -whitespace

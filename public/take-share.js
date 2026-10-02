@@ -1,3 +1,4 @@
+import {validArp} from './ai-instruments.js?v=56';
 import {requestPlaybackMode} from './audio-unlock.js?v=55';
 const VERSION=1;
 export function encodeScore(score){
@@ -8,7 +9,8 @@ export function decodeScore(hash){
  const raw=new URLSearchParams(hash.replace(/^#/,'' )).get('score');if(!raw)return null;
  if(raw.length>180000)throw Error('Shared score is too large');
  const bytes=Uint8Array.from(atob(raw.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));const score=JSON.parse(new TextDecoder().decode(bytes));
- if(score.version!==VERSION||![52,53].includes(score.engine)||!Number.isFinite(score.interval)||score.interval<1000||score.interval>86400000||!Array.isArray(score.rows)||!score.rows.length||score.rows.length>256)throw Error('Unsupported shared score');
+ if(score.version!==VERSION||![52,53,56].includes(score.engine)||!Number.isFinite(score.interval)||score.interval<1000||score.interval>86400000||!Array.isArray(score.rows)||!score.rows.length||score.rows.length>256)throw Error('Unsupported shared score');
+ if(score.engine===56&&!validArp(score.arpeggio))throw Error('Invalid shared arpeggio');
  if(!score.market?.baseToken||!score.market?.quoteToken||!['chainId','pairAddress','dexId'].every(k=>typeof score.market[k]==='string'&&score.market[k].length<256))throw Error('Invalid shared coin');
  for(const token of [score.market.baseToken,score.market.quoteToken])if(!['address','symbol','name'].every(k=>typeof token[k]==='string'&&token[k].length<256))throw Error('Invalid shared coin');
  if(!(Number(score.market.priceUsd)>0)||!Number.isFinite(Number(score.market.priceUsd)))throw Error('Invalid shared price');
@@ -48,7 +50,7 @@ export function createTakeShare({button,dialog,snapshot,onContinue=()=>{}}){
    prepared={url:payload&&payload.length<18000?base+'#score='+payload:null,file:null};
    if(take?.blob?.size){const ext=take.blob.type.includes('mp4')?'m4a':'webm',name='AV-'+take.started+'.'+ext;prepared.file=new File([take.blob],name,{type:take.blob.type});link(take.blob,'Download exact audio take',name);}
    if(score)link(new Blob([JSON.stringify(score)],{type:'application/json'}),'Download frozen score','AV-score.json');
-   get('share-note').textContent='Audio preserves the exact take (up to five minutes). The replay link freezes the candle score and coin seed; granular textures can vary. Video export and the sharing API are not connected yet.';
+   get('share-note').textContent='Audio preserves the exact take (up to five minutes). The replay link freezes the candle score and coin seed; arpeggio phrase is preserved; granular textures can vary. Video export and the sharing API are not connected yet.';
    if(payload&&!prepared.url)get('share-note').textContent+=' This score is too long for a replay link; download the audio or score instead.';
    get('share-link').textContent='Copy replay link';get('share-link').disabled=!prepared.url;
    get('share-native').hidden=!prepared.file||!navigator.canShare?.({files:[prepared.file]});

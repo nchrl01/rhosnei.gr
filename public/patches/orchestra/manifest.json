@@ -1,10 +1,9 @@
 {
-  "version": 16,
+  "version": 17,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
     "av-envion.pd",
-    "av-hardstyle.pd",
     "av-math-voice.pd",
     "av-math.pd",
     "av-random.pd",
@@ -12,7 +11,6 @@
   ],
   "layers": [
     "melody",
-    "hardstyle",
     "math-0",
     "math-1",
     "math-2",

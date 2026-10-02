@@ -8,7 +8,7 @@ udp.on('message',(data,remote)=>{if(remote.address!=='127.0.0.1')return;const te
 udp.on('error',e=>console.error('Pd bridge:',e.message));udp.bind(3002,'127.0.0.1');
 const ranges={'av-envion-ready':[0,1],'av-envion-market':[0,1],run:[0,1],tempo:[10,240],tonic:[24,96],seed:[0,16777215],activity:[0,1],motion:[0,1],energy:[0,1],balance:[0,1],texture:[0,1],melody:[0,1],pad:[0,1],space:[0,1],master:[0,.8],cutoff:[100,12000],heartbeat:[0,1]};
 Object.assign(ranges,{tones:[0,1],poly:[0,1],filtered:[0,1],percussion:[0,1],swing:[.05,.95],density:[0,1],duration:[5,2000],decay:[1,64],divider:[1,32],drive:[1,32],feedback:[0,.8],'delay-left':[2,1900],'delay-right':[2,1900],'perc-density':[0,2],'perc-decay':[10,1000],'perc-color':[0,1],'perc-delay':[5,1900],'perc-feedback':[0,.75]});
-const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.pd':'text/plain','.txt':'text/plain','.md':'text/plain','.zip':'application/zip','.wav':'audio/wav','.json':'application/json'};
+const mime={'.html':'text/html','.css':'text/css','.js':'text/javascript','.pd':'text/plain','.txt':'text/plain','.md':'text/plain','.zip':'application/zip','.wav':'audio/wav','.json':'application/json','.svg':'image/svg+xml','.wasm':'application/wasm'};
 http.createServer(async(req,res)=>{
  try{
   const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
