@@ -87,3 +87,5 @@
 .envion-mapping-table th,.envion-mapping-table td{padding:7px 10px;border-bottom:1px solid #ccc;vertical-align:top}
 .envion-mapping-table th{font-weight:700}
 .envion-mapping-table td:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+
+.envion-performance-status{margin:0;padding:10px 12px;border-bottom:1px solid #111;font:12px/1.5 Arial,sans-serif}

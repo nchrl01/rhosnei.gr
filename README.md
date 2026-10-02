@@ -126,42 +126,42 @@ control and Record. The same DOM, market stream, replay clock and sound engine
 serve both layouts. The play control has an explicit accessible label/state.
 Arial, monochrome styling and the magenta replay playhead are retained.
 
-## Market control audit (v38)
+## Market and chance performance (v40)
 
-`public/envion-market.js` defines 50 numeric sound mappings. The original patch
-view is read only, including message boxes, preset buttons, file import/drop,
-keyboard performance and clock selection. Listen/Pause, Record, listening volume
-and chart replay remain user controls. `pdata` → **Live data inputs** shows each
-numeric mapping and the value arriving back from Pd.
+Envion now performs its source controls on musical boundaries. The v38 workflow
+which disabled its generators and used four samples has been replaced.
 
-- Activity controls envelope rate/stretch, note density, grain duration and levels.
-- Contextual price direction controls playback factor and grain pitch.
-- Motion controls filter cutoff, rounding, flutter and modulation depth.
-- Buy/sell share enters the original pan inlet; the original disconnected slider
-  remains a visual readout. Missing historical balance stays centered.
-- Volume controls echo mix/repeats/feedback, overlap and levels.
-- Liquidity controls reverb decay/damping/size/mix, capped at 25% wet. Missing
-  historical liquidity stays dry. Market cap still controls tempo.
-- Bundled gait/wood/toy/earings samples and ultra-percussion/sharpy/complex-
-  percussion/relaxed envelopes are selected from activity and motion. Changes
-  must remain stable for five seconds after initial selection to avoid reload
-  flicker; numeric controls update on every market frame. No preset macro is used.
-- A deterministic counter advances through the selected 1000-row envelope bank.
-  Activity selects a division of 1–8 sixteenth notes; direction, volume and motion
-  select the starting region. Random row/speed draws have been removed from the host.
-- 35 independent source generator controls are disabled. Clocks which original
-  stretch wires can retrigger are forced off after each market write. DSP phases and
-  authored grain synthesis remain in the original implementation.
+- Every two beats, market conditions weight a fresh set of effect switches and
+  bounded parameter variations. Steady market readings still produce new phrases.
+- Every four beats, a market-weighted chance selects a new preset and material.
+  All 36 sound preset buttons, 44 bundled WAVs, 19 envelope banks, eight tape
+  recordings and six impulse responses are reachable. Larger samples load in the
+  background while the current material keeps playing.
+- Original preset macros run before automatic sample/envelope/tape/IR selection.
+  File dialogs and NETaudio downloads are fulfilled from the supplied library.
+  No external sample download, upload prompt or local folder access is needed.
+- Grain engine, entropy, modulation, autopan, echo ping-pong/distortion and tape
+  switches are enabled by chance. Grain envelope and excitation buttons receive
+  occasional bangs. Their numeric ranges follow activity, motion, volume,
+  direction and liquidity; reverb remains capped at 25% wet and feedback below
+  unity. Musical variation continues between market observations.
+- Global free-running row clocks and keyboard/file-scanning generators remain
+  off. Panic, Stop, Record, export and source calibration are infrastructure,
+  never random performance actions. Listening volume and Record stay manual.
+- The source's short 328-row percussion bank now gets its actual row count in
+  the host sequencer. Rows never address beyond the selected bank. During asset
+  loading, the sequencer retains the sounding bank's count.
+- `pdata` shows the active preset/material and planned effects, plus live control
+  values. The chart's Sound parameters menu also names the preset and sample.
+- Chance uses a per-coin seed and current market weights. It is not an exact
+  reconstruction of historical sound; candle-only replay still estimates inputs.
 
-`public/patches/envion/control-audit.json` inventories every exposed source control
-and classifies mapped controls, disabled generators, disabled presets/file
-operations, and read-only source internals/inactive branches. Alternative preset
-branches and local/remote sample scanners are inactive. Calibration, source
-initialization and normalization constants are retained; they are not coin inputs.
-
-This update received syntax and receiver/asset inspection only; it has not been
-auditioned or checked in a running browser. Recreating sound from historical
-candles remains an estimate, not an exact recording of the historical instrument.
+`checks/envion-performance.mjs` checks full-library reachability, probability
+response to market motion, finite parameter ranges and actual offline libpd
+renders for every preset, including tape/IR loading and mute behavior. All 36
+preset renders produced nonzero finite audio with no serious Pd diagnostics.
+This checks the engine without opening a browser or audio device. Subjective
+listening and the browser interface have not been checked for this revision.
 
 ## Chart startup and live subscriptions (v39)
 

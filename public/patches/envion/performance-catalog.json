@@ -1,0 +1,80 @@
+{
+  "banks": [
+    {
+      "path": "data/bounded_kickdrum.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/buchla.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/complex_drone_plain.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/complex_percussive_plain.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/default.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/drone.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/emf_interference.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/perc.txt",
+      "rows": 328
+    },
+    {
+      "path": "data/polyrhythm.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/random_delayed_perc.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/relaxed.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/sharpy.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/terne_1000_fadeout.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/unstable-metro.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/vactrol.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/vline_perc_1.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/vline_perc_2.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/vline_ultra_perc_3.txt",
+      "rows": 1000
+    },
+    {
+      "path": "data/zadar_style_4triplets.txt",
+      "rows": 1000
+    }
+  ]
+}

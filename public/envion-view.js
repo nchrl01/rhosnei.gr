@@ -129,7 +129,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   const clockChoices = elt('div', 'envion-clock-choices'); clockChoices.setAttribute('role', 'group'); clockChoices.setAttribute('aria-label', 'Envion clock source');
   const marketClock = button('Market clock', () => { setClockMode('market'); onCommand('market'); });
   const originalClock = button('Original clocks', () => { setClockMode('original'); onCommand('original'); });
-  clockChoices.append(elt('span','envion-market-mode','Market controlled')); 
+  clockChoices.append(elt('span','envion-market-mode','Market + chance')); 
   function setClockMode(mode) {
     clockMode = mode === 'original' ? 'original' : 'market';
     marketClock.setAttribute('aria-pressed', String(clockMode === 'market'));
@@ -150,7 +150,8 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   const zoomControls = elt('div', 'envion-zoom-controls');
   zoomControls.append(button('−', () => setZoom(zoom / 1.25), 'Zoom out'), zoomValue, button('+', () => setZoom(zoom * 1.25), 'Zoom in'), button('Fit', () => { fitting = true; fit(); }), button('100%', () => setZoom(1)));
   nav.append(crumbs, zoomControls);
-  const hint = elt('p', 'envion-hint', 'Market controls the sound · Hover a control to see its data input · Click a subpatch to explore');
+  const performanceStatus=elt('p','envion-performance-status','Waiting for a market phrase');
+  const hint = elt('p', 'envion-hint', 'Market-weighted chance plays the preset and effect buttons · Bundled samples load automatically · Click a subpatch to explore');
   const mappingDetails=elt('details','envion-mapping-details');
   mappingDetails.append(elt('summary','','Live data inputs'));
   const mappingTable=elt('table','envion-mapping-table'),mappingBody=elt('tbody');
@@ -158,7 +159,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   for(const title of ['Sound control','Data input','Current value'])headRow.append(elt('th','',title));
   heading.append(headRow);mappingTable.append(heading,mappingBody);mappingDetails.append(mappingTable);
   const mappingOutputs=new Map();
-  container.replaceChildren(toolbar, mappingDetails, fileRequest, nav, viewport, hint);
+  container.replaceChildren(toolbar, performanceStatus, mappingDetails, fileRequest, nav, viewport, hint);
 
   function setZoom(value, keepFit = false) {
     const old = zoom, centerX = viewport.scrollLeft + viewport.clientWidth / 2, centerY = viewport.scrollTop + viewport.clientHeight / 2;
@@ -403,6 +404,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
     receive(receiver, data) { if (destroyed) return; pending.set(String(receiver), Array.isArray(data) ? data : [data]); if (!frame) frame = requestAnimationFrame(flush); },
     setScopes(data){for(const [id,channels] of Object.entries(data))scopeValues.set(id,channels);drawScopes();},
     receiveCanvas(id,data){canvasValues.set(id,data);canvasViews.get(id)?.(data);},
+    setPerformance(text,active,loading) { performanceStatus.textContent=(active?'Playing '+active+' · ':'')+(loading?'Loading next sound · ':'')+text; },
     setStatus(text) { status.textContent = String(text); },
     requestFile(id, mode = '0') {
       requestedFileId = id ? String(id) : null;

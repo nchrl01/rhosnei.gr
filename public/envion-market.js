@@ -1,4 +1,4 @@
-// All creative controls are derived from the same live/replay market frame.
+// Continuous market signals and held chance decisions share the live/replay frame.
 // DSP constants and listening/recording transport are deliberately separate.
 const unit = value => Math.max(0, Math.min(1, Number.isFinite(Number(value)) ? Number(value) : 0));
 export const ENVION_CONTROLS = [
@@ -65,31 +65,29 @@ export function envionFrame(m, tempo) {
     tempo:Math.max(10,Math.min(200,Number(tempo)||120)),availability:available,
   };
 }
-export function applyEnvionMarket(pd, namespace, m, tempo, write = (receiver,value)=>pd.sendFloat(receiver,value)) {
+export function applyEnvionMarket(pd, namespace, m, tempo, write = (receiver,value)=>pd.sendFloat(receiver,value), performance = null) {
   const frame=envionFrame(m,tempo);
-  for(const index of ENVION_FIXED)write('av-envion-ui-c0-'+index,0);
-  for(const [index,,,,derive] of ENVION_CONTROLS)write('av-envion-ui-c0-'+index,derive(frame));
+  const expressive=new Set([407,503,751,772,779,786,793,826,867,876,877,878,881,929,930,942]);
+  for(const index of ENVION_FIXED)if(!performance||!expressive.has(index))write('av-envion-ui-c0-'+index,0);
+  for(const [index,,,,derive] of ENVION_CONTROLS)write('av-envion-ui-c0-'+index,performance?.values[index]??derive(frame));
+  if(performance){
+    for(const [index,value] of Object.entries(performance.values))write('av-envion-ui-c0-'+index,value);
+    for(const [id,value] of Object.entries(performance.extra))write('av-envion-ui-'+id,value);
+    write('av-envion-row-count',performance.material.bank.rows);
+  }
   // Some original parameter wires bang clock toggles as a side effect. Always
   // stop those generators after the parameter writes, even when 0 is cached.
   for(const index of [18,220,226])pd.sendFloat('av-envion-ui-c0-'+index,0);
   pd.sendFloat(namespace+'-met0',0);
   // The authored pan inlet divides by 20 before its equal-power curves.
   write('av-envion-pan-position',frame.balance*20);
-  write('av-envion-density',1+Math.floor(7*(1-frame.activity)));
-  write('av-envion-row-base',Math.min(999,Math.floor(999*(.5*frame.direction+.3*frame.volume+.2*frame.motion))));
+  write('av-envion-density',performance?.density??(1+Math.floor(7*(1-frame.activity))));
+  write('av-envion-row-base',performance?.row??Math.min(999,Math.floor(999*(.5*frame.direction+.3*frame.volume+.2*frame.motion))));
   return {
-    nuke:Math.round(100+4900*frame.motion)+' Hz',
-    grains:(frame.activity>.55?'ACTIVE':'QUIET')+' · '+Math.round(frame.activity*100)+'%',
+    nuke:Math.round(performance?.values[350]??(100+4900*frame.motion))+' Hz',
+    grains:((performance?performance.values[751]:frame.activity>.55)?'ACTIVE':'QUIET')+' · '+Math.round(frame.activity*100)+'%',
     pan:frame.availability.balance===false?'CENTRE · NO HISTORY':Math.round(frame.balance*100)+'% BUY',
-    echo:Math.round(frame.volume*65)+'%'+(frame.availability.volume===false?' · ESTIMATED':''),
-    reverb:frame.availability.liquidity===false?'DRY · NO HISTORY':Math.round(frame.liquidity*25)+'%',
-  };
-}
-export function envionMaterial(m) {
-  const activity=unit(m.activity),motion=unit(m.motion);
-  // Small, supplied assets only. Banks contain 1000 rows, selected on market ticks.
-  return {
-    sample:activity>.75?'audio/gait.wav':activity>.5?'audio/wood.wav':motion>.5?'audio/toy.wav':'audio/earings.wav',
-    envelope:activity>.7?190:motion>.5?208:activity>.35?187:209,
+    echo:Math.round((performance?.values[454]??frame.volume*.65)*100)+'%'+(frame.availability.volume===false?' · ESTIMATED':''),
+    reverb:frame.availability.liquidity===false?'DRY · NO HISTORY':Math.round((performance?.values[379]??frame.liquidity*.25)*100)+'%',
   };
 }

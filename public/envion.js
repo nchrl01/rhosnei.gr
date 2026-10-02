@@ -1,6 +1,7 @@
-import {createEnvionView} from './envion-view.js?v=38';
-import {applyEnvionMarket,envionMaterial,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=38';
-export {applyEnvionMarket} from './envion-market.js?v=38';
+import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=40';
+import {createEnvionView} from './envion-view.js?v=40';
+import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=40';
+export {applyEnvionMarket} from './envion-market.js?v=40';
 
 const BASE = 'patches/envion/';
 const ROOT = 'orchestra/envion/';
@@ -71,21 +72,24 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   let activePicker = null, pendingDialog = null, generation = 0, initialized = false;
   let sampleWaveforms = [null,null];
   const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [];
-  let presetRequest = 0, latestMarket = null, material = null, candidate = null, candidateSince = 0;
+  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0;
   const marketWrites = new Map();
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
   let recordingOperation = Promise.resolve();
   const view = createEnvionView(container, {onControl:control, onFile:openFile, onCommand:command});
-  const ready = fetch(BASE+'model.json?v=38').then(async response => {
+  const ready = fetch(BASE+'model.json?v=40').then(async response => {
     if (!response.ok) throw Error('Envion source layout unavailable');
     model = await response.json();
+    const catalogResponse=await fetch(BASE+'performance-catalog.json?v=40');if(!catalogResponse.ok)throw Error('Envion sample catalog unavailable');
+    catalog=buildPerformanceCatalog(model,(await catalogResponse.json()).banks);performer=createEnvionPerformance(catalog,performanceSeed);
     for (const canvas of Object.values(model.canvases)) for (const node of canvas.nodes) {
       if (node.send) nodes.set(node.send,node);
       if (node.fileRequest) dialogs.set(canvas.id+'-'+node.index,node);
     }
     for(const canvas of Object.values(model.canvases))for(const node of canvas.nodes){
       const entry=canvas.id==='c0'&&ENVION_CONTROLS.find(([index])=>index===node.index);
-      node.marketMapping=entry?entry[1]+' ← '+entry[2]+' · '+entry[3]:canvas.id==='c0'&&ENVION_FIXED.includes(node.index)?'Independent source generator disabled; market controls this function':'Source internals / inactive preset · read only';
+      const preset=canvas.id==='c0'&&catalog.presets.find(p=>p.index===node.index);
+      node.marketMapping=preset?preset.name+' ← market-weighted preset chance':CHANCE_LABELS[canvas.id+'-'+node.index]?CHANCE_LABELS[canvas.id+'-'+node.index]+' ← market-weighted phrase chance':entry?entry[1]+' ← '+entry[2]+' + phrase chance':node.fileRequest?'Automatic bundled sample / envelope source':'Original source control · controlled by presets and phrase chance';
     }
     view.load(model); view.setStatus('Envion 5.2 · original source · press Listen');
     return model;
@@ -95,14 +99,14 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   const requirePd = () => {if (!pd || !initialized) throw Error('Press Listen to open the instrument first');};
   const report = error => view.setStatus(error.message || String(error));
   const absolute = path => '/patches/'+path;
-  const status = () => view.setStatus('Envion 5.2 · '+'market controlled'+(running?' · playing':' · paused'));
+  const status = () => view.setStatus('Envion 5.2 · '+'market + chance'+(running?' · playing':' · paused'));
   function clocks(force = false) {
     if (!pd || !namespace) return;
     pd.sendFloat('av-envion-market',1);
     pd.sendFloat(namespace+'-met0',0);
   }
   async function fetchBytes(path) {
-    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=38');
+    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=40');
     if (!response.ok) throw Error('Cannot load Envion asset: '+path);
     return new Uint8Array(await response.arrayBuffer());
   }
@@ -165,7 +169,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     if(dialogs.get(id)?.fileMode==='2')pd.sendList('av-envion-file-'+id,[path]);
     else pd.sendSymbol('av-envion-file-'+id,path);
     pendingDialog = null;view.requestFile(null);clocks();
-    view.setStatus('Loaded '+file.name+' · '+'market controlled');
+    view.setStatus('Loaded '+file.name+' · '+'market + chance');
   }
   function chooseFiles(id) {
     if (activePicker) return;
@@ -199,18 +203,21 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     input.click();
   }
   async function requestFile(atoms) {
-    const [id,kind] = atoms;
-    if(kind==='savepanel') {
-      recordingPath=ROOT+'recordings/envion-'+Date.now()+'.wav';
-      // Pre-create the destination directory for writesf~.
-      await pd.writeFile(recordingPath,new Uint8Array());
-      pd.sendSymbol('av-envion-file-'+id,absolute(recordingPath));
-      view.setStatus('Recording original Envion output · stop it before exporting');
-    } else if (!activePicker) {
-      pendingDialog=id;
-      view.requestFile(id,dialogs.get(id)?.fileMode||'0');
-      view.setStatus('Choose the file or folder requested by this patch control');
+    const [id,kind]=atoms,target=pd,epoch=generation;
+    // Recorder destination is infrastructure; only the user's Record action
+    // starts capture. Musical file inputs always use bundled source material.
+    if(kind==='savepanel'){
+      recordingPath=ROOT+'recordings/envion-'+Date.now()+'.wav';await target.writeFile(recordingPath,new Uint8Array());
+      if(target===pd&&epoch===generation)target.sendSymbol('av-envion-file-'+id,absolute(recordingPath));return;
     }
+    const material=performancePlan?.material;
+    const path=id==='c0-30'?(material?.bank.path||'data/perc.txt'):id==='c99-1'?(material?.tape||'audio/___tape-audio/ambience.wav'):(material?.sample||'audio/buchla_2.wav');
+    await ensurePath(absolute(ROOT+path));if(target!==pd||epoch!==generation)return;
+    const mode=dialogs.get(id)?.fileMode;
+    if(mode==='1')target.sendSymbol('av-envion-file-'+id,absolute(ROOT+'audio/'));
+    else if(mode==='2')target.sendList('av-envion-file-'+id,[absolute(ROOT+path)]);
+    else target.sendSymbol('av-envion-file-'+id,absolute(ROOT+path));
+    view.requestFile(null);
   }
   async function soundfile(atoms) {
     const [id,method,...args]=atoms;
@@ -237,16 +244,16 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     const key='sfload:'+array,request=(requests.get(key)||0)+1;requests.set(key,request);
     let data;
     if(method==='download') {
-      const url=new URL(path);
-      if(!['https:','http:'].includes(url.protocol))throw Error('Unsupported audio URL');
-      const response=await fetch(url,{signal:AbortSignal.timeout(90000)});
-      if(!response.ok)throw Error('NETaudio: HTTP '+response.status);
-      data=new Uint8Array(await response.arrayBuffer());
+      // Original NETaudio buttons now draw from the supplied library. A patch
+      // gesture never blocks on an external sample host or a file chooser.
+      const local=performancePlan?.material.sample||'audio/buchla_2.wav';
+      await ensureAsset(local);if(target!==pd||epoch!==generation)return;
+      data=await target.readFile(ROOT+local);
     } else {
       await ensurePath(path);
-      data=await pd.readFile(path.replace(/^\/patches\//,'').replace(/^(?!orchestra\/)/,ROOT));
+      data=await target.readFile(path.replace(/^\/patches\//,'').replace(/^(?!orchestra\/)/,ROOT));
     }
-    const audio=await decode(data),channel=Math.trunc(Number(channelArg)||0);
+    const audio=await decode(data),requestedChannel=Math.trunc(Number(channelArg)||0),channel=audio.channels.length===1?0:requestedChannel;
     if(channel<0 || channel>=audio.channels.length)throw Error('NETaudio: channel is outside the source file');
     // ELSE sfload converts size/onset using Pd's host rate, including its
     // original behavior for a source recorded at a different sample rate.
@@ -263,7 +270,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       sampleWaveforms[array==='samplebufR'?1:0]=mono;view.setWaveform(sampleWaveforms);
     }
     clocks();
-    view.setStatus('NETaudio loaded'+(audio.resampled?' · browser decoded at playback rate':' · source sample rate preserved'));
+    view.setStatus('Bundled source loaded'+(audio.resampled?' · browser decoded at playback rate':' · source sample rate preserved'));
   }
   function recordCommand(atoms) {
     const [method,...args]=atoms;
@@ -314,30 +321,62 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       }
     } catch(error) {report(error);}
   }
-  function selectMaterial(m) {
-    const next=envionMaterial(m),signature=next.sample+':'+next.envelope;
-    if(candidate!==signature){candidate=signature;candidateSince=performance.now();}
-    if(material===signature || material && performance.now()-candidateSince<5000)return;
-    material=signature;
-    const target=pd,epoch=generation,request=++presetRequest;
-    ensureAsset(next.sample).then(()=>{
-      if(pd!==target||generation!==epoch||request!==presetRequest)return;
-      pd.sendBang('av-envion-ui-c0-'+next.envelope);
-      pd.sendSymbol('av-envion-file-c0-49',absolute(ROOT+next.sample));
-      // Asset reads do not call the original preset macros or their random clocks.
-      marketWrites.clear();
-      if(latestMarket)applyEnvionMarket(pd,namespace,latestMarket.m,latestMarket.tempo,writeMarket);
-      status();
-    }).catch(error=>{if(pd===target&&generation===epoch){material=null;report(error);}});
+  function applyCurrent() {
+    if(!pd||!initialized||!latestMarket)return;
+    const soundingPlan=performancePlan?{...performancePlan,material:{...performancePlan.material,bank:{...performancePlan.material.bank,rows:loadedBankRows}},row:performancePlan.row%loadedBankRows}:null;
+    const values=applyEnvionMarket(pd,namespace,latestMarket.m,latestMarket.tempo,writeMarket,soundingPlan);
+    writeMarket('av-envion-row-count',loadedBankRows);if(!soundingPlan)writeMarket('av-envion-row-base',0);
+    for(const [name,value] of Object.entries(values)){const target=document.getElementById('function-'+name);if(target)target.textContent=value;}
+    const description=performancePlan?.summary||'Waiting for a market phrase';
+    const output=document.getElementById('function-performance');if(output)output.textContent=description;
+    view.setPerformance?.(description,activeMaterial,materialBusy);
+  }
+  function decide(step,force=false) {
+    if(!running||!initialized||!latestMarket||!performer)return;
+    const plan=performer.next(latestMarket.m,latestMarket.tempo,step,force);if(!plan)return;
+    performancePlan=plan;applyCurrent();
+    for(const index of plan.actions)pd.sendBang('av-envion-ui-c0-'+index);
+    if(plan.changeMaterial){pendingMaterial=plan;void loadPerformanceMaterial();}
+  }
+  async function loadPerformanceMaterial() {
+    if(materialBusy)return;materialBusy=true;
+    const target=pd,epoch=generation,operation=++materialOperation;
+    try {
+      while(pendingMaterial&&running&&target===pd&&epoch===generation&&operation===materialOperation){
+        const plan=pendingMaterial;pendingMaterial=null;
+        const {preset,sample,bank,tape,ir}=plan.material;
+        await Promise.all([...new Set([...preset.assets,sample,tape,ir])].filter(Boolean).map(ensureAsset));
+        if(operation!==materialOperation||target!==pd||epoch!==generation||!running)return;
+        if(pendingMaterial)continue;
+        // Let the supplied preset configure its own DSP, then populate its file
+        // inputs from the local library. Cached assets avoid a network pause here.
+        pd.sendFloat('av-envion-ready',0);
+        pd.sendBang('av-envion-ui-c0-'+preset.index);
+        await new Promise(resolve=>setTimeout(resolve,35));
+        if(operation!==materialOperation||target!==pd||epoch!==generation||!running)return;
+        pd.sendSymbol('av-envion-file-c0-49',absolute(ROOT+sample));
+        pd.sendSymbol('av-envion-file-c0-30',absolute(ROOT+bank.path));
+        pd.sendSymbol(namespace+'-open',absolute(ROOT+tape));
+        pd.sendSymbol(namespace+'-tape-IR',absolute(ROOT+ir));
+        await new Promise(resolve=>setTimeout(resolve,35));
+        if(operation!==materialOperation||target!==pd||epoch!==generation)return;
+        loadedBankRows=bank.rows;
+        activeMaterial=preset.name+' · '+sample.split('/').pop();
+        marketWrites.clear();clocks();applyCurrent();
+        pd.sendFloat('av-envion-ready',1);status();
+      }
+    } catch(error){if(operation===materialOperation&&target===pd&&epoch===generation)report(error);}
+    finally{if(operation===materialOperation&&target===pd&&epoch===generation){materialBusy=false;pd.sendFloat('av-envion-ready',1);applyCurrent();if(pendingMaterial&&running)void loadPerformanceMaterial();}}
   }
   return {
     view, ready, printed,
+    setSeed(value){materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
     async files() {
       await ready;
-      const response=await fetch(BASE+'manifest.json?v=38');if(!response.ok)throw Error('Envion source manifest unavailable');
+      const response=await fetch(BASE+'manifest.json?v=40');if(!response.ok)throw Error('Envion source manifest unavailable');
       const manifest=await response.json();
       const files=Object.fromEntries(await Promise.all(manifest.files.map(async path=>{
-        const r=await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=38');if(!r.ok)throw Error('Cannot load '+path);
+        const r=await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=40');if(!r.ok)throw Error('Cannot load '+path);
         return [ROOT+path,await r.text()];
       })));
       for(const path of manifest.initialAssets)if(!(ROOT+path in files))files[ROOT+path]=await fetchBytes(path);
@@ -353,6 +392,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
         view.setScopes(scopes);
       }));
       subscriptions.push(pd.subscribe('av-envion-sample-frames',()=>marketWrites.clear()));
+      subscriptions.push(pd.subscribe('generation',message=>decide(Number(message.values[0]))));
       subscriptions.push(pd.subscribe('av-envion-id',message=>{namespace=Math.round(message.values[0]);clocks();}));
       subscriptions.push(pd.subscribe('av-envion-stop-request',()=>{if(namespace)pd.sendFloat(namespace+'-met0',0);}));
       pd.sendBang('av-envion-identify');
@@ -370,12 +410,10 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     setRunning(value){running=!!value;view.setRunning(running);clocks(true);if(!running){pd?.sendBang('av-envion-hard-stop');pd?.sendBang('av-envion-ui-c44-1');}status();},
     market(m,tempo){
       if(!pd||!namespace||!initialized)return;
-      clocks();
-      latestMarket={m,tempo};
-      const values=applyEnvionMarket(pd,namespace,m,tempo,writeMarket);
-      selectMaterial(m);
-      for(const [name,value] of Object.entries(values)){const target=document.getElementById('function-'+name);if(target)target.textContent=value;}
+      clocks();latestMarket={m,tempo};
+      if(!performancePlan&&running)decide(0,true);
+      applyCurrent();
     },
-    detach(){marketWrites.clear();latestMarket=null;material=null;candidate=null;generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
+    detach(){materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
   };
 }

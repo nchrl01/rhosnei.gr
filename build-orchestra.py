@@ -51,6 +51,7 @@ division=p.obj('mod 8');density=p.obj('r av-envion-density');p.chain(split,divis
 hit=p.obj('sel 0');p.chain(division,hit)
 row=p.obj('f 0');advance=p.obj('+ 1');row_split=p.obj('t f f');p.chain(hit,row,advance,row_split);p.link(row_split,row,out=1,inp=1)
 base=p.obj('r av-envion-row-base');add=p.obj('+');wrap=p.obj('mod 1000');p.chain(row_split,add,wrap,p.obj('s av-envion-ui-c0-15'));p.link(base,add,inp=1)
+row_count=p.obj('r av-envion-row-count');p.link(row_count,wrap,inp=1)
 seed=p.obj('r seed');reset=p.msg('0');p.chain(seed,reset);p.link(reset,counter,inp=1);p.link(reset,row,inp=1)
 # Both browser and local bridge observe this request and stop the source's
 # independent metros using its announced canvas namespace.
@@ -86,5 +87,5 @@ for channel,side in enumerate(['left','right']):
     p.chain(limit,p.obj('env~ 4096'),p.obj('- 100'),p.obj('s av-output-'+side))
 p.write('market')
 files=sorted(active)
-(ROOT/'manifest.json').write_text(json.dumps({'version':7,'entry':'market.pd','files':files,'layers':['melody']},indent=2)+'\n')
+(ROOT/'manifest.json').write_text(json.dumps({'version':8,'entry':'market.pd','files':files,'layers':['melody']},indent=2)+'\n')
 print('Built Envion-only instrument:',len(files),'host Pd files')

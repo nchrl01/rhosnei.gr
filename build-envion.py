@@ -192,3 +192,7 @@ print('Prepared original Envion:',len(canvases),'canvases,',len(receivers),'live
 
 files=[str(p.relative_to(DEST)) for p in DEST.rglob('*') if p.is_file() and p.name!='Envion_v5.2_Plugdata.pd' and p.suffix in ['.pd','.txt'] and not any(x in p.parts for x in ['original','audio'])]
 (DEST/'manifest.json').write_text(json.dumps({'version':1,'files':sorted(files),'initialAssets':['audio/buchla_2.wav',*sorted(x for x in assets if x.startswith('asset/'))]},indent=2)+'\n')
+
+# The automatic file workflow needs real row counts (perc has 328, not 1000).
+banks=[{'path':'data/'+p.name,'rows':len([row for row in p.read_text().split(';') if row.strip()])} for p in sorted((DEST/'data').glob('*.txt'))]
+(DEST/'performance-catalog.json').write_text(json.dumps({'banks':banks},indent=2)+'\n')

@@ -87,3 +87,13 @@ their source and accompanying notices.
 AV website revision28: genotype is disabled. The Pd panel is hidden until
 "pdata" is submitted in the token box. Market signals automatically set Nuke
 cutoff/routing, grains, stereo pan, echo and reverb. Original samples are retained.
+
+AV website revision40: market-weighted phrase decisions press the source's
+36 sound preset buttons, effect toggles, grain-envelope and excitation buttons.
+All 44 bundled samples and 19 envelope banks are eligible; file inputs and
+NETaudio requests resolve to bundled assets automatically. The browser patch
+view is read only. Market cap still clocks the conductor; independent main
+row clocks, keyboard control and local-folder scanning stay off. Source
+calibration and recorder controls are not probabilistic. See README.md and
+control-audit.json for the current mapping; earlier revision notes above are
+historical. The original desktop patch remains unchanged.
