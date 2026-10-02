@@ -1,4 +1,5 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
+import {candleEnd} from './market-replay.js?v=33';
 import {createChartTicks} from './chart-ticks.js?v=33';
 
 // One series per view, with provider candles and explicitly partial live observations.
@@ -34,6 +35,42 @@ export class MarketChart{
   this.tickView=createChartTicks(this);
   this.chart.subscribeClick(param=>{if(typeof param.time==='number'){const bar=this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
  }
+ // The audio clock owns the cursor; animation only interpolates its display.
+ bindReplay(readState,isPlaying){
+  this.readReplay=readState;this.replayIsPlaying=isPlaying;
+  this.playhead=document.getElementById('replay-playhead');
+  const animate=()=>{if(!document.hidden)this.followReplay();this.replayFrame=requestAnimationFrame(animate);};
+  this.replayFrame=requestAnimationFrame(animate);
+ }
+ replayLogical(at){
+  const bars=this.renderedBars;if(!bars.length)return null;
+  let low=0,high=bars.length;
+  while(low<high){const middle=(low+high)>>1;if(candleEnd(bars[middle],this.interval)<=at)low=middle+1;else high=middle;}
+  const index=Math.max(0,low-1),bar=bars[index],next=bars[index+1];
+  const start=candleEnd(bar,this.interval),end=next?candleEnd(next,this.interval):start;
+  const fraction=end>start?Math.max(0,Math.min(1,(at-start)/(end-start))):0;
+  return index+fraction+(this.origin&&this.origin<bars[0].time?1:0);
+ }
+ followReplay(){
+  const state=this.readReplay?.(),active=!!state?.active&&this.renderedBars.length>0;
+  if(this.playhead)this.playhead.hidden=!active;
+  if(!active)return;
+  const scale=this.chart.timeScale(),width=scale.width();
+  if(this.playhead){this.playhead.style.left=width/2+'px';this.playhead.style.bottom=scale.height()+'px';}
+  let cursor=state.cursor;
+  if(this.replayIsPlaying()&&!state.dragging&&!state.ended&&state.clock!=null){
+   const rate=state.speed==='candle'?this.interval/1000:Number(state.speed)||1;
+   cursor+=Math.min(1000,Math.max(0,performance.now()-state.clock))*rate;
+  }
+  cursor=Math.min(cursor,candleEnd(this.renderedBars.at(-1),this.interval));
+  const logical=this.replayLogical(cursor),range=scale.getVisibleLogicalRange();
+  if(logical==null||!range)return;
+  const span=Math.max(2,range.to-range.from),middle=(range.from+range.to)/2;
+  if(Math.abs(middle-logical)>.00001){
+   this.manual=true;this.needsFit=false;
+   scale.setVisibleLogicalRange({from:logical-span/2,to:logical+span/2});
+  }
+ }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.scale=mode;this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
  setRange(range){this.range=range;this.manual=false;this.needsFit=true;this.schedule();}
@@ -43,7 +80,7 @@ export class MarketChart{
  goLive(){this.range='live';this.manual=false;this.needsFit=true;this.schedule();}
  zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);this.schedule();}
+ reset(){this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);if(this.playhead)this.playhead.hidden=true;this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
   // Provider coverage takes precedence over observations already included in
@@ -79,7 +116,8 @@ export class MarketChart{
    if(visible&&!this.needsFit)scale.setVisibleRange(visible);
   }else if(this.dirty.size){const bar=bars.at(-1);this.candles.update(candle(bar));this.line.update({time:last/1000,value:bar.close});this.volume.update(volume(bar));}
   this.rebuild=false;this.dirty.clear();
-  if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}
+  if(this.readReplay?.().active){this.followReplay();}
+  else if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}
   else if(!this.manual&&this.range==='live'&&following)scale.scrollToRealTime();
   this.tickView?.update(bars);
  }

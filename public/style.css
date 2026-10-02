@@ -136,3 +136,9 @@ main{padding:0 16px 28px}
 .chart-status{display:flex;align-items:center;gap:10px;margin:6px 0 0;min-width:0;max-width:100%;white-space:nowrap;line-height:1.2;color:#666}
 .chart-status>span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:14px!important}
 .chart-status #feed{flex:1.5}.chart-status #last-event{flex:1}.chart-status #status{flex:1;font-size:14px!important}.chart-status #tempo{flex:none;color:#111}
+
+/* A fixed playback cursor over the scrolling market timeline. */
+.chart-stage{position:relative;min-width:0}
+#replay-playhead{position:absolute;top:0;left:50%;bottom:24px;width:2px;background:#ff4f9b;transform:translateX(-50%);pointer-events:none;z-index:3}
+#replay-playhead::before,#replay-playhead::after{content:'';position:absolute;left:50%;width:6px;height:3px;background:#ff4f9b;transform:translateX(-50%)}
+#replay-playhead::before{top:0}#replay-playhead::after{bottom:0}

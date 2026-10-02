@@ -12,7 +12,7 @@ import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=33';
-import {MarketChart} from './chart.js?v=33';
+import {MarketChart} from './chart.js?v=34';
 import {loadHistory} from './history.js?v=30';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
@@ -28,6 +28,7 @@ let stopMusicHistory,musicHistoryTimer,musicalCandles=[],musicalInterval=300000;
 let stopHistory,stopChartHistory,historyContext=null,originDate=null,contextCandles=[],contextInterval=60000,chartRequest=0;
 const chart=new MarketChart($('market-chart'));
 const replay=createMarketReplay();
+chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
 const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
 async function loadCoinImage(pair){
@@ -194,7 +195,7 @@ async function initialize(){
 }
 $('play').onclick=async()=>{
  if(starting)return;
- if(playing){playing=false;send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
+ if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
  try{if(!pd)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;replay.state.clock=performance.now();send('seed',seed%16777216);loop();send('run',1);envion.setRunning(true);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(replay.state.active?'Envion playing · history replay':mode==='demo'?'Envion playing · synthetic demo signals':'Envion playing · market signals');}
  catch(e){playing=false;envion.detach();$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}

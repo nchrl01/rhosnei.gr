@@ -98,3 +98,11 @@ reverb is dry because historical liquidity is unavailable. Cap is inferred from
 latest supply and historical price; supply changes make it uncertain. Missing
 candle volume is labelled unavailable. These modes regenerate Envion's sound;
 they do not reconstruct past random sample choices or an exact audio waveform.
+
+
+During history playback, a pink playhead stays at the centre of the plot area
+(excluding the price axis). Candles or the price line scroll left beneath it,
+using the same replay cursor and selected speed as the sound. Display motion
+interpolates between control updates without advancing the audio clock. Pause
+holds the cursor; Live removes it and restores the live chart. Zoom preserves
+the visible span around the playhead. The replay strip remains the seek control.
