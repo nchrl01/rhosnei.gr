@@ -36,13 +36,14 @@ export function createWersiBank(container,onChange=()=>{},onVoice=()=>{}){
   if(persist)try{await savedROM(buffer);}catch{status.textContent+=' · storage unavailable; reload file next visit';}onChange();
  }
  file.onchange=async()=>{const input=file.files?.[0];if(!input)return;try{if(input.size!==16384)throw Error('Choose a 16 KB MK1 cartridge .BIN file');await load(await input.arrayBuffer());}catch(e){status.textContent=e.message;}file.value='';};
- $('[data-rom-audition]').onclick=async()=>{if(!bank)return;try{if(!previewContext){previewContext=new AudioContext();preview=renderer(previewContext,previewContext.destination);}await previewContext.resume();preview.stop();preview.output.gain.setValueAtTime(Math.min(.5,master),previewContext.currentTime);const p=bank.patches[Number(select.value)];preview.play(p,60,{texture:.7,motion:.3},.8);status.textContent=`Auditioning ${p.name} · C4 · approximate envelope/filter`;}catch(e){status.textContent='Audition unavailable: '+e.message;}};
+ $('[data-rom-audition]').onclick=async()=>{if(!bank)return;try{if(!previewContext){previewContext=new AudioContext();preview=renderer(previewContext,previewContext.destination);}await previewContext.resume();preview.stop();preview.output.gain.setValueAtTime(Math.min(.5,master),previewContext.currentTime);const p=bank.patches[Number(select.value)];preview.play(p,60,{texture:.7,motion:.3},.8);status.textContent=`Auditioning ${p.name} · key C4 · approximate envelope/filter`;}catch(e){status.textContent='Audition unavailable: '+e.message;}};
  $('[data-rom-clear]').onclick=async()=>{unloaded=true;try{localStorage.setItem('av-cartridge-disabled','1');}catch{}stop();bank=null;level=0;$('[data-rom-now]').hidden=true;select.disabled=true;$('[data-rom-audition]').disabled=true;$('[data-rom-clear]').disabled=true;status.textContent='Cartridge unloaded · original orchestra';try{const store=await db();const tx=store.transaction('rom','readwrite');tx.objectStore('rom').delete('active');tx.oncomplete=()=>store.close();}catch{}onChange();};
  // Local development preloads the supplied file from outside public/. Pages
  // returns 404 here; visitors load their own cartridge through the file input.
  (async()=>{try{if(localStorage.getItem('av-cartridge-disabled')==='1')return;let buffer=await savedROM();if(!buffer&&['localhost','127.0.0.1'].includes(location.hostname)){const r=await fetch('/cartridge/rom1');if(r.ok)buffer=await r.arrayBuffer();}if(buffer&&!unloaded&&!bank)await load(buffer,false);}catch{}})();
  return {
   get loaded(){return !!bank;},
+  setMaster(value){master=Math.max(0,Math.min(.8,Number(value)||0));if(engine)engine.output.gain.setTargetAtTime(playing?level*master:0,engine.output.context.currentTime,.03);if(preview)preview.output.gain.setTargetAtTime(Math.min(.5,master),preview.output.context.currentTime,.03);},
   get state(){return {loaded:!!bank,level,name:lastName};},
   get active(){return !!bank&&!native;},
   attach(context,destination){engine?.close();engine=context?renderer(context,destination):null;},

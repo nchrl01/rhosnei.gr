@@ -132,3 +132,18 @@ Cartridge binary-layout reference: https://github.com/ijsf/DMS-Toolbox.
 The browser decoder and synthesizer here are independently implemented;
 DMS-Toolbox code is not bundled. No GUI controls or desktop screenshots were
 used during this integration.
+
+Offline cartridge inspection and scheduling checks:
+
+```sh
+node checks/wersi.mjs "/path/to/your/ROM1.BIN"
+```
+
+With the supplied ROM these confirm checksum/hash, 20 patches, 39 referenced
+wave blocks, Fourier reconstruction error below 1e-5, linked-layer scheduling,
+voice stealing, stopping, native/zero-budget gating, and that paused control
+updates do not interrupt patch auditions. Web Audio nodes are modeled for
+these scheduling checks; they do not render audio or prove hardware fidelity.
+The existing real Pd/WASM check remains `node checks/orchestra.mjs`.
+Browser playback and visual layout have not been inspected through Computer
+Use under the current permission restriction.

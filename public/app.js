@@ -1,4 +1,4 @@
-import {createWersiBank} from './wersi-bank.js?v=20';
+import {createWersiBank} from './wersi-bank.js?v=21';
 import {createMarketSketch} from './market-sketch.js?v=20';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS} from './orchestra.js?v=18';
@@ -174,7 +174,7 @@ $('audio-output').onchange=async()=>{
  catch(e){status('Could not change audio output: '+e.message);}
  finally{starting=false;$('play').disabled=false;$('audio-output').disabled=false;}
 };
-for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
+for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);wersiBank.setMaster(Number($(id).value));session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
 function orientPair(pair,token){
