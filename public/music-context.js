@@ -34,10 +34,44 @@ export const HARMONIES={
  restless:{name:'Restless',progression:'i · ii° · V · i',chords:[minor(0),chord(2,[0,3,6]),major(7),minor(0)]},
 };
 export function pianoHarmony(seed,event={},music={}){
- const character=HARMONIES[music.character]?music.character:'serene',h=HARMONIES[character];
+ const character=HARMONIES[music.character]?music.character:'serene',h=harmonyPlan(seed,character);
  const at=Number(event.occurredAt??event.at??event.receivedAt)||0;
  const step=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(at/30000);
  const index=((step+(seed>>>0)%4)%4+4)%4,root=48+(seed>>>0)%5;
- const notes=h.chords[index].map(n=>{const note=root+n;return note>67?note-12:note;}).sort((a,b)=>a-b);
+ const previous=compactVoicing(h.chords[(index+3)%4],root);
+ const notes=compactVoicing(h.chords[index],root,previous);
  return {character,name:h.name,progression:h.progression,index,notes};
+}
+
+// Functional harmony, extensions and modal interchange studied in ChordSeqAI's
+// theory wiki. These authored progressions do not run its neural models.
+const seventh=(root,quality='major')=>chord(root,quality==='minor'?[0,3,7,10]:quality==='dominant'?[0,4,7,10]:[0,4,7,11]);
+const HARMONY_VARIANTS={
+ serene:[{progression:'Imaj7 · IVmaj7 · ii7 · Vsus4',chords:[seventh(0),seventh(5),seventh(2,'minor'),chord(7,[0,5,7])]}],
+ hopeful:[{progression:'Iadd9 · vi7 · IVmaj7 · V7',chords:[chord(0,[0,4,7,14]),seventh(9,'minor'),seventh(5),seventh(7,'dominant')]}],
+ confident:[{progression:'I · IV · ii7 · V7',chords:[major(0),major(5),seventh(2,'minor'),seventh(7,'dominant')]}],
+ reflective:[{progression:'Imaj7 · iii7 · vi7 · IVmaj7',chords:[seventh(0),seventh(4,'minor'),seventh(9,'minor'),seventh(5)]}],
+ bittersweet:[{progression:'Imaj7 · IVmaj7 · iv6 · Iadd9',chords:[seventh(0),seventh(5),chord(5,[0,3,7,9]),chord(0,[0,4,7,14])]}],
+ tense:[{progression:'i7 · iv7 · ♭VImaj7 · V7',chords:[seventh(0,'minor'),seventh(5,'minor'),seventh(8),seventh(7,'dominant')]}],
+ restless:[{progression:'i · iiø7 · V7 · iadd9',chords:[minor(0),chord(2,[0,3,6,10]),seventh(7,'dominant'),chord(0,[0,3,7,14])]}],
+};
+export function harmonyPlan(seed,character='serene'){
+ const name=HARMONIES[character]?character:'serene',variants=[HARMONIES[name],...HARMONY_VARIANTS[name]];
+ const choice=((seed>>>0)^(seed>>>8))>>>0;
+ return {...variants[choice%variants.length],name:HARMONIES[name].name};
+}
+function compactVoicing(chordNotes,root,previous=[]){
+ const tones=[...new Set(chordNotes.map(n=>((root+n)%12+12)%12))];let best=null,cost=Infinity;
+ for(let inversion=0;inversion<tones.length;inversion++){
+  const order=[...tones.slice(inversion),...tones.slice(0,inversion)];
+  for(let low=45;low<=57;low++){
+   if(low%12!==order[0])continue;const notes=[low];
+   for(const pitchClass of order.slice(1)){let note=notes.at(-1)+1;while(note%12!==pitchClass)note++;notes.push(note);}
+   if(notes.at(-1)>69)continue;
+   const movement=previous.length?notes.reduce((sum,n)=>sum+Math.min(...previous.map(p=>Math.abs(n-p))),0):0;
+   const score=movement+Math.abs(notes.reduce((a,b)=>a+b,0)/notes.length-55)*.6+(notes.at(-1)-notes[0])*.1;
+   if(score<cost){best=notes;cost=score;}
+  }
+ }
+ return best||chordNotes.map(n=>root+n);
 }

@@ -1,5 +1,5 @@
 {
-  "version": 15,
+  "version": 16,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
@@ -16,6 +16,7 @@
     "math-0",
     "math-1",
     "math-2",
-    "math-3"
+    "math-3",
+    "math-4"
   ]
 }

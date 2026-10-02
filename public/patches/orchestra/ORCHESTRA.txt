@@ -4,25 +4,30 @@ The default website source is the CC0 sampled Web Audio trade piano:
 one chord per decoded trade; trade arrival frequency is rhythm; market cap
 controls resonance. See ../../trade-piano.js and ../../samples/piano/.
 
-Two additional seeded math voices are enabled above their market-cap thresholds.
-av-math.pd mixes two av-math-voice instances. The browser supplies the plotted
+Five seeded math voices are enabled above their market-cap thresholds.
+av-math.pd mixes five av-math-voice instances. The browser supplies the plotted
 pitch function, timbre and phrase envelope; Pd synthesizes the sound and reports
 measured RMS. No independent math clock runs in Pd. A 400ms gate watchdog avoids
 stuck tones. Individual card toggles or the pdata math bundle can mute them.
 The source reel is interpreted using bounded functions; its audio is not copied.
 
 This optional Pd graph contains original Envion 5.2 and an independently
-authored hardstyle kick inspired by GrundTon's demo, both OFF by default:
+authored hardstyle kick inspired by GrundTon's demo, both enabled by default:
 https://www.youtube.com/watch?v=v5btDT3sjao
 The kick uses pitch decay and successive filtering/distortion stages; it is
 an approximation, not the original patch or recorded video audio.
 
-Hardstyle is eligible when available market cap is >= $1,000,000.
+Math milestones: $100k / $500k / $1m / $2m / $5m. Each function plays
+one eight-beat phrase, rests at least 24 beats, and requires fresh chart activity
+to restart. Pause, seek and replay end close gates and cancel queued phrases.
+
+Hardstyle is eligible when available market cap is >= $1,000,000 and
+contextual intensity exceeds 20%.
 Every four bars, market activity/pressure gives a 15–45% chance of a short
 four-beat phrase, followed by at least twelve beats of rest.
 Below the threshold, unavailable cap or stale signals close its trigger gate.
 History playback uses the chart's estimated historical capitalization.
-Optional Pd tempo follows trade cadence, bounded to 10–240 BPM. The default
+Pd tempo follows contextual percentage movement, 40–140 BPM. The default
 piano is event-driven and does not use the Pd clock.
 
 Harmonic strings have been removed from the graph and bundle controls.

@@ -52,3 +52,5 @@
 @media(prefers-reduced-motion:reduce){
  .math-pattern-view *{animation:none!important;transition:none!important}
 }
+
+.math-phrase-progress{height:2px;background:#ddd;margin:4px 0 8px;overflow:hidden}.math-phrase-progress span{display:block;height:100%;width:0;background:#ff00ff}.math-pattern-card:last-child:nth-child(odd){grid-column:1/-1}.math-pattern-card:last-child:nth-child(odd) .math-pattern-plot{height:62px}.math-pattern-card[data-active=true] .math-pattern-heading{border-left:2px solid #ff00ff;padding-left:6px}.math-pattern-header h3{text-transform:uppercase;letter-spacing:.02em}

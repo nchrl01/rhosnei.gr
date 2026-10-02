@@ -71,32 +71,22 @@ appear beside the chart.
 
 ## Seeded math functions
 
-Four original Pd voices use bounded adaptations of the functions in the supplied
-Instagram reel. The token's chain/address seed selects two distinct rhythmic
-families and two distinct tonal families. The first rhythm/tonal pair unlocks
-at $1m; the second pair at $10m. No video audio is bundled; these are
-interpretations, not identical reconstructions of its sound.
+Five Pd voices use bounded adaptations of the supplied function reel. Each coin
+seed selects three distinct rhythmic families and two tonal families, one for each
+market-cap milestone: $100k, $500k, $1m, $2m and $5m. These are interpretations of
+the supplied visual functions; no reel audio is bundled.
 
-Once an observed live cap reaches a tier, that tier remains unlocked for that
-seed, even after cap falls or playback restarts. Up to 64 seed unlocks are saved
-in this browser's local storage, with an in-memory fallback if storage is blocked.
-This records observed milestones, not an assertion about unseen all-time highs.
-Replay uses its historical cap and never imports a future live unlock.
+Observed live milestones persist for up to 64 seeds in local storage. Replay
+uses only its historical capitalization estimate. A playing chart event can queue
+an eight-beat phrase, aligned to the current ensemble tempo. Phrases are serialized
+and each voice rests for at least 24 beats before new activity can trigger it again.
+Static event identifiers cannot retrigger completed phrases. Pause, seek, replay
+end, stale data and quiet movement close gates and cancel queued phrases.
 
-Unlocked functions repeat their eight-beat curves without probabilistic silent
-windows. Fresh market controls drive an internal 1.6–3 beats/second phrase clock;
-individual trades are not required for functions. Missing/stale market data still
-closes the audible gates. Piano continues to require decoded trade events.
-The four curves have staggered phases, and gain shares headroom across enabled,
-unlocked voices. No continuous ambient-string source is used.
-
-The compact UI shows all four selected functions and labels reached tiers as
-Unlocked. Curve position and normalized value drive the same pitch/cutoff/gate
-controls sent to Pd at about 30 Hz. Curves show pitch controls, not audio waveforms.
-Pd smooths pitch, gain, filter and timbre; details show its measured RMS before
-master volume. If gate updates stop for 400 ms, Pd closes the voice in 15 ms.
-Mute each slot on its card, or the complete Math functions bundle through `pdata`.
-Changing coins resets phase and clears sound, retaining each coin's unlocks.
+The UI shows five milestone cards, waiting/queued/playing/rest status, and eight-beat
+progress. Their curves represent the same pitch controls sent to Pd, not measured
+audio waveforms. Card toggles or the complete bundle in `pdata` mute functions.
+Pd reports RMS before master and closes stale controls after 400ms.
 
 Sources: `public/math-patterns.js`, `public/math-pattern-view.js`, and
 `public/patches/orchestra/av-math*.pd`. Rebuild with `python3 build-math-patterns.py`
@@ -289,3 +279,22 @@ Focused check: `node checks/music-context.mjs`. A headless Web Audio check also
 verified live and replay piano output, exact-audio downloads, replay-link restore,
 390px mobile overflow and square controls. The legacy `checks/integration.mjs`
 currently imports the previously removed `signal-map.js` and cannot run as-is.
+
+## Search, harmony and gain (v53)
+
+The input accepts names, symbols and exact token addresses. Name search offers
+explicit coin choices, grouping pools per network/token and retaining the most
+liquid matching pool. Addresses still load directly. Symbols may be ambiguous.
+
+ChordSeqAI's theory documentation informed authored alternative progressions:
+functional tension/release, modal interchange, sevenths, added ninths and compact
+voice leading. Seed chooses an alternative consistently; market context chooses
+the harmonic character. Its AI models are not installed. References:
+https://chordseqai.com/wiki/music-theory/chord-progressions
+https://chordseqai.com/wiki/music-theory/understanding-chords
+
+The shared browser output gain is 1.5 times the previous gain, before its limiter.
+The volume slider retains its scale and default 50%. Peaks already limited cannot
+increase by the full 50%. Offline checks verify all five Pd voices, finite phrase
+duration at 60/120 BPM, no stale-event retrigger, pause/seek/end silence, name search,
+replay audio and Share. Run `node checks/math-transport.mjs`.

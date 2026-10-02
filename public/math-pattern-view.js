@@ -1,4 +1,4 @@
-import {MATH_SLOT_COUNT} from './math-patterns.js?v=51';
+import {MATH_SLOT_COUNT} from './math-patterns.js?v=53';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 280;
 const HEIGHT = 82;
@@ -56,8 +56,8 @@ function makeCard(onToggle) {
       <div class="math-pattern-identity"><h4></h4><span class="math-pattern-threshold"></span></div>
       <button type="button" class="math-pattern-toggle" disabled>Sound off</button>
     </div>
-    <div class="math-pattern-plot"></div>
-    <div class="math-pattern-caption"><span class="math-pattern-state"></span><span>Pitch function</span></div>
+    <div class="math-pattern-plot"></div><div class="math-phrase-progress" aria-hidden="true"><span></span></div>
+    <div class="math-pattern-caption"><span class="math-pattern-state"></span><span class="math-pattern-beats">8 beats</span></div>
     <details class="math-pattern-details">
       <summary>Function details</summary>
       <div class="math-pattern-formula"></div>
@@ -67,7 +67,7 @@ function makeCard(onToggle) {
         <dt>Gate</dt><dd class="math-pattern-gate"></dd>
         <dt>Pd RMS · before master</dt><dd class="math-pattern-level"></dd>
       </dl>
-      <p>The curve controls pitch across an eight-beat phrase. Pd output is the measured audio level before master volume.</p>
+      <p>The curve controls pitch across one eight-beat phrase, then rests. Fresh chart activity can trigger another phrase after at least 24 beats. Pd output is the measured audio level before master volume.</p>
     </details>`;
   const get = selector => node.querySelector(selector);
   const svg = svgNode('svg', {viewBox: `0 0 ${WIDTH} ${HEIGHT}`, preserveAspectRatio: 'none', role: 'img'});
@@ -82,7 +82,7 @@ function makeCard(onToggle) {
     state: get('.math-pattern-state'), formula: get('.math-pattern-formula'),
     pitch: get('.math-pattern-pitch'), value: get('.math-pattern-value'),
     gate: get('.math-pattern-gate'), level: get('.math-pattern-level'),
-    slot: null, enabled: false, path: '', id: null,
+    slot: null, enabled: false, path: '', id: null,progress:get('.math-phrase-progress span'),beats:get('.math-pattern-beats'),
   };
   card.toggle.addEventListener('click', () => {
     if (card.slot != null) onToggle?.(card.slot, !card.enabled);
@@ -92,7 +92,7 @@ function makeCard(onToggle) {
 
 /**
  * A view of the same control functions used by the audio engine.
- * update() accepts up to four selected slots. receive() accepts dBFS from Pd.
+ * update() accepts five selected slots. receive() accepts dBFS from Pd.
  * Nodes are retained on every update, including open details and keyboard focus.
  */
 export function createMathPatternView(container, {onToggle} = {}) {
@@ -101,8 +101,8 @@ export function createMathPatternView(container, {onToggle} = {}) {
   root.className = 'math-pattern-view';
   root.setAttribute('aria-label', 'Market sound functions');
   root.innerHTML = `
-    <header class="math-pattern-header"><h3>Market functions</h3><span class="math-pattern-seed"></span></header>
-    <p class="math-pattern-waiting">A coin’s seed selects its sound functions.</p>
+    <header class="math-pattern-header"><h3>Market phrases</h3><span class="math-pattern-seed"></span></header>
+    <p class="math-pattern-waiting">Five seeded functions · eight beats each · follows playback.</p>
     <div class="math-pattern-cards"></div>`;
   const seed = root.querySelector('.math-pattern-seed');
   const waiting = root.querySelector('.math-pattern-waiting');
@@ -130,7 +130,7 @@ export function createMathPatternView(container, {onToggle} = {}) {
       levels.clear();
     }
     const identity = view.seed == null ? '' : `Seed ${String(view.seed)}`;
-    text(seed, identity ? `${identity} · ${money(view.cap)}` : 'Waiting for a coin');
+    text(seed, identity ? `${identity} · ${number(view.tempo,40)} BPM` : 'Waiting for a coin');
     seed.title = identity;
     waiting.hidden = slots.length > 0;
     cardsRoot.hidden = slots.length === 0;
@@ -146,7 +146,7 @@ export function createMathPatternView(container, {onToggle} = {}) {
       card.node.dataset.enabled = String(card.enabled);
       card.node.dataset.active = String(Boolean(slot.active && view.playing && card.enabled));
       text(card.name, slot.name || 'Market function');
-      text(card.threshold, number(slot.threshold) > 0 ? `${slot.unlocked ? 'Unlocked' : 'Unlocks'} · ${money(slot.threshold)}` : 'Market driven');
+      text(card.threshold, number(slot.threshold) > 0 ? `${String(index+1).padStart(2,'0')} / ${slot.unlocked ? 'Reached' : 'At'} ${money(slot.threshold)}` : 'Market driven');
       card.toggle.disabled = view.globalEnabled === false;
       card.toggle.title = view.globalEnabled === false ? 'Restore the math functions bundle in pdata first.' : '';
       text(card.toggle, card.enabled ? 'Sound on' : 'Sound off');
@@ -166,7 +166,9 @@ export function createMathPatternView(container, {onToggle} = {}) {
         card.curve.setAttribute('d', path);
       }
       card.svg.setAttribute('aria-label', `${slot.name || 'Market'} pitch control function across eight beats. ${status}.`);
-      card.marker.setAttribute('visibility', points.length ? 'visible' : 'hidden');
+      card.marker.setAttribute('visibility', points.length&&slot.performing&&view.playing ? 'visible' : 'hidden');
+      card.progress.style.width=slot.performing&&view.playing?`${clamp(number(slot.phase))*100}%`:'0%';
+      text(card.beats,slot.performing&&view.playing?`${number(slot.beats).toFixed(1)} / 8 beats`:'8 beats · then rest');
       if (points.length) {
         const phase = clamp(number(slot.phase));
         const y = clamp(number(slot.value));

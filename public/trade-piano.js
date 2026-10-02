@@ -1,5 +1,5 @@
 // CC0 sampled piano. Only an explicit trade() call creates a chord.
-import {pianoHarmony} from './music-context.js?v=52';
+import {pianoHarmony} from './music-context.js?v=53';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
 async function loadSampleAsset(path,format){

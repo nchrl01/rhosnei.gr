@@ -1,16 +1,17 @@
-import {rollingText} from './coin-readout.js?v=52';
-import {createTakeShare,decodeScore} from './take-share.js?v=52';
-import {HARMONIES} from './music-context.js?v=52';
-import {createEnvion} from './envion.js?v=52';
-import {createEngineView} from './engine-view.js?v=52';
-import {hardstyleActive} from './hardstyle-state.js?v=52';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=52';
-import {createMathPatterns,mathIdentity,MATH_SLOT_COUNT} from './math-patterns.js?v=52';
-import {createMathPatternView} from './math-pattern-view.js?v=52';
-import {contextualizeMarket} from './market-state.js?v=52';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=52';
+import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=53';
+import {rollingText} from './coin-readout.js?v=53';
+import {createTakeShare,decodeScore} from './take-share.js?v=53';
+import {harmonyPlan} from './music-context.js?v=53';
+import {createEnvion} from './envion.js?v=53';
+import {createEngineView} from './engine-view.js?v=53';
+import {hardstyleActive} from './hardstyle-state.js?v=53';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=53';
+import {createMathPatterns,mathIdentity,MATH_SLOT_COUNT} from './math-patterns.js?v=53';
+import {createMathPatternView} from './math-pattern-view.js?v=53';
+import {contextualizeMarket} from './market-state.js?v=53';
+import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=53';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=52';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=53';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {subscribePool} from './realtime.js?v=4';
@@ -19,7 +20,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=39';
-import {MarketChart} from './chart.js?v=52';
+import {MarketChart} from './chart.js?v=53';
 import {loadHistory} from './history.js?v=39';
 import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
@@ -238,7 +239,15 @@ function tick(){
 }
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);}
-function mathLoop(){mathPatterns.frame(mathMarket||{},{playing:playing&&!replay.state.dragging&&(!ctx||ctx.state==='running'),ready:!!pd&&!audioErrors.pd,error:audioErrors.pd,position:replay.state.active?replay.state.cursor/1000:undefined,clock:ctx?.currentTime??performance.now()/1000});setTimeout(mathLoop,playing?33:250);}
+function mathLoop(){
+ const active=playing&&!replay.state.dragging&&!replay.state.ended&&(!ctx||ctx.state==='running');
+ const frozen=replay.state.frozen,interval=frozen?.interval||chart.interval;
+ const rate=replay.state.speed==='candle'?interval/1000:Number(replay.state.speed)||1;
+ const position=replay.state.active?(replay.state.cursor-candleEnd((frozen?.bars||chart.renderedBars)[0]||{time:replay.state.cursor},interval))/rate/1000:undefined;
+ const event=replay.state.active?replay.state.bar?.time:lastTrade?.id??lastChainPrice?.receivedAt??null;
+ mathPatterns.frame(mathMarket||{},{playing:active,seeking:replay.state.dragging,ended:replay.state.ended,ready:!!pd&&!audioErrors.pd,error:audioErrors.pd,event,position,clock:ctx?.currentTime??performance.now()/1000});
+ setTimeout(mathLoop,playing?33:250);
+}
 mathLoop();
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
@@ -262,9 +271,9 @@ async function initialize(){
   audioErrors.pd='';audioErrors.envion='';
   pdLoading=(async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{
-    const response=await fetch('patches/orchestra/manifest.json?v=52');if(!response.ok)throw Error('Cannot load orchestra manifest');
+    const response=await fetch('patches/orchestra/manifest.json?v=53');if(!response.ok)throw Error('Cannot load orchestra manifest');
     const manifest=await response.json();
-    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=52');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=53');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
     return {manifest,files};
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');
@@ -304,9 +313,9 @@ $('play').onclick=async()=>{
   finally{starting=false;$('play').disabled=false;}
   return;
  }
- if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;pendingPianoTrade=null;piano?.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
+ if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;mathPatterns.stop();pendingPianoTrade=null;piano?.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ try{if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);await closeAudio();}
  finally{starting=false;$('play').disabled=false;}
 };
@@ -419,6 +428,7 @@ function chooseMarket(pair,{shared=false}={}){
 const addressField=$('address').closest('.address-field');
 const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
 function syncAddressLabel(){addressField.classList.toggle('has-value',!!$('address').value.trim());}
+$('address').addEventListener('input',()=>{$('coin-search-results').hidden=true;});
 $('address').addEventListener('input',syncAddressLabel);
 $('address').addEventListener('change',syncAddressLabel);
 syncAddressLabel();
@@ -427,12 +437,15 @@ $('coin-form').onsubmit=async e=>{
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const wantedNetwork=requestedNetwork,autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
- const address=$('address').value.trim();if(address.length<5||address.length>250||/\s/.test(address)){status('Enter a token address or chain-specific token identifier.');return;}
+ const address=$('address').value.trim();if(address.length<1||address.length>250){status('Enter a coin name, symbol or contract address.');return;}
  loading=true;$('load').disabled=true;status('Looking up indexed markets…');
  try{
   const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address));
-  const pairs=(data.pairs||[]).map(p=>orientPair(p,address)).filter(Boolean);pairs.sort((a,b)=>(b.liquidity?.usd||0)-(a.liquidity?.usd||0));
-  if(!pairs.length)throw Error('No indexed market found for this token identifier.');
+  if($('address').value.trim()!==address)return;
+  const pairs=rankCoinMatches(data.pairs||[],address,{orientPair,network:wantedNetwork});
+  if(!pairs.length)throw Error('No indexed coin matched this name or address.');
+  if(!isTokenIdentifier(address)&&!pairs.some(pair=>sameToken(pair.baseToken.address,address))){showCoinMatches($('coin-search-results'),pairs,pair=>{$('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];chooseMarket(pair);if(autoPlay&&!playing)void $('play').onclick();});status('Choose a coin from the search results');return;}
+  $('coin-search-results').hidden=true;
   const selection=wantedNetwork?pairs.find(p=>p.chainId===wantedNetwork):pairs[0];if(!selection)throw Error('No DEX Screener market found on the trending coin’s network.');
   discovered=[selection];chooseMarket(selection);if(autoPlay&&!playing)await $('play').onclick();
  }catch(e){status(e.message);$('lookup').textContent=e.message;}
@@ -444,7 +457,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:52,interval,seed,speed:replay.state.speed,market:{chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:53,interval,seed,speed:replay.state.speed,market:{chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollTime=rollingText($('coin-time')),rollCap=rollingText($('coin-cap'));
@@ -455,7 +468,7 @@ function updateCoinReadout(m){
  rollCap(cap>0?'$'+Math.round(cap).toLocaleString('en'):'—',cap||0);
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
  $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
- const harmony=HARMONIES[m.music?.character]||HARMONIES.serene;
+ const harmony=harmonyPlan(seed,m.music?.character);
  $('coin-character').textContent=harmony.name.toUpperCase();$('coin-progression').textContent=harmony.progression;
 }
 function restoreSharedScore(){

@@ -91,5 +91,5 @@ for channel,side in enumerate(['left','right']):
     p.chain(limit,p.obj('env~ 4096'),p.obj('- 100'),p.obj('s av-output-'+side))
 p.write('market')
 files=sorted(active)
-(ROOT/'manifest.json').write_text(json.dumps({'version':15,'entry':'market.pd','files':files,'layers':['melody','hardstyle','math-0','math-1','math-2','math-3']},indent=2)+'\n')
+(ROOT/'manifest.json').write_text(json.dumps({'version':16,'entry':'market.pd','files':files,'layers':['melody','hardstyle','math-0','math-1','math-2','math-3','math-4']},indent=2)+'\n')
 print('Built market instrument:',len(files),'host Pd files')

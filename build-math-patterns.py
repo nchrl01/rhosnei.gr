@@ -134,12 +134,12 @@ p.text('Seed changes and run=0 clear the envelope. A voice needs new market cont
 p.text('No gate updates for 400 ms -> fade to silence in 15 ms.', 575, 700)
 p.write('av-math-voice')
 
-p = pd_patch.Patch('Four seed-selected market math voices / stereo sum', 1180, 680)
+p = pd_patch.Patch('Five seed-selected market math voices / stereo sum', 1450, 680)
 p.text('Each voice is clocked by browser audio time and reports its measured output.', 25, 45)
 left = p.obj('+~', 240, 490)
 right = p.obj('+~', 640, 490)
-# Four fixed pans. Browser gains share headroom across the unlocked voices.
-for slot, (left_gain, right_gain) in enumerate([(0.82, 0.57), (0.57, 0.82), (0.75, 0.66), (0.66, 0.75)]):
+# Five fixed pans. Browser gains share headroom across the unlocked voices.
+for slot, (left_gain, right_gain) in enumerate([(0.82, 0.57), (0.57, 0.82), (0.75, 0.66), (0.66, 0.75), (0.707, 0.707)]):
     x = 50 + slot * 275
     voice = p.obj(f'av-math-voice {slot}', x, 110)
     l = p.obj(f'*~ {left_gain}', x, 210)
