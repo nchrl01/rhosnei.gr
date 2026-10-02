@@ -1,8 +1,9 @@
-import {contextualizeMarket} from './market-state.js?v=25';
-import {createMarketSketch} from './market-sketch.js?v=25';
+import {createEngineView} from './engine-view.js?v=26';
+import {contextualizeMarket} from './market-state.js?v=26';
+import {createMarketSketch} from './market-sketch.js?v=26';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=25';
-import {createSignalMap} from './signal-map.js?v=25';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=26';
+import {createSignalMap} from './signal-map.js?v=26';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
@@ -12,7 +13,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=1';
 import {MarketChart} from './chart.js?v=19';
-import {loadHistory} from './history.js?v=25';
+import {loadHistory} from './history.js?v=26';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -57,16 +58,17 @@ const conductor=createOrchestraConductor();
 const levels=Object.fromEntries([...ORCHESTRA_LAYERS,'space'].map(name=>[name,0]));
 let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 const signalMap=createSignalMap($('signal-map'));
-function resetEnsemble(){conductor.reset();for(const name of Object.keys(levels))levels[name]=0;signalMap.reset();marketSketch.reset();}
-function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'};signalMap.update(view);marketSketch.update(view);}
-function bindSignalMap(){resetEnsemble();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','av-envion-voice','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);signalMap.receive(name,value);marketSketch.receive(name,value);});}
+const engineView=createEngineView($('engine-view'));
+function resetEnsemble(){conductor.reset();for(const name of Object.keys(levels))levels[name]=0;signalMap.reset();marketSketch.reset();engineView.reset();}
+function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'};signalMap.update(view);marketSketch.update(view);engineView.update({...view,coin:market?.baseToken?.symbol,feed:mode==='demo'?'Synthetic demo':streamKind,liquidity:market?.liquidity?.usd});}
+function bindSignalMap(){resetEnsemble();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','av-envion-voice','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);signalMap.receive(name,value);marketSketch.receive(name,value);engineView.receive(name,value);});}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
 const status=s=>$('status').textContent=s;
 function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
 function marketRoot(){const current=currentPrice(),anchor=historyContext?.first?.open;const offset=current>0&&anchor>0?Math.round(12*Math.tanh(Math.log(current/anchor))):0;return 45+seed%12+offset;}
-function send(name,value){pd?.sendFloat(name,value);}
+function send(name,value){if(pd){pd.sendFloat(name,value);engineView.sent(name,value);}}
 function event(name){pd?.sendBang(name);}
 function metrics(){
  if(!market){const t=performance.now()/1000;const raw={motion:.3+.25*Math.sin(t/19),activity:.45+.25*Math.sin(t/31),balance:.5+.2*Math.sin(t/23),texture:.6,volume:.4+.3*Math.sin(t/27),fresh:1,snapshotFresh:1,snapshotAge:0};return contextualizeMarket(raw,{price:lastDemoPrice,history:chart.points.slice(-360).map(p=>({time:p.at,open:p.price,close:p.price,volume:0})),interval:1000,observedAt:chart.lastReceived?.at});}
@@ -153,12 +155,13 @@ function tick(){
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
- if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>signalMap.setTransport(state));for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
+ if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{signalMap.setTransport(state);engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx=new AudioContext();await ctx.resume();
- const manifestResponse=await fetch('patches/orchestra/manifest.json?v=25');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=26');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
  const manifest=await manifestResponse.json();
- const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=25');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
- pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=26');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet.js',onPrint:text=>{console.log('[Pd]',text);engineView.log(text);},onError:error=>{engineView.log(error.message);status('Audio engine: '+error.message);}});
+ engineView.setFiles(files,manifest,true);
  gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;gain.connect(limiter);limiter.connect(analyser);analyser.connect(ctx.destination);outputTap=analyser;marketSketch.attachAudio(analyser);bindSignalMap();
  for(const id of controls)send(id,Number($(id).value));
 }

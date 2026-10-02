@@ -142,3 +142,19 @@ intensity continue to shape density, articulation and mix rather than tempo.
 Latest cap can be price-adjusted from snapshot supply, as labelled in the UI.
 FDV is not used as a substitute. Missing cap uses an explicit 120 BPM fallback;
 the synthetic demo also uses 120 BPM. Native transport accepts the 10 BPM floor.
+
+## Visible Pure Data engine
+
+The website includes an open, read-only engine panel. It renders objects and
+connections directly from the published Pd files, using their stored positions.
+The patch selector and clickable abstractions browse the implementation; they
+do not change the instrument. Full patch source and individual downloads are
+available. When Browser Pd loads, its exact file strings replace the preview.
+Native mode displays published source previews; it cannot inspect the actual
+patch contents open in the desktop application.
+
+Live controls show numeric messages sent to the engine, not acknowledgements
+or measured loudness. Feedback shows actual subscribed Pd messages and their
+age. The console exposes browser Pd prints/errors. Market source, capitalization,
+liquidity and history intensity are visible beside the patch. This panel is
+read-only and never schedules or modifies audio.
