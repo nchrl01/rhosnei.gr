@@ -1,5 +1,6 @@
-// CC0 sampled piano. Only an explicit trade() call creates a chord.
+// CC0 sampled piano. Meaningful moves and known quiet intervals select single notes.
 import {pianoHarmony} from './music-context.js?v=53';
+import {createPianoPolicy} from './piano-policy.js?v=58';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
 async function loadSampleAsset(path,format){
@@ -52,7 +53,8 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   for(let i=0;i<data.length;i++){noise=(Math.imul(noise,1664525)+1013904223)>>>0;smooth=.88*smooth+.12*(noise/2147483648-1);data[i]=i<ctx.sampleRate*.025?0:smooth*Math.exp(-i/ctx.sampleRate*1.7);}
  }
  room.buffer=impulse;input.connect(filter);filter.connect(dry);filter.connect(room);room.connect(wet);dry.connect(master);wet.connect(master);master.connect(destination);
- let enabled=true,running=false,volume=.5,seed=1917,closed=false,currentHarmony=null,arp=null,pattern=[],nextArp=0,lastArpBucket=null;
+ let enabled=true,running=false,volume=.5,seed=1917,closed=false,currentHarmony=null,arp=null,pattern=[],nextArp=0,lastArpBucket=null,lastPitch=null;
+ const policy=createPianoPolicy(seed);
  const voices=new Set();
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.025);}
  function stopVoice(voice,fade=false){
@@ -61,7 +63,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   else{try{voice.source.stop();}catch{}voice.source.disconnect();voice.gain.disconnect();}
  }
  function clear(){arp=null;currentHarmony=null;for(const voice of [...voices])stopVoice(voice);room.buffer=null;room.buffer=impulse;}
- function note(midi,time,dynamics,duration=8,kind='chord'){
+ function note(midi,time,dynamics,duration=8,kind='note'){
   while(voices.size>=32)stopVoice(voices.values().next().value,true);
   const sample=samples.reduce((a,b)=>Math.abs(a.midi-midi)<=Math.abs(b.midi-midi)?a:b);
   const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi)/12);
@@ -83,11 +85,31 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   }
   if(arp.index>=arp.notes.length)arp=null;
  },25);
+ function play(selection,event,cap,music){
+  const harmony=pianoHarmony(seed,event,music),tones=harmony.notes;
+  currentHarmony=harmony;
+  const quiet=selection.reason==='quiet',direction=Math.sign(selection.changePct);
+  const target=quiet?(lastPitch??54):direction>0?58:49;
+  const midi=tones.reduce((a,b)=>Math.abs(a-target)<=Math.abs(b-target)?a:b);
+  const time=ctx.currentTime+.008,intensity=unit(music.intensity);
+  note(midi,time,quiet?.105:.20*(.7+.3*intensity),quiet?5:7);lastPitch=midi;
+  const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/30000);
+  const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
+  // The existing occasional AI phrase is allowed only after a significant move.
+  // Quiet notes never start a phrase or a chord.
+  if(!quiet&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
+   const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
+   const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
+   arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity)};nextArp=time+beat*24;lastArpBucket=bucket;
+  }
+  onVoice({id:event.id,notes:[midi],harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
+  return true;
+ }
  return {
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){running=Boolean(value);updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();seed=Number(value)>>>0;nextArp=0;lastArpBucket=null;},
+  reset(value=seed){clear();seed=Number(value)>>>0;policy.reset(seed);lastPitch=null;nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){if(arp){arp.tempo=Math.max(40,Math.min(140,Number(value)||40));arp.step=30/arp.tempo;}},
   resonance(cap){const r=marketResonance(cap);filter.Q.setTargetAtTime(.5+2*r,ctx.currentTime,.6);wet.gain.setTargetAtTime(.2+.22*r,ctx.currentTime,.6);return r;},
@@ -95,21 +117,13 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
    this.setTempo(music.tempo);
-   // Stable, consonant voicings change slowly; arrival timing remains untouched.
-   const harmony=pianoHarmony(seed,event,music),notes=harmony.notes;
-   const time=ctx.currentTime+.008;
-   const intensity=unit(music.intensity),dynamics=.24*(.65+.35*intensity)/Math.sqrt(notes.length/3);
-   currentHarmony=harmony;
-   for(const midi of notes)note(midi,time,dynamics);
-   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(Number(event.occurredAt??event.at??event.receivedAt)/30000);
-   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
-   if(pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
-    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
-    // Compress the AI's contour to eight eighth-note slots; skip held repeats.
-    const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
-    arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity)};nextArp=time+beat*24;lastArpBucket=bucket;
-   }
-   onVoice({id:event.id,notes,harmony,resonance:marketResonance(cap),at:Date.now()});return true;
+   const selection=policy.trade({...event,quietAt:ctx.currentTime*1000},music);
+   return selection?play(selection,event,cap,music):false;
+  },
+  frame(m,{playing=false,seeking=false,ended=false,at,price,known=false,quiet=false,referencePrice}={}){
+   if(closed||!enabled||!running||!playing||seeking||ended||ctx.state!=='running')return false;
+   const selection=policy.idle({at,quietAt:ctx.currentTime*1000,price,music:m.music,known,quiet,referencePrice});
+   return selection?play(selection,{id:'quiet:'+selection.at,at:selection.at},m.context?.latestCap,m.music||{}):false;
   },
   close(){closed=true;clearInterval(scheduler);clear();for(const node of [input,filter,dry,wet,room,master])node.disconnect();},
  };

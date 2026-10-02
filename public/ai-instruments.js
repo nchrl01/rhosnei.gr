@@ -30,12 +30,12 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
 }
 export function createCoinVoice({onStatus=()=>{}}={}){
  let ctx,destination,master,input,space,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=false,source=null,lastClock=null,elapsed=0,next=12,cache=new Map(),retryAt=0;
- const runner=backgroundModel('./voice-ai-worker.js?v=56',onStatus,240000);
+ const runner=backgroundModel('./voice-ai-worker.js?v=58',onStatus,240000);
  function hush(){if(source){try{source.stop();}catch{}source.disconnect();source=null;}space?.clear();}
  function update(){if(master&&ctx)master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.03);}
  return {
   attach(context,out){if(ctx===context)return;ctx=context;destination=out;master=ctx.createGain();master.gain.value=0;master.connect(destination);space=createVoiceReverb(ctx,master);input=space.input;update();},
-  setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=12+seed%8;onStatus('Coin voice · loads with Listen');},
+  setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=12+seed%8;onStatus('Coin whisper · loads with Listen');},
   setMaster(value){volume=Math.max(0,Math.min(1,Number(value)||0));update();},
   setEnabled(value){enabled=Boolean(value);update();if(!enabled)hush();else if(running)void this.prepare();},
   setRunning(value){running=Boolean(value);lastClock=null;update();if(!running)hush();},
@@ -43,18 +43,20 @@ export function createCoinVoice({onStatus=()=>{}}={}){
   async prepare(){if(!ctx||!name||!enabled||loading||buffer||Date.now()<retryAt)return;loading=true;const token=epoch,current=name;
    try{let result=cache.get(current);if(!result){result=await runner.request({text:current});cache.set(current,result);if(cache.size>8)cache.delete(cache.keys().next().value);}
     if(token!==epoch)return;const samples=result.samples;if(!(samples instanceof Float32Array)||!samples.length||samples.length>24000*30||!Number.isFinite(result.rate)||result.rate<8000||result.rate>48000)throw Error('Invalid voice audio');
-    buffer=ctx.createBuffer(1,samples.length,result.rate);let peak=0;for(const n of samples)if(Number.isFinite(n))peak=Math.max(peak,Math.abs(n));const trim=peak>0?Math.min(3,.28/peak):1;buffer.copyToChannel(Float32Array.from(samples,n=>Number.isFinite(n)?n*trim:0),0);onStatus('Coin voice ready · moving markets only');
+    buffer=ctx.createBuffer(1,samples.length,result.rate);let peak=0;for(const n of samples)if(Number.isFinite(n))peak=Math.max(peak,Math.abs(n));const trim=peak>0?Math.min(3,.16/peak):1;buffer.copyToChannel(Float32Array.from(samples,n=>Number.isFinite(n)?n*trim:0),0);onStatus('Coin whisper ready · accompanies instruments only');
    }catch{retryAt=Date.now()+60000;if(token===epoch)onStatus('Coin voice unavailable · click Retry');}
    finally{loading=false;}
   },
   retry(){retryAt=0;void this.prepare();},
-  frame(m,{playing=false,seeking=false,ended=false}={}){
+  frame(m,{playing=false,seeking=false,ended=false,audible=false}={}){
    if(!ctx)return;const active=running&&enabled&&playing&&!seeking&&!ended&&ctx.state==='running';const clock=ctx.currentTime,dt=lastClock===null?0:Math.max(0,clock-lastClock);lastClock=clock;
    if(!active){hush();return;}elapsed+=dt;
    // Both % movement and contextual intensity must be present. Quiet markets
    // never become a timed announcement loop; each call is one finite name.
    const moving=(m.fresh||0)>0&&(m.music?.intensity||0)>.035&&Math.abs(m.music?.changePct||0)>.3;
-   if(!moving){hush();return;}
+   // The isolated music tap excludes this voice and its reverb. Announcements
+   // cannot start, or sustain themselves, when the other instruments are silent.
+   if(!moving||!audible||volume===0){hush();return;}
    if(!buffer){void this.prepare();return;}
    if(elapsed<next||source)return;
    source=ctx.createBufferSource();source.buffer=buffer;const spoken=source;source.onended=()=>{spoken.disconnect();if(source===spoken)source=null;};source.connect(input);source.start();next=elapsed+110+seed%50;

@@ -6,12 +6,16 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 ## Active instruments
 
 The piano is the CC0 VSCO 2 CE soft upright piano, played through
-Web Audio. Each accepted decoded swap triggers one contextual chord immediately
-on receipt. Chords are not quantized to a metronome. Stable timestamp/seed-based
-progressions express serene, hopeful, confident, reflective, bittersweet, tense
-or restless movement. These characters are artistic interpretations, not predictions.
-Snapshots and generic pool transactions do not trigger piano notes. Provider
-polling and caching can deliver chords in bursts; this does not remove feed delay.
+Web Audio. During active trading, a cumulative move of at least 20% since the
+previous piano note selects one harmonic note on receipt. Its initial price
+anchor uses available five-minute context. There are no block chords. Stable
+timestamp/seed-based progressions provide a serene, hopeful, confident,
+reflective, bittersweet, tense or restless palette for the individual notes.
+These characters are artistic interpretations, not predictions. Quiet native
+decoded streams can produce one soft note after 30 seconds without an observed
+trade, then at coin-seeded intervals of 45–60 seconds. Cached polling and
+disconnected feeds cannot establish silence and do not enable this fallback.
+Generic pool events and snapshots never masquerade as piano trade triggers.
 
 Market cap controls resonance on a logarithmic scale: $10k or less = 0%,
 $1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.5 to 2.5
@@ -19,7 +23,7 @@ and room-reverb gain from 0.2 to 0.42. The room is audible from startup,
 including when market cap is unknown; cap adds resonance and a longer-feeling wash.
 These are sound-design mappings, not physical measurements of resonance.
 
-Piano, Envion and the standalone hardstyle bundle are ON by default and can be removed separately via
+Piano, Envion and coin voice are ON by default and can be removed separately via
 `pdata`. Harmonic strings have been removed. The violin research output is not in the site.
 Envion's original source, 44 samples, 19 envelope banks and authored effects
 remain available in the full Pure Data browser engine.
@@ -27,15 +31,13 @@ ZERO100, polyrhythms, resonant banks, synthesized percussion, external Freeverb,
 external feedback delays and genotype are removed from the published host graph.
 Source studies under `native/` are archival; they are not loaded by the app.
 
-Above $1m market cap an independent hardstyle kick can play occasional four-beat
-phrases with at least twelve beats of rest. Activity and pressure give each
-four-bar opportunity a 15–45% chance. Each remaining bundle can be removed
-separately under `pdata`.
+The standalone hardstyle kick is removed from the active engine. Each remaining
+bundle can be removed separately under `pdata`.
 
 Ensemble tempo follows 40–140 BPM contextual movement: absolute five-minute
 percentage change, movement relative to recent median candle volatility, and a
-logarithmic market-cap weight. Quiet/small markets are gentler. Hardstyle also
-requires intensity above 20%. Live piano remains trade-triggered.
+logarithmic market-cap weight. Quiet/small markets are gentler. Live piano selects
+meaningful decoded price moves and sparse notes during observed quiet intervals.
 The market controls Envion's envelope sequence, playback speed, Nuke, grains, pan,
 echo, internal reverb and smoothed output gain. Chart pan/zoom do not schedule sound.
 Listening volume starts at 50%; the volume button at the right of the single-line trending header opens a 0–100% slider. Clicking a trending coin loads its market and starts playback.
@@ -46,19 +48,21 @@ audio take; Share downloads that exact performance and a frozen candle score.
 A replay link embeds up to 128 candles when its encoded payload is under 18,000
 characters. Longer scores remain downloadable; video export/API are future work.
 
-Piano replay generates one contextual chord per completed historical candle,
-including history from before this visit. This is an OHLC interpretation, not
+Piano replay applies the same 20% cumulative-movement selection to completed
+historical candles, including history from before this visit. Empty zero-volume
+candles allow the quiet fallback; quiet spacing uses listening time so accelerated
+history cannot create a rapid ambient loop. This is an OHLC interpretation, not
 reconstructed trades. Replay freezes history and market-cap supply estimates;
-chord selection is stable per seed/candle. Envion reseeds each four-candle phrase;
+note selection uses the seed and candle context. Envion reseeds each four-candle phrase;
 granular textures and asynchronous sample arrival can still vary. A shared score
 starts its context from its included candles; use the audio take for exact fidelity. Pausing or seeking clears
 active voices and room tails; returning live never replays a backlog. Busy bursts
-are limited to 48 simultaneous piano voices, replacing oldest tails as necessary.
+are limited to 32 simultaneous piano voices, replacing oldest tails as necessary.
 Shared volume and audio recording include both the piano and enabled Pd sources.
 The piano uses samples resampled to 24 kHz stereo PCM16 with up to ten-second tails.
 Decoded samples receive per-note playback trims toward a 0.65 peak (at most 12×),
-before chord dynamics and master volume. This corrects the quiet source recordings
-without changing the trade trigger timing or the soft-note envelopes.
+before note dynamics and master volume. This corrects the quiet source recordings
+while retaining the soft-note envelopes.
 Source, license and mapping records are in `public/samples/piano/`.
 Rebuild them with the local audio Python environment and `build-piano.py`.
 Samples prefetch when a market is selected. Piano and Pd load independently;
@@ -314,3 +318,22 @@ Safari captures prefer MP4/AAC. Headless WebKit with an iPhone viewport verified
 trade/replay output, suspension/resume, Share audio and shared score playback;
 Chromium passed too. These checks do not measure a physical iPhone's mute switch.
 Regression check: `node checks/audio-unlock.mjs`.
+
+## Selective piano and instrument-gated whisper (v58)
+
+`public/piano-policy.js` centralizes cumulative movement and quiet-note selection.
+Silent rejected candles are consumed once; they never replay on each rendering
+tick. Existing occasional arpeggios remain available only after significant
+price-triggered notes. Quiet notes never launch arpeggios or chords.
+
+Kokoro af_nicole runs at 0.78 speaking speed, followed by an authored band-envelope
+noise vocoder and a small articulation path. This is a whisper effect, not a new
+whisper-trained model. The generated sample peaks at 0.16 before listening volume
+and retains its warm stereo reverb. A separate music-only analyser contains piano
+and Pd, excluding coin voice and its reverb. Announcements require movement,
+playback and measured music RMS above 0.0005; silence closes the voice and tail.
+The global gain and listening slider are unchanged. Shared scores declare engine
+58; older score versions remain readable and use the current engine's rules.
+
+Syntax checks passed for the changed JavaScript. No new listening or runtime
+checks were run for this update.
