@@ -3,13 +3,19 @@
 AV turns observed cryptocurrency market behavior into a Pure Data instrument.
 The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
-## Envion-only instrument
+## Active instruments
 
-Envion 5.2 is the only active sound source. The original source, 44 samples,
+Envion 5.2 is the main sound source. The original source, 44 samples,
 19 envelope banks and authored effects run in the full Pure Data browser engine.
 ZERO100, polyrhythms, resonant banks, synthesized percussion, external Freeverb,
 external feedback delays and genotype are removed from the published host graph.
 Source studies under `native/` are archival; they are not loaded by the app.
+
+Above $1m market cap, an independent hardstyle kick can play occasional four-beat
+phrases with at least twelve beats of rest. Activity and pressure give each
+four-bar opportunity a 15–45% chance. Harmonic-string ambience is off by default;
+it can be restored explicitly under `pdata`. Each bundle can be removed there.
+The harmonic-string patch is original Pd synthesis, not CoDiCodec inference.
 
 Market cap sets tempo: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM.
 The market controls Envion's envelope sequence, playback speed, Nuke, grains, pan,

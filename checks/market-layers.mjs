@@ -13,11 +13,13 @@ for(const part of ['av-hardstyle','av-strings']){
 `;
  const h=await createEnvionHarness({entry,extraFiles:{[entry]:source}});
  try{
-  for(const [key,value] of Object.entries({tempo:100,tonic:48,texture:.6,ambience:0,run:1,'hardstyle-active':0}))h.pd.sendFloat(key,value);
+  for(const [key,value] of Object.entries({tempo:100,tonic:48,texture:.6,ambience:0,run:1,'hardstyle-active':0,'hardstyle-chance':100}))h.pd.sendFloat(key,value);
   assert.equal((await h.render(1)).peak,0);
   h.pd.sendFloat(part==='av-hardstyle'?'hardstyle-active':'ambience',1);
-  await h.render(4);const first=await h.render(3),later=await h.render(3);
-  assert.ok(first.rms>1e-5&&later.rms>1e-5,part+' sustains audio');
+  h.pd.sendFloat('seed',149);
+  const first=await h.render(2.8),rest=await h.render(5),later=await h.render(12);
+  assert.ok(first.rms>1e-5&&later.rms>1e-5,part+' produces repeated phrases');
+  if(part==='av-hardstyle')assert.ok(rest.rms<1e-6,'hardstyle leaves long rests between phrases');
   h.pd.sendFloat(part==='av-hardstyle'?'hardstyle-active':'ambience',0);await h.render(.3);assert.ok((await h.render(1)).peak<1e-9,part+' removal silences output');
   await h.assertClean();console.log(part,{first,later});
  }finally{await h.close();}

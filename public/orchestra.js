@@ -3,7 +3,7 @@ export function orchestraTempo(m){const cap=Number(m.context?.latestCap);if(!Num
 export const ORCHESTRA_LAYERS=['melody','ambience'];
 export const ORCHESTRA_BUNDLES={envion:['melody'],ambience:['ambience']};
 export function createOrchestraConductor(){
- let ticks=0,lastTime=null,level=0,enabled=true,strings=true;
+ let ticks=0,lastTime=null,level=0,enabled=true,strings=false;
  return {
   observe(name,value){if(name==='generation'&&Number.isFinite(value))ticks=Math.max(0,value);},
   setBundle(name,value){if(name==='envion')enabled=Boolean(value);if(name==='ambience')strings=Boolean(value);},

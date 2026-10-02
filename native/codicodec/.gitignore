@@ -1,0 +1,8 @@
+.venv/
+upstream/
+data/
+models/
+cache/
+runs/
+*.log
+__pycache__/
