@@ -5,7 +5,7 @@ function node(tag,text,className){const el=document.createElement(tag);if(text!=
 function safeImage(url){try{const parsed=new URL(url);return parsed.protocol==='https:'?parsed.href:null;}catch{return null;}}
 export function startTrending(onPick){
  const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),duration=document.getElementById('trending-duration');
- let generation=0,controller,timer,updated=null,offset=0,width=0,lastFrame=0;
+ let generation=0,controller,timer,updated=null,offset=0,width=0,lastFrame=0,initialPick=true;
  let hovered=false,focused=false,dragging=false;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const items=new Map();
@@ -68,6 +68,9 @@ export function startTrending(onPick){
      if(!next.has(key(item)))next.set(key(item),item);
     }
     items.clear();for(const [id,item] of next)items.set(id,item);updated=Date.now();render();
+    // Open the highest-ranked pool on first load. This is intentionally not an
+    // autoplay action: mobile browsers require a direct tap before audio starts.
+    if(initialPick&&items.size){initialPick=false;onPick([...items.values()][0],{initial:true,autoplay:false});}
     status.textContent=items.size+' coins · '+total+' trending pools · fetched '+new Date(updated).toLocaleTimeString()+(data.data.length<20||page===10?' · refresh every 5 min':' · loading more…');
     if(data.data.length<20)break;
    }
