@@ -71,7 +71,6 @@ export function createSignalMap(container){
   if(!latest.native&&group){const voice=nodes.get(group).querySelector(`[data-voice="${value}"]`);if(voice){voice.classList.remove('signal-pulse');void voice.offsetWidth;voice.classList.add('signal-pulse');}}
   if(name==='av-perc-voice'&&!latest.native)counts.percussion++;
   if(name==='av-output-left'||name==='av-output-right')set('output-level',`Pd L ${(eventState['av-output-left']??-100).toFixed(1)} / R ${(eventState['av-output-right']??-100).toFixed(1)} dBFS`);
-  if(!latest.native&&name==='note'){counts.note++;const b=nodes.get('rules');b.classList.remove('signal-pulse');void b.offsetWidth;b.classList.add('signal-pulse');}
   set(`DNA ${eventState['av-dna']??'—'} / rule ${eventState['av-codon']??'—'} / state ${eventState['av-phenotype']??'—'}`);
   container.querySelector('[data-events]').textContent=latest.native?`Native state sampled every 250 ms. Last melody: ${eventState.note??'—'} MIDI. Shared clock: ${eventState.generation??'—'}.`:`Received: ${counts.note} generative note events / ${counts.percussion} percussion envelope onsets. Shared clock: ${eventState.generation??'—'}.`;
  }
