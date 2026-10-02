@@ -17,56 +17,66 @@ export const MATH_FAMILIES=[
  {id:'build',name:'Chirp build',formula:'y = p − 1.2 + (.4 + .64p)sin(32πp²)',base:40,shape:.35,drive:1,sample:p=>[p-1.2+(.4+.64*p)*Math.sin(32*Math.PI*p*p),.15+.4*p]},
  {id:'drop',name:'Drop envelope',formula:'y = 4.7e⁻¹²ʳ − 1.9 + m/12',base:31,shape:.75,drive:1.7,sample:p=>{const b=p*8,r=fract(b);return [4.7*Math.exp(-12*r)-1.9+[0,0,-4,-2][Math.floor(b/2)%4]/12,Math.exp(-5*r)];}},
 ];
+export const MATH_SLOT_COUNT=4;
 const rhythm=[0,2,4,5,9],tonal=[1,3,6,7,8];
 export function mathIdentity(seed){
- const chosen=[rhythm[hash(seed)%rhythm.length],tonal[hash(seed^0xa53c)%tonal.length]];
- return chosen.map((index,slot)=>({...MATH_FAMILIES[index],slot,threshold:slot?10000000:1000000,
+ const r=hash(seed)%rhythm.length,t=hash(seed^0xa53c)%tonal.length;
+ const chosen=[rhythm[r],tonal[t],rhythm[(r+1+hash(seed^0x1717)%4)%5],tonal[(t+1+hash(seed^0xbebe)%4)%5]];
+ return chosen.map((index,slot)=>({...MATH_FAMILIES[index],slot,threshold:slot<2?1000000:10000000,
   curve:Array.from({length:161},(_,i)=>normalize(MATH_FAMILIES[index].sample(Math.min(.99999,i/160))[0]))}));
+}
+const UNLOCK_KEY='av.math-unlocks.v1';
+function readUnlocks(){
+ try{
+  const rows=JSON.parse(globalThis.localStorage?.getItem(UNLOCK_KEY)||'[]');
+  return new Map(Array.isArray(rows)?rows.filter(row=>Array.isArray(row)&&Number.isInteger(row[0])&&[1000000,10000000].includes(row[1])).slice(-64):[]);
+ }catch{return new Map();}
 }
 export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
  let seed=0,profile=mathIdentity(seed),enabled=true,beat=0,last=null,wasRunning=false;
- let slots=profile.map(()=>({enabled:true,entered:false,level:0}));
- const preferences=new Map();
- function silence(){for(let i=0;i<2;i++){send(`math-${i}-gate`,0);send(`math-${i}-level`,0);}}
+ let slots=profile.map(()=>({enabled:true,level:0}));
+ const preferences=new Map(),unlocks=readUnlocks();
+ function silence(){for(let i=0;i<MATH_SLOT_COUNT;i++){send(`math-${i}-gate`,0);send(`math-${i}-level`,0);}}
+ function observeCap(cap){
+  const tier=cap>=10000000?10000000:cap>=1000000?1000000:0;
+  if(tier<=(unlocks.get(seed)||0))return;
+  unlocks.delete(seed);unlocks.set(seed,tier);
+  if(unlocks.size>64)unlocks.delete(unlocks.keys().next().value);
+  try{globalThis.localStorage?.setItem(UNLOCK_KEY,JSON.stringify([...unlocks]));}catch{}
+ }
  return {
-  setSeed(value){preferences.set(seed,slots.map(s=>s.enabled));if(preferences.size>32)preferences.delete(preferences.keys().next().value);seed=Number(value)>>>0;profile=mathIdentity(seed);slots=profile.map((_,i)=>({enabled:preferences.get(seed)?.[i]??true,entered:false,level:0}));this.reset();},
-  reset(){beat=0;last=null;wasRunning=false;for(const slot of slots){slot.level=0;slot.entered=false;slot.activeSince=null;slot.phrase=null;slot.phraseChosen=false;slot.heard=false;}silence();},
+  setSeed(value){preferences.set(seed,slots.map(s=>s.enabled));if(preferences.size>64)preferences.delete(preferences.keys().next().value);seed=Number(value)>>>0;profile=mathIdentity(seed);slots=profile.map((_,i)=>({enabled:preferences.get(seed)?.[i]??true,level:0}));this.reset();},
+  // Transport reset clears audio, but does not forget a coin's reached tiers.
+  reset(){beat=0;last=null;wasRunning=false;for(const slot of slots)slot.level=0;silence();},
   setEnabled(value){enabled=Boolean(value);if(!enabled)silence();},
   setSlot(slot,value){if(!slots[slot])return;slots[slot].enabled=Boolean(value);if(!value){send(`math-${slot}-gate`,0);send(`math-${slot}-level`,0);}},
   frame(m={},options={}){
    const clock=Number(options.clock)||0,transport=Boolean(options.playing),running=transport&&options.ready!==false,elapsed=last===null?0:Math.max(0,clock-last),dt=Math.min(.1,elapsed);last=clock;
    const cap=Number(m.context?.latestCap)||0,rate=Math.max(0,Number(m.tradeRate)||0),fresh=clamp(m.fresh);
-   // This is the function phrase clock, not a simulated trade clock. Even at
-   // one trade per 30 seconds a full curve takes at most five seconds; the
-   // piano still receives only the actual incoming trade events.
-   if(running&&rate>0)beat+=Math.min(.25,elapsed)*(1.6+1.4*(1-Math.exp(-rate)));
+   // Remember observed live tiers, including observations made before Listen.
+   // Replay uses its historical cap, never a future live unlock.
+   if(!m.replay&&fresh>0&&Number.isFinite(cap))observeCap(cap);
+   const reached=m.replay?cap:(unlocks.get(seed)||0);
+   const unlocked=profile.map(pattern=>reached>=pattern.threshold);
+   const count=Math.max(1,slots.filter((slot,i)=>slot.enabled&&unlocked[i]).length);
+   // Once unlocked, curves keep moving on fresh market controls, even when
+   // individual trade events are unavailable. This does not trigger piano notes.
+   if(running&&fresh>0)beat+=Math.min(.25,elapsed)*(1.6+1.4*(1-Math.exp(-rate-clamp(m.activity))));
    if(!running&&wasRunning)silence();wasRunning=running;
    const views=profile.map((pattern,i)=>{
-    const state=slots[i];
-    if(cap>=pattern.threshold)state.entered=true;
-    if(cap<pattern.threshold*.88||!fresh)state.entered=false;
-    const emergence=state.entered?clamp((cap/pattern.threshold-.88)/1.12):0;
-    const allowed=enabled&&state.enabled&&running&&rate>0&&fresh>0&&state.entered;
-    // Two eight-beat windows in a 32-beat cycle, separated by rests. A seeded
-    // phrase decision further reduces density; no simultaneous full phrases.
-    const local=(beat+i*16)%32,phrase=Math.floor((beat+i*16)/32);
-    const chance=hash(seed^Math.imul(phrase+1,7919)^i)/4294967296;
-    if(state.phrase!==phrase){state.phrase=phrase;state.phraseChosen=!state.heard||chance<.35+.35*clamp(m.volume);state.activeSince=null;}
-    const inWindow=local<8&&state.phraseChosen;
-    if(!allowed||!inWindow)state.activeSince=null;
-    else state.activeSince??=clock;
-    const phraseOn=inWindow&&state.activeSince!==null&&clock-state.activeSince<5;
-    const phase=clamp(local/8,0,.99999),[raw,gate]=pattern.sample(phase),value=normalize(raw);
-    const target=allowed?(.18+.14*emergence)*fresh:0;
+    const state=slots[i],entered=unlocked[i];
+    const allowed=enabled&&state.enabled&&running&&fresh>0&&entered;
+    const emergence=clamp(cap/pattern.threshold-1);
+    const phase=fract(beat/8+i/4),[raw,gate]=pattern.sample(phase),value=normalize(raw);
+    const target=allowed?(.18+.14*emergence)*fresh/Math.sqrt(count):0;
     state.level+=(target-state.level)*(1-Math.exp(-dt/(target>state.level ? .12 : .35)));
     if(!running||!enabled||!state.enabled)state.level=0;
-    const audibleGate=allowed&&phraseOn?clamp(gate):0;
-    if(audibleGate>0&&state.level>.01)state.heard=true;
+    const audibleGate=allowed?clamp(gate):0;
     const pitch=clamp(pattern.base+(seed%5)+value*19,24,78);
     send(`math-${i}-pitch`,pitch);send(`math-${i}-cutoff`,350+value*2200);send(`math-${i}-shape`,pattern.shape);
     send(`math-${i}-drive`,pattern.drive);send(`math-${i}-level`,state.level);send(`math-${i}-gate`,audibleGate);
-    const status=!enabled||!state.enabled?'Muted':!transport?'Paused':!running?(options.error?'Audio unavailable':'Loading audio'):!cap?'Market cap unavailable':!state.entered?'Waiting for market cap':!rate||!fresh?'Waiting for trades':!phraseOn?'Rest':'Playing';
-    return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,enabled:enabled&&state.enabled,level:state.level,active:audibleGate>0&&state.level>.0001,phase,value,curve:pattern.curve,pitch,gate:audibleGate,status};
+    const status=!enabled||!state.enabled?'Muted':!transport?'Paused':!running?(options.error?'Audio unavailable':'Loading audio'):!entered?'Waiting for market cap':!fresh?'Waiting for fresh data':'Playing';
+    return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,unlocked:entered,enabled:enabled&&state.enabled,level:state.level,active:audibleGate>0&&state.level>.0001,phase,value,curve:pattern.curve,pitch,gate:audibleGate,status};
    });
    const view={playing:transport,seed,cap,globalEnabled:enabled,slots:views};onView(view);return view;
   },

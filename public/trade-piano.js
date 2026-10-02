@@ -30,7 +30,16 @@ export function marketResonance(cap){
 export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
  const downloaded=await preloadPianoSamples();
  const decoded=await Promise.allSettled(downloaded.map(async item=>({midi:item.midi,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
- const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
+ const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>{
+  const sample=result.value;
+  // The supplied soft samples peak at only 0.07–0.21. Match their playback
+  // headroom before the chord envelope/master instead of burying them under Pd.
+  let peak=0;
+  for(let channel=0;channel<sample.buffer.numberOfChannels;channel++){
+   for(const value of sample.buffer.getChannelData(channel))peak=Math.max(peak,Math.abs(value));
+  }
+  return {...sample,trim:peak>1e-5?Math.min(12,.65/peak):1};
+ });
  if(!samples.length)throw Error('This browser could not decode the piano samples');
  const input=ctx.createGain(),filter=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),master=ctx.createGain();
  filter.type='lowpass';filter.frequency.value=2600;filter.Q.value=.5;
@@ -66,7 +75,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
     const sample=samples.reduce((a,b)=>Math.abs(a.midi-midi)<=Math.abs(b.midi-midi)?a:b);
     const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi)/12);
     const duration=Math.min(10,source.buffer.duration/source.playbackRate.value);
-    gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(dynamics,time+.012);gain.gain.setTargetAtTime(0,time+duration-.2,.045);
+    gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(dynamics*sample.trim,time+.012);gain.gain.setTargetAtTime(0,time+duration-.2,.045);
     source.connect(gain);gain.connect(input);const voice={source,gain};voices.add(voice);source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(time+duration);
    }
    onVoice({id:event.id,notes,resonance:marketResonance(cap),at:Date.now()});return true;

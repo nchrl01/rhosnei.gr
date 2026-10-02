@@ -49,6 +49,9 @@ active voices and room tails; returning live never replays a backlog. Busy burst
 are limited to 48 simultaneous piano voices, replacing oldest tails as necessary.
 Shared volume and audio recording include both the piano and enabled Pd sources.
 The piano uses samples resampled to 24 kHz stereo PCM16 with up to ten-second tails.
+Decoded samples receive per-note playback trims toward a 0.65 peak (at most 12×),
+before chord dynamics and master volume. This corrects the quiet source recordings
+without changing the trade trigger timing or the soft-note envelopes.
 Source, license and mapping records are in `public/samples/piano/`.
 Rebuild them with the local audio Python environment and `build-piano.py`.
 Samples prefetch when a market is selected. Piano and Pd load independently;
@@ -61,32 +64,32 @@ appear beside the chart.
 
 ## Seeded math functions
 
-Two additional original Pd voices use bounded adaptations of the functions in
-the supplied Instagram reel. The token's chain/address seed consistently selects
-one rhythmic family (3+3+2, drift envelope, reverse kick, bouncing ball, drop) and
-one tonal family (Fourier series, tangent, wobble, heart, chirp). No video audio
-is bundled; these are interpretations, not identical reconstructions of its sound.
+Four original Pd voices use bounded adaptations of the functions in the supplied
+Instagram reel. The token's chain/address seed selects two distinct rhythmic
+families and two distinct tonal families. The first rhythm/tonal pair unlocks
+at $1m; the second pair at $10m. No video audio is bundled; these are
+interpretations, not identical reconstructions of its sound.
 
-The first slot enters at $1m and the second at $10m. Gain increases gradually
-toward twice that threshold, and a 12% hysteresis band avoids repeated switching.
-Unknown cap, missing trade cadence or stale market controls close the gates.
-Phrase speed maps observed trades per second into 1.6–3 phrase beats per second
-for these additional voices. Zero observed trades still closes their gates. This
-bounded internal clock prevents multi-minute gaps at sparse trade rates; it is
-not a claim about market trade frequency. Piano still responds to accepted events.
-Two eight-beat windows alternate within a 32-beat cycle, with rests and a
-seeded 35–70% phrase probability based on volume, after a guaranteed first eligible
-window for each voice. Gains start audibly at entry and grow with cap. A phrase lasts at most five
-seconds, even when trading is slow. No continuous ambient-string source is used.
+Once an observed live cap reaches a tier, that tier remains unlocked for that
+seed, even after cap falls or playback restarts. Up to 64 seed unlocks are saved
+in this browser's local storage, with an in-memory fallback if storage is blocked.
+This records observed milestones, not an assertion about unseen all-time highs.
+Replay uses its historical cap and never imports a future live unlock.
 
-The compact UI shows only the coin's selected two functions. Curve position and
-normalized value drive the same pitch/cutoff/gate controls sent to Pd at about
-30 Hz. Curves show pitch controls, not audio waveforms. Pd smooths pitch, gain,
-filter and timbre; the details show its measured RMS before master volume.
-If gate updates stop for 400 ms, Pd closes the voice in 15 ms.
+Unlocked functions repeat their eight-beat curves without probabilistic silent
+windows. Fresh market controls drive an internal 1.6–3 beats/second phrase clock;
+individual trades are not required for functions. Missing/stale market data still
+closes the audible gates. Piano continues to require decoded trade events.
+The four curves have staggered phases, and gain shares headroom across enabled,
+unlocked voices. No continuous ambient-string source is used.
+
+The compact UI shows all four selected functions and labels reached tiers as
+Unlocked. Curve position and normalized value drive the same pitch/cutoff/gate
+controls sent to Pd at about 30 Hz. Curves show pitch controls, not audio waveforms.
+Pd smooths pitch, gain, filter and timbre; details show its measured RMS before
+master volume. If gate updates stop for 400 ms, Pd closes the voice in 15 ms.
 Mute each slot on its card, or the complete Math functions bundle through `pdata`.
-Changing coins resets phase and clears sound. Historical candle-only regions do
-not fabricate trade cadence and therefore do not trigger these patterns.
+Changing coins resets phase and clears sound, retaining each coin's unlocks.
 
 Sources: `public/math-patterns.js`, `public/math-pattern-view.js`, and
 `public/patches/orchestra/av-math*.pd`. Rebuild with `python3 build-math-patterns.py`

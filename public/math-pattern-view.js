@@ -1,3 +1,4 @@
+import {MATH_SLOT_COUNT} from './math-patterns.js?v=51';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 280;
 const HEIGHT = 82;
@@ -91,7 +92,7 @@ function makeCard(onToggle) {
 
 /**
  * A view of the same control functions used by the audio engine.
- * update() accepts up to two selected slots. receive() accepts dBFS from Pd.
+ * update() accepts up to four selected slots. receive() accepts dBFS from Pd.
  * Nodes are retained on every update, including open details and keyboard focus.
  */
 export function createMathPatternView(container, {onToggle} = {}) {
@@ -106,7 +107,7 @@ export function createMathPatternView(container, {onToggle} = {}) {
   const seed = root.querySelector('.math-pattern-seed');
   const waiting = root.querySelector('.math-pattern-waiting');
   const cardsRoot = root.querySelector('.math-pattern-cards');
-  const cards = [makeCard(onToggle), makeCard(onToggle)];
+  const cards = Array.from({length:MATH_SLOT_COUNT},()=>makeCard(onToggle));
   for (const card of cards) {
     card.node.hidden = true;
     cardsRoot.append(card.node);
@@ -123,7 +124,7 @@ export function createMathPatternView(container, {onToggle} = {}) {
 
   function update(view = {}) {
     if (destroyed) return;
-    const slots = Array.isArray(view.slots) ? view.slots.slice(0, 2) : [];
+    const slots = Array.isArray(view.slots) ? view.slots.slice(0, MATH_SLOT_COUNT) : [];
     if (currentSeed !== view.seed) {
       currentSeed = view.seed;
       levels.clear();
@@ -145,7 +146,7 @@ export function createMathPatternView(container, {onToggle} = {}) {
       card.node.dataset.enabled = String(card.enabled);
       card.node.dataset.active = String(Boolean(slot.active && view.playing && card.enabled));
       text(card.name, slot.name || 'Market function');
-      text(card.threshold, number(slot.threshold) > 0 ? `From ${money(slot.threshold)} market cap` : 'Market driven');
+      text(card.threshold, number(slot.threshold) > 0 ? `${slot.unlocked ? 'Unlocked' : 'Unlocks'} · ${money(slot.threshold)}` : 'Market driven');
       card.toggle.disabled = view.globalEnabled === false;
       card.toggle.title = view.globalEnabled === false ? 'Restore the math functions bundle in pdata first.' : '';
       text(card.toggle, card.enabled ? 'Sound on' : 'Sound off');
