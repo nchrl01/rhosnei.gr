@@ -1,4 +1,4 @@
-import {validArp} from './ai-instruments.js?v=56';
+import {validArp} from './ai-instruments.js?v=57';
 import {requestPlaybackMode} from './audio-unlock.js?v=55';
 const VERSION=1;
 export function encodeScore(score){

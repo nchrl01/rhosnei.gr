@@ -1,3 +1,4 @@
+import {createVoiceReverb} from './voice-space.js?v=57';
 const KEY='av.ai-arps.v1';
 export function validArp(pattern){return Array.isArray(pattern)&&pattern.length>=3&&pattern.length<=16&&pattern.every(row=>Array.isArray(row)&&row.length===2&&Number.isInteger(row[0])&&row[0]>=0&&row[0]<16&&Number.isInteger(row[1])&&row[1]>=48&&row[1]<=83)&&pattern.every((row,i)=>!i||row[0]>pattern[i-1][0]);}
 export function seededArp(seed){const notes=seed%2?[60,67,63,72,67,63,60,67]:[60,64,67,72,67,64,60,67];return notes.map((n,i)=>[i,n]);}
@@ -28,12 +29,12 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
  };
 }
 export function createCoinVoice({onStatus=()=>{}}={}){
- let ctx,destination,master,input,filter,wet,room,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=false,source=null,lastClock=null,elapsed=0,next=12,cache=new Map(),retryAt=0;
+ let ctx,destination,master,input,space,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=false,source=null,lastClock=null,elapsed=0,next=12,cache=new Map(),retryAt=0;
  const runner=backgroundModel('./voice-ai-worker.js?v=56',onStatus,240000);
- function hush(){if(source){try{source.stop();}catch{}source.disconnect();source=null;}if(room){const impulse=room.buffer;room.buffer=null;room.buffer=impulse;}}
+ function hush(){if(source){try{source.stop();}catch{}source.disconnect();source=null;}space?.clear();}
  function update(){if(master&&ctx)master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.03);}
  return {
-  attach(context,out){if(ctx===context)return;ctx=context;destination=out;input=ctx.createGain();filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=5200;master=ctx.createGain();master.gain.value=0;wet=ctx.createGain();wet.gain.value=.09;room=ctx.createConvolver();const impulse=ctx.createBuffer(1,ctx.sampleRate*1.7,ctx.sampleRate),data=impulse.getChannelData(0);let r=91;for(let i=0;i<data.length;i++){r=(Math.imul(r,1664525)+1013904223)>>>0;data[i]=(r/2147483648-1)*Math.exp(-i/ctx.sampleRate*4)*.2;}room.buffer=impulse;input.connect(filter);filter.connect(master);filter.connect(room);room.connect(wet);wet.connect(master);master.connect(destination);update();},
+  attach(context,out){if(ctx===context)return;ctx=context;destination=out;master=ctx.createGain();master.gain.value=0;master.connect(destination);space=createVoiceReverb(ctx,master);input=space.input;update();},
   setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=12+seed%8;onStatus('Coin voice · loads with Listen');},
   setMaster(value){volume=Math.max(0,Math.min(1,Number(value)||0));update();},
   setEnabled(value){enabled=Boolean(value);update();if(!enabled)hush();else if(running)void this.prepare();},
@@ -58,6 +59,6 @@ export function createCoinVoice({onStatus=()=>{}}={}){
    if(elapsed<next||source)return;
    source=ctx.createBufferSource();source.buffer=buffer;const spoken=source;source.onended=()=>{spoken.disconnect();if(source===spoken)source=null;};source.connect(input);source.start();next=elapsed+110+seed%50;
   },
-  close(){this.setRunning(false);runner.stop();epoch++;buffer=null;loading=false;for(const n of [input,filter,wet,room,master])n?.disconnect();ctx=null;},
+  close(){this.setRunning(false);runner.stop();epoch++;buffer=null;loading=false;space?.close();space=null;master?.disconnect();master=null;input=null;ctx=null;},
  };
 }
