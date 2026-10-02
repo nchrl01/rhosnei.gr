@@ -84,6 +84,7 @@ export async function checkEnvion() {
   assert.ok(h.events.some(e=>e.receiver==='av-envion-sample-frames'&&e.value>1000),'MAIN PRESET must load original audio');
   h.pd.sendFloat('tempo',120);h.pd.sendFloat('seed',1917);h.pd.sendFloat('activity',1);h.pd.sendFloat('energy',.8);h.pd.sendFloat('motion',.5);h.pd.sendFloat('texture',.5);h.pd.sendFloat('master',.8);h.pd.sendFloat('run',1);h.pd.sendFloat('melody',.5);
   for(const k of ['tones','poly','filtered','percussion','space'])h.pd.sendFloat(k,0);
+  applyEnvionMarket(h.pd,h.namespace,{motion:.5,activity:.8,texture:.5,volume:.8,balance:.5},120);
   await h.render(3); // Discard initial gain ramps and any startup tails.
   const melody=await h.render(5);assert.ok(melody.rms>1e-6,'original Envion alone must produce audio');
   h.pd.sendFloat('av-envion-ui-c0-72',2.5);await h.flush();assert.ok(h.events.some(e=>e.receiver==='av-envion-value-c0-72'&&e.value===2.5),'stretch value must traverse original Pd control');

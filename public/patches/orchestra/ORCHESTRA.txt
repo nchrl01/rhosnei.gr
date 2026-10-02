@@ -1,28 +1,26 @@
-AV / ENVION ONLY
+AV / MARKET INSTRUMENT
 
-The browser runs four Pd sources under one market clock: the supplied original Envion 5.2 source, Gameta strings and pads, ZERO100 tonal voices, and Perc Generator percussion.
-envelope banks, Nuke, grain processing, stereo routing and authored effects.
-No ZERO100 tonal bank, polyrhythm bank, resonant bank, Perc Generator,
-external Freeverb, external feedback delay, pad or genotype is instantiated.
+Active sources: original Envion 5.2, original Pd harmonic-string ambience,
+and an independently authored hardstyle kick inspired by GrundTon's demo:
+https://www.youtube.com/watch?v=v5btDT3sjao
+The kick uses pitch decay and successive filtering/distortion stages; it is
+an approximation, not the original patch or recorded video audio.
 
-Four host patches: market.pd, av-envion.pd, av-conductor.pd and av-random.pd.
-The clock is a Pd metro: each sixteenth note lasts 15000 / BPM milliseconds.
-Market cap: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM.
-Logarithmic interpolation, bounded at 10 and 200; missing cap uses 120 BPM.
-Activity drives original Envion row/speed randomizer probability.
-Activity, traded volume and signal freshness determine a smoothed Envion gain.
-Volatility controls Nuke filtering; activity controls grains; buy/sell balance
-controls pan; traded volume controls echo; liquidity controls Envion's own
-reverb wet amount (up to 25%) and decay. Original authored effects remain.
-Chart pan/zoom do not schedule notes or change fixed historical context.
+Hardstyle plays on quarter notes when available market cap is >= $1,000,000.
+Below the threshold, unavailable cap or stale signals close its trigger gate.
+History playback uses the chart's estimated historical capitalization.
+Market cap tempo: $10k=10 BPM, $1m=100 BPM, $10m=200 BPM.
 
-Envion stereo -> market gain -> run gate -> listening volume -> clip -> output.
-Listening volume starts at 50% on a normalized 0..1 slider, available from the
-fixed upper-left Volume button. Changes use a 50 ms Pd ramp; zero mutes output.
-Pause also stops the source clocks and mutes the host output.
+Harmonic strings use sustained partials, slow detuning and stereo delay.
+Market data controls register, brightness and level. This is NOT CoDiCodec
+inference. The referenced custom violin checkpoint and samples were unavailable:
+https://www.youtube.com/watch?v=DqQvzOBhg8E
+https://github.com/moiseshorta/CoDiCodec-Flow
 
-The hidden Pure Data view opens/closes by submitting pdata in the address box.
-Desktop output remains disabled because the browser file bridge is required.
-Envion source, assets, licenses and browser adaptations:
-../envion/PORT-NOTES.txt and ../envion/LICENSE.txt.
-Rebuild: python3 build-orchestra.py. Browser host version: 6.
+Type pdata into the address box to remove/restore each complete sound bundle.
+Pause and listening volume apply to the entire stereo mix.
+Gameta, ZERO100 and Perc Generator are removed from the published engine.
+
+Rebuild: python3 build-strings.py; python3 build-celebration.py;
+python3 build-orchestra.py. Tests: node checks/market-layers.mjs.
+Envion provenance: ../envion/PORT-NOTES.txt and ../envion/LICENSE.txt.

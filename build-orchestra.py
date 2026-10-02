@@ -1,4 +1,4 @@
-"""Build the original Envion with market clock and stereo listening volume."""
+"""Build Envion, harmonic strings and market-cap-gated hardstyle beats."""
 from pathlib import Path
 import json
 import sys
@@ -11,7 +11,7 @@ pd_patch.ROOT=ROOT
 Patch=pd_patch.Patch
 
 # Only these host patches belong to the Envion-only browser instrument.
-active={'av-random.pd','av-conductor.pd','av-envion.pd','market.pd'}
+active={'av-random.pd','av-conductor.pd','av-envion.pd','av-hardstyle.pd','av-strings.pd','market.pd'}
 for path in ROOT.glob('*.pd'):
     if path.name not in active: path.unlink()
 
@@ -75,17 +75,21 @@ p.chain(threshold,change,audible,value,p.obj('s av-envion-voice'))
 p.write('av-envion')
 
 
-p=Patch('AV / original Envion only / market gain and stereo listening volume')
+p=Patch('AV / Envion + harmonic strings + one-million hardstyle / stereo master')
 p.obj('av-conductor');source=p.obj('av-envion')
+beats=p.obj('av-hardstyle')
+strings=p.obj('av-strings')
 level=p.signal('melody');running=p.signal('run');master=p.signal('master')
 for channel,side in enumerate(['left','right']):
     market=p.obj('*~');p.link(source,market,out=channel);p.link(level,market,inp=1)
-    gate=p.obj('*~');p.link(market,gate);p.link(running,gate,inp=1)
+    mixed=p.obj('+~');p.link(market,mixed);p.link(beats,mixed,out=channel,inp=1)
+    p.link(strings,mixed,out=channel)
+    gate=p.obj('*~');p.link(mixed,gate);p.link(running,gate,inp=1)
     output=p.obj('*~');p.link(gate,output);p.link(master,output,inp=1)
     limit=p.obj('clip~ -0.85 0.85');p.chain(output,limit,p.obj('dac~ '+str(channel+1)))
     p.chain(limit,p.obj('s~ av-output-'+str(channel)))
     p.chain(limit,p.obj('env~ 4096'),p.obj('- 100'),p.obj('s av-output-'+side))
 p.write('market')
 files=sorted(active)
-(ROOT/'manifest.json').write_text(json.dumps({'version':8,'entry':'market.pd','files':files,'layers':['melody']},indent=2)+'\n')
-print('Built Envion-only instrument:',len(files),'host Pd files')
+(ROOT/'manifest.json').write_text(json.dumps({'version':11,'entry':'market.pd','files':files,'layers':['melody','ambience','hardstyle']},indent=2)+'\n')
+print('Built market instrument:',len(files),'host Pd files')

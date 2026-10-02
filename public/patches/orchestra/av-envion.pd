@@ -36,7 +36,7 @@
 #X obj 685 55 env~ 1024;
 #X obj 685 95 env~ 1024;
 #X obj 685 135 max;
-#X obj 685 175 r envion;
+#X obj 685 175 r melody;
 #X obj 685 215 dbtorms;
 #X obj 685 255 *;
 #X obj 685 295 > 0.00316228;

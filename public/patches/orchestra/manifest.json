@@ -1,21 +1,17 @@
 {
-  "version": 9,
+  "version": 11,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
-    "av-genome.pd",
-    "av-orchestra-tables.pd",
-    "av-pad.pd",
-    "av-pluck.pd",
     "av-envion.pd",
-    "av-envion-bundle.pd",
+    "av-hardstyle.pd",
     "av-random.pd",
-    "av-sequencer.pd",
-    "av-zero-ensemble.pd",
+    "av-strings.pd",
     "market.pd"
-    ,"zp-band.pd","zp-clock.pd","zp-cross.pd","zp-delay.pd","zp-lane.pd","zp-perc-clock.pd","zp-perc-markov.pd","zp-perc-voice.pd","zp-perc.pd","zp-poly.pd","zp-tone.pd"
   ],
   "layers": [
-    "melody", "pad", "tones", "poly", "filtered", "percussion", "envion"
+    "melody",
+    "ambience",
+    "hardstyle"
   ]
 }

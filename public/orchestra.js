@@ -1,17 +1,19 @@
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
 export function orchestraTempo(m){const cap=Number(m.context?.latestCap);if(!Number.isFinite(cap)||cap<=0)return 120;if(cap<=10000)return 10;if(cap>=10000000)return 200;return Math.round(cap<=1000000?10+90*Math.log10(cap/10000)/2:100+100*Math.log10(cap/1000000));}
-export const ORCHESTRA_LAYERS=['melody','pad','tones','poly','filtered','percussion','envion'];
-export const ORCHESTRA_BUNDLES={gameta:['melody','pad'],zero100:['tones','poly','filtered'],percussion:['percussion'],envion:['envion']};
-export function orchestraTargets(input,connected,phrase=0){const m=Object.fromEntries(['activity','volume','motion','texture','fresh','balance'].map(key=>[key,unit(input[key])]));const activity=m.activity*(connected?1:m.fresh),budget=.9*Math.sqrt(Math.max(.02,activity)*Math.max(.02,m.volume))*m.fresh;const roles=[[1.15,1.1,.9,.75,.75,.9,.95],[.9,1.1,1.15,.9,.8,.9,1.1],[1,.8,.8,1.2,1.15,1.15,.85],[1.05,1.15,1,.85,.7,.8,1]][Math.floor(phrase)%4];const weights=[.35+.8*m.motion,.25+.7*m.texture*(1-.5*m.motion),.2+.6*m.texture*(1-.35*m.motion),.12+.65*m.motion*m.activity,.08+.45*m.motion*m.volume,.2+.65*m.activity+.2*m.motion,.5+.65*m.texture+.25*m.volume].map((value,index)=>value*roles[index]);const total=weights.reduce((a,b)=>a+b,0);return {...Object.fromEntries(ORCHESTRA_LAYERS.map((name,index)=>[name,budget*weights[index]/total])),space:.7*m.texture*m.fresh};}
-export function orchestraParameters(input){const m=Object.fromEntries(['activity','volume','motion','texture','fresh','balance'].map(key=>[key,unit(input[key])]));return {swing:.5+.18*m.motion*(2*m.balance-1),density:.08+.85*m.activity,duration:230-155*m.volume,decay:34-24*m.texture,divider:16-12*m.motion,drive:2+22*m.motion,feedback:.12+.45*m.texture,'delay-left':128+128*m.texture,'delay-right':128+256*m.texture,'perc-density':(.08+1.3*m.activity+.3*m.volume)*m.fresh,'perc-decay':50+320*m.texture,'perc-color':.1+.85*m.motion,'perc-delay':250+500*m.texture,'perc-feedback':.08+.44*m.texture};}
+export const ORCHESTRA_LAYERS=['melody','ambience'];
+export const ORCHESTRA_BUNDLES={envion:['melody'],ambience:['ambience']};
 export function createOrchestraConductor(){
- let generation=0,lastTime=null;const levels=Object.fromEntries(ORCHESTRA_LAYERS.map(name=>[name,0]));const bundles={gameta:true,zero100:true,percussion:true,envion:true};
- const applyBundles=target=>{for(const [bundle,layers] of Object.entries(ORCHESTRA_BUNDLES))if(!bundles[bundle])for(const layer of layers)target[layer]=0;return target;};
- return {observe(name,value){if(name==='generation'&&Number.isFinite(value))generation=Math.max(0,value);},setBundle(name,enabled){if(Object.hasOwn(bundles,name))bundles[name]=Boolean(enabled);},bundleState(){return {...bundles};},update(input,connected,now=performance.now()){
-  const m=Object.fromEntries(['activity','volume','motion','texture','fresh','balance'].map(key=>[key,unit(input[key])]));const activity=m.activity*(connected?1:m.fresh),budget=.86*Math.sqrt(Math.max(.02,activity)*Math.max(.02,m.volume))*m.fresh;
-  const roles=[[1.15,1.1,.9,.75,.75,.9,.95],[.9,1.1,1.15,.9,.8,.9,1.1],[1,.8,.8,1.2,1.15,1.15,.85],[1.05,1.15,1,.85,.7,.8,1]][Math.floor(generation/32)%4];
-  const target=applyBundles(orchestraTargets(m,connected,Math.floor(generation/32)));
-  const elapsed=lastTime===null?150:Math.max(0,Math.min(1000,now-lastTime));lastTime=now;const alpha=1-Math.exp(-elapsed/650);for(const name of ORCHESTRA_LAYERS)levels[name]+=(target[name]-levels[name])*alpha;const intensity=m.activity*.4+m.volume*.35+m.motion*.25;
-  return {levels:{...levels},parameters:orchestraParameters(m),phrase:Math.floor(generation/32)%4,state:m.fresh<.1?'SIGNAL FADING':intensity>.65?'TURBULENT':intensity>.35?'GATHERING':'SPARSE'};
- },reset(){generation=0;lastTime=null;for(const name of ORCHESTRA_LAYERS)levels[name]=0;}};
+ let ticks=0,lastTime=null,level=0,enabled=true,strings=true;
+ return {
+  observe(name,value){if(name==='generation'&&Number.isFinite(value))ticks=Math.max(0,value);},
+  setBundle(name,value){if(name==='envion')enabled=Boolean(value);if(name==='ambience')strings=Boolean(value);},
+  update(m,connected,now=performance.now()){
+   const activity=unit(m.activity)*(connected?1:unit(m.fresh));
+   const target=enabled?.9*Math.sqrt(activity*unit(m.volume))*unit(m.fresh):0;
+   const elapsed=lastTime===null?150:Math.max(0,Math.min(1000,now-lastTime));lastTime=now;
+   level+=(target-level)*(1-Math.exp(-elapsed/650));
+   return {levels:{melody:level,ambience:strings?(.18+.3*unit(m.texture)+.12*unit(m.volume))*unit(m.fresh):0},parameters:{},phrase:Math.floor(ticks/32)%4,state:unit(m.fresh)<.1?'SIGNAL FADING':unit(m.pressure)>.65?'INTENSE':activity>.35?'ACTIVE':'SPARSE'};
+  },
+  reset(){ticks=0;lastTime=null;level=0;},
+ };
 }
