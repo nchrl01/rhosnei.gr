@@ -18,11 +18,11 @@ export function pathAt(path,x){
  return {x,y:a.y+(b.y-a.y)*t};
 }
 export function createMarketSketch(container,chart){
- container.innerHTML=`<div class="sketch-heading"><span>MARKET / SONIC SKETCH</span><span data-sketch-state>MARKET ONLY · SOUND PAUSED</span></div><canvas aria-label="Dynamic market path with real sound activity and measured audio spectrum" role="img"></canvas><div class="sketch-readings"><span data-sketch-path>No price path yet</span><span data-sketch-audio>Audio awaiting playback</span></div><p>Price → path · volume → marks · Pd notes → traces · measured sound → spectrum. The clock marker scans the visible chart path; it does not replay historical prices.</p>`;
+ container.innerHTML=`<div class="sketch-heading"><span>MARKET / SONIC SKETCH</span><span data-sketch-state>MARKET ONLY · SOUND PAUSED</span></div><canvas aria-label="Dynamic market path with real sound activity and measured audio spectrum" role="img"></canvas><div class="sketch-readings"><span data-sketch-path>No price path yet</span><span data-sketch-audio>Audio awaiting playback</span></div><p>Price → path · volume → marks · Sound voices → traces · measured sound → spectrum. The clock marker scans the visible chart path; it does not replay historical prices.</p>`;
  const canvas=container.querySelector('canvas'),ctx=canvas.getContext('2d');
  const stateText=container.querySelector('[data-sketch-state]'),pathText=container.querySelector('[data-sketch-path]'),audioText=container.querySelector('[data-sketch-audio]');
  let width=640,height=320,analyser=null,spectrum=null,wave=null,playing=false,native=false,clock=0,metrics={},voices=[],lastTrade=0,tradeAt=-Infinity,lastDraw=0,path=[],pathVersion='',audioDb=-100,disposed=false;
- const groups={'av-string-voice':['strings',20],'av-pad-voice':['pads',6],'av-tone-voice':['tones',32],'av-poly-voice':['poly',12],'av-perc-voice':['percussion',32]};
+ const groups={'av-wersi-voice':['cartridge',20],'av-string-voice':['strings',20],'av-pad-voice':['pads',6],'av-tone-voice':['tones',32],'av-poly-voice':['poly',12],'av-perc-voice':['percussion',32]};
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const resize=new ResizeObserver(entries=>{width=Math.max(240,entries[0].contentRect.width);height=width<500?270:340;const dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.height=height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);});resize.observe(canvas);
  function update(input){playing=input.playing;native=input.native;metrics=input.m;stateText.textContent=playing?(native?'PD CLOCK + NATIVE METERS':'PD CLOCK + MEASURED AUDIO'):'MARKET ONLY · SOUND PAUSED';}

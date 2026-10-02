@@ -91,3 +91,44 @@ leaves the market path live. Reduced-motion users receive slower redraws and
 no expanding trade rings. No random animation or new sound generator is added.
 The implementation is independently written, inspired by SonicSketch’s drawn
 path/spectrum concept; its source, samples and synthesis are not included.
+
+## Wersi ROM 1 cartridge part
+
+Expand **WERSI ROM 1 · cartridge sounds**, choose your 16 KB MK1 .BIN file,
+then press Listen with Browser Pd. The import checks the header, pointers,
+linked voices and checksum. The verified supplied ROM has SHA-256
+`599d5e9d83355bb15ee3b36c938c11cfef63bc98ac3d745beb89c4e1879754a3`.
+The browser remembers it in IndexedDB; Unload removes that stored bank.
+The original ROM is never uploaded or bundled in the public site.
+
+Twenty patch definitions are decoded, including their linked layers and four
+waveform registers (64/64/32/16 samples per WAVE block). A bank of band-limited
+Web Audio oscillators uses the original cycles; DC removal and normalization
+are playback choices. These are not full sampled notes. Register boundaries,
+detune units, amplitude envelopes, low-pass filtering and effects are AV
+approximations. ROM amplitude/frequency envelopes, fixed-formant processing,
+keyboard hardware timing and original analog circuitry are not emulated.
+
+In Browser Pd mode the optional cartridge takes 20% of the existing shared
+market gain budget, with the original six parts taking 80%. Gameta's actual
+note events trigger it, with the same pitch and clock. Movement and liquidity
+choose a patch family; token seed and musical phrase distribute patches.
+Liquidity shapes sustain and cutoff, and volume shapes note velocity.
+A shared browser compressor controls combined output peaks. The Pd branch
+meters exclude these Web Audio voices; the market sketch's spectrum includes
+both branches. Without a cartridge, or in Native Pd mode, the original
+orchestra gains stay intact. Native cartridge synthesis is not implemented.
+
+The audition workbench plays a separate C4 note for each patch, independently
+of the market. It uses the current listening volume and does not start the
+orchestra. This audition is not included in the orchestra recording.
+
+For this workspace only, `.local/wersi-rom1.bin` is the supplied private copy.
+The loopback server exposes it at `/cartridge/rom1` for local preload. `.local/`
+is excluded from Git and is outside the published public folder. Restart the
+local server after updating its code. Public Pages users use the file input.
+
+Cartridge binary-layout reference: https://github.com/ijsf/DMS-Toolbox.
+The browser decoder and synthesizer here are independently implemented;
+DMS-Toolbox code is not bundled. No GUI controls or desktop screenshots were
+used during this integration.

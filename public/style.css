@@ -31,3 +31,9 @@ footer{display:flex;flex-wrap:wrap;gap:16px;border-top:1px solid #111;padding-to
 .market-sketch canvas{display:block;width:100%;height:340px}
 .market-sketch p{margin:0;padding:0 16px 14px;font:10px/1.6 monospace;color:#777;max-width:none}
 @media(max-width:600px){.sketch-heading,.sketch-readings{flex-direction:column;gap:5px}.market-sketch canvas{height:270px}}
+
+.wersi-cartridge{border-top:1px solid #ddd;border-bottom:1px solid #ddd;margin:16px 0;padding:12px 0;font:11px/1.6 monospace}
+.wersi-cartridge summary{cursor:pointer;color:#111;letter-spacing:.05em}.wersi-cartridge p{color:#777;font:10px/1.6 monospace;margin:10px 0}
+.cartridge-file{display:block;color:#777}.cartridge-file input{display:block;margin-top:8px;max-width:100%;font:11px monospace}
+.cartridge-audition{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.cartridge-audition label{display:flex;flex-direction:column;font-size:9px;color:#777;gap:6px}.cartridge-audition select{min-width:150px}
+.cartridge-now{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:10px}.cartridge-now[hidden]{display:none}.cartridge-now meter{width:90px;height:5px;margin-left:auto}

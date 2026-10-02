@@ -13,6 +13,7 @@ http.createServer(async(req,res)=>{
  try{
   const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
   const connected=()=>Date.now()-lastPd<3000;
+  if(path==='/cartridge/rom1'){if(req.method!=='GET'){res.writeHead(405);res.end();return;}try{const data=await readFile(resolve('.local/wersi-rom1.bin'));res.writeHead(200,{'Content-Type':'application/octet-stream','Cache-Control':'no-store'});res.end(data);}catch{res.writeHead(404);res.end('Load your cartridge file in the website');}return;}
   if(path==='/pd/status'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({connected:connected(),orchestra:Date.now()-lastOrchestra<3000,state:pdState}));return;}
   if(path==='/pd/control'){
    // Browser requests must originate from this local page, never a remote website.
