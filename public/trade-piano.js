@@ -1,21 +1,40 @@
 // CC0 sampled piano. Only an explicit trade() call creates a chord.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
+let sampleDownload;
+async function loadSampleAsset(path,format){
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
+ try{
+  const response=await fetch('samples/piano/'+path+'?v=47',{signal:controller.signal});
+  if(!response.ok)throw Error('Cannot load piano asset '+path);
+  return await response[format]();
+ }finally{clearTimeout(timeout);}
+}
+// Start downloading when a market is selected, before the audio gesture. A
+// missing sample must not silence all the other, successfully loaded notes.
+export function preloadPianoSamples(){
+ if(!sampleDownload)sampleDownload=(async()=>{
+  const manifest=await loadSampleAsset('manifest.json','json');
+  const results=await Promise.allSettled(manifest.files.map(async item=>{
+   return {...item,bytes:await loadSampleAsset(item.file,'arrayBuffer')};
+  }));
+  const samples=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
+  if(!samples.length)throw Error('Piano samples unavailable');
+  return samples;
+ })().catch(error=>{sampleDownload=null;throw error;});
+ return sampleDownload;
+}
 export function marketResonance(cap){
  const value=Number(cap);
  return value>0&&Number.isFinite(value)?unit((Math.log10(value)-4)/4):0;
 }
 export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
- const response=await fetch('samples/piano/manifest.json?v=47');
- if(!response.ok)throw Error('Piano samples unavailable');
- const manifest=await response.json();
- const samples=await Promise.all(manifest.files.map(async item=>{
-  const response=await fetch('samples/piano/'+item.file+'?v=47');
-  if(!response.ok)throw Error('Cannot load piano sample '+item.midi);
-  return {...item,buffer:await ctx.decodeAudioData(await response.arrayBuffer())};
- }));
+ const downloaded=await preloadPianoSamples();
+ const decoded=await Promise.allSettled(downloaded.map(async item=>({midi:item.midi,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
+ const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
+ if(!samples.length)throw Error('This browser could not decode the piano samples');
  const input=ctx.createGain(),filter=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),master=ctx.createGain();
  filter.type='lowpass';filter.frequency.value=2600;filter.Q.value=.5;
- dry.gain.value=.8;wet.gain.value=0;master.gain.value=0;
+ dry.gain.value=.8;wet.gain.value=.2;master.gain.value=0;
  const impulse=ctx.createBuffer(2,Math.ceil(ctx.sampleRate*4.5),ctx.sampleRate);
  let noise=1917;
  for(let channel=0;channel<2;channel++){
@@ -33,7 +52,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
   setRunning(value){running=Boolean(value);updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
   reset(value=seed){clear();seed=Number(value)>>>0;index=0;},
-  resonance(cap){const r=marketResonance(cap);filter.Q.setTargetAtTime(.5+2*r,ctx.currentTime,.6);wet.gain.setTargetAtTime(.4*r,ctx.currentTime,.6);return r;},
+  resonance(cap){const r=marketResonance(cap);filter.Q.setTargetAtTime(.5+2*r,ctx.currentTime,.6);wet.gain.setTargetAtTime(.2+.22*r,ctx.currentTime,.6);return r;},
   trade(event,cap){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);

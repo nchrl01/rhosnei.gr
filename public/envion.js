@@ -384,6 +384,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     },
     async attach(runtime,audioContext,files) {
       pd=runtime;context=audioContext;generation++;staged.clear();loads.clear();requests.clear();
+      const epoch=generation;
       for(const path of Object.keys(files))staged.add(path);
       for(const receiver of model.receivers)subscriptions.push(pd.subscribe(receiver,message=>view.receive(receiver,message.values)));
       subscriptions.push(pd.subscribeScopes(({channels})=>{
@@ -398,14 +399,17 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       pd.sendBang('av-envion-identify');
       // Source loadbang clears sample arrays after 2 ms. MAIN PRESET follows it.
       await new Promise(resolve=>setTimeout(resolve,25));
+      if(pd!==runtime||generation!==epoch)return false;
       await new Promise((resolve,reject)=>{
         const timer=setTimeout(()=>{off();reject(Error('Envion default sample did not finish loading'));},15000);
         const off=pd.subscribe('av-envion-sample-frames',message=>{if(Number(message.values[0])>0){clearTimeout(timer);off();resolve();}});
         pd.sendBang('av-envion-main-preset');
       });
+      if(pd!==runtime||generation!==epoch)return false;
       if(!namespace)throw Error('Envion source did not announce its namespace');
       clocks();pd.sendFloat('av-envion-ready',1);initialized=true;
       status();
+      return true;
     },
     setRunning(value){running=!!value;view.setRunning(running);clocks(true);if(!running){pd?.sendBang('av-envion-hard-stop');pd?.sendBang('av-envion-ui-c44-1');}status();},
     market(m,tempo){

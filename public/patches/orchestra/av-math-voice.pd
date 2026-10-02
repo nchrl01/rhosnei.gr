@@ -37,8 +37,8 @@
 #X obj 25 630 lop~ 900;
 #X obj 25 665 hip~ 25;
 #X obj 915 90 r math-\$1-level;
-#X obj 915 125 clip 0 0.12;
-#X obj 915 160 pack f 120;
+#X obj 915 125 clip 0 0.4;
+#X obj 915 160 pack f 60;
 #X obj 915 195 line~;
 #X obj 1100 90 r math-\$1-gate;
 #X obj 1100 125 clip 0 1;
@@ -62,12 +62,12 @@
 #X msg 1100 435 1;
 #X obj 1100 470 s math-\$1-drive;
 #X obj 25 780 *~;
-#X obj 25 815 *~ 0.32;
+#X obj 25 815 *~ 0.55;
 #X obj 25 910 outlet~;
 #X obj 250 815 env~ 1024 512;
 #X obj 250 850 - 100;
 #X obj 250 885 s math-\$1-meter;
-#X text 575 630 Measured output RMS dB: -100 = silence. Maximum level 0.12 x trim 0.32.;
+#X text 575 630 Measured output RMS dB: -100 = silence. Maximum level 0.4 x trim 0.55.;
 #X text 575 665 Seed changes and run=0 clear the envelope. A voice needs new market controls to sound again.;
 #X text 575 700 No gate updates for 400 ms -> fade to silence in 15 ms.;
 #X connect 2 0 3 0;

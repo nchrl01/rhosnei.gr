@@ -30,13 +30,16 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
  function silence(){for(let i=0;i<2;i++){send(`math-${i}-gate`,0);send(`math-${i}-level`,0);}}
  return {
   setSeed(value){preferences.set(seed,slots.map(s=>s.enabled));if(preferences.size>32)preferences.delete(preferences.keys().next().value);seed=Number(value)>>>0;profile=mathIdentity(seed);slots=profile.map((_,i)=>({enabled:preferences.get(seed)?.[i]??true,entered:false,level:0}));this.reset();},
-  reset(){beat=0;last=null;wasRunning=false;for(const slot of slots){slot.level=0;slot.entered=false;slot.activeSince=null;slot.phrase=null;slot.phraseChosen=false;}silence();},
+  reset(){beat=0;last=null;wasRunning=false;for(const slot of slots){slot.level=0;slot.entered=false;slot.activeSince=null;slot.phrase=null;slot.phraseChosen=false;slot.heard=false;}silence();},
   setEnabled(value){enabled=Boolean(value);if(!enabled)silence();},
   setSlot(slot,value){if(!slots[slot])return;slots[slot].enabled=Boolean(value);if(!value){send(`math-${slot}-gate`,0);send(`math-${slot}-level`,0);}},
   frame(m={},options={}){
-   const clock=Number(options.clock)||0,running=Boolean(options.playing),elapsed=last===null?0:Math.max(0,clock-last),dt=Math.min(.1,elapsed);last=clock;
+   const clock=Number(options.clock)||0,transport=Boolean(options.playing),running=transport&&options.ready!==false,elapsed=last===null?0:Math.max(0,clock-last),dt=Math.min(.1,elapsed);last=clock;
    const cap=Number(m.context?.latestCap)||0,rate=Math.max(0,Number(m.tradeRate)||0),fresh=clamp(m.fresh);
-   if(running&&rate>0)beat+=elapsed*Math.min(rate,4);
+   // This is the function phrase clock, not a simulated trade clock. Even at
+   // one trade per 30 seconds a full curve takes at most five seconds; the
+   // piano still receives only the actual incoming trade events.
+   if(running&&rate>0)beat+=Math.min(.25,elapsed)*(1.6+1.4*(1-Math.exp(-rate)));
    if(!running&&wasRunning)silence();wasRunning=running;
    const views=profile.map((pattern,i)=>{
     const state=slots[i];
@@ -48,23 +51,24 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
     // phrase decision further reduces density; no simultaneous full phrases.
     const local=(beat+i*16)%32,phrase=Math.floor((beat+i*16)/32);
     const chance=hash(seed^Math.imul(phrase+1,7919)^i)/4294967296;
-    if(state.phrase!==phrase){state.phrase=phrase;state.phraseChosen=chance<.35+.35*clamp(m.volume);state.activeSince=null;}
+    if(state.phrase!==phrase){state.phrase=phrase;state.phraseChosen=!state.heard||chance<.35+.35*clamp(m.volume);state.activeSince=null;}
     const inWindow=local<8&&state.phraseChosen;
     if(!allowed||!inWindow)state.activeSince=null;
     else state.activeSince??=clock;
     const phraseOn=inWindow&&state.activeSince!==null&&clock-state.activeSince<5;
     const phase=clamp(local/8,0,.99999),[raw,gate]=pattern.sample(phase),value=normalize(raw);
-    const target=allowed?.075*emergence*fresh:0;
-    state.level+=(target-state.level)*(1-Math.exp(-dt/1.1));
+    const target=allowed?(.18+.14*emergence)*fresh:0;
+    state.level+=(target-state.level)*(1-Math.exp(-dt/(target>state.level ? .12 : .35)));
     if(!running||!enabled||!state.enabled)state.level=0;
     const audibleGate=allowed&&phraseOn?clamp(gate):0;
+    if(audibleGate>0&&state.level>.01)state.heard=true;
     const pitch=clamp(pattern.base+(seed%5)+value*19,24,78);
     send(`math-${i}-pitch`,pitch);send(`math-${i}-cutoff`,350+value*2200);send(`math-${i}-shape`,pattern.shape);
     send(`math-${i}-drive`,pattern.drive);send(`math-${i}-level`,state.level);send(`math-${i}-gate`,audibleGate);
-    const status=!enabled||!state.enabled?'Muted':!running?'Paused':!cap?'Market cap unavailable':!state.entered?'Waiting for market cap':!rate||!fresh?'Waiting for trades':!phraseOn?'Rest':'Playing';
+    const status=!enabled||!state.enabled?'Muted':!transport?'Paused':!running?(options.error?'Audio unavailable':'Loading audio'):!cap?'Market cap unavailable':!state.entered?'Waiting for market cap':!rate||!fresh?'Waiting for trades':!phraseOn?'Rest':'Playing';
     return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,enabled:enabled&&state.enabled,level:state.level,active:audibleGate>0&&state.level>.0001,phase,value,curve:pattern.curve,pitch,gate:audibleGate,status};
    });
-   const view={playing:running,seed,cap,globalEnabled:enabled,slots:views};onView(view);return view;
+   const view={playing:transport,seed,cap,globalEnabled:enabled,slots:views};onView(view);return view;
   },
   stop(){last=null;wasRunning=false;silence();},
  };

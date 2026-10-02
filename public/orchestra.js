@@ -4,7 +4,7 @@ export function orchestraTempo(m){return Math.round(Math.max(0,Number(m.tradeRat
 export const ORCHESTRA_LAYERS=['melody'];
 export const ORCHESTRA_BUNDLES={envion:['melody']};
 export function createOrchestraConductor(){
- let ticks=0,lastTime=null,level=0,enabled=false;
+ let ticks=0,lastTime=null,level=0,enabled=true;
  return {
   observe(name,value){if(name==='generation'&&Number.isFinite(value))ticks=Math.max(0,value);},
   setBundle(name,value){if(name==='envion')enabled=Boolean(value);},

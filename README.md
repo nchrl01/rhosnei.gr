@@ -5,7 +5,7 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
 ## Active instruments
 
-The default instrument is the CC0 VSCO 2 CE soft upright piano, played through
+The piano is the CC0 VSCO 2 CE soft upright piano, played through
 Web Audio. Each accepted decoded swap triggers one three-note chord immediately
 on receipt. Chords are not quantized to a metronome. The displayed trade cadence
 is accepted trades received in the last 30 seconds, expressed per minute.
@@ -14,10 +14,11 @@ polling and caching can deliver chords in bursts; this does not remove feed dela
 
 Market cap controls resonance on a logarithmic scale: $10k or less = 0%,
 $1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.5 to 2.5
-and room-reverb amount from 0 to 0.4. Unknown cap leaves the piano dry.
+and room-reverb gain from 0.2 to 0.42. The room is audible from startup,
+including when market cap is unknown; cap adds resonance and a longer-feeling wash.
 These are sound-design mappings, not physical measurements of resonance.
 
-Envion and hardstyle are OFF by default and can be restored separately via
+Piano, Envion and the standalone hardstyle bundle are ON by default and can be removed separately via
 `pdata`. Harmonic strings have been removed. The violin research output is not in the site.
 Envion's original source, 44 samples, 19 envelope banks and authored effects
 remain available in the full Pure Data browser engine.
@@ -25,13 +26,13 @@ ZERO100, polyrhythms, resonant banks, synthesized percussion, external Freeverb,
 external feedback delays and genotype are removed from the published host graph.
 Source studies under `native/` are archival; they are not loaded by the app.
 
-If explicitly restored, above $1m market cap an independent hardstyle kick can play occasional four-beat
+Above $1m market cap an independent hardstyle kick can play occasional four-beat
 phrases with at least twelve beats of rest. Activity and pressure give each
 four-bar opportunity a 15–45% chance. Each remaining bundle can be removed
 separately under `pdata`.
 
 The old market-cap-to-tempo mapping has been replaced by trade cadence.
-Optional Pd sources use a bounded 10–240 BPM cadence-derived clock; the default
+Envion and standalone hardstyle use a bounded 10–240 BPM cadence-derived clock; the
 piano has no clock, so no trades means no new chords (existing notes can decay).
 The market controls Envion's envelope sequence, playback speed, Nuke, grains, pan,
 echo, internal reverb and smoothed output gain. Chart pan/zoom do not schedule sound.
@@ -46,10 +47,17 @@ at their receipt times. At most 20,000 trades are retained; switching market cle
 them. OHLC candles cannot supply missing trade events. Pausing or seeking clears
 active voices and room tails; returning live never replays a backlog. Busy bursts
 are limited to 48 simultaneous piano voices, replacing oldest tails as necessary.
-Shared volume and audio recording include both the piano and any restored Pd sources.
+Shared volume and audio recording include both the piano and enabled Pd sources.
 The piano uses samples resampled to 24 kHz stereo PCM16 with up to ten-second tails.
 Source, license and mapping records are in `public/samples/piano/`.
 Rebuild them with the local audio Python environment and `build-piano.py`.
+Samples prefetch when a market is selected. Piano and Pd load independently;
+the first ready instrument can start after Listen while the other finishes loading.
+Envion's sample initialization cannot close the piano or the math voices.
+Failed piano samples fall back to the successfully decoded notes. A fresh trade
+received during startup can trigger once ready (at most the latest event, under
+three seconds old); stale loading backlogs are discarded. Loading and errors
+appear beside the chart.
 
 ## Seeded math functions
 
@@ -62,10 +70,13 @@ is bundled; these are interpretations, not identical reconstructions of its soun
 The first slot enters at $1m and the second at $10m. Gain increases gradually
 toward twice that threshold, and a 12% hysteresis band avoids repeated switching.
 Unknown cap, missing trade cadence or stale market controls close the gates.
-Phrase timing follows observed trades per second, bounded to four beats per
-second for these additional voices. Piano still responds to every accepted trade.
+Phrase speed maps observed trades per second into 1.6–3 phrase beats per second
+for these additional voices. Zero observed trades still closes their gates. This
+bounded internal clock prevents multi-minute gaps at sparse trade rates; it is
+not a claim about market trade frequency. Piano still responds to accepted events.
 Two eight-beat windows alternate within a 32-beat cycle, with rests and a
-seeded 35–70% phrase probability based on volume. A phrase lasts at most five
+seeded 35–70% phrase probability based on volume, after a guaranteed first eligible
+window for each voice. Gains start audibly at entry and grow with cap. A phrase lasts at most five
 seconds, even when trading is slow. No continuous ambient-string source is used.
 
 The compact UI shows only the coin's selected two functions. Curve position and
@@ -79,7 +90,7 @@ not fabricate trade cadence and therefore do not trigger these patterns.
 
 Sources: `public/math-patterns.js`, `public/math-pattern-view.js`, and
 `public/patches/orchestra/av-math*.pd`. Rebuild with `python3 build-math-patterns.py`
-followed by `python3 build-orchestra.py`. The working trade piano is unchanged.
+followed by `python3 build-orchestra.py`.
 
 ## Run and deploy
 
@@ -155,7 +166,8 @@ During the current visit, one market-control frame per second is kept for up to
 one hour per pool, for eight pools. Replay uses a captured frame only when it is
 within 1.5 seconds of the selected timestamp. Older history uses completed OHLC
 candles and their volume: activity is a volume proxy, buy/sell is neutral, and
-reverb is dry because historical liquidity is unavailable. Cap is inferred from
+Envion's liquidity-driven reverb is dry because historical liquidity is unavailable.
+The piano keeps its base room when replaying captured trades. Cap is inferred from
 latest supply and historical price; supply changes make it uncertain. Missing
 candle volume is labelled unavailable. These modes regenerate Envion's sound;
 they do not reconstruct past random sample choices or an exact audio waveform.
