@@ -14162,6 +14162,7 @@
 #X obj 20 45 s~ reg1;
 #X obj 20 70 s~ reg2;
 #X obj 20 95 dac~ 5 6 7 8 9 10 11;
+#X obj 20 20 r av-envion-pan-position;
 #X obj 20 20 r av-envion-identify;
 #X obj 20 45 f \$0;
 #X obj 20 70 s av-envion-id;
@@ -15924,5 +15925,6 @@
 #X connect 1099 0 2169 4;
 #X connect 1115 0 2169 5;
 #X connect 1116 0 2169 6;
-#X connect 2170 0 2171 0;
+#X connect 2170 0 404 1;
 #X connect 2171 0 2172 0;
+#X connect 2172 0 2173 0;

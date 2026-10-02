@@ -79,3 +79,11 @@
 
 .envion-node .envion-object-body,.envion-node .envion-object-control,.envion-node .envion-message-control{display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2}
 .envion-node .envion-atom-control{text-align:center}
+
+.envion-market-mode{padding:6px 9px;font:11px Arial,sans-serif;font-weight:700}
+.envion-mapping-details{padding:8px 12px;border-bottom:1px solid #111;font:12px Arial,sans-serif;overflow:auto;max-height:340px}
+.envion-mapping-details summary{cursor:pointer;font-weight:700}
+.envion-mapping-table{border-collapse:collapse;width:100%;margin-top:12px;text-align:left}
+.envion-mapping-table th,.envion-mapping-table td{padding:7px 10px;border-bottom:1px solid #ccc;vertical-align:top}
+.envion-mapping-table th{font-weight:700}
+.envion-mapping-table td:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}

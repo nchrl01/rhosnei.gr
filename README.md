@@ -12,7 +12,7 @@ external feedback delays and genotype are removed from the published host graph.
 Source studies under `native/` are archival; they are not loaded by the app.
 
 Market cap sets tempo: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM.
-The market controls Envion's row/speed randomization, Nuke, grains, pan,
+The market controls Envion's envelope sequence, playback speed, Nuke, grains, pan,
 echo, internal reverb and smoothed output gain. Chart pan/zoom do not schedule sound.
 Listening volume starts at 50%; the volume button at the right of the single-line trending header opens a 0–100% slider. Clicking a trending coin loads its market and starts playback.
 The interface has no dot grid. Enter `pdata` and submit to show/hide Pure Data.
@@ -125,3 +125,40 @@ chart and touch-sized history strip, then a central circular Listen/Pause
 control and Record. The same DOM, market stream, replay clock and sound engine
 serve both layouts. The play control has an explicit accessible label/state.
 Arial, monochrome styling and the magenta replay playhead are retained.
+
+## Market control audit (v38)
+
+`public/envion-market.js` defines 50 numeric sound mappings. The original patch
+view is read only, including message boxes, preset buttons, file import/drop,
+keyboard performance and clock selection. Listen/Pause, Record, listening volume
+and chart replay remain user controls. `pdata` → **Live data inputs** shows each
+numeric mapping and the value arriving back from Pd.
+
+- Activity controls envelope rate/stretch, note density, grain duration and levels.
+- Contextual price direction controls playback factor and grain pitch.
+- Motion controls filter cutoff, rounding, flutter and modulation depth.
+- Buy/sell share enters the original pan inlet; the original disconnected slider
+  remains a visual readout. Missing historical balance stays centered.
+- Volume controls echo mix/repeats/feedback, overlap and levels.
+- Liquidity controls reverb decay/damping/size/mix, capped at 25% wet. Missing
+  historical liquidity stays dry. Market cap still controls tempo.
+- Bundled gait/wood/toy/earings samples and ultra-percussion/sharpy/complex-
+  percussion/relaxed envelopes are selected from activity and motion. Changes
+  must remain stable for five seconds after initial selection to avoid reload
+  flicker; numeric controls update on every market frame. No preset macro is used.
+- A deterministic counter advances through the selected 1000-row envelope bank.
+  Activity selects a division of 1–8 sixteenth notes; direction, volume and motion
+  select the starting region. Random row/speed draws have been removed from the host.
+- 35 independent source generator controls are disabled. Clocks which original
+  stretch wires can retrigger are forced off after each market write. DSP phases and
+  authored grain synthesis remain in the original implementation.
+
+`public/patches/envion/control-audit.json` inventories every exposed source control
+and classifies mapped controls, disabled generators, disabled presets/file
+operations, and read-only source internals/inactive branches. Alternative preset
+branches and local/remote sample scanners are inactive. Calibration, source
+initialization and normalization constants are retained; they are not coin inputs.
+
+This update received syntax and receiver/asset inspection only; it has not been
+auditioned or checked in a running browser. Recreating sound from historical
+candles remains an estimate, not an exact recording of the historical instrument.

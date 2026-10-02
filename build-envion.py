@@ -167,6 +167,10 @@ def render(cid):
   for _,sources,channels,_ in scope_sources:
    wires += [[source,0,count,channel-5] for source,channel in zip(sources,channels)]
   count+=1
+  # Market buy/sell balance enters the original stereo pan inlet directly.
+  # Source slider 408 was unconnected in the supplied patch.
+  extra.append('#X obj 20 20 r av-envion-pan-position;')
+  wires.append([count,0,404,1]);count+=1
   # Announce the source namespace after subscriptions are established.
   extra += ['#X obj 20 20 r av-envion-identify;','#X obj 20 45 f \\$0;','#X obj 20 70 s av-envion-id;']
   wires += [[count,0,count+1,0],[count+1,0,count+2,0]]

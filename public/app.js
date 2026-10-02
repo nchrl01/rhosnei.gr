@@ -1,5 +1,5 @@
-import {createEnvion} from './envion.js?v=35';
-import {createEngineView} from './engine-view.js?v=30';
+import {createEnvion} from './envion.js?v=38';
+import {createEngineView} from './engine-view.js?v=38';
 import {contextualizeMarket} from './market-state.js?v=30';
 import {createMarketReplay,candleEnd} from './market-replay.js?v=33';
 import {signalFreshness} from './market-controls.js?v=18';
@@ -173,7 +173,7 @@ function setupStream(){
  stopStream=()=>{stopNative?.();stopFallback?.();};
 }
 function tick(){
- const m=metrics(),energy=m.volume*m.fresh;syncLevels(m);envion.market(m);
+ const m=metrics(),energy=m.volume*m.fresh;syncLevels(m);envion.market(m,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM'+(m.context.latestCap?' · MCAP':market?' · MCAP UNKNOWN / FALLBACK':' · DEMO CLOCK');
  send('tempo',bpm);send('activity',m.activity);send('motion',m.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
@@ -183,9 +183,9 @@ function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx??=new AudioContext({sampleRate:44100});await ctx.resume();
- const manifestResponse=await fetch('patches/orchestra/manifest.json?v=30');if(!manifestResponse.ok)throw Error('Cannot load Envion host manifest');
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=38');if(!manifestResponse.ok)throw Error('Cannot load Envion host manifest');
  const manifest=await manifestResponse.json();
- const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=30');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=38');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
  Object.assign(files,await envion.files());
  pd=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=30',onPrint:text=>{if(!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{engineView.log(error.message);status('Audio engine: '+error.message);}});
  engineView.setFiles(files,manifest,true);
@@ -339,7 +339,7 @@ $('record').onclick=()=>{
  const destination=ctx.createMediaStreamDestination(),recordNode=outputTap||gain;recordNode.connect(destination);chunks=[];
  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
  recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined);
- session={version:8,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / Envion only',mapping:'historical-context-envion-v3',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice(),replay:replay.state.active?{cursor:replay.state.cursor,source:replay.state.source,speed:replay.state.speed}:null};
+ session={version:8,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / Envion only',mapping:'market-controls-envion-v4',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice(),replay:replay.state.active?{cursor:replay.state.cursor,source:replay.state.source,speed:replay.state.speed}:null};
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
  recorder.onstop=()=>{const name='AV-'+new Date(session.started).toISOString().replace(/[:.]/g,'-');download(new Blob(chunks,{type:recorder.mimeType}),name+(recorder.mimeType.includes('mp4')?'.m4a':'.webm'));download(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}),name+'.json');try{recordNode.disconnect(destination);}catch{}session=null;$('record').textContent='● Record';status('Recording ready to download · session log included');};
  recorder.start(1000);$('record').textContent='■ Finish';status('Recording audio and session changes…');
@@ -365,7 +365,7 @@ function seekHistory(bar,dragging=false){
  if(!replay.state.active)resetEnsemble();
  replay.seek(bar,chart.interval,dragging);
  session?.controls.push({at:Date.now(),name:'history-seek',cursor:replay.state.cursor,source:'loaded-candle',speed:replay.state.speed});
- if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(m);if(!starting)$('play').onclick();}
+ if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(m,orchestraTempo(m));if(!starting)$('play').onclick();}
 }
 chart.onHistorySeek=seekHistory;
 chart.onHistorySeekEnd=()=>replay.release();
@@ -376,7 +376,7 @@ $('replay-play').onclick=()=>{
 $('replay-live').onclick=()=>{
  replay.live();resetEnsemble();chart.tickView?.live();chart.goLive();$('chart-range').value='live';display();
  session?.controls.push({at:Date.now(),name:'history-live'});
- if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(m);}
+ if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(m,orchestraTempo(m));}
  status(playing?'Envion playing · live market signals':'Live market · press Listen');
 };
 $('replay-speed').onchange=()=>{replay.state.speed=$('replay-speed').value;replay.release();session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});};

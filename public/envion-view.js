@@ -129,7 +129,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   const clockChoices = elt('div', 'envion-clock-choices'); clockChoices.setAttribute('role', 'group'); clockChoices.setAttribute('aria-label', 'Envion clock source');
   const marketClock = button('Market clock', () => { setClockMode('market'); onCommand('market'); });
   const originalClock = button('Original clocks', () => { setClockMode('original'); onCommand('original'); });
-  clockChoices.append(marketClock, originalClock);
+  clockChoices.append(elt('span','envion-market-mode','Market controlled')); 
   function setClockMode(mode) {
     clockMode = mode === 'original' ? 'original' : 'market';
     marketClock.setAttribute('aria-pressed', String(clockMode === 'market'));
@@ -144,14 +144,21 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
     try { await onFile(file); } catch (error) { status.textContent = `Could not load ${file.name}: ${error.message || error}`; }
   }
   for (const input of [audioInput, scoreInput]) input.addEventListener('change', () => { chooseFile(input.files?.[0]); input.value = ''; });
-  files.append(transport, clockChoices, button('Open audio', () => audioInput.click()), button('Open envelope text', () => scoreInput.click()), button('Export patch recording', () => onCommand('export')), audioInput, scoreInput);
+  files.append(transport, clockChoices);
   toolbar.append(credit, port, files, status);
   const crumbs = elt('div', 'envion-breadcrumbs'); crumbs.setAttribute('aria-label', 'Patch path');
   const zoomControls = elt('div', 'envion-zoom-controls');
   zoomControls.append(button('−', () => setZoom(zoom / 1.25), 'Zoom out'), zoomValue, button('+', () => setZoom(zoom * 1.25), 'Zoom in'), button('Fit', () => { fitting = true; fit(); }), button('100%', () => setZoom(1)));
   nav.append(crumbs, zoomControls);
-  const hint = elt('p', 'envion-hint', 'Original patch layout · Controls send to Pure Data · Click a subpatch to open it');
-  container.replaceChildren(toolbar, fileRequest, nav, viewport, hint);
+  const hint = elt('p', 'envion-hint', 'Market controls the sound · Hover a control to see its data input · Click a subpatch to explore');
+  const mappingDetails=elt('details','envion-mapping-details');
+  mappingDetails.append(elt('summary','','Live data inputs'));
+  const mappingTable=elt('table','envion-mapping-table'),mappingBody=elt('tbody');
+  const heading=elt('thead'),headRow=elt('tr');
+  for(const title of ['Sound control','Data input','Current value'])headRow.append(elt('th','',title));
+  heading.append(headRow);mappingTable.append(heading,mappingBody);mappingDetails.append(mappingTable);
+  const mappingOutputs=new Map();
+  container.replaceChildren(toolbar, mappingDetails, fileRequest, nav, viewport, hint);
 
   function setZoom(value, keepFit = false) {
     const old = zoom, centerX = viewport.scrollLeft + viewport.clientWidth / 2, centerY = viewport.scrollTop + viewport.clientHeight / 2;
@@ -168,8 +175,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
     viewport.scrollLeft = 0; viewport.scrollTop = 0;
   }
   function send(node, selector, data = []) {
-    if (!node.send) return;
-    onControl({receiver: node.send, selector, values: data});
+    // The market frame owns sound controls; exploration never sends a tweak.
   }
   function flash(el, duration = 110) {
     el.classList.add('envion-pulse');
@@ -186,7 +192,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   function accessible(el, node, d) {
     const label = !empty(d.label) ? d.label : `${d.type} ${node.index}`;
     el.setAttribute('aria-label', label);
-    if (!node.send) { el.disabled = true; el.setAttribute('aria-label', `${label}, read only`); }
+    el.disabled = true; el.setAttribute('aria-label', `${label}, market controlled, read only`);
   }
   function makeLabel(parent, d) {
     if (empty(d.label)) return;
@@ -202,7 +208,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   function buildNode(node, d) {
     const box = elt('div', `envion-node envion-${d.type.replace(/[^a-z\d-]/gi, '')}`);
     box.style.cssText = `left:${numeric(node.x) - bounds.x}px;top:${numeric(node.y) - bounds.y}px;width:${d.width}px;height:${d.height}px;--envion-bg:${d.bg};--envion-fg:${d.fg};--envion-toggle-size:${d.height * .9};font-size:${d.font}px`;
-    box.title = d.body; box.dataset.node = String(node.index);
+    box.title = node.marketMapping || d.body; box.dataset.node = String(node.index);
     if (d.type === 'cnv') { box.style.zIndex='0';const label=makeLabel(box,d);if(node.canvasTap){const apply=data=>{if(data[0]==='label'&&label)label.textContent=data.slice(1).join(' ');if(data[0]==='color'){box.style.setProperty('--envion-bg',colour(data[1]));if(label)label.style.color=colour(data[3]??data[2]);}};canvasViews.set(node.canvasTap,apply);if(canvasValues.has(node.canvasTap))apply(canvasValues.get(node.canvasTap));}return box; }
     if (d.type === 'text' || d.type === 'note') { box.textContent = d.body; return box; }
     if (d.type === 'pic') {
@@ -224,7 +230,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
       }
       function set(valueInput) {
         value = numeric(valueInput, value); const p = toPosition(value, d);
-        input.value = p; input.setAttribute('aria-valuetext', showNumber(value)); box.title = `${d.body}\n${showNumber(value)}`;
+        input.value = p; input.setAttribute('aria-valuetext', showNumber(value)); box.title = `${node.marketMapping || d.body}\n${showNumber(value)}`;
         if (needle) needle.style.transform = `rotate(${-135 + 270 * p}deg)`;
       }
       input.addEventListener('input', () => { set(fromPosition(numeric(input.value), d)); send(node, 'float', [value]); });
@@ -249,7 +255,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
       function paint() { options.forEach((option, i) => { option.classList.toggle('envion-selected', i === Math.trunc(value)); option.setAttribute('aria-pressed', String(i === Math.trunc(value))); }); }
       for (let i = 0; i < d.count; i++) {
         const option = button('', () => { value = i; paint(); send(node, 'float', [i]); }, `Select ${i}`);
-        option.className = 'envion-radio-option'; option.style.width = `${d.size}px`; option.style.height = `${d.size}px`; option.disabled = !node.send;
+        option.className = 'envion-radio-option'; option.style.width = `${d.size}px`; option.style.height = `${d.size}px`; option.disabled = true;
         options.push(option); box.append(option);
       }
       register(node, data => { value = numeric(scalar(data), value); paint(); }); makeLabel(box, d); paint(); return box;
@@ -304,7 +310,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
       return box;
     }
     if (node.kind === 'msg') {
-      const msg = button(d.body, () => { flash(msg); send(node, 'bang'); }); msg.className = 'envion-message-control'; msg.disabled = !node.send; box.append(msg);
+      const msg = button(d.body, () => { flash(msg); send(node, 'bang'); }); msg.className = 'envion-message-control'; msg.disabled = true; box.append(msg);
       register(node, data => { if (data[0] === 'set') msg.textContent = data.slice(1).map(showNumber).join(' '); else flash(msg); });
     } else { const body = elt('span', 'envion-object-body', d.body); box.append(body); }
     return box;
@@ -377,22 +383,30 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   function navigate(id) { if (!model?.canvases?.[id]) return; current = id; trail.push(id); render(); viewport.scrollLeft = 0; viewport.scrollTop = 0; }
   function flush() {
     frame = 0; if (destroyed) return;
-    for (const [receiver, data] of pending) { values.set(receiver, data); for (const update of controls.get(receiver) || []) update(data); }
+    for (const [receiver, data] of pending) { values.set(receiver, data); if(mappingOutputs.has(receiver))mappingOutputs.get(receiver).textContent=showNumber(scalar(data)); for (const update of controls.get(receiver) || []) update(data); }
     pending.clear();
   }
   viewport.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) { event.preventDefault(); viewport.classList.add('envion-dragover'); } });
   viewport.addEventListener('dragleave', () => viewport.classList.remove('envion-dragover'));
-  viewport.addEventListener('drop', event => { event.preventDefault(); viewport.classList.remove('envion-dragover'); chooseFile(event.dataTransfer?.files?.[0]); });
+  viewport.addEventListener('drop', event => { event.preventDefault(); viewport.classList.remove('envion-dragover'); status.textContent='Samples and envelopes are selected by market data.'; });
   const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => { if (fitting) fit(); }) : null; observer?.observe(viewport);
   return {
-    load(nextModel) { model = nextModel; current = model.root; trail = [current]; values.clear(); pending.clear(); fitting = true; render(); },
+    load(nextModel) { model = nextModel;
+      mappingBody.replaceChildren();mappingOutputs.clear();
+      for(const canvas of Object.values(model.canvases))for(const node of canvas.nodes){
+        if(!node.marketMapping || !node.marketMapping.includes(' ← '))continue;
+        const [name,input]=node.marketMapping.split(' ← '),row=elt('tr'),value=elt('td','','—');
+        row.append(elt('td','',name),elt('td','',input),value);mappingBody.append(row);
+        mappingOutputs.set(node.receive,value);
+      }
+ current = model.root; trail = [current]; values.clear(); pending.clear(); fitting = true; render(); },
     receive(receiver, data) { if (destroyed) return; pending.set(String(receiver), Array.isArray(data) ? data : [data]); if (!frame) frame = requestAnimationFrame(flush); },
     setScopes(data){for(const [id,channels] of Object.entries(data))scopeValues.set(id,channels);drawScopes();},
     receiveCanvas(id,data){canvasValues.set(id,data);canvasViews.get(id)?.(data);},
     setStatus(text) { status.textContent = String(text); },
     requestFile(id, mode = '0') {
       requestedFileId = id ? String(id) : null;
-      fileRequest.hidden = !requestedFileId;
+      fileRequest.hidden = true;
       if (!requestedFileId) return;
       const folder = String(mode) === '1' || mode === 'folder', multiple = String(mode) === '2' || mode === 'multiple';
       fileRequestText.textContent = folder ? 'The patch is waiting for a local audio folder.' : multiple ? 'The patch is waiting for audio files.' : 'The patch is waiting for a local file.';
