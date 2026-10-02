@@ -1,4 +1,4 @@
-import {createEnvion} from './envion.js?v=33';
+import {createEnvion} from './envion.js?v=35';
 import {createEngineView} from './engine-view.js?v=30';
 import {contextualizeMarket} from './market-state.js?v=30';
 import {createMarketReplay,candleEnd} from './market-replay.js?v=33';
@@ -12,7 +12,7 @@ import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=33';
-import {MarketChart} from './chart.js?v=34';
+import {MarketChart} from './chart.js?v=35';
 import {loadHistory} from './history.js?v=30';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
@@ -389,4 +389,4 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },100);
 setInterval(()=>{if(mode==='demo'){const t=performance.now()/1000;lastDemoPrice=100+2*Math.sin(t/19)+Math.sin(t/31);chart.add({at:Date.now(),price:lastDemoPrice,source:'demo'});$('chart-source').textContent='Synthetic demo prices · no market feed';}},1000);
-document.fonts.ready.then(()=>chart.chart.applyOptions({layout:{fontFamily:'Tiny, monospace'}}));
+document.fonts.ready.then(()=>chart.chart.applyOptions({layout:{fontFamily:'Arial, sans-serif'}}));

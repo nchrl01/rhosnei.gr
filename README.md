@@ -100,9 +100,14 @@ candle volume is labelled unavailable. These modes regenerate Envion's sound;
 they do not reconstruct past random sample choices or an exact audio waveform.
 
 
-During history playback, a pink playhead stays at the centre of the plot area
+During history playback, a magenta playhead stays at the centre of the plot area
 (excluding the price axis). Candles or the price line scroll left beneath it,
 using the same replay cursor and selected speed as the sound. Display motion
 interpolates between control updates without advancing the audio clock. Pause
 holds the cursor; Live removes it and restores the live chart. Zoom preserves
 the visible span around the playhead. The replay strip remains the seek control.
+
+The interface and chart use Arial. Regular (400) text and bold (700) identity/labels
+use a consistent type scale; controls centre their text within fixed heights.
+The playback marker is pure magenta (#ff00ff). Previously bundled TINY assets
+retain their license but are no longer loaded by the interface.
