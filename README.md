@@ -132,3 +132,13 @@ uses the conductor’s 650 ms smoothing followed by a 500 ms Pd ramp; room
 feedback uses 500 ms. Freshness
 gates wet mix. Listening volume and Pause gate the whole output; starting
 playback clears the effect buffers. No new audio audition has been performed.
+
+## Market-cap tempo
+
+The shared clock uses market cap: $10,000 = 10 BPM, $1,000,000 = 100 BPM,
+$10,000,000 = 200 BPM. Piecewise logarithmic interpolation joins those anchors.
+Caps outside this range hold the nearest endpoint. Activity, volume and recent
+intensity continue to shape density, articulation and mix rather than tempo.
+Latest cap can be price-adjusted from snapshot supply, as labelled in the UI.
+FDV is not used as a substitute. Missing cap uses an explicit 120 BPM fallback;
+the synthetic demo also uses 120 BPM. Native transport accepts the 10 BPM floor.

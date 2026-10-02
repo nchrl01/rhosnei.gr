@@ -1,8 +1,8 @@
-import {contextualizeMarket} from './market-state.js?v=24';
-import {createMarketSketch} from './market-sketch.js?v=24';
+import {contextualizeMarket} from './market-state.js?v=25';
+import {createMarketSketch} from './market-sketch.js?v=25';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=24';
-import {createSignalMap} from './signal-map.js?v=24';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=25';
+import {createSignalMap} from './signal-map.js?v=25';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
@@ -12,7 +12,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=1';
 import {MarketChart} from './chart.js?v=19';
-import {loadHistory} from './history.js?v=24';
+import {loadHistory} from './history.js?v=25';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -146,7 +146,7 @@ function setupStream(){
 }
 function tick(){
  const m=metrics(),energy=m.volume*m.fresh;syncLevels(m);
- bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM';
+ bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM'+(m.context.latestCap?' · MCAP':market?' · MCAP UNKNOWN / FALLBACK':' · DEMO CLOCK');
  send('tempo',bpm);send('activity',m.activity);send('motion',m.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot());send('cutoff',900+m.texture*3100+energy*1800);
 }
@@ -155,9 +155,9 @@ function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>signalMap.setTransport(state));for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx=new AudioContext();await ctx.resume();
- const manifestResponse=await fetch('patches/orchestra/manifest.json?v=24');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=25');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
  const manifest=await manifestResponse.json();
- const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=24');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=25');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
  pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
  gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;gain.connect(limiter);limiter.connect(analyser);analyser.connect(ctx.destination);outputTap=analyser;marketSketch.attachAudio(analyser);bindSignalMap();
  for(const id of controls)send(id,Number($(id).value));

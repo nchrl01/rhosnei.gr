@@ -51,3 +51,8 @@ Liquidity increases wet mix (up to 55%) and room decay (room 0.35 to 0.95).
 This vanilla-Pd algorithm port uses eight combs and four diffusion stages per
 channel. Original algorithm: Jezar at Dreampoint (2000), public domain.
 See FREEVERB.txt. The active cartridge feature has been removed.
+
+Clock mapping: market cap $10k -> 10 BPM, $1m -> 100 BPM, $10m -> 200 BPM.
+Logarithmic interpolation between anchors; endpoint limits at 10/200 BPM.
+Missing cap uses a labelled 120 BPM fallback. Market intensity shapes
+articulation, density and mix independently of this cap-based clock.

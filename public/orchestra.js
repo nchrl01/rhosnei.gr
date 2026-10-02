@@ -1,5 +1,16 @@
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
-export const orchestraTempo=m=>Math.round(80+70*unit(m.activity)+40*unit(m.volume)*unit(m.fresh)+30*unit(m.pressure)*unit(m.fresh));
+// Interpolate in log market-cap space through the user's three anchors.
+// Outside the anchor range, hold the endpoint tempo. Missing cap is explicit
+// in the UI and uses the neutral 120 BPM preview clock.
+export function orchestraTempo(m){
+ const cap=Number(m.context?.latestCap);
+ if(!Number.isFinite(cap)||cap<=0)return 120;
+ if(cap<=10000)return 10;
+ if(cap>=10000000)return 200;
+ return Math.round(cap<=1000000
+  ?10+90*Math.log10(cap/10000)/2
+  :100+100*Math.log10(cap/1000000));
+}
 export const ORCHESTRA_LAYERS=['melody','tones','poly','filtered','percussion'];
 
 // One market-driven ensemble. Roles change at musical phrase boundaries;

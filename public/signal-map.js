@@ -1,5 +1,6 @@
 // This view observes controls and Pd messages; it never schedules sound.
 const sources=[
+ ['cap','MARKET CAP → BPM','Market cap sets the shared clock: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM. Between anchors the tempo interpolates in log market-cap space. Caps below $10k hold 10 BPM; above $10m hold 200 BPM. Missing market cap uses an explicit 120 BPM fallback. Live cap can be inferred from latest price and snapshot supply, as labelled in capitalization context. FDV is not substituted.'],
  ['motion','PRICE MOVEMENT','Absolute movement / 8%, clipped to 0–1. Observed swaps use a rolling 30-second window; snapshots use the 5-minute change.'],
  ['pressure','HISTORICAL INTENSITY','Latest price relative to fixed 5-minute history: return size and speed across 5 minutes, 1 hour, 6 hours and 24 hours; recent candle shocks cool with a two-hour time constant. Relative volume and liquidity turnover also contribute. Historical height alone cannot keep a quiet coin intense. Chart pan and zoom never enter the music.'],
  ['activity','TRADE ACTIVITY','Trade rate is scaled with log(1 + trades/sec) / log(21).'],
@@ -11,7 +12,7 @@ const sources=[
 ];
 const stages=[
  ['arrangement','AUTO CONDUCTOR','arrangement','Market state + musical phrase → part balance','Every 32 shared clock ticks the phrase role changes. Five continuously available parts share a bounded gain budget. Effective activity and volume set the budget. Historical intensity raises effective movement/activity/volume, reduces sustained tonal prominence, and shortens percussion tails. Freshness still gates the ensemble. The conductor smooths changes by elapsed time and schedules no browser-side notes.'],
- ['clock','CLOCK','tempo','Activity + volume → tempo','80 + 70 × effective activity + 40 × effective energy + 30 × historical intensity × freshness BPM. Pd schedules a sixteenth-note tick every 15000 / BPM milliseconds.'],
+ ['clock','CLOCK','tempo','Market cap → tempo','Market cap sets 10 / 100 / 200 BPM at $10k / $1m / $10m. Logarithmic interpolation joins the anchors; limits are 10–200 BPM. Missing cap uses a labelled 120 BPM fallback. Pd schedules a sixteenth-note tick every 15000 / BPM milliseconds. Buy/sell balance still shapes swing; activity and historical intensity shape the other musical parameters.'],
  ['rules','GENOTYPE → RULE','rules','Movement → mutation','An 8-bit genotype selects one of eight rules. Motion above 0.12 perturbs a DNA bit every 16 ticks. Repeated phenotype values suppress notes.'],
  ['gestures','ENVION GESTURES × 8','gestures','Market intensity → live fragment articulation','Adapted from Envion by Emiliano Pennisi. Value/time/delay triplets shape delay-buffer reading and amplitude envelopes with vline~. Eight stereo voices reshape the live tonal and polyrhythmic material. Activity controls gesture probability; movement controls read trajectory and shortens envelopes. Liquidity extends duration. No plucked-string bank or network samples are used.'],
  ['tones','TONAL LANES × 32','tones','Liquidity + movement → tonal texture','ZERO100 adaptation: staggered one-shot ramps drive 32 phase-modulated tones. The market sets density, decay, pitch register and distortion. Uses the same seven-note pitch family and phasor as the other parts. Voice pulses reflect real envelope activity above the telemetry threshold.'],
@@ -20,7 +21,7 @@ const stages=[
  ['percussion','PERCUSSION × 32','percussion','Activity + volume → hit density and level','Perc Generator adaptation: two 16-voice banks share the master clock. Notes stay in the ensemble pitch family; weighted note transitions choose the second bank. Activity controls gate probability, movement controls FM color, and liquidity controls decay and delay feedback. Uses synthesized percussion.'],
  ['space','FREEVERB','space','Liquidity → wet mix and room decay','Vanilla-Pd port of Jezar’s public-domain Freeverb algorithm: eight damped feedback combs and four diffusion stages per stereo channel. Liquidity is normalized as log10(USD) / 7. Wet mix = 0.55 × liquidity × freshness. Room = 0.35 + 0.60 × liquidity; feedback = 0.70 + 0.28 × room. Wet control uses 650 ms smoothing followed by a 500 ms Pd ramp; room feedback uses 500 ms. More liquidity increases reverb presence and tail length. Existing bounded branch delays remain part of the sound. No manual effects control.'],
 ];
-const links={pressure:['arrangement','clock','gestures','tones','percussion'],motion:['arrangement','rules','gestures','tones','poly','filtered','percussion'],activity:['arrangement','clock','gestures','tones','poly','percussion'],volume:['arrangement','clock','gestures','tones','poly','filtered','percussion'],texture:['arrangement','gestures','tones','space','percussion'],balance:['clock'],root:['tones','poly','percussion'],fresh:['arrangement','gestures','tones','poly','filtered','percussion','space']};
+const links={cap:['clock'],pressure:['arrangement','gestures','tones','percussion'],motion:['arrangement','rules','gestures','tones','poly','filtered','percussion'],activity:['arrangement','gestures','tones','poly','percussion'],volume:['arrangement','gestures','tones','poly','filtered','percussion'],texture:['arrangement','gestures','tones','space','percussion'],balance:['clock'],root:['tones','poly','percussion'],fresh:['arrangement','gestures','tones','poly','filtered','percussion','space']};
 export function createFeedbackMonitor(now=()=>performance.now()){
  let lastBeat=null,generation=null,transport=null;
  return {
@@ -52,8 +53,8 @@ export function createSignalMap(container){
  const set=(id,text)=>{container.querySelector(`[data-value="${id}"]`).textContent=text;};
  function update({m,levels,orchestra,bpm,root,master,playing,native}){
   latest={playing,native};
-  for(const [id] of sources){const value=id==='root'?root:(m.raw?.[id]??m[id]);set(id,id==='root'?`MIDI ${root}`:`${value.toFixed(3)} / ${Math.round(value*100)}%`);nodes.get(id).style.setProperty('--signal-value',`${Math.max(0,Math.min(1,value))*100}%`);}
-  set('tempo',`${bpm} BPM / ${(15000/bpm).toFixed(0)} ms`);
+  for(const [id] of sources){if(id==='cap'){const cap=m.context?.latestCap;set(id,cap>0?'$'+Math.round(cap).toLocaleString('en')+(m.context.capEstimated?' · estimate':''):'Unknown · 120 BPM fallback');nodes.get(id).style.setProperty('--signal-value',`${cap>0?(bpm-10)/190*100:0}%`);continue;}const value=id==='root'?root:(m.raw?.[id]??m[id]);set(id,id==='root'?`MIDI ${root}`:`${value.toFixed(3)} / ${Math.round(value*100)}%`);nodes.get(id).style.setProperty('--signal-value',`${Math.max(0,Math.min(1,value))*100}%`);}
+  set('tempo',`${bpm} BPM / ${(15000/bpm).toFixed(0)} ms${m.context?.latestCap?'':' · fallback'}`);
   set('arrangement',`${orchestra.state} · phrase ${orchestra.phrase+1}/4`);
   set('gestures',`${Math.round(levels.melody*100)}% · ${(45+280*m.texture*(1-.75*m.motion)).toFixed(0)} ms gestures`);
   set('tones',`${Math.round(levels.tones*100)}% · density ${(orchestra.parameters.density??0).toFixed(2)}`);
