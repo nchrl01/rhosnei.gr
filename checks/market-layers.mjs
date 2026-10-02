@@ -3,7 +3,7 @@ import {createEnvionHarness} from './envion.mjs';
 import {hardstyleActive} from '../public/hardstyle-state.js';
 for(const [cap,expected] of [[999999,false],[1000000,true],[1200000,true],[null,false],[NaN,false]])assert.equal(hardstyleActive({context:{latestCap:cap},fresh:1}),expected);
 assert.equal(hardstyleActive({context:{latestCap:2000000},fresh:1},false),false);
-for(const part of ['av-hardstyle','av-strings']){
+for(const part of ['av-hardstyle']){
  const entry='orchestra/check.pd',source=`#N canvas 0 0 800 600 12;
 #X obj 20 20 av-conductor;
 #X obj 20 60 ${part};

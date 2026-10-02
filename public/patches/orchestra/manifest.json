@@ -1,17 +1,15 @@
 {
-  "version": 11,
+  "version": 12,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
     "av-envion.pd",
     "av-hardstyle.pd",
     "av-random.pd",
-    "av-strings.pd",
     "market.pd"
   ],
   "layers": [
     "melody",
-    "ambience",
     "hardstyle"
   ]
 }

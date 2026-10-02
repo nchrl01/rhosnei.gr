@@ -17,8 +17,8 @@ $1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.5 to 2.5
 and room-reverb amount from 0 to 0.4. Unknown cap leaves the piano dry.
 These are sound-design mappings, not physical measurements of resonance.
 
-Envion, synthetic harmonic strings and hardstyle are OFF by default and can be
-restored separately via `pdata`. The violin research output is not in the site.
+Envion and hardstyle are OFF by default and can be restored separately via
+`pdata`. Harmonic strings have been removed. The violin research output is not in the site.
 Envion's original source, 44 samples, 19 envelope banks and authored effects
 remain available in the full Pure Data browser engine.
 ZERO100, polyrhythms, resonant banks, synthesized percussion, external Freeverb,
@@ -27,9 +27,8 @@ Source studies under `native/` are archival; they are not loaded by the app.
 
 If explicitly restored, above $1m market cap an independent hardstyle kick can play occasional four-beat
 phrases with at least twelve beats of rest. Activity and pressure give each
-four-bar opportunity a 15–45% chance. Harmonic-string ambience is off by default;
-it can be restored explicitly under `pdata`. Each bundle can be removed there.
-The harmonic-string patch is original Pd synthesis, not CoDiCodec inference.
+four-bar opportunity a 15–45% chance. Each remaining bundle can be removed
+separately under `pdata`.
 
 The old market-cap-to-tempo mapping has been replaced by trade cadence.
 Optional Pd sources use a bounded 10–240 BPM cadence-derived clock; the default

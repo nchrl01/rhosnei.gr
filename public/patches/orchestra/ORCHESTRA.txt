@@ -18,17 +18,12 @@ History playback uses the chart's estimated historical capitalization.
 Optional Pd tempo follows trade cadence, bounded to 10–240 BPM. The default
 piano is event-driven and does not use the Pd clock.
 
-Harmonic strings are OFF by default at the user's request. They can be restored
-explicitly in pdata. They use sustained partials, slow detuning and stereo delay.
-Market data controls register, brightness and level. This is NOT CoDiCodec
-inference. The referenced custom violin checkpoint and samples were unavailable:
-https://www.youtube.com/watch?v=DqQvzOBhg8E
-https://github.com/moiseshorta/CoDiCodec-Flow
+Harmonic strings have been removed from the graph and bundle controls.
 
 Type pdata into the address box to remove/restore each complete sound bundle.
 Pause and listening volume apply to the entire stereo mix.
 Gameta, ZERO100 and Perc Generator are removed from the published engine.
 
-Rebuild: python3 build-strings.py; python3 build-celebration.py;
+Rebuild: python3 build-celebration.py;
 python3 build-orchestra.py. Tests: node checks/market-layers.mjs.
 Envion provenance: ../envion/PORT-NOTES.txt and ../envion/LICENSE.txt.

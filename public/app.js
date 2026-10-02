@@ -1,11 +1,11 @@
 import {createEnvion} from './envion.js?v=40';
-import {createEngineView} from './engine-view.js?v=47';
-import {hardstyleActive} from './hardstyle-state.js?v=47';
-import {createTradePiano,marketResonance} from './trade-piano.js?v=47';
+import {createEngineView} from './engine-view.js?v=48';
+import {hardstyleActive} from './hardstyle-state.js?v=48';
+import {createTradePiano,marketResonance} from './trade-piano.js?v=48';
 import {contextualizeMarket} from './market-state.js?v=30';
 import {createMarketReplay,candleEnd} from './market-replay.js?v=33';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=47';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=48';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {subscribePool} from './realtime.js?v=4';
@@ -194,9 +194,9 @@ function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx??=new AudioContext({sampleRate:44100});await ctx.resume();
- const manifestResponse=await fetch('patches/orchestra/manifest.json?v=47');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=48');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
  const manifest=await manifestResponse.json();
- const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=47');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=48');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
  Object.assign(files,await envion.files());
  pd=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=30',onPrint:text=>{if(!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{engineView.log(error.message);status('Audio engine: '+error.message);}});
  engineView.setFiles(files,manifest,true);
