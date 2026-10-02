@@ -1,6 +1,7 @@
+import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=53';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,decodeScore} from './take-share.js?v=53';
+import {createTakeShare,decodeScore} from './take-share.js?v=55';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=53';
 import {createEngineView} from './engine-view.js?v=54';
@@ -125,7 +126,7 @@ function liveMetrics(){
 function metrics(){
  const live=liveMetrics();live.observation={liquidity:market?.liquidity?.usd,trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
  if(market)replay.record(live,currentPrice());
- const ended=replay.advance(chart.renderedBars||[],chart.interval,playing);
+ const ended=replay.advance(chart.renderedBars||[],chart.interval,playing&&ctx?.state==='running');
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
  if(ended&&playing){$('play').onclick();status('History replay finished');}
  return historical||live;
@@ -251,7 +252,7 @@ function mathLoop(){
 mathLoop();
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
- await audioContext().resume();
+ if(audioContext().state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}
  if(!gain){
   gain=ctx.createGain();gain.gain.value=0;
   const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;
@@ -294,7 +295,7 @@ async function initialize(){
  catch{throw Error([audioErrors.piano,audioErrors.pd].filter(Boolean).join(' · ')||'No audio instrument could load');}
 }
 async function closeAudio(){
- audioEpoch++;pianoLoading=null;pdLoading=null;pendingPianoTrade=null;
+ stopLegacyPlayback();audioEpoch++;pianoLoading=null;pdLoading=null;pendingPianoTrade=null;
  piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;outputTap=null;
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
  if(runtime)await runtime.close();await context?.close();
@@ -306,17 +307,20 @@ function setPlayState(active){
 setPlayState(false);
 $('play').onclick=async()=>{
  if(starting)return;
- if(playing&&ctx&&ctx.state!=='running'){
+ const wasInterrupted=playing&&ctx&&ctx.state!=='running';
+ let unlocked;
+ if(!playing||ctx?.state!=='running'){try{unlocked=unlockPlayback(audioContext());}catch(error){status(error.message);return;}}
+ if(wasInterrupted){
   starting=true;$('play').disabled=true;
-  try{await ctx.resume();if(ctx.state!=='running')throw Error('Tap Resume again to enable audio');flushPianoTrade();setPlayState(true);audioStatus();}
+  try{await unlocked;if(ctx.state!=='running')throw Error('Tap Resume again to enable audio');flushPianoTrade();setPlayState(true);audioStatus();}
   catch(error){status('Audio interrupted · '+error.message);}
   finally{starting=false;$('play').disabled=false;}
   return;
  }
- if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;mathPatterns.stop();pendingPianoTrade=null;piano?.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
+ if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();mathPatterns.stop();pendingPianoTrade=null;piano?.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
- catch(e){playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);await closeAudio();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble();if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ catch(e){playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{starting=false;$('play').disabled=false;}
 };
 $('native-option').disabled=true;
@@ -494,17 +498,17 @@ const chartStatus=document.querySelector('.chart-status');
 new MutationObserver(()=>{for(const item of chartStatus.children)item.title=item.textContent;}).observe(chartStatus,{childList:true,characterData:true,subtree:true});
 function audioContext(){
  if(!ctx){
-  const context=new AudioContext({sampleRate:44100});ctx=context;
+  const context=createMusicContext();ctx=context;
   context.onstatechange=()=>{
    if(context!==ctx||!playing)return;
-   if(context.state==='running'){flushPianoTrade();setPlayState(true);}
-   else{mathPatterns.stop();$('play').textContent='▶︎ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
+   if(context.state==='running'){replay.state.clock=performance.now();flushPianoTrade();setPlayState(true);}
+   else{mathPatterns.stop();$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('play').textContent='▶︎ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
    audioStatus();
   };
  }
  return ctx;
 }
-function primeAudio(){try{audioContext().resume().catch(()=>{});}catch{}}
+function primeAudio(){try{unlockPlayback(audioContext()).catch(()=>{});}catch{}}
 function seekHistory(bar,dragging=false){
  pendingPianoTrade=null;
  send('hardstyle-active',0);

@@ -1,3 +1,4 @@
+import {requestPlaybackMode} from './audio-unlock.js?v=55';
 const VERSION=1;
 export function encodeScore(score){
  const bytes=new TextEncoder().encode(JSON.stringify(score));let text='';for(const byte of bytes)text+=String.fromCharCode(byte);
@@ -24,13 +25,15 @@ export function createTakeShare({button,dialog,snapshot,onContinue=()=>{}}){
   let destination;
   try{
    destination=context.createMediaStreamDestination();tap.connect(destination);
-   const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
+   const safari=/AppleWebKit/.test(navigator.userAgent)&&!/(Chrome|Chromium|Edg)/.test(navigator.userAgent);
+   const formats=safari?['audio/mp4','audio/webm;codecs=opus','audio/webm']:['audio/webm;codecs=opus','audio/mp4','audio/webm'];
+   const mime=formats.find(t=>MediaRecorder.isTypeSupported(t));
    const recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined),take={recorder,destination,tap,chunks:[],started:Date.now(),score:snapshot(),epoch};
    take.done=new Promise(resolve=>take.resolve=resolve);
    recorder.ondataavailable=event=>{if(event.data.size)take.chunks.push(event.data);};
    recorder.onstop=()=>{clearTimeout(take.timer);try{tap.disconnect(destination);}catch{}for(const track of destination.stream.getTracks())track.stop();take.blob=new Blob(take.chunks,{type:recorder.mimeType});take.chunks=[];if(take.epoch===epoch)lastTake=take;take.resolve(take);};
    recorder.onerror=()=>{if(recorder.state!=='inactive')recorder.stop();};
-   active=take;recorder.start(1000);
+   active=take;recorder.start(1000);requestPlaybackMode();
    // Keep one bounded take. Share or a new Listen starts a new capture.
    take.timer=setTimeout(()=>{if(active===take)void finish();},300000);
   }catch{if(destination){try{tap.disconnect(destination);}catch{}for(const track of destination.stream.getTracks())track.stop();}active=null;button.disabled=false;}

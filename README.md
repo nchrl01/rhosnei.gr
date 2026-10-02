@@ -298,3 +298,19 @@ The volume slider retains its scale and default 50%. Peaks already limited canno
 increase by the full 50%. Offline checks verify all five Pd voices, finite phrase
 duration at 60/120 BPM, no stale-event retrigger, pause/seek/end silence, name search,
 replay audio and Share. Run `node checks/math-transport.mjs`.
+
+## iPhone audio startup (v55)
+
+AudioSession uses playback mode when supported so Web Audio follows music
+playback rather than iOS's default ambient/ringer category. A one-frame silent
+source and resume request execute directly inside the Listen/Resume gesture,
+before sample loading. Older iOS uses a bundled silent HTML audio loop to select
+the music route; Pause and closing the engine stop it. The browser chooses the
+device's native sample rate instead of forcing 44.1 kHz.
+
+Blocked startup times out with a retry message instead of hanging. Interrupted
+contexts hold replay position, and Resume restores audio without toggling Pause.
+Safari captures prefer MP4/AAC. Headless WebKit with an iPhone viewport verified
+trade/replay output, suspension/resume, Share audio and shared score playback;
+Chromium passed too. These checks do not measure a physical iPhone's mute switch.
+Regression check: `node checks/audio-unlock.mjs`.
