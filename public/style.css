@@ -37,3 +37,6 @@ footer{display:flex;flex-wrap:wrap;gap:16px;border-top:1px solid #111;padding-to
 .cartridge-file{display:block;color:#777}.cartridge-file input{display:block;margin-top:8px;max-width:100%;font:11px monospace}
 .cartridge-audition{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.cartridge-audition label{display:flex;flex-direction:column;font-size:9px;color:#777;gap:6px}.cartridge-audition select{min-width:150px}
 .cartridge-now{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:10px}.cartridge-now[hidden]{display:none}.cartridge-now meter{width:90px;height:5px;margin-left:auto}
+
+.market-memory{margin:20px 0;border:1px solid #ddd;font:11px monospace}.context-readings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;padding:16px}.context-readings small{display:block;font-size:9px;color:#888;margin-bottom:7px}.context-readings strong{font-size:12px;font-weight:400}.market-memory p{padding:0 16px 14px;font:10px/1.6 monospace;color:#777;margin:0}
+@media(max-width:600px){.context-readings{grid-template-columns:1fr}}

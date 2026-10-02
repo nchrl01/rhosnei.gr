@@ -1,12 +1,14 @@
 {
-  "version": 1,
+  "version": 2,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
+    "av-envion-triplets.pd",
+    "av-envion-voice.pd",
+    "av-envion.pd",
     "av-genome.pd",
     "av-orchestra-tables.pd",
     "av-pad.pd",
-    "av-pluck.pd",
     "av-random.pd",
     "av-sequencer.pd",
     "av-zero-ensemble.pd",

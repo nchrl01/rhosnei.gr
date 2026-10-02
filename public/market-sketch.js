@@ -18,11 +18,11 @@ export function pathAt(path,x){
  return {x,y:a.y+(b.y-a.y)*t};
 }
 export function createMarketSketch(container,chart){
- container.innerHTML=`<div class="sketch-heading"><span>MARKET / SONIC SKETCH</span><span data-sketch-state>MARKET ONLY · SOUND PAUSED</span></div><canvas aria-label="Dynamic market path with real sound activity and measured audio spectrum" role="img"></canvas><div class="sketch-readings"><span data-sketch-path>No price path yet</span><span data-sketch-audio>Audio awaiting playback</span></div><p>Price → path · volume → marks · Sound voices → traces · measured sound → spectrum. The clock marker scans the visible chart path; it does not replay historical prices.</p>`;
+ container.innerHTML=`<div class="sketch-heading"><span>LATEST MARKET / SONIC SKETCH</span><span data-sketch-state>MARKET ONLY · SOUND PAUSED</span></div><canvas aria-label="Dynamic market path with real sound activity and measured audio spectrum" role="img"></canvas><div class="sketch-readings"><span data-sketch-path>No price path yet</span><span data-sketch-audio>Audio awaiting playback</span></div><p>Latest market state → gesture · actual sound → traces and spectrum. This drawing does not sequence notes or replay historical candles.</p>`;
  const canvas=container.querySelector('canvas'),ctx=canvas.getContext('2d');
  const stateText=container.querySelector('[data-sketch-state]'),pathText=container.querySelector('[data-sketch-path]'),audioText=container.querySelector('[data-sketch-audio]');
  let width=640,height=320,analyser=null,spectrum=null,wave=null,playing=false,native=false,clock=0,metrics={},voices=[],lastTrade=0,tradeAt=-Infinity,lastDraw=0,path=[],pathVersion='',audioDb=-100,disposed=false;
- const groups={'av-wersi-voice':['cartridge',20],'av-string-voice':['strings',20],'av-pad-voice':['pads',6],'av-tone-voice':['tones',32],'av-poly-voice':['poly',12],'av-perc-voice':['percussion',32]};
+ const groups={'av-wersi-voice':['cartridge',20],'av-envion-voice':['gestures',8],'av-pad-voice':['pads',6],'av-tone-voice':['tones',32],'av-poly-voice':['poly',12],'av-perc-voice':['percussion',32]};
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const resize=new ResizeObserver(entries=>{width=Math.max(240,entries[0].contentRect.width);height=width<500?270:340;const dpr=Math.min(2,devicePixelRatio||1);canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);canvas.style.height=height+'px';ctx.setTransform(dpr,0,0,dpr,0,0);});resize.observe(canvas);
  function update(input){playing=input.playing;native=input.native;metrics=input.m;stateText.textContent=playing?(native?'PD CLOCK + NATIVE METERS':'PD CLOCK + MEASURED AUDIO'):'MARKET ONLY · SOUND PAUSED';}
@@ -37,16 +37,15 @@ export function createMarketSketch(container,chart){
  function paint(now){
   if(disposed)return;requestAnimationFrame(paint);
   if(document.hidden||now-lastDraw<(reduced.matches?100:33))return;lastDraw=now;
-  let range=null;try{range=chart.chart.timeScale().getVisibleRange();}catch{}
-  const version=`${chart.scale}/${chart.revision||0}/${chart.received}/${chart.history.length}/${chart.interval}/${range?.from}/${range?.to}/${chart.buckets.size}/${chart.history.at(-1)?.close}`;
-  if(version!==pathVersion){pathVersion=version;path=marketPath([...chart.buckets.values()],range,chart.scale);pathText.textContent=path.length?`${path.length} price marks · ${new Date(path[0].time).toLocaleTimeString()} → ${new Date(path.at(-1).time).toLocaleTimeString()}`:'Waiting for chart prices';}
+  const livePath=metrics.context?.path||[],version=`${livePath.length}/${livePath.at(-1)?.time}/${livePath.at(-1)?.close}/${metrics.context?.baseline}/${chart.scale}`;
+  if(version!==pathVersion){pathVersion=version;path=marketPath(livePath,null,chart.scale);pathText.textContent=path.length?`${path.length} context marks · latest received frame · ${new Date(path.at(-1).time).toLocaleTimeString()}`:'Waiting for latest market state';}
   if(chart.received!==lastTrade){lastTrade=chart.received;tradeAt=now;}
   const margin=22,top=28,bottom=height*.62,plotHeight=bottom-top,plotWidth=width-2*margin;
   const xy=p=>[margin+p.x*plotWidth,top+p.y*plotHeight];
   ctx.clearRect(0,0,width,height);ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);
   ctx.strokeStyle='#e9e9e9';ctx.lineWidth=1;
   for(let i=0;i<4;i++){const y=top+i*plotHeight/3;ctx.beginPath();ctx.moveTo(margin,y);ctx.lineTo(width-margin,y);ctx.stroke();}
-  ctx.font='9px monospace';ctx.fillStyle='#777';ctx.fillText((chart.scale==='log'?'LOG':'LINEAR')+' PRICE / VISIBLE CHART',margin,14);
+  ctx.font='9px monospace';ctx.fillStyle='#777';ctx.fillText((chart.scale==='log'?'LOG':'LINEAR')+' PRICE / FIXED MARKET CONTEXT',margin,14);
   if(path.length){
    const maxVolume=Math.max(1,...path.map(p=>p.volume));ctx.strokeStyle='#bbb';
    for(const p of path){if(!p.volume)continue;const [x,y]=xy(p);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+Math.log1p(p.volume)/Math.log1p(maxVolume)*18);ctx.stroke();}
@@ -54,11 +53,11 @@ export function createMarketSketch(container,chart){
    if(path.length===1){const [x,y]=xy(path[0]);ctx.beginPath();ctx.arc(x,y,2,0,2*Math.PI);ctx.fill();}
    const [tx,ty]=xy(path.at(-1)),age=(now-tradeAt)/1000;
    if(age<1.5&&!reduced.matches){ctx.strokeStyle=`rgba(0,0,0,${(1-age/1.5)*.5})`;ctx.beginPath();ctx.arc(tx,ty,3+age*14*(.3+(metrics.volume||0)),0,2*Math.PI);ctx.stroke();}
-   if(playing){const scan=pathAt(path,(clock%32)/31),[x,y]=xy(scan);ctx.strokeStyle='#999';ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(x,top);ctx.lineTo(x,bottom);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle='#111';ctx.fillRect(x-2,y-2,4,4);}
+
   }
   voices=voices.filter(v=>now-v.born<2200);
   if(playing&&path.length)for(const v of voices){
-   const age=(now-v.born)/2200,p=pathAt(path,(v.clock%32)/31),[x,y]=xy(p),offset=(v.index/Math.max(1,v.count-1)-.5)*50;
+   const age=(now-v.born)/2200,p=path.at(-1),[x,y]=xy(p),offset=(v.index/Math.max(1,v.count-1)-.5)*50;
    ctx.strokeStyle=`rgba(0,0,0,${(1-age)*.65})`;ctx.lineWidth=v.kind==='pads'?2:1;
    ctx.beginPath();
    if(v.kind==='percussion'){const size=2+(1-age)*6;ctx.moveTo(x-size,y+offset);ctx.lineTo(x,y+offset-size);ctx.lineTo(x+size,y+offset);ctx.lineTo(x,y+offset+size);ctx.closePath();}

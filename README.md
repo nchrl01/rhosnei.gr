@@ -5,7 +5,7 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
 ## Automatic orchestra
 
-The browser now combines Gameta strings and pads, ZERO100 tonal lanes,
+The browser now combines Envion-shaped live-buffer fragments and Gameta pads, ZERO100 tonal lanes,
 polyrhythms and resonant filtering, and Perc Generator synthesized percussion.
 All parts run together with one clock and pitch family. A rule-based conductor
 changes roles every two bars and allocates a shared gain budget from activity,
@@ -50,6 +50,18 @@ Provider candle coverage takes precedence over older observations inside that co
 
 Origin means earliest available pool history, not a verified token launch. Missing coverage is explicit. The root register depends on price relative to the earliest available open. Historical backfill can change that reference. Chart controls do not change the music's historical timeframe.
 
+A separate five-minute candle request loads musical context before deeper
+origin history. It refreshes every five minutes through the shared provider
+queue; initial history can be delayed or unavailable. Latest received price
+is compared with completed anchors across 5m/1h/6h/24h. Return size and speed,
+recent candle shocks, relative volume and liquidity turnover produce intensity.
+Recent shocks cool with a two-hour time constant. Effective movement/activity/
+volume can remain high after a fast move pauses; stale feeds still fade.
+The loaded median price gives context but high historical valuation alone
+does not hold the mix at high intensity. Historical market cap is not supplied:
+the displayed typical cap is inferred from price and snapshot supply, which
+can be inaccurate when supply changes. Quote-side token caps remain unknown.
+
 ## Signal-map feedback
 
 Browser voice pulses come from actual Pd messages; percentage bars show control gains rather than measured loudness. The advancing Pd clock establishes feedback health. After 1.5 seconds without advancement, the map reports stale feedback, even if cached native values continue arriving. Native state is sampled every 250 ms and does not claim to show every note event. Changing coin or restarting playback resets the display counters.
@@ -81,14 +93,12 @@ performed under the current computer-control restriction.
 
 ## Dynamic market sketch
 
-The monochrome Canvas visualization follows the chart’s visible price history.
-The chart’s linear/log scale sets geometry, actual candle volume marks the path, Pd clock
-and voice events leave short-lived traces, and a Web Audio analyser displays
-actual post-master browser spectrum/waveform. The clock scans the path as a
-visual correspondence; this does not sonify/replay old candles. Native mode
-shows Pd output meters without inventing a frequency spectrum. Pausing sound
-leaves the market path live. Reduced-motion users receive slower redraws and
-no expanding trade rings. No random animation or new sound generator is added.
+The monochrome Canvas visualization uses fixed musical history and the latest
+received frame. Chart linear/log scale changes drawing geometry only. Actual
+Pd voice events leave traces at the latest point, and a Web Audio analyser
+displays the combined browser spectrum/waveform. The drawing does not replay
+historic candles or sequence notes. Native mode shows measured Pd output
+without inventing a spectrum. Pausing sound leaves the market path live.
 The implementation is independently written, inspired by SonicSketch’s drawn
 path/spectrum concept; its source, samples and synthesis are not included.
 
@@ -147,3 +157,18 @@ these scheduling checks; they do not render audio or prove hardware fidelity.
 The existing real Pd/WASM check remains `node checks/orchestra.mjs`.
 Browser playback and visual layout have not been inspected through Computer
 Use under the current permission restriction.
+
+## Envion gesture adaptation
+
+The active 20-string bank has been removed. Eight stereo fragment voices use
+Envion’s value/time/delay triplet core (Emiliano Pennisi, 2025, MIT). They read
+up to six seconds of AV’s own tonal/polyrhythmic audio through shaped delay
+trajectories and amplitude envelopes. They introduce no sampled loops or
+network audio. Activity sets gesture probability; movement changes articulation
+and shortens duration; liquidity extends it. The live buffer needs a few seconds
+to fill after starting. Other orchestra parts can sound immediately.
+
+This is a portable core adaptation, not the full Envion PlugData ecosystem.
+The original string study remains archived; the downloadable active orchestra
+contains the replacement and Envion’s license. This revision has not had a new
+desktop or browser audio audition.

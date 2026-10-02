@@ -8,7 +8,7 @@ bounded total gain budget; movement and liquidity distribute prominence.
 Mix changes use a 650 ms time constant. Missing snapshot-only signals fade.
 Master adjusts listening volume only. This is a rule-based conductor, not AI.
 
-Parts: Gameta 20 strings / 6 PWM pads; ZERO100 32 tonal lanes / 12 polyrhythms /
+Parts: Envion 8 stereo live-fragment gestures / Gameta 6 PWM pads; ZERO100 32 tonal lanes / 12 polyrhythms /
 8 resonant bands; Perc Generator 32 synthesized percussion voices.
 The percussion uses FM and filtered noise, not sampled breaks or ZENOLOGY.
 ZENOLOGY remains a separately hosted local plugin companion.
@@ -32,3 +32,16 @@ Rebuild: python3 build-orchestra.py (in the project root).
 Runtime check: node checks/orchestra.mjs uses the actual embedded browser WASM.
 Voice pulses report actual Pd triggers/envelopes. L/R meters measure output.
 Native telemetry is sampled and cannot show every note event.
+
+Envion: Emiliano Pennisi (2025), MIT. See ENVION-LICENSE.txt.
+https://www.peamarte.it/env/envion_v3.6.html
+The value/time/delay triplet core is adapted to vanilla Pd; the full PlugData
+application, its externals, presets, samples and network loader are not bundled.
+AV reshapes its own live tonal/polyrhythmic audio with gesture envelopes.
+The live six-second buffer fills after playback starts.
+
+Market context: latest received state + fixed five-minute candles, independently
+of chart zoom/pan. Return size/speed and recent shocks retain recent intensity;
+shocks cool with a two-hour time constant. Volume relative to loaded history and
+liquidity turnover also contribute. Missing context remains explicit. Typical
+market cap is a price-based estimate using snapshot supply, not historical cap.

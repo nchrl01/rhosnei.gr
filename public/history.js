@@ -11,7 +11,7 @@ export function loadHistory(market,onUpdate,options={}){
  const base='https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/pools/'+encodeURIComponent(market.pairAddress)+'/ohlcv/'+timeframe;
  let before=Math.floor(Date.now()/1000)+1,pages=0,failures=0;
  function report(state,message){onUpdate({candles:[...rows.values()].sort((a,b)=>a.time-b.time),interval,timeframe,state,message,created});}
- try{const cached=JSON.parse(localStorage.getItem(key));if(cached&&cached.timeframe===timeframe&&Date.now()-cached.saved<600000&&Array.isArray(cached.candles)){for(const bar of cached.candles)rows.set(bar.time,bar);report(cached.state,'Cached '+cached.timeframe+' history');return()=>{closed=true;};}}catch{}
+ try{const cached=JSON.parse(localStorage.getItem(key));if(cached&&cached.timeframe===timeframe&&Date.now()-cached.saved<(options.cacheAge??600000)&&Array.isArray(cached.candles)){for(const bar of cached.candles)rows.set(bar.time,bar);report(cached.state,'Cached '+cached.timeframe+' history');return()=>{closed=true;};}}catch{}
  async function page(){
   if(closed)return;controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=10000;const requestedAt=Date.now();
   try{
