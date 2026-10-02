@@ -1,10 +1,11 @@
+import {installGrid} from './grid.js?v=29';
 import {createEnvion} from './envion.js?v=28';
 import {createEngineView} from './engine-view.js?v=28';
 import {contextualizeMarket} from './market-state.js?v=28';
 import {createMarketSketch} from './market-sketch.js?v=28';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=28';
-import {createSignalMap} from './signal-map.js?v=28';
+import {createSignalMap} from './signal-map.js?v=29';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=28';
 import {subscribePool} from './realtime.js?v=4';
@@ -318,7 +319,5 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },100);
 setInterval(()=>{if(mode==='demo'){const t=performance.now()/1000;lastDemoPrice=100+2*Math.sin(t/19)+Math.sin(t/31);chart.add({at:Date.now(),price:lastDemoPrice,source:'demo'});$('chart-source').textContent='Synthetic demo prices · no market feed';}},1000);
-// Keep the dot rows fitted to the viewport, following the reference grid proportions.
-function fitDotGrid(){const root=document.documentElement,columns=parseInt(getComputedStyle(root).getPropertyValue('--grid-columns'))||8;const width=root.clientWidth-8,height=innerHeight-10;root.style.setProperty('--grid-row',height/Math.max(1,Math.ceil(height/(width/columns)))+'px');}
-window.addEventListener('resize',fitDotGrid);fitDotGrid();
+installGrid();
 document.fonts.ready.then(()=>chart.chart.applyOptions({layout:{fontFamily:'Tiny, monospace'}}));

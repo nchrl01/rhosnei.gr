@@ -71,10 +71,9 @@ export function createSignalMap(container){
   if(!latest.native&&group){const voice=nodes.get(group).querySelector(`[data-voice="${value}"]`);if(voice){voice.classList.remove('signal-pulse');void voice.offsetWidth;voice.classList.add('signal-pulse');}}
   if(name==='av-perc-voice'&&!latest.native)counts.percussion++;
   if(name==='av-output-left'||name==='av-output-right')set('output-level',`Pd L ${(eventState['av-output-left']??-100).toFixed(1)} / R ${(eventState['av-output-right']??-100).toFixed(1)} dBFS`);
-  set(`DNA ${eventState['av-dna']??'—'} / rule ${eventState['av-codon']??'—'} / state ${eventState['av-phenotype']??'—'}`);
   container.querySelector('[data-events]').textContent=latest.native?`Native state sampled every 250 ms. Last melody: ${eventState.note??'—'} MIDI. Shared clock: ${eventState.generation??'—'}.`:`Received: ${counts.note} generative note events / ${counts.percussion} percussion envelope onsets. Shared clock: ${eventState.generation??'—'}.`;
  }
- function reset(){feedback.reset();eventState={};counts={note:0,percussion:0};for(const b of container.querySelectorAll('.signal-pulse'))b.classList.remove('signal-pulse');set('Awaiting engine');set('output-level','Awaiting audio meters');container.querySelector('[data-events]').textContent='No Pd events received';}
+ function reset(){feedback.reset();eventState={};counts={note:0,percussion:0};for(const b of container.querySelectorAll('.signal-pulse'))b.classList.remove('signal-pulse');set('output-level','Awaiting audio meters');container.querySelector('[data-events]').textContent='No Pd events received';}
  reset();
  return {update,receive,reset,setTransport:state=>feedback.setTransport(state)};
 }
