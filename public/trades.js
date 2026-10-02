@@ -1,6 +1,6 @@
 // Free REST trade observations across GeckoTerminal-indexed networks.
 // HTTP polling is explicitly reported; this is not a WebSocket trade stream.
-import {fetchGecko} from './gecko.js?v=1';
+import {fetchGecko} from './gecko.js?v=39';
 const networkAlias={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro',zksync:'zksync',pulsechain:'pulsechain'};
 const same=(a,b)=>/^0x[0-9a-f]{40}$/i.test(a||'')?a.toLowerCase()===b?.toLowerCase():a===b;
 export function pollPoolTrades(market,onEvent,onState){
@@ -10,7 +10,7 @@ export function pollPoolTrades(market,onEvent,onState){
  async function poll(){
   if(closed)return;controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=8000;
   try{
-   const response=await fetchGecko(url,{signal:controller.signal});
+   const response=await fetchGecko(url,{signal:controller.signal,priority:90});
    if(!response.ok){if(response.status===404){onState({connected:false,kind:'snapshot',message:'Pool not indexed by free trade provider · snapshots active'});closed=true;return;}if(response.status===429)delay=Math.max(30000,Number(response.headers.get('Retry-After'))*1000||0);throw Error('Trade provider HTTP '+response.status);}
    const data=await response.json();if(closed)return;if(!Array.isArray(data.data))throw Error('Unexpected trade response');
    const ordered=data.data.slice().sort((a,b)=>Date.parse(a.attributes?.block_timestamp)-Date.parse(b.attributes?.block_timestamp));

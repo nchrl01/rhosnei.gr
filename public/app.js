@@ -7,14 +7,14 @@ import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orches
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {subscribePool} from './realtime.js?v=4';
-import {subscribeEvm} from './evm.js?v=5';
-import {subscribeOrca} from './orca.js?v=1';
+import {subscribeEvm} from './evm.js?v=39';
+import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
-import {fetchGecko} from './gecko.js?v=1';
-import {startTrending} from './trending.js?v=33';
+import {fetchGecko} from './gecko.js?v=39';
+import {startTrending} from './trending.js?v=39';
 import {MarketChart} from './chart.js?v=35';
-import {loadHistory} from './history.js?v=30';
-import {pollPoolTrades} from './trades.js?v=5';
+import {loadHistory} from './history.js?v=39';
+import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let pd,ctx,gain,outputTap,playing=false,starting=false,poll,market=null,mode='demo',generation=0,loading=false;
@@ -37,7 +37,7 @@ async function loadCoinImage(pair){
  const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
  const controller=new AbortController();imageController=controller;const timeout=setTimeout(()=>controller.abort(),45000);
  try{
-  const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(aliases[pair.chainId]||pair.chainId)+'/tokens/'+encodeURIComponent(pair.baseToken.address)+'/info',{signal:controller.signal});
+  const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(aliases[pair.chainId]||pair.chainId)+'/tokens/'+encodeURIComponent(pair.baseToken.address)+'/info',{signal:controller.signal,priority:0});
   if(!r.ok)throw Error('Token image unavailable');const data=await r.json();if(controller.signal.aborted)return;
   tokenImages.set(key,data.data?.attributes?.image_url||'');if(market&&imageKey(market)===key)displayCoinImage();
  }catch{if(!controller.signal.aborted)tokenImages.set(key,'');}finally{clearTimeout(timeout);}
@@ -258,7 +258,8 @@ function updateContext(){
 }
 function startHistory(pair){
  const gen=generation;stopHistory?.();stopMusicHistory?.();clearTimeout(musicHistoryTimer);historyContext=null;contextCandles=[];musicalCandles=[];
- function refreshMusicHistory(){if(gen!==generation)return;stopMusicHistory?.();stopMusicHistory=loadHistory(pair,data=>{if(gen!==generation)return;musicalCandles=data.candles;musicalInterval=data.interval;},{timeframe:'minute',aggregate:5,maxPages:1,cacheAge:60000});musicHistoryTimer=setTimeout(refreshMusicHistory,300000);}
+ function refreshMusicHistory(){if(gen!==generation)return;stopMusicHistory?.();stopMusicHistory=loadHistory(pair,data=>{if(gen!==generation)return;musicalCandles=data.candles;musicalInterval=data.interval;},{timeframe:'minute',aggregate:5,maxPages:1,cacheAge:60000,priority:60});musicHistoryTimer=setTimeout(refreshMusicHistory,300000);}
+ if($('chart-timeframe').value!=='auto')loadChartTimeframe();
  refreshMusicHistory();
  const dates=discovered.filter(p=>p.chainId===pair.chainId).map(p=>Number(p.pairCreatedAt)).filter(n=>n>0);
  originDate=dates.length?Math.min(...dates):Number(pair.pairCreatedAt)||null;updateContext();
@@ -271,7 +272,6 @@ function startHistory(pair){
   $('history-status').textContent=data.message+' · '+data.timeframe+' candles'+gap;
   updateContext();session?.controls.push({at:Date.now(),name:'history-context',first:first?.time,firstOpen:first?.open,state:data.state,originDate});
  });
- if($('chart-timeframe').value!=='auto')loadChartTimeframe();
 }
 const chartFrames={'1m':{timeframe:'minute',aggregate:1},'5m':{timeframe:'minute',aggregate:5},'15m':{timeframe:'minute',aggregate:15},'1h':{timeframe:'hour',aggregate:1},'4h':{timeframe:'hour',aggregate:4},'1d':{timeframe:'day',aggregate:1}};
 function loadChartTimeframe(){
@@ -284,7 +284,7 @@ function loadChartTimeframe(){
   if(gen!==generation||request!==chartRequest)return;
   chart.setHistory(data.candles,data.interval,originDate);
   $('chart-resolution').textContent=selection+' · '+data.candles.length+' provider candles · '+data.message;
- },{...frame,maxPages:3});
+ },{...frame,maxPages:3,priority:100});
 }
 async function fetchJSON(url){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),12000);try{const r=await fetch(url,{signal:abort.signal});if(!r.ok)throw Error('Market provider returned '+r.status);return await r.json();}finally{clearTimeout(timeout);}}
 function applySnapshot(pair){
@@ -296,7 +296,7 @@ function applySnapshot(pair){
 function chooseMarket(pair){
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
- resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
+ resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);startHistory(pair);setupStream();loadCoinImage(pair);
  $('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;

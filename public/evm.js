@@ -3,6 +3,7 @@ export const EVM_RPC={
  ethereum:'ethereum-rpc',base:'base-rpc',bsc:'bsc-rpc',arbitrum:'arbitrum-one-rpc',
  polygon:'polygon-bor-rpc',optimism:'optimism-rpc',avalanche:'avalanche-c-chain-rpc'
 };
+const metadataCache=new Map();
 const V2='0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822';
 const V3='0xc42079f94a6350d7e6235f29174924f928cc2ac818eb64fed8004e115fbcca67';
 const isAddress=s=>/^0x[0-9a-f]{40}$/i.test(s||'');
@@ -40,13 +41,13 @@ export function subscribeEvm(market,onEvent,onState){
    pending.set(id,{resolve,reject,timeout});ws.send(JSON.stringify({jsonrpc:'2.0',id,method,params}));
   });}
   async function call(to,data){return request('eth_call',[{to,data},'latest']);}
-  function receive(log){
+  function receive(log,receivedAt=Date.now()){
    const id=log.transactionHash+':'+log.logIndex;
    if(log.removed){seen.delete(id);onEvent({id,removed:true,receivedAt:Date.now()});return;}
    if(seen.has(id))return;const trade=decodeSwap(log,meta);if(!trade)return;
    seen.add(id);if(seen.size>4096)seen.delete(seen.values().next().value);
    onState({connected:true,kind:'swap',message:'Connected · '+market.chainId+' · decoded '+trade.protocol.toUpperCase()+' swaps'});
-   const receivedAt=Date.now();onEvent({...trade,id,signature:log.transactionHash,block:Number(BigInt(log.blockNumber)),receivedAt,kind:'swap'});
+   onEvent({...trade,id,signature:log.transactionHash,block:Number(BigInt(log.blockNumber)),receivedAt,kind:'swap'});
    // Fetch timestamp after emitting the trade; telemetry never delays sound.
    if(!blockTimes.has(log.blockNumber)){
     blockTimes.set(log.blockNumber,request('eth_getBlockByNumber',[log.blockNumber,false]).then(block=>Number(BigInt(block.timestamp))*1000));
@@ -61,6 +62,9 @@ export function subscribeEvm(market,onEvent,onState){
     if(ready)request('eth_blockNumber',[]).catch(()=>{failure='Heartbeat failed';ws.close();});
    },15000);
    try{
+    const key=market.chainId+':'+market.pairAddress+':'+market.baseToken.address+':'+market.quoteToken.address;
+    const metadata=(async()=>{
+      const cached=metadataCache.get(key);if(cached&&Date.now()-cached.saved<3600000)return cached.value;
     const [token0Raw,token1Raw]=await Promise.all([call(market.pairAddress,'0x0dfe1681'),call(market.pairAddress,'0xd21220a7')]);
     const token0=('0x'+token0Raw.slice(-40)).toLowerCase(),token1=('0x'+token1Raw.slice(-40)).toLowerCase();
     const base=market.baseToken.address.toLowerCase(),quote=market.quoteToken.address.toLowerCase();
@@ -68,18 +72,23 @@ export function subscribeEvm(market,onEvent,onState){
     const [d0,d1]=await Promise.all([call(token0,'0x313ce567'),call(token1,'0x313ce567')]);
     const dec0=Number(BigInt(d0)),dec1=Number(BigInt(d1));
     if(!Number.isInteger(dec0)||!Number.isInteger(dec1)||dec0>36||dec1>36)throw Error('Unsupported token decimals');
-    meta={baseIs0:token0===base,baseDecimals:token0===base?dec0:dec1,quoteDecimals:token0===base?dec1:dec0};
-    await request('eth_subscribe',['logs',{address:market.pairAddress,topics:[[V2,V3]]}]);
+    const result={baseIs0:token0===base,baseDecimals:token0===base?dec0:dec1,quoteDecimals:token0===base?dec1:dec0};
+    metadataCache.set(key,{saved:Date.now(),value:result});if(metadataCache.size>128)metadataCache.delete(metadataCache.keys().next().value);
+    return result;
+    })();
+    // Capture pool logs during token/decimal lookup instead of subscribing later.
+    const result=await Promise.all([metadata,request('eth_subscribe',['logs',{address:market.pairAddress,topics:[[V2,V3]]}])]);
+    meta=result[0];
     if(closed)return;ready=true;clearTimeout(openTimeout);attempt=0;
     onState({connected:true,kind:'waiting',message:'Connected · '+market.chainId+' · awaiting supported swap; snapshots active'});
-    for(const log of buffer)receive(log);buffer.length=0;
+    for(const item of buffer)receive(item.log,item.receivedAt);buffer.length=0;
    }catch(error){if(closed)return;failure=error.message;ws.close();}
   };
   ws.onmessage=message=>{
    if(closed)return;lastMessage=Date.now();let data;try{data=JSON.parse(message.data);}catch{return;}
    if(pending.has(data.id)){const p=pending.get(data.id);pending.delete(data.id);clearTimeout(p.timeout);data.error?p.reject(Error(data.error.message)):p.resolve(data.result);return;}
    if(data.method!=='eth_subscription'||!data.params?.result)return;
-   const log=data.params.result;if(!meta||!ready){if(buffer.length<256)buffer.push(log);}else receive(log);
+   const log=data.params.result;if(!meta||!ready){if(buffer.length<512)buffer.push({log,receivedAt:Date.now()});}else receive(log);
   };
   ws.onerror=()=>{failure='PublicNode connection failed';};
   ws.onclose=event=>{

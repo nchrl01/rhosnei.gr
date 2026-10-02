@@ -1,4 +1,4 @@
-import {fetchGecko} from './gecko.js?v=1';
+import {fetchGecko} from './gecko.js?v=39';
 const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom',cro:'cronos'};
 const money=value=>value!=null&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(Number(value)):null;
 function node(tag,text,className){const el=document.createElement(tag);if(text!=null)el.textContent=text;if(className)el.className=className;return el;}
@@ -58,7 +58,7 @@ export function startTrending(onPick){
   status.textContent='Loading trending markets…';
   try{
    for(let page=1;page<=10;page++){
-    const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,network&duration='+encodeURIComponent(duration.value)+'&page='+page,{signal});
+    const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,network&duration='+encodeURIComponent(duration.value)+'&page='+page,{signal,priority:5});
     if(!r.ok)throw Error('Trending provider HTTP '+r.status);const data=await r.json();if(gen!==generation||signal.aborted)return;
     if(!Array.isArray(data.data))throw Error('Unexpected trending response');const included=new Map((data.included||[]).map(x=>[x.id,x]));
     for(const pool of data.data){

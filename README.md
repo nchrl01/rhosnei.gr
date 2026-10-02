@@ -162,3 +162,32 @@ initialization and normalization constants are retained; they are not coin input
 This update received syntax and receiver/asset inspection only; it has not been
 auditioned or checked in a running browser. Recreating sound from historical
 candles remains an estimate, not an exact recording of the historical instrument.
+
+## Chart startup and live subscriptions (v39)
+
+- The selected visible chart requests its latest 1000 candles before sound context,
+  launch backfill, image metadata and trending. The shared GeckoTerminal queue
+  prioritizes first chart pages (100), fallback trades (90), first context pages
+  (80/60), older history pages (20), trending (5) and images (0).
+- Identical concurrent requests share one HTTP response, with independent
+  cancellation and cloned bodies. Dispatch spacing is six seconds: the stricter
+  public docs currently say about 10 calls/minute, while the FAQ says 30. HTTP 429
+  applies a shared cooldown using Retry-After (or 60 seconds).
+- Saved candles display immediately for repeat visits (up to 24-hour cache age),
+  explicitly marked as saved. The latest page always refreshes, replacing
+  overlapping candles. Every successful page is saved, so interrupted backfills
+  do not discard all progress. Cache gaps remain partial and are backfilled.
+- Pagination has no additional ten-second sleep after each response; the shared
+  request scheduler provides pacing. Deep launch coverage still takes multiple
+  requests and depends on upstream retention, indexing and available budget.
+- EVM V2/V3 logs subscribe concurrently with token/decimal lookup. Orca metadata
+  lookup and the WebSocket handshake run concurrently. Logs received during
+  lookup are buffered (up to 512) with their actual browser receipt times. Pool
+  metadata is reused for one hour in memory (bounded to 128 entries).
+- Native confirmed subscriptions run outside the REST history queue. Existing
+  unsupported pools still use cached trade polling/snapshots; PublicNode is a free
+  shared provider. This does not create a universal direct decoder for every DEX.
+
+Provider source: https://api.geckoterminal.com/docs/index.html. Its documented
+one-minute cache means polling alone cannot produce an uncached live stream.
+No runtime timing measurements or browser checks have been run for this update.
