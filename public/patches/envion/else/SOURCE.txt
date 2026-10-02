@@ -1,0 +1,15 @@
+ELSE Pure Data abstractions, Alexandre Torres Porres and contributors.
+Upstream: https://github.com/porres/pd-else
+Pinned commit: bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0
+This is the exact ELSE submodule commit used by libpd-wasm 5570d36ec99820b4c6fb9662be6ead7bfbd59572.
+
+Unmodified source files:
+Abstractions/Audio/mono.rev~.pd
+Abstractions/Audio/float2sig~.pd
+Abstractions/Control/lfo.pd
+Abstractions/Control/swap2.pd
+Abstractions/Extra/f2s~.pd
+Abstractions/Extra/float2sig.unit.pd
+License: LICENSE.txt (WTFPL v2).
+
+sfload.pd is an AV browser adapter, not an upstream ELSE implementation. The original sfload is a compiled C external with FFmpeg/network dependencies unavailable in this WASM build. The adapter delegates decoding/fetching to the browser, then reads a staged WAV with soundfiler. See BROWSER-ADAPTER.txt and ADAPTER-LICENSE.txt.

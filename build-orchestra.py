@@ -1,7 +1,7 @@
 """Build one browser/native Pd orchestra from AV's existing editable engines.
 
-Gameta, ZERO100 and Perc Generator share a clock, register, scale and output.
-The reference reconstructions remain approximations; see ORCHESTRA.txt.
+Original Envion joins the shared market clock and orchestral output.
+ZERO100 and Perc Generator remain reference reconstructions; see ORCHESTRA.txt.
 """
 from pathlib import Path
 import json
@@ -21,28 +21,9 @@ for name in ['zp-clock','zp-lane','zp-tone','zp-poly','zp-band','zp-cross','zp-d
     (ROOT/(name+'.pd')).write_text((zero/(name+'.pd')).read_text())
 for name in ['zp-perc-clock','zp-perc-markov','zp-perc-voice','zp-perc']:
     (ROOT/(name+'.pd')).write_text((perc/(name+'.pd')).read_text())
-for name in ['av-genome']:
-    (ROOT/(name+'.pd')).write_text((BASE/'public'/'patches'/(name+'.pd')).read_text())
-for retired in ['av-pluck.pd','av-pad.pd']:
+# Genotype and the retired Gameta sequencer are disabled.
+for retired in ['av-genome.pd','av-sequencer.pd','av-pluck.pd','av-pad.pd','av-envion-voice.pd','av-envion-triplets.pd']:
     if (ROOT/retired).exists(): (ROOT/retired).unlink()
-
-# Keep Gameta's rule engine and note/rest behavior; drive it with the ensemble
-# audio-clock edge instead of an independent metro.
-seq=(BASE/'public'/'patches'/'av-sequencer.pd').read_text()
-seq=seq.replace('metro 110','spigot 0').replace('r tempo','r av-tick')
-# Locate indices rather than relying on coordinates in a generated patch.
-objects=[line for line in seq.splitlines() if line.startswith('#X ') and not line.startswith('#X connect')]
-run=next(i for i,line in enumerate(objects) if line.endswith('r run;'))
-gate=next(i for i,line in enumerate(objects) if line.endswith('spigot 0;'))
-tick=next(i for i,line in enumerate(objects) if line.endswith('r av-tick;'))
-duration=next((i for i,line in enumerate(objects) if 'expr 15000 /' in line),None)
-if duration is not None:
-    line=objects[duration];parts=line.split(' ',4)
-    seq=seq.replace(line,f'#X text {parts[2]} {parts[3]} Shared orchestra clock;')
-    seq=seq.replace(f'#X connect {tick} 0 {duration} 0;',f'#X connect {tick} 0 {gate} 0;')
-    seq=seq.replace(f'#X connect {duration} 0 {gate} 1;','')
-seq=seq.replace(f'#X connect {run} 0 {gate} 0;',f'#X connect {run} 0 {gate} 1;')
-(ROOT/'av-sequencer.pd').write_text(seq)
 
 def append_patch(name,make):
     path=ROOT/(name+'.pd'); lines=path.read_text().splitlines()
@@ -104,6 +85,7 @@ for source,target in [('swing','swing'),('density','density'),('duration','durat
                       ('perc-density','perc-density'),('perc-decay','perc-decay'),
                       ('perc-color','perc-color'),('perc-delay','perc-delay'),('perc-feedback','perc-feedback')]:
     p.chain(p.obj('r '+source),p.obj(r's \$1-'+target))
+counter=p.obj('f 0');increment=p.obj('+ 1');counter_split=p.obj('t f f');p.chain(p.obj('r av-tick'),counter,increment,counter_split);p.link(counter_split,counter,out=1,inp=1);p.chain(counter_split,p.obj('s generation'))
 p.write('av-conductor')
 
 p=Patch('One pitch family / musical rate ratios / deterministic token-dependent filter frequencies.')
@@ -134,50 +116,43 @@ for i in range(8):
 p.chain(seed,split);p.chain(pack,write)
 p.write('av-orchestra-tables')
 
-# Envion's envelope-first triplet sequencing, reduced to vanilla Pd.
-# Attribution: Envion / Emiliano Pennisi (2025), MIT; license bundled.
-p=Patch('Envion triplet stream: value / time / delay -> vline~')
-incoming=p.obj('inlet');split=p.obj('list split 3');rest=p.obj('list');trigger=p.obj('t b l');line=p.obj('vline~');out=p.obj('outlet~')
-p.chain(incoming,split);p.link(split,rest,out=1,inp=1);p.chain(split,trigger);p.link(trigger,rest);p.link(trigger,line,out=1);p.chain(rest,split);p.chain(line,out)
-p.write('av-envion-triplets')
-
-p=Patch('AV / Envion adaptation: shaped live-buffer fragments, not plucked strings')
-incoming=p.obj('inlet',25,70);count=p.obj('av-random 1000');p.chain(incoming,count)
-seed=p.obj('r seed');salt=p.obj(r'expr int($f1)+\$1*7919');msg=p.msg(r'seed \$1');p.chain(seed,salt,msg,count)
-split=p.obj('t f f f f');p.chain(count,split)
-duration=p.obj('expr 45+280*$f2*(1-.75*$f3)');texture=p.obj('r texture');motion=p.obj('r motion');p.link(texture,duration,inp=1);p.link(motion,duration,inp=2);p.link(split,duration,out=3)
-start=p.obj('expr 450+($f1*17)%3600');p.link(split,start,out=2)
-pack=p.obj('pack f f f f f');p.link(start,pack,inp=1);p.link(duration,pack,inp=2)
-energy=p.obj('r energy');p.link(energy,pack,inp=3);p.link(motion,pack,inp=4);p.link(split,pack)
-unpack=p.obj('unpack f f f f f');p.chain(pack,unpack)
-# The trigger is last after cold parameters update. Indexed delay trajectories
-# perform reversal/stretch of the engine's own material; no network samples.
-args=p.obj('pack f f f f f');p.link(unpack,args);p.link(unpack,args,out=1,inp=1);p.link(unpack,args,out=2,inp=2);p.link(unpack,args,out=3,inp=3);p.link(unpack,args,out=4,inp=4)
-trajectory=p.obj(r'expr $f2 \; max(20 \, min(5500 \, $f2+($f1%2*2-1)*$f3*(.2+1.6*$f5))) \; max(20 \, min(5500 \, $f2-$f3*(.3+$f4))) \; $f3*.4 \; $f3*.6')
-# expr with multiple outlets emits right to left; pack's hot inlet is start.
-coords=p.obj('pack f f f f f');p.chain(args,trajectory)
-for i in range(5):p.link(trajectory,coords,out=i,inp=i)
-message=p.msg(r'\$1 0 0 \$2 \$4 0 \$3 \$5 \$4');readpath=p.obj('av-envion-triplets');read=p.obj(r'vd~ \$2-envion-material');p.chain(coords,message,readpath,read)
-envargs=p.obj(r'expr 3+18*(1-$f2) \; $f1*.2 \; max(5 \, $f1*.8-(3+18*(1-$f2))) \; $f1*.2+3+18*(1-$f2)')
-p.link(motion,envargs,inp=1);p.link(duration,envargs)
-envpack=p.obj('pack f f f f');
-for i in range(4):p.link(envargs,envpack,out=i,inp=i)
-envmsg=p.msg(r'0 0 0 1 \$1 0 0.35 \$2 \$1 0 \$3 \$4');env=p.obj('av-envion-triplets');p.chain(envpack,envmsg,env)
-audio=p.obj('*~');p.link(read,audio);p.link(env,audio,inp=1)
-hp=p.obj('hip~ 80');trim=p.obj('*~ 0.42');p.chain(audio,hp,trim)
-left=p.obj(r'expr cos(\$1/7*1.5707963)');right=p.obj(r'expr sin(\$1/7*1.5707963)');lb=p.obj('loadbang');p.link(lb,left);p.link(lb,right)
-for channel,pan in enumerate([left,right]):
-    mul=p.obj('*~');p.link(trim,mul);p.link(pan,mul,inp=1);out=p.obj('outlet~',25+channel*220,805);p.chain(mul,out)
-report_audio(p,trim,'av-envion-voice',r'f \$1','melody')
-p.write('av-envion-voice')
-
-p=Patch('Envion-inspired live micro-assembly / original envelope-first core adaptation')
-source=p.obj(r'r~ \$1-envion-source');write=p.obj(r'delwrite~ \$1-envion-material 6000');p.chain(source,write)
-tick=p.obj('r av-tick');random=p.obj('av-random 1000');scale=p.obj('/ 1000');gate=p.obj('< .5');hit=p.obj('sel 1');dispatch=p.msg('next bang');voices=p.obj(r'clone av-envion-voice 8 \$1');p.chain(tick,random,scale,gate,hit,dispatch,voices)
+# Run the supplied Envion 5.2 source itself. Host adapters preserve the original
+# DSP and expose its GUI/control messages without recreating its synthesis.
+p=Patch('Original Envion 5.2 / market-clock host / authored DSP preserved')
+p.obj('envion/main')
+tick=p.obj('r av-tick')
+ready_gate=p.obj('spigot 0');ready=p.obj('r av-envion-ready')
+run_gate=p.obj('spigot 0');run=p.obj('r run')
+market_gate=p.obj('spigot 1');market=p.obj('r av-envion-market')
+p.chain(tick,ready_gate,run_gate,market_gate)
+p.link(ready,ready_gate,inp=1);p.link(run,run_gate,inp=1);p.link(market,market_gate,inp=1)
+random=p.obj('av-random 1000');scale=p.obj('/ 1000');gate=p.obj('< .5');hit=p.obj('sel 1')
+p.chain(market_gate,random,scale,gate,hit)
 activity=p.obj('r activity');prob=p.obj('expr .1+.85*$f1');p.chain(activity,prob);p.link(prob,gate,inp=1)
-seed=p.obj('r seed');seedmsg=p.msg(r'seed \$1');clear=p.msg('clear');p.chain(seed,seedmsg,random);p.chain(seed,clear,write)
-for channel in range(2):
-    out=p.obj('outlet~',25+channel*220,805);p.link(voices,out,out=channel)
+# Match the original row metro's outlet order: speed draw first, row draw second.
+trigger=p.obj('t b b');p.chain(hit,trigger)
+p.chain(trigger,p.obj('s av-envion-row-random'))
+p.link(trigger,p.obj('s av-envion-random-speed'),out=1)
+seed=p.obj('r seed');seedmsg=p.msg(r'seed \$1');p.chain(seed,seedmsg,random)
+# Both browser and local bridge observe this request and stop the source's
+# independent metros using its announced canvas namespace.
+stop=p.obj('sel 0');stop_actions=p.obj('t b b');p.chain(run,stop,stop_actions)
+p.chain(stop_actions,p.obj('s av-envion-hard-stop'))
+request=p.msg('0');p.link(stop_actions,request,out=1);p.chain(request,p.obj('s av-envion-stop-request'))
+channels=[]
+for channel,side in enumerate(['left','right']):
+    source=p.obj('r~ av-envion-'+side);channels.append(source)
+    out=p.obj('outlet~',25+channel*220,805);p.chain(source,out)
+# One original Envion output pair replaces the previous eight fragment voices.
+# Measure each side independently before combining energy to avoid phase cancellation.
+left_level=p.obj('env~ 1024');right_level=p.obj('env~ 1024')
+p.chain(channels[0],left_level);p.chain(channels[1],right_level)
+maximum=p.obj('max');p.link(left_level,maximum);p.link(right_level,maximum,inp=1)
+# Use the orchestra layer gain in the audible crossing condition.
+gain=p.obj('r melody');rms=p.obj('dbtorms');weighted=p.obj('*');threshold=p.obj('> 0.00316228')
+p.chain(maximum,rms,weighted,threshold);p.link(gain,weighted,inp=1)
+change=p.obj('change');audible=p.obj('sel 1');value=p.msg('0')
+p.chain(threshold,change,audible,value,p.obj('s av-envion-voice'))
 p.write('av-envion')
 
 p=Patch('ZERO100 orchestral voices and filterbank / existing reconstruction modules.')
@@ -237,7 +212,7 @@ for channel in range(2):
 p.write('av-freeverb')
 
 p=Patch('AV AUTO ORCHESTRA / one clock, harmony, automatic mix and stereo master.')
-p.obj(r'av-orchestra-tables \$0');p.obj(r'av-conductor \$0');p.obj('av-sequencer')
+p.obj(r'av-orchestra-tables \$0');p.obj(r'av-conductor \$0')
 envion=p.obj(r'av-envion \$0');mel=p.gain(envion,'melody',1)
 right=p.obj('+~ 0');p.link(envion,right,out=1);melR=p.gain(right,'melody',1)
 both=p.obj('+~');p.link(mel,both);p.link(melR,both,inp=1);center=p.obj('*~ .5');p.chain(both,center)
@@ -281,18 +256,18 @@ bridge=(BASE/'public'/'patches'/'av-bridge.pd').read_text()
 bp=Patch('');bp.nodes=[line for line in bridge.splitlines()[1:] if not line.startswith('#X connect')]
 bp.wires=[line for line in bridge.splitlines()[1:] if line.startswith('#X connect')]
 route=next(i for i,line in enumerate(bp.nodes) if ' route ' in line)
-new=['tones','poly','filtered','percussion','swing','density','duration','decay','divider','drive','feedback','delay-left','delay-right','perc-density','perc-decay','perc-color','perc-delay','perc-feedback']
+new=['tones','poly','filtered','percussion','swing','density','duration','decay','divider','drive','feedback','delay-left','delay-right','perc-density','perc-decay','perc-color','perc-delay','perc-feedback','av-envion-ready','av-envion-market']
 old=bp.nodes[route].split(' route ',1)[1].rstrip(';').split()
 bp.nodes[route]=bp.nodes[route][:-1]+' '+' '.join(new)+';'
 for i,name in enumerate(new):bp.link(route,bp.obj('s '+name),out=len(old)+i)
-for name in ['av-envion-voice','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right']:
+for name in ['av-envion-voice','av-envion-stop-request','av-envion-id','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right']:
     alive=next(i for i,line in enumerate(bp.nodes) if line.endswith('netsend -u;'))
     r=bp.obj('r '+name);msg=bp.msg(r'send '+name+r' \$1');bp.chain(r,msg,alive)
 alive=next(i for i,line in enumerate(bp.nodes) if line.endswith('netsend -u;'))
 beat=next(i for i,line in enumerate(bp.nodes) if line.endswith('metro 1000;'))
-version=bp.msg('send orchestra-version 4');bp.chain(beat,version,alive)
+version=bp.msg('send orchestra-version 5');bp.chain(beat,version,alive)
 bp.write('av-bridge')
 
 files=sorted(path.name for path in ROOT.glob('*.pd') if path.name not in ['av-desktop.pd','av-bridge.pd'])
-(ROOT/'manifest.json').write_text(json.dumps({'version':4,'entry':'market.pd','files':files,'layers':['melody','tones','poly','filtered','percussion']},indent=2)+'\n')
+(ROOT/'manifest.json').write_text(json.dumps({'version':5,'entry':'market.pd','files':files,'layers':['melody','tones','poly','filtered','percussion']},indent=2)+'\n')
 print('Built orchestra:',len(files),'browser Pd files + desktop launcher')

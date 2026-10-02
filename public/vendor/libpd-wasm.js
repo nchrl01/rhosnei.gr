@@ -989,19 +989,20 @@ function prepareRuntimeSource(source, packages, manifest2) {
 function prepareRuntimeFiles(files, packages, manifest2) {
   return Object.fromEntries(Object.entries(files).map(([path, source]) => [
     path,
-    prepareRuntimeSource(source, packages, manifest2)
+    // AV: preserve WAVs and other binary assets in the virtual filesystem.
+    typeof source === "string" ? prepareRuntimeSource(source, packages, manifest2) : source
   ]));
 }
 
 // npm/dist/runtime.js
 function validatePath(path) {
-  if (path === "")
+  if (typeof path !== "string" || path === "")
     throw new Error("Pd file path cannot be empty.");
   if (path.startsWith("/")) {
     throw new Error(`Pd file path must be relative: ${path}`);
   }
-  if (path.split("/").includes("..")) {
-    throw new Error(`Pd file path cannot contain '..': ${path}`);
+  if (path.includes("\\") || path.includes("\0") || path.split("/").some(part => part === ".." || part === "." || part === "")) {
+    throw new Error(`Pd file path cannot contain traversal or empty segments: ${path}`);
   }
 }
 function normalizeFiles(files) {
@@ -1045,9 +1046,13 @@ var PdRuntime = class {
   subscribers = /* @__PURE__ */ new Map();
   printHandlers = /* @__PURE__ */ new Set();
   errorHandlers = /* @__PURE__ */ new Set();
+  scopeHandlers = new Set();
   readyWaiter = null;
   patchWaiter = null;
   closed = false;
+  // AV extension: correlate asynchronous virtual file transfers.
+  fileRequests = new Map();
+  nextFileRequest = 1;
   constructor(options) {
     this.audioContext = options.audioContext;
     this.node = options.node;
@@ -1092,12 +1097,59 @@ var PdRuntime = class {
     if (this.closed)
       return;
     this.closed = true;
+    for (const pending of this.fileRequests.values()) {
+      clearTimeout(pending.timer);
+      pending.reject(new Error("Pd closed during a virtual file request."));
+    }
+    this.fileRequests.clear();
     this.node.port.postMessage({ type: "close-patch" });
     this.node.disconnect();
     this.subscribers.clear();
+    this.scopeHandlers.clear();
     if (this.ownsAudioContext) {
       await this.audioContext.close();
     }
+  }
+  // Paths are relative to /patches, the same root used by loadPatch().
+  // A successful write resolves only after the worklet has staged every byte.
+  writeFile(path, content) {
+    if (typeof content !== "string" && !(content instanceof Uint8Array)) {
+      return Promise.reject(new TypeError("File content must be a string or Uint8Array."));
+    }
+    return this.requestFile("write-file", path, content);
+  }
+  readFile(path) {
+    return this.requestFile("read-file", path);
+  }
+  // Record Envion's dedicated stereo bus, separately from the audible ensemble.
+  startRecording(path) {
+    return this.requestFile("start-recording", path);
+  }
+  stopRecording() {
+    return this.requestFile("stop-recording");
+  }
+  requestFile(type, path, content) {
+    try {
+      if (this.closed) throw new Error("Cannot access files after Pd was closed.");
+      if (type !== "stop-recording") validatePath(path);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    const requestId = this.nextFileRequest++;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.fileRequests.delete(requestId);
+        reject(new Error(`Pd virtual file request timed out: ${path}`));
+      }, 30000);
+      this.fileRequests.set(requestId, {resolve, reject, timer, type});
+      try {
+        this.node.port.postMessage({type, requestId, path, ...(content === undefined ? {} : {content})});
+      } catch (error) {
+        clearTimeout(timer);
+        this.fileRequests.delete(requestId);
+        reject(error);
+      }
+    });
   }
   sendBang(name) {
     this.node.port.postMessage({ type: "bang", receiver: name });
@@ -1144,6 +1196,17 @@ var PdRuntime = class {
       this.printHandlers.delete(callback);
     };
   }
+  subscribeScopes(callback) {
+    if (this.closed) throw new Error("Cannot subscribe after Pd was closed.");
+    this.scopeHandlers.add(callback);
+    this.node.port.postMessage({type:"enable-scopes", enabled:true});
+    return () => {
+      this.scopeHandlers.delete(callback);
+      if (!this.closed && this.scopeHandlers.size === 0) {
+        this.node.port.postMessage({type:"enable-scopes", enabled:false});
+      }
+    };
+  }
   onError(callback) {
     this.errorHandlers.add(callback);
     return () => {
@@ -1151,6 +1214,19 @@ var PdRuntime = class {
     };
   }
   handleMessage(data) {
+    if (data.type === "scope-data") {
+      for (const handler of this.scopeHandlers) handler(data);
+      return;
+    }
+    if (data.type === "file-result") {
+      const pending = this.fileRequests.get(data.requestId);
+      if (!pending) return;
+      clearTimeout(pending.timer);
+      this.fileRequests.delete(data.requestId);
+      if (data.ok) pending.resolve(pending.type === "read-file" ? data.content : data.result);
+      else pending.reject(new Error(data.message || "Pd virtual file request failed."));
+      return;
+    }
     if (data.type === "ready") {
       this.readyWaiter?.resolve();
       this.readyWaiter = null;

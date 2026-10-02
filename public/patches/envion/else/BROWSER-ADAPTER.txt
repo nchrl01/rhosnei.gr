@@ -1,0 +1,28 @@
+sfload.pd / AV browser compatibility adapter
+
+Input methods retained for Envion: download URL [channel sizeMs startMs], load path [channel sizeMs startMs], set arrayName, threaded 0/1. Threaded is accepted because browser fetch/decode is already asynchronous. Native FFmpeg support, arbitrary network protocols and prefixed multichannel arrays are not implemented here.
+
+Every load/download requests a host action through the global Pd send av-envion-fetch:
+  [instanceId, arrayName, method, pathOrURL, optionalChannel, optionalSizeMs, optionalStartMs]
+
+The same list passes through fudiformat to the print prefix av-envion-fetch-bytes. Decode the printed decimal ASCII bytes and tokenize FUDI with backslash escaping. The resulting message begins with the selector list:
+  list 1005 samplebufL download https://example.org/sample.wav;
+This transport works in libpd builds which export only float and print hooks.
+
+The host fetches/decode the file, applies optional channel/size/start selection, and stages a mono WAV in the virtual filesystem. An unprefixed target array uses source channel 0 by default, matching original sfload. Explicit channel selects that channel. Source framing should be preserved for WAV files; metadata fields refer to the full source before slicing.
+
+To finish, send a Pd list to INSTANCE-sfload-ready:
+  [absoluteVirtualPath, originalFrameCount, originalSampleRate, originalChannels, sourceBits]
+The adapter reads the staged WAV with soundfiler into its current target array. Only a successful nonzero read produces its outlet list:
+  [originalFrameCount, originalSampleRate, originalChannels, sourceBits]
+This follows the original sfload four-field outlet contract.
+
+On host failure, send a symbol or list to INSTANCE-sfload-error. It prints av-envion-sfload and sends the error to av-envion-fetch-error. No success metadata is fabricated.
+
+Array names and paths are passed as symbols; FUDI formatting preserves spaces. The host must prevent stale async responses from replacing later user requests. The original sample library licenses remain separate from this adapter.
+
+Other browser adapters in the parent envion directory:
+
+av-envion-file.pd replaces a native openpanel/savepanel. Arguments are id, kind (open/save), and optional mode (0 file, 1 directory, 2 multiple files). Bang emits FUDI bytes via av-envion-file-bytes: [id, kind, mode]. After staging, the host replies on av-envion-file-ID with symbol path (or a list for multiple files). The adapter forwards this message unchanged.
+
+av-envion-soundfiler.pd stages on-demand local sample assets. Read emits av-envion-soundfile-bytes: [instanceId, read, flags/path/arrays...]. After staging, send the original read message to INSTANCE-soundfile-ready. Both original soundfiler outlets are forwarded unchanged. Successful reads also send frame count to av-envion-sample-frames and av-envion-soundfile-done-bytes: [instanceId, frameCount]. Host failure can be sent to INSTANCE-soundfile-error. Non-read methods, including writes, pass directly to native soundfiler.

@@ -2,21 +2,24 @@ AV / AUTO ORCHESTRA
 
 Browser: enter a contract, choose its indexed pool and press Listen.
 There is one ensemble. The five meters display automatic part gain, not selectors.
-All parts share a sixteenth-note clock and the pitch family 0 2 3 5 7 9 10.
+The market conductor uses a sixteenth-note clock. Its reconstructed tonal
+parts use the pitch family 0 2 3 5 7 9 10; Envion keeps its original sample DSP.
 Every 32 ticks (two bars) phrase roles change. Activity and USD volume set a
 bounded total gain budget; movement and liquidity distribute prominence.
 Mix changes use a 650 ms time constant. Missing snapshot-only signals fade.
 Master adjusts listening volume only. This is a rule-based conductor, not AI.
 
-Parts: Envion 8 stereo live-fragment gestures; ZERO100 32 tonal lanes / 12 polyrhythms /
+Parts: original Envion 5.2 stereo instrument; ZERO100 32 tonal lanes / 12 polyrhythms /
 8 resonant bands; Perc Generator 32 synthesized percussion voices.
 The percussion uses FM and filtered noise, not sampled breaks or ZENOLOGY.
 ZENOLOGY remains a separately hosted local plugin companion.
 
-Desktop: keep this folder together, open av-desktop.pd, enable DSP, start the
-local AV server, choose Native Pd on localhost:4173, then Listen.
-The bridge validates the orchestra version and stops after missing heartbeats.
-Do not open another market instrument alongside it: controls are global.
+Browser orchestra version: 5. The Native Pd selector is temporarily disabled:
+the full Envion browser file bridge is not implemented by the desktop host.
+Older av-orchestra.zip downloads are archived version-4 studies and do not
+contain this full Envion integration. For the original standalone desktop
+source and library setup, see ../envion/PORT-NOTES.txt. No working full AV
+native orchestra is claimed for this version.
 
 Reference adaptations:
 Rolando Rampoldi / Gameta https://www.youtube.com/watch?v=Atttrb0hoEc
@@ -29,16 +32,32 @@ an aesthetic reference; its original patch and drum samples are not bundled.
 No reference video audio, commercial plugin, or preset is distributed.
 
 Rebuild: python3 build-orchestra.py (in the project root).
-Runtime check: node checks/orchestra.mjs uses the actual embedded browser WASM.
-Voice pulses report actual Pd triggers/envelopes. L/R meters measure output.
-Native telemetry is sampled and cannot show every note event.
+The browser loads Envion separately through ../envion/manifest.json.
+Voice pulses report Pd triggers/envelopes; Envion activity is measured from
+its actual stereo output. L/R meters measure orchestra output.
 
-Envion: Emiliano Pennisi (2025), MIT. See ENVION-LICENSE.txt.
+Envion: Emiliano Pennisi (2025), MIT. See ENVION-LICENSE.txt and
+../envion/LICENSE.txt for the original source notice.
 https://www.peamarte.it/env/envion_v3.6.html
-The value/time/delay triplet core is adapted to vanilla Pd; the full PlugData
-application, its externals, presets, samples and network loader are not bundled.
-AV reshapes its own live tonal/polyrhythmic audio with gesture envelopes.
-The live six-second buffer fills after playback starts.
+The supplied original 5.2 source replaces the former fragment approximation:
+109 canvases, 5,597 nodes, 4,380 wires, all 44 supplied audio files, 19 envelope
+banks and six tape impulse responses. The browser port retains the original
+DSP, presets and effects with adapters for controls, files, keyboard and output.
+Market clock mode drives the original speed/row controls; Original clocks
+mode uses Envion's own clocks. Both join the same AV stereo ensemble.
+Only the recorder's unbound inputs are redirected to the original pre-out
+$0-vul/$0-vur signals; other orphan reg1/reg2 inputs remain silent.
+Original recorder controls use a browser WAV writer: the runtime's native
+writesf~ produces no frames. Dedicated output channels 3/4 carry the actual
+pre-out samples to a 44,100 Hz, 32-bit float WAV. This is separate from AV's
+main post-master Record function. The original desktop source is unchanged.
+The four-triplet main-envelope path and hardcoded 44,100 Hz timing are retained.
+Scopes without taps are labelled; live canvas-label changes are not mirrored.
+Sample waveforms are displayed. NETaudio requires remote access/CORS; browser
+decoding may resample compressed formats. Source PCM WAV data is preserved.
+Full port notes, exact-source checksum and desktop directions:
+../envion/PORT-NOTES.txt. Runtime ELSE/Cyclone licenses are mixed; see
+../../vendor/licenses/ and ../envion/audiolab/ source/license notices.
 
 Market context: latest received state + fixed five-minute candles, independently
 of chart zoom/pan. Return size/speed and recent shocks retain recent intensity;
@@ -56,3 +75,6 @@ Clock mapping: market cap $10k -> 10 BPM, $1m -> 100 BPM, $10m -> 200 BPM.
 Logarithmic interpolation between anchors; endpoint limits at 10/200 BPM.
 Missing cap uses a labelled 120 BPM fallback. Market intensity shapes
 articulation, density and mix independently of this cap-based clock.
+
+Genotype and its sequencer are disabled in the current graph. The generation
+telemetry name now reports shared clock ticks only.

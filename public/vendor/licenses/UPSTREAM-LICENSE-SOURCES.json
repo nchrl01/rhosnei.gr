@@ -1,0 +1,62 @@
+[
+  {
+    "file": "LIBPD-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/hyrfilm/libpd-wasm/5570d36ec99820b4c6fb9662be6ead7bfbd59572/LICENSE.txt"
+  },
+  {
+    "file": "LIBPD-WASM-NPM-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/hyrfilm/libpd-wasm/5570d36ec99820b4c6fb9662be6ead7bfbd59572/npm/LICENSE.txt"
+  },
+  {
+    "file": "PURE-DATA-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/LICENSE.txt"
+  },
+  {
+    "file": "CYCLONE-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/LICENSE.txt"
+  },
+  {
+    "file": "ELSE-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/License.txt"
+  },
+  {
+    "file": "ELSE-LICENSE-OVERVIEW.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/LICENSE/About%20the%20Licenses.txt"
+  },
+  {
+    "file": "ELSE-BSD.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/LICENSE/LICENSE%20BSD"
+  },
+  {
+    "file": "ELSE-CC.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/LICENSE/LICENSE%20CC"
+  },
+  {
+    "file": "ELSE-WTFPL.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/LICENSE/LICENSE%20WTFPL"
+  },
+  {
+    "file": "ELSE-GNU.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/LICENSE/License%20GNU"
+  },
+  {
+    "file": "ELSE-MIT.txt",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/LICENSE/License%20MIT"
+  },
+  {
+    "file": "GPL-2.0.txt",
+    "source": "https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt"
+  },
+  {
+    "file": "EMSCRIPTEN-LICENSE.txt",
+    "source": "https://raw.githubusercontent.com/emscripten-core/emscripten/5.0.6/LICENSE"
+  },
+  {
+    "file": "EMSCRIPTEN-AUTHORS.txt",
+    "source": "https://raw.githubusercontent.com/emscripten-core/emscripten/5.0.6/AUTHORS"
+  },
+  {
+    "file": "MUSL-COPYRIGHT.txt",
+    "source": "https://raw.githubusercontent.com/emscripten-core/emscripten/5.0.6/system/lib/libc/musl/COPYRIGHT"
+  }
+]

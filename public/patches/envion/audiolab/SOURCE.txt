@@ -1,0 +1,15 @@
+AudioLab Pure Data abstractions, solipd and contributors.
+Upstream: https://github.com/solipd/AudioLab
+Pinned commit: 31c1ac3dc2b42425a132c0f25c280c3522bfcd0e
+
+Unmodified source files:
+pp.echo~.pd
+pp.sfplayer~.pd
+pp.fft-partconv-st~.pd
+pp.fft-partconv-st-part.pd
+pp.lfnoise~.pd
+pp.wfdisplay.pd
+
+Upstream general license: LICENSE (GNU GPL v3). Specific source notices are preserved in each patch; BSD-3-Clause and GPL v3 texts included. Source patches are provided in full, including their DSP and preset/savestate implementations.
+
+array.copy.pd is an AV vanilla compatibility adapter, not an AudioLab object. It implements the two-array copy message used by Envion, resizing the destination and copying in 4096-sample chunks to bound intermediate list size. Other ceammc array.copy operations are not implemented. See ADAPTER-LICENSE.txt.

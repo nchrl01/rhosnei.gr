@@ -1,0 +1,89 @@
+ENVION 5.2 / AV BROWSER PORT
+
+Source: Envion 5.2 PlugData by Emiliano Pennisi, copyright 2025, MIT.
+Project: https://www.peamarte.it/env/envion_v3.6.html
+License and original notices: LICENSE.txt.
+
+WHAT IS INCLUDED
+The supplied original patch is the instrument's source, with its nested DSP,
+presets, routing and effects. The source model contains 109 canvases, 5,597
+nodes and 4,380 wires. The library includes all 44 supplied audio files
+(260,338,532 bytes), 19 envelope text banks and six tape impulse responses.
+Samples beyond the startup preset are loaded when needed.
+
+Envion_v5.2_Plugdata.pd is the byte-identical original, beside its relative
+audio/, data/ and asset/ folders. main.pd is the generated browser adaptation.
+The original snapshot also remains in original/ for provenance.
+Original source SHA-256, also recorded in model.json:
+b311a1ef54914f22987d4ec8846b05b2155eb922de5611d7d9dfa1fe7f4f6591
+
+WHAT AV ADAPTS
+The browser runs the patch in libpd with ELSE and Cyclone. Added control taps
+connect the source's controls to its browser drawing; keyboard input is sent
+from the focused instrument. File choosers, local sample loading, NETaudio
+and recording use a browser file bridge. See else/BROWSER-ADAPTER.txt.
+The original output stage keeps its gain behavior and sends stereo audio to
+AV's ensemble gain, liquidity-controlled Freeverb and master volume.
+
+Only the recorder's two otherwise unbound reg1/reg2 inputs are redirected to
+the existing $0-vul/$0-vur signals: the final Envion stereo mix before out~.
+This records Envion before AV's ensemble gain, Freeverb and master. Other
+orphan reg1/reg2 inputs remain silent, as in the supplied original patch;
+the recorder fix adds no feedback path.
+The source's open/start/stop controls are preserved, but writesf~ is replaced
+by av-envion-recorder at the file-writing boundary: the supplied WASM runtime
+does not write audio frames through native writesf~. Dedicated libpd output
+channels 3/4 carry the actual pre-out stereo samples to the browser host,
+which writes a 44,100 Hz, 32-bit float WAV into the virtual filesystem and
+acknowledges completion. This patch recording is separate from AV's main
+post-master Record function. The downloadable original patch is unchanged.
+
+Market clock mode triggers the original random-speed and row-selection
+controls from AV's market clock. Original clocks mode enables the source's
+own clocks. The rest of AV's ensemble continues to follow market signals.
+The source's hardcoded 44,100 Hz timing and four-triplet main-envelope path
+are retained, including their limitations. AV requests a 44,100 Hz browser
+AudioContext. PCM WAV imports retain their original samples and sample rate.
+
+BROWSER DIFFERENCES
+This is an original-source port with documented host adaptations, not a
+claim that every desktop feature or rendered pixel is identical.
+The browser displays the original layout, control values and sample
+waveforms. Five source scopes and the stereo meter display actual parallel Pd signal taps;
+their browser window rendering differs from the desktop scope renderer. The
+source canvas receive label is mirrored.
+NETaudio depends on each remote host's availability and browser CORS access.
+Compressed formats use the browser decoder and may be resampled to playback
+rate. This differs from the original FFmpeg decoder. Remote audio retains
+its source's license; see the original notice in LICENSE.txt.
+
+DESKTOP SOURCE
+Download the full project, preserving this directory and its assets:
+https://github.com/nchrl01/rhosnei.gr
+For desktop use, copy Envion_v5.2_Plugdata.pd and its audio/, data/ and asset/
+folders into a separate folder, then open that patch in PlugData with ELSE
+and Cyclone available. Install the AudioLab and ceammc libraries used by
+the original; configure their library/search paths and preserve asset/.
+AudioLab: https://github.com/solipd/AudioLab
+ceammc: https://github.com/uliss/pd-ceammc
+Use desktop versions of those libraries. Leave this port's browser else/
+adapter folder out of the desktop copy: its sfload expects AV's browser
+file bridge and can shadow desktop ELSE when placed beside the patch.
+
+The AV Native Pd selector is temporarily disabled: the full browser file
+bridge is not implemented by the desktop orchestra host. The original
+desktop source is supplied for use in its own supported environment; the
+full AV native orchestra is not presented as working. Older av-orchestra.zip
+downloads are archived version-4 studies, not this version-5 browser port.
+
+DEPENDENCIES
+Envion's MIT license does not replace its dependencies' licenses. AudioLab
+source and its GPL/BSD notices are in audiolab/. ELSE abstraction provenance
+is in else/SOURCE.txt. The full libpd/ELSE/Cyclone WASM runtime has mixed
+licenses; source notices and texts are in public/vendor/licenses/ in the
+project. AV's sfload, file and output adapters are identified separately in
+their source and accompanying notices.
+
+AV website revision28: genotype is disabled. The Pd panel is hidden until
+"pdata" is submitted in the token box. Market signals automatically set Nuke
+cutoff/routing, grains, stereo pan, echo and reverb. Original samples are retained.

@@ -1,0 +1,12 @@
+[
+  {
+    "file": "../libpd-worklet-full.js",
+    "sha256": "54501925afe30522f635bd8c9fc6edb3bb69d9a607d903176bc75a658e9c54a6",
+    "upstream": "https://raw.githubusercontent.com/hyrfilm/libpd-wasm/5570d36ec99820b4c6fb9662be6ead7bfbd59572/demo/libpd-worklet-full.js"
+  },
+  {
+    "file": "../libpd-wasm.js",
+    "sha256": "35f6ce22d5b54fec76dac73bf52e161bcc979c1645e71a2ab8f297e59afc308a",
+    "upstream": "https://raw.githubusercontent.com/hyrfilm/libpd-wasm/5570d36ec99820b4c6fb9662be6ead7bfbd59572/demo/libpd-wasm.js"
+  }
+]

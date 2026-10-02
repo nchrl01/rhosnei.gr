@@ -1,0 +1,4 @@
+TINY 5x3 / Jack Halten Fahnestock / Velvetyne
+https://velvetyne.fr/fonts/tiny/
+https://github.com/jckfa/tinyfonts
+Unmodified TINY5x3-120.woff2, SIL Open Font License 1.1.

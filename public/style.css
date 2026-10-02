@@ -39,3 +39,23 @@ footer{display:flex;flex-wrap:wrap;gap:16px;border-top:1px solid #111;padding-to
 .engine-panel{border:1px solid #ccc;margin:22px 0;padding:16px;font:11px/1.5 monospace}.engine-panel>summary{cursor:pointer;letter-spacing:.07em}.engine-note{font:10px/1.6 monospace;color:#777;margin:12px 0;max-width:none}.engine-status{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:10px;padding:10px 0;border-block:1px solid #ddd}.engine-overview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;margin:16px 0}.engine-overview small{font-size:9px;color:#888}.engine-overview dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;margin:6px 0;font-size:10px}.engine-overview dt{color:#777;overflow-wrap:anywhere}.engine-overview dd{margin:0;text-align:right;overflow-wrap:anywhere}.engine-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.engine-toolbar label{display:flex;gap:8px;align-items:center}.engine-toolbar select{max-width:220px;font:11px monospace}.engine-toolbar a{font-size:10px}.engine-graph{max-height:520px;overflow:auto;background:#fafafa;border:1px solid #ccc;margin:12px 0}.engine-graph svg{display:block;max-width:none}.pd-wire{stroke:#999;stroke-width:1}.pd-object,.pd-message{fill:#fff;stroke:#333;stroke-width:1}.pd-message{stroke-dasharray:3 2}.pd-label,.pd-comment{font:10px monospace;fill:#111}.pd-comment{fill:#777}.pd-abstraction{cursor:pointer}.pd-abstraction:hover rect,.pd-abstraction:focus rect{stroke:#000;stroke-width:2;fill:#eee}.engine-source,.engine-console{margin-top:12px}.engine-source summary,.engine-console summary{cursor:pointer;font-size:10px}.engine-panel pre{max-height:320px;overflow:auto;background:#fafafa;border:1px solid #ddd;padding:12px;font:10px/1.6 monospace;white-space:pre}.engine-panel [data-log]{white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:750px){.engine-overview{grid-template-columns:1fr}.engine-graph{max-height:380px}}
 
 .engine-overview>div{max-height:280px;overflow:auto;padding-right:4px}
+
+/* Full viewport / Tiny typography / reference dot grid. */
+@font-face{font-family:Tiny;src:url('fonts/Tiny.woff2') format('woff2');font-weight:400;font-display:swap}
+:root{font-family:Tiny,monospace;--grid-columns:16;--grid-cell:calc((100vw - 16px)/var(--grid-columns))}
+body{min-height:100vh;background:#fff}
+body::after{content:'';position:fixed;inset:8px;pointer-events:none;z-index:10;background-image:radial-gradient(circle at 1px 1px,#000 1px,transparent 0);background-size:var(--grid-cell) var(--grid-cell);opacity:.6}
+main{width:100%;max-width:none;margin:0;padding:16px 24px 28px}
+body,button,input,select,output,small,strong,p,label,span,summary{font-family:Tiny,monospace!important}
+button,input,select{font-size:20px}p,small,label,.eyebrow,.badge,.session,.feed-state{font-size:18px!important;line-height:1.25}
+.brand{font-size:40px}.brand span{font-size:18px}.instrument{border:0;padding:0;background:transparent}.instrument-top{margin:18px 0}
+#coin-form{margin:18px 0}.address-row input{font-size:22px}.readings{border-block:1px solid #111;padding:12px 0}.readings strong{font-size:26px}
+.chart-panel{margin:16px 0;border:0}.chart-heading,.chart-navigation,.chart-options{font-size:18px}.chart-heading select{font-size:18px}#market-chart{height:min(58vh,650px);min-height:300px}
+.trending-header{margin:12px 0}.trending-heading p,.trending-heading span,.trending-controls button,.trending-controls select{font-size:18px}.trending-title,.trending-cap{font-size:20px!important}.trending-address{font-family:monospace!important;font-size:11px!important}
+#market-functions{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;border-block:1px solid #111;padding:12px 0;margin:12px 0}#market-functions span{display:block;font-size:18px}#market-functions output{display:block;font-size:24px;margin-top:6px}
+#envion,#engine-view,#signal-map{background:white;margin-top:20px}.envion-node,.envion-node *{font-family:Menlo,monospace!important}
+#status{font-size:20px!important}.chart-credit{font-size:15px!important}.timing span{font-size:17px}
+@media(max-width:700px){main{padding:12px}.readings{gap:12px}#market-functions{grid-template-columns:repeat(2,minmax(0,1fr))}:root{--grid-columns:8}.transport{flex-wrap:wrap}#market-chart{height:48vh}.brand{font-size:32px}}
+
+@media(min-width:1024px){:root{--grid-columns:24}}
+body::after{inset:4px;opacity:1;background-size:calc((100vw - 8px)/var(--grid-columns)) var(--grid-row,40px)}

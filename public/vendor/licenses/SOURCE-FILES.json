@@ -1,0 +1,3878 @@
+[
+  {
+    "component": "else",
+    "path": "Source/Audio/above~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/above~.c",
+    "sha256": "5a2c921fdf820e24ab1a1e179724142b7810ea5fac3bec8f7611d0cd34580974"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/add~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/add~.c",
+    "sha256": "4fc8f8772c60dc35386c2b479a6bdc87ae9b11a856b304beb74663c40a1331ba"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/adsr~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/adsr~.c",
+    "sha256": "c1b916064116584c16f7debcef30c38a552b1af9d8272e9b125092b644d3e4e2"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/allpass.2nd~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/allpass.2nd~.c",
+    "sha256": "f19f72974c9ba976c34deb73f026e7229589684504687de22765b7f2dd93f9df"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/allpass.rev~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/allpass.rev~.c",
+    "sha256": "83c7b631a2dd5a8dda5ac8d5e3f6e1cb4a861c9be1838ea54d2cc07def1c9c64"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/asr~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/asr~.c",
+    "sha256": "9edc0e7113fc08e773fac7ce2463c9f4cfe19ef93265e23b8c837307ad694341"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/autofade.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade.mc~.c",
+    "sha256": "fceb148e7da0280c566045c8e9e4265cf140401f8528db2c81dd7fac0a6bd460"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/autofade2.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade2.mc~.c",
+    "sha256": "67effc0ae274a69d307effd1dc6e1501f1050324d864425149c5e79a97c833e3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/autofade2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade2~.c",
+    "sha256": "9ebb6e85644f63da021d9cfa59f13b186d4857f56126c4869037a3cd49cde93e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/autofade~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade~.c",
+    "sha256": "63fd397b124f64525b2ed8143898e87a57165e1df86c460dd61719f08cc4f1e8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/balance~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/balance~.c",
+    "sha256": "721215dd7c46c3c2427ede37918bdd0ce1ba6eab44ba1e6405e72a7af3db91b8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bandpass~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bandpass~.c",
+    "sha256": "2e8ac00e346ecd8f4294feb392b29059b8e1470e6a1039df643f2047bf1a9072"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bandstop~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bandstop~.c",
+    "sha256": "d4a29ce007ce1873cc71e43029356d00974cabd75ca340db5972e35eace29988"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/biquads~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/biquads~.c",
+    "sha256": "1abb56c1349cb7758be05dc7feeb2ffc4cb35654f8840829d26c4163131045e0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bitnormal~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bitnormal~.c",
+    "sha256": "2a4e13c387e1d4e019724e16d99659bed7d0dc29656d64139c3efb2e461ae514"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.imp2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.imp2~.c",
+    "sha256": "77fbdf4e58d460469feb80f3b7d682b342e79f3a2e521c9859d7ae5f4401e992"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.imp~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.imp~.c",
+    "sha256": "f1516e0685289bbbe7d2c238fdad7a84d08d51793ad931bf418b3abd2f8fada2"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.saw2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.saw2~.c",
+    "sha256": "c0d4696eb0d54ae7249ea405f2a261cd77510a5db070964ecdba1f36a8a63b1e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.saw~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.saw~.c",
+    "sha256": "b9f7da629386d464b1bde60a82a2c0c9bd79bdc20465c2ce57441b610644a0a5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.square~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.square~.c",
+    "sha256": "65c0a2df047e65c8e4dfa7321b2b2e4151ed2c9e02154e124e88172396010f62"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.tri~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.tri~.c",
+    "sha256": "42136f89aeb55086602c21917a9e8f2b5bae710214ada260a31c259081a349e9"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/bl.vsaw~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.vsaw~.c",
+    "sha256": "87c0754bb528f1186cdc847cdeb89339743aa7af5fe6552037ee2d814c8d2135"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/blocksize~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/blocksize~.c",
+    "sha256": "6d630ad7d162dc38f444774b6cedc1fa52567e0bc8b54be96247d762387d8919"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/brown~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/brown~.c",
+    "sha256": "df465e5bccd67c84048d23f4449638eab503016e8e4e86be6c0d69ef4fcd3d76"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/car2pol~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/car2pol~.c",
+    "sha256": "3eeac53754ea661c82e69295634fc8133fc70852e5d990abe9cc3cd5483eaf7a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/ceil~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ceil~.c",
+    "sha256": "73f4dfd4f744bd210817ca1b44e99b55a9ab5d6d8199e127124981b7fdf162ca"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/cents2ratio~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/cents2ratio~.c",
+    "sha256": "e95bb7c1691d6c41ad45b77e7d2dc391d29cde34a743728b2b154637a4d80866"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/chance~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/chance~.c",
+    "sha256": "924483ec52746ed93b09e7e37066c46913192f81f2f2b0d7788900936f8a5d78"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/changed2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/changed2~.c",
+    "sha256": "797ed767ecd6d22b575bf2a6cff9edb8d60d44bffe093c7e1ccb945b1c5a6776"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/changed~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/changed~.c",
+    "sha256": "3aa7f18799b57f5c7f9d74fb247a3614ba6939cbc78588fdbd549947739213a2"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/comb.filt~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/comb.filt~.c",
+    "sha256": "3c6c3e54da73c860cea3dc9107de46f4c8576d852713fd669caf2036cf0b2318"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/comb.rev~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/comb.rev~.c",
+    "sha256": "cbbe24b9031ebbe984bca379119380691cba210c86f0ca6075981f8d7b9e1a57"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/cosine~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/cosine~.c",
+    "sha256": "fbd393fc3e898aa6176829904fc9a1852e63615097303fd228fe7054704584f3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/crackle~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/crackle~.c",
+    "sha256": "c29534aad9057d77a462a3cea50a163b0a5202bcce953c4be23f379ed74ff76d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/crossover~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/crossover~.c",
+    "sha256": "9f75a2059f1cbe920133ed9e2b4af1e8d8276d9120a7bffd4c0780dbb49dacc3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/cusp~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/cusp~.c",
+    "sha256": "5a57c226030617314bdbbfcf69db60ee993279c757768d0a40b5ee8ba6a61a1e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/db2lin~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/db2lin~.c",
+    "sha256": "330b13b744784245f8e0b978b5dc517ab54f2b6de1ccc38f42107b427db4c5fd"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/dbgain~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/dbgain~.c",
+    "sha256": "96d8739e378c32029c3b9e1e2f2d75e431fca2cf98e8801bddc622d933b9a171"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/decay~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/decay~.c",
+    "sha256": "e5a8425b696809913b88858fa4bbca81456f6e08c45c01d8bc9633d384541b97"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/del.in~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/del.in~.c",
+    "sha256": "1d2b3a2fca3da26e5f887dac942c65bf0455421ac1b4f0e3bf85a792fcdfd8aa"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/del.out~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/del.out~.c",
+    "sha256": "35b7a96d639b611790140e8ccee0ed1d1b7b5fe4fab01616925731cc9d885682"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/delace~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/delace~.c",
+    "sha256": "d1f308af669fd844e43ce49dda68c887a8cf3795a10744df509e44995ca0b77f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/detect~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/detect~.c",
+    "sha256": "41e15fd3eee0dadf2eed9c57bde3aba80e6c830d378f8741cf77e3f001a49149"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/downsample~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/downsample~.c",
+    "sha256": "b280cb1d056860b0ef2c91ec3ca4a466034ee1ac2df5c38f050c65c5b42fd0c8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/drive~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/drive~.c",
+    "sha256": "c25af38d20fee19d12b64a279cb2e0e3e9b64929daa9590c16b93ae5c55496c6"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/dust2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/dust2~.c",
+    "sha256": "4c13a53d9a9ee78d9fca0ecb1b78cc91d604ddf71204dc9380daa0aa4d406ace"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/dust~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/dust~.c",
+    "sha256": "1edf8bcd5f79a5abc708cc6064c9703a85a35f6b71fa55a548c8c8daf9fec8fb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/envgen~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/envgen~.c",
+    "sha256": "369183c25047ca855f92daab8031e0532114b69b5665ad37852b9c239f2cfd17"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/eq~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/eq~.c",
+    "sha256": "623bdb637746bc45b6fb05ed511d6f522ee74d301f62ddcf8f5b243effacd3ac"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fader~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fader~.c",
+    "sha256": "96f90e9c4b1ca7c42e5c48b4e16d50eee360bd04670bbb4eb397fd8c5a11eb20"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fbdelay~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fbdelay~.c",
+    "sha256": "29b2b9051261713a4bd5472d63ffed68d3805608b4c1ba44491bebd5a37f8fd9"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fbsine2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fbsine2~.c",
+    "sha256": "2f82f02855345f916857fed76551e88deea526abd479c53557c908f8ed476af0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fbsine~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fbsine~.c",
+    "sha256": "6497bb58432d34147372f509d5e30bb912ee4be3d9d8ea7742e197534db2257a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fdn.rev~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fdn.rev~.c",
+    "sha256": "58509c3dda5968590a13dff325976d4abb6ec8745dcbab874f5f1a6e10415636"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/ffdelay~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ffdelay~.c",
+    "sha256": "5f7777f30043369db7aedeefb48aac08f4e1f247393c5e28c808a7cdac78f930"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/filterdelay~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/filterdelay~.c",
+    "sha256": "0f421974d1a91e87b634aaff8c2a9e0813c1d06da312d0239b156a1ec2eee89d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/floor~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/floor~.c",
+    "sha256": "852cf35906df7175e23fc15b2b09778bbe83e20ad51569f60f6d7c6a7389d582"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fm~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fm~.c",
+    "sha256": "4badb215610ff652bdd4d90dfc09635e6a7a6157590df8e9c1ed21725eb097fb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/fold~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fold~.c",
+    "sha256": "226623b1f0b4b736bb33282d5a0fea935f1f6fdeea3f5a628f749ae2595273cb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/follow~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/follow~.c",
+    "sha256": "1722a7d986576595859b6f6b9003eb8829acc184a8bdf7c7428e781b863ba289"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/freq.shift~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/freq.shift~.c",
+    "sha256": "eaa2c6134f5841b00e0efee4b987b578ca57823f0656d94037863e3fbbb354cd"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/function~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/function~.c",
+    "sha256": "f029e0eef4a7f0b20e2e8d033b10aafaaf1bb0f37bb33086c6bf37ef66e67272"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/gate2imp~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gate2imp~.c",
+    "sha256": "01cb6474641a0a94e9b6911f045e27e18cff71ce4022e2083b4e6899c28c53f1"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/gatedelay~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gatedelay~.c",
+    "sha256": "3f6305c3f9709864ba7610bcebd20bfbd4d95344e171f8b4c35df6c05f61cf96"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/gaussian~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gaussian~.c",
+    "sha256": "57389643a10156102da8840dc9eb2a5023abdac022e8404f4102bc21b251ca24"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/gbman~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gbman~.c",
+    "sha256": "ac67148b8625f2bc72dc33cdaf1004bffbf038e2ee87e1b6052b1ae3475bca94"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/gendyn~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gendyn~.c",
+    "sha256": "fa818e2e0644c8af50e879751dc0f0e36627b634ee33e17b0d3840d267a78a70"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/get~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/get~.c",
+    "sha256": "a00b42c82cfc5927a886c2119dc43877d5eaf30192b1ae14325d11ea20e2eea5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/giga.rev~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/giga.rev~.c",
+    "sha256": "42f406aee73fe8dec1f92938308061696b1504bbcb8e795e42b8ba5ce4c0601f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/glide2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/glide2~.c",
+    "sha256": "49d2a8de994fab073169201d1bbfd708c078e5a29795933b267ef94302b70266"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/glide~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/glide~.c",
+    "sha256": "7bf3bac6626c198b7aa8f2624b07a65d4a1c34c089f2e0408b3dade239ca232f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/gray~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gray~.c",
+    "sha256": "0d0b9f79257c8293a1ccc260450b294ebfb50156fc890190ee2354e662957d40"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/group~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/group~.c",
+    "sha256": "8c31cafb1d6fcfda9b6c6b561ebc310b55403d6ed6fdfac37b8afed32afc37f5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/henon~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/henon~.c",
+    "sha256": "69bad7844bfcdfae98ec7c5b5233293c62ec2f1f0d1fc65bb26c06916007c355"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/highpass~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/highpass~.c",
+    "sha256": "1338df310d2f369cd3ce1150f09504aae2a5106c2ac00cef4ba82a3fe2ee0dc4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/highshelf~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/highshelf~.c",
+    "sha256": "cebf52aa1909264084ff19c8b0bbcd15d9e33faa0b39f6a2273f2c607e80e763"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/ikeda~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ikeda~.c",
+    "sha256": "b02782df00a7e6f4bd9f8c099ee033ad59ccd71e6a121c10e5bd6b6d4da1ddf7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/impseq~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/impseq~.c",
+    "sha256": "8a1bc93c364961a56685e9eb1b105824ca74efaf94d124df2f8d7b977b497923"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/impulse2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/impulse2~.c",
+    "sha256": "6c89716f11bc8f113ec1231741a08149aa29e65dd4ae0852ae89e4f6c8392d81"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/impulse~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/impulse~.c",
+    "sha256": "2a4e865db023d201d23aa4584d0bb9115ed14d4673f0ca6c07e9b57e829e4112"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lace~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lace~.c",
+    "sha256": "32646e9c8e8e8f5a9e6ac83c31763aca9b42fecb1c9157508c28498066f62705"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lag2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lag2~.c",
+    "sha256": "849e4dc5eb47fbe29b02f46fced55ee6205df418da6796e25f29927aec21aa58"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lag~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lag~.c",
+    "sha256": "e0eac406c084b7b00b2c74ac53322f3e463c4ac14169b47a4a36bc2d2e91bdce"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lastvalue~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lastvalue~.c",
+    "sha256": "0ff7e38845975e1bfaa14183301b5aeda05d39894791fbb500713d0c09dc0a1b"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/latoocarfian~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/latoocarfian~.c",
+    "sha256": "81144d377aab36bf76e5afe00539c5caa02fecb035d902514c0aaf0d2477be3d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lfnoise~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lfnoise~.c",
+    "sha256": "abd8537daa796f4caddc1c99ba98898b99b108c77c90288a5004a593eae8f9d7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lin2db~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lin2db~.c",
+    "sha256": "b0feff0b08f9d602f2adc45a6f1363695ce129ad56c65ea069009a19b3a495ab"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lincong~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lincong~.c",
+    "sha256": "13495efcb632c49f6dc6262a1bad1a946f2f79dbbf3019f6dda403472da273ed"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/logistic~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/logistic~.c",
+    "sha256": "f893f78d0b1f11565f833696bb7404e37e141bd84079997798d4e67ac336e918"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lop2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lop2~.c",
+    "sha256": "00ef9e52cacc6a75f2c214c435c246481ab7ff8b6e342a31d32412772bfd1391"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lorenz~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lorenz~.c",
+    "sha256": "19cda9c7e59c8f6fcc82fcb6c8c24f5bbabee54d64da4307b0938c5e079f4a31"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lowpass~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lowpass~.c",
+    "sha256": "7a076a1b550965c5c4d49d537a1a4ce3f4c7aff4d298033e463bc34ccb6d23dd"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/lowshelf~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lowshelf~.c",
+    "sha256": "0e8655e0e58e39d5440365ac5ede0f2b078dfc2c512a8a4a958b61b1c7038669"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/match~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/match~.c",
+    "sha256": "f9d0d8519d96d693447bf80b6e61b8a630af4aca26ed19abf1677fd81c0b81c9"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/median~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/median~.c",
+    "sha256": "75393db5f96840323eeeadcae2ecec547605b4400e7e6fbb4f8ff59289e0184e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/merge~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/merge~.c",
+    "sha256": "b6871dd30713891860a1348184836d756815ce2486dd53950e5b442f30e1b505"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/mix~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mix~.c",
+    "sha256": "0fe6efcbc0d99b1fc7e0cc12de3891b35a65d40f0eb3221e4a2d1a4690b0af76"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/mov.avg~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mov.avg~.c",
+    "sha256": "42f0f0658ae0af4c0ed336dcd6619d01eba24d76926139abce172fa5353938de"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/mov.rms~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mov.rms~.c",
+    "sha256": "d62f037b4f1a2f12d291c4bab4f7d1b23587d057fabc894a3361b92209592c7c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/mtx.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mtx.mc~.c",
+    "sha256": "948ec0cb2cb393252529cac9d8c9071e343c408dda8378c77e93f02be2dcbaed"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/mtx~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mtx~.c",
+    "sha256": "8d3826feedca8ff1a993607a422ce49747543a74776622382587c6a846122e37"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/nchs~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/nchs~.c",
+    "sha256": "2bf4369c96ee06f2c6b01cb5b036c3128522f17fd887e79705a8ca90efb892ef"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/numbox~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/numbox~.c",
+    "sha256": "648d4ecc58584865001450d71299e0c4dc03b10dea042dd0705a9fcf1699eb63"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/nyquist~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/nyquist~.c",
+    "sha256": "bf5899229477a4206ea57e7308889d2a3545bee4a883b5a4888fa7d0bc7fb890"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/op~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/op~.c",
+    "sha256": "4d2bbfed961f9a988c1c67aad8076eb11710eac665bbf70fdaa35de1728536d6"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pan.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan.mc~.c",
+    "sha256": "0c6bf65794b6c15e639cfd393364fa2f492c58912e7a79421a33e9a56d37e826"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pan.stereo~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan.stereo~.c",
+    "sha256": "b0dd7413363a4c36c1834588c5a3915752b8e6d8edefd3f07a27bcd326014a5e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pan2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan2~.c",
+    "sha256": "4de2dcd67f3020296c253b1e9dff29cc0bb1da72b28d44674bb49e95234c667d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pan4~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan4~.c",
+    "sha256": "47ca6e3ea48795ce09c5a9ae6efb8f164e053e5ef3b93ad5204c771f0e2cceaa"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pan~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan~.c",
+    "sha256": "54a3c5954d7175d611e921a83d9a775df2267271de1da8998e744badc8aa82fa"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/parabolic~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/parabolic~.c",
+    "sha256": "4c3135c0cd94fa659808cb71f9c043e57eabad64859f23df396467b7258a73c3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/peak~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/peak~.c",
+    "sha256": "592420362d00e66c079e608d643c6b3765b8b3f7c09c0752e7a773966092714e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/phaseseq~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/phaseseq~.c",
+    "sha256": "4f64677ff546e6395f1a1c4c82253e008e580bc7eddb771a45753790e514b529"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pick~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pick~.c",
+    "sha256": "2d64c1c4f3f13092ea451bf2002ec4fa7ff6e0ebab5465c45350b722a11a5d30"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pimpmul~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pimpmul~.c",
+    "sha256": "f2edc8047efb70d6658c3fd9ee805f2d07d6adda9edbd69e534595bd549805cd"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pimp~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pimp~.c",
+    "sha256": "fecea8238aee88713b83c5c60738f2f52cf401407ea5d7d2e9e10436dae2ac94"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pink~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pink~.c",
+    "sha256": "a34248e5b74f1c6a51b877337e6274c96d0897e3d875bebb4347f2897c031274"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pluck~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pluck~.c",
+    "sha256": "c99bef1bef58343f00a5ee54364c2103a417422ea3914bf25b4100796656f02c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pm2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm2~.c",
+    "sha256": "f1fd9492dbf21ebd022798f28e7785f9b98df39a77b105145f911bf7a69ddb1f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pm4~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm4~.c",
+    "sha256": "40a8b3c12bbde65864cb0028e18a8a1fce7d68c1cb93359efa6ea0e96438b1c3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pm6~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm6~.c",
+    "sha256": "a916d51ff6e67512340f2efeda4e03c5f98ab07b5462c48a7116fa9c06400c3d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pm~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm~.c",
+    "sha256": "1a1846581b03a472a71bdd657ece0b17686fda5c7aeb376d6b98a7b0a8bd8a84"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pol2car~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pol2car~.c",
+    "sha256": "06daa9202c1aee3a1b0228aeca26bf62a42c33dfea4aa3a261645f6b723a13b4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/power~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/power~.c",
+    "sha256": "93c362e97ccc1491eab763e90157309581b7d0f8f50c00ddb5879202c0c32023"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pulsecount~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pulsecount~.c",
+    "sha256": "a4497c5dbd43c954bf809da666fb1b5beb10cc9fec9c7692e3c984112cf6537e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pulsediv~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pulsediv~.c",
+    "sha256": "98403d1f3465ea73065f61ee7f26b466e520c8439f41a741f08bb12dd45f497a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/pulse~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pulse~.c",
+    "sha256": "012e86ca36ec31a1a9297c0cd7bbcd71a70b28a0f323536ba491f7562cbac55c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/quad~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/quad~.c",
+    "sha256": "7a2e1598692c0602d979d894144fe4ea45d2626e37871e7b2fbb030b4537d513"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/quantizer~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/quantizer~.c",
+    "sha256": "31afac0ff12428d3b248faf4780effaa04d3934c51a57cac17bda3538cb31fba"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rampnoise~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rampnoise~.c",
+    "sha256": "742393dcb967819dd63915143f75338f7273989c8dad20910019e168b4ee9d34"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/ramp~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ramp~.c",
+    "sha256": "409727b892916f9469e6c9ec53d5ecb06caff62930fa82e4fa046cf2fbfde792"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rand.f~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rand.f~.c",
+    "sha256": "463f53b22aa5d039c42fec5802a4a47760a9c2d2fcc05f0346d367909153c164"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rand.i~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rand.i~.c",
+    "sha256": "5de484eaa7fc79efd59e15becc9708f760fa67da2e417c3073bb691f4e71fe3f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/randpulse2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/randpulse2~.c",
+    "sha256": "e3fcb7517583ad41d99815bd734929e3c8720d45426dc4ac742e8a96ea9e9842"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/randpulse~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/randpulse~.c",
+    "sha256": "900eb68e26bc300ffb9d052706070be70d01ac0ff64a2ad489f41b945b70748a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/range~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/range~.c",
+    "sha256": "b4c4366b3f8f6ad2e8401a5b9456b62f240aa9cad48dfc19d11f318873128119"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/ratio2cents~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ratio2cents~.c",
+    "sha256": "6d29bf20d9e7fccdfd80f0f289f8b277c8d30591b1abd86dcbf4e8c9f5839537"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/repeat~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/repeat~.c",
+    "sha256": "78b806480d20e2120a29f982c87893cd94e4e14fcb33ba60aaff3ab3fb4c7532"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rescale~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rescale~.c",
+    "sha256": "dd1ac750039360a9e605ba5704992af6c5b6597abf8641d9558e7fb218709823"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/resonant~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/resonant~.c",
+    "sha256": "75c2389b9778321aae2fc382b5f9ef77a47f739b25e395002f37778bd063d123"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/resonator2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/resonator2~.c",
+    "sha256": "1f1ca7686d49776a14a5427c0b949037779b60883345e05b3e3f28ba9ffe8440"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/resonator~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/resonator~.c",
+    "sha256": "94b64d82d4ee7a57d1d35bbc3f9f89e48f0a81ac5c0bda1b8dc1d7adc63b5d1b"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rint~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rint~.c",
+    "sha256": "dce392826f2487ec63c0540339e7b1225fa139ead67125ee0fd80decacf65a7a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rms~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rms~.c",
+    "sha256": "eb2526bd79d0d36a539222af3a4d45efd20af9620a218877aa376a4391aac842"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rotate.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rotate.mc~.c",
+    "sha256": "74953c5ed511cd87706c5f85c8f0348911aa71520fd182ed524b410c2e5ccd4d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/rotate~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rotate~.c",
+    "sha256": "ba7bce6dd14105f5d654f2467e8ce2a6e10b03fdb4681d845ed7ce4c2e968dc0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/saw2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/saw2~.c",
+    "sha256": "e05d750e63315cab84be650cefd404b3db43522416f10d57172f1a54511f7ba0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/saw~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/saw~.c",
+    "sha256": "2f91d36224e9f7b9673ae17280cecda65b7570688db7b4bd4aea0461c3546b73"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/schmitt~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/schmitt~.c",
+    "sha256": "d46ffca77fe79ed8e6096940abe8a65ddce28628159fb00cab43a434d57ac0a1"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/scope~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/scope~.c",
+    "sha256": "3d0112137d8f4f45f8b875b3a0332c160819249f7de73423958c4c1afa082b3b"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/select~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/select~.c",
+    "sha256": "3874a2f6b2e09a78284c2dbe85ed34054b7750e4397f30d532843f07ff9066ea"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sequencer~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sequencer~.c",
+    "sha256": "bbcb86fd6ba6db217d4a027c30cbcf03bc47cab5e2e33da7776430d92aa58d28"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/shaper~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/shaper~.c",
+    "sha256": "6b0548ab4529b567e942bfab19ea4f11aea0362d8dcdef2206e978e6a1c43b39"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sh~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sh~.c",
+    "sha256": "ee9a962ac2dcbfdfa6cb0988a0d06171d8fbfd5563c44df755085d634ca7a5ce"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sig2float~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sig2float~.c",
+    "sha256": "435b72f4abba6b0fcc1e22876c1c52da383804f4cc31b2709ddce11cc996358e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sine~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sine~.c",
+    "sha256": "2a882d6ce6fd39d5a3a7a6888c3fceb077f1b7ba1d4beebc4925dc116c8a519d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sin~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sin~.c",
+    "sha256": "8a8db332d9dc32598338a5cfd20f6fa5518c2308aa9e4404ee1a577bc6fcf380"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/slew2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/slew2~.c",
+    "sha256": "fef944c2560655e07dc34491e861911af14a97b9a3e482064ff5c0a49509b16e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/slew~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/slew~.c",
+    "sha256": "3bca91ae9e9dc8fa5232878378f076da0790404fdd742e01dd0dd56df1e70f3d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/slice~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/slice~.c",
+    "sha256": "f7f2180688eb98df2d25672fd1a89b24d00ab84ef9593b75d95652b0464cb727"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/smooth2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/smooth2~.c",
+    "sha256": "2396a970577e8cc0ab4ca0466bc15e4def9246af846abd316bfdf644a04efeeb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/smooth~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/smooth~.c",
+    "sha256": "d187a6892a880f909aa56b91b41409d918c7c83721bab51d681bef4f75dce707"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/spread.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/spread.mc~.c",
+    "sha256": "2db0e98f56ea4a27bf8c1a7aabfc9ec05b319678fcd629028e38d758efefb0bb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/spread~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/spread~.c",
+    "sha256": "ae395f0483df668158e1ce1f89444082ba1e5e17bb853924c032dcec79a9fee3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/square~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/square~.c",
+    "sha256": "03102b9d6ccb05a72a2d6b1c5a99d6a7015399e031eab74b5d5b8de8cf46736d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sr~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sr~.c",
+    "sha256": "f57f8faeae36d19e9261a81d331d28e627fb0c170164680382e5203c0e7b16a8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/standard~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/standard~.c",
+    "sha256": "c850831054ea2f05a471779b6cbc459d48f5624bbc200be1c5b717a043ba4524"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/status~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/status~.c",
+    "sha256": "036d713a78116b570a9baaace07f1d40501b4579bb3a7256f52ee526cf97bde6"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/stepnoise~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/stepnoise~.c",
+    "sha256": "77c4a59215cbee6c09f2f0662c52514017f604fb017abe6ff106c8f6eae08e77"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/sum~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sum~.c",
+    "sha256": "6e62a86d7ba678903a5845943c1893171043451292b1cdc4d383cec293eefd6c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/susloop~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/susloop~.c",
+    "sha256": "379cd17b57e7eafba0a32565fc0725eeb0c5134c98ca82564e823878456fe60c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/svfilter~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/svfilter~.c",
+    "sha256": "52c23052a0c50e7619e0b67e6e6632906c5f5c7dba36fc06126783326e646b26"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/tabplayer~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tabplayer~.c",
+    "sha256": "64893bc28757cf8931ebcabd53de8975b189bacef83e9949f75d585b919b8a4f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/tabreader~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tabreader~.c",
+    "sha256": "c77a8b0b8fce8495a0d29182da1f058b36c0c38950045843573d2c45d682e992"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/tabwriter~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tabwriter~.c",
+    "sha256": "4e59bc595a57b04f265bccfbc8aa695abde4c76f7d12147432a503589c32693f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/tanh~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tanh~.c",
+    "sha256": "c969ee3b001720550659ddb7e3a3cffeef14fb9d5f073739a0393eeb031e48a3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/tempo~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tempo~.c",
+    "sha256": "6223d20ef1892f9142fd214f7af91fdd4a3a72682fb367217ff799ee713ae29d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/timed.gate~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/timed.gate~.c",
+    "sha256": "e2cd4b7ac71be52617064e74aca32f79fd3216e995c40e56b3312a0824a54419"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/toggleff~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/toggleff~.c",
+    "sha256": "00654c54ab6e9f4a97fa5382bb4715839e36cf6e4f6733f392dd8eac65b1874a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/trig.delay~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/trig.delay~.c",
+    "sha256": "497516217fe352de0a87500829c2d8e4bf0caeeb3e01a5bb116c2328fbe2b3ac"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/trighold~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/trighold~.c",
+    "sha256": "9cd7f9e0f7c19de3c3fcecae3e3c73897f18949700f4da80b15e16fa6e6419a7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/tri~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tri~.c",
+    "sha256": "422dc61397b45ae9addf1a2c8567966a55cd2d6157c651a32b265eaa4f157f67"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/trunc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/trunc~.c",
+    "sha256": "4323387de570b91371f034f4b5e904cd2e1d26c3c58c96941a1be1361c98dcf7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/unmerge~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/unmerge~.c",
+    "sha256": "fb130363e999e9e893ec51f5e1959a8e98d4a808ac37b1f3e2ba21bb60b8323a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/velvet~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/velvet~.c",
+    "sha256": "1f4c8d0f75ca91381ead7c779ca7a14efa85f742e5e75985bcbd5e6dda956adf"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/vsaw~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/vsaw~.c",
+    "sha256": "c2164a8664320f3a8c941c6c31eaaa8eb22db27f5a77a438716f3e6ff4457d28"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/vu~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/vu~.c",
+    "sha256": "033878baea19b1c418cdc1a2ab9d896780f4c3f540ef9fd46d19d4e632b32b8b"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/wavetable~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/wavetable~.c",
+    "sha256": "482b78aae6f0eff98a7c5fad8242d6106b52146d67335c4cc2e8261cdeacffbd"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/white~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/white~.c",
+    "sha256": "91193813a9ddd5d9153fc86bdf7cad680e1f11adbf30ae6d91b4154b4d2660fc"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/width~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/width~.c",
+    "sha256": "89a3fdaf114451a7e025df973edfa24c2be9fecce3300556e06977135aabb064"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/wrap2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/wrap2~.c",
+    "sha256": "93f7199dab0d9cc96b3fe824adb7e519300cb209cf5f8f7d01eb2c0fe2c0faed"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/wt2d~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/wt2d~.c",
+    "sha256": "b29f6003fbcbf2976e5aee5abca4fa28a9113e460223961ec3715c24663c802d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xfade.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xfade.mc~.c",
+    "sha256": "6f6a427efbc1b5dbeb102489b4c88ab6ec15e38c1d20454aa85148d562491090"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xfade~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xfade~.c",
+    "sha256": "81494b678ced7a1b5a12771b53fce2868785a417cc2e60ae1811821c3c5aa84f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xgate.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate.mc~.c",
+    "sha256": "de1dc593f007202d4d3c3ebe20b92a1cb6cd7d4714abdd499451568379d0b4e5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xgate2.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate2.mc~.c",
+    "sha256": "a2d064cd1ef601887916ad4e9c1844dba8f1fb7db1a405e5c88fb524004ee306"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xgate2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate2~.c",
+    "sha256": "bf23dbd36d4a8e897fe867dfdc17df57983fabebc8bb48ca96527ad1dc2bcb33"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xgate~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate~.c",
+    "sha256": "dee48e90a924c75a1db619bbab2709e07ab4465f40e84581d5fe17b7780b247e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xmod2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xmod2~.c",
+    "sha256": "bbb1dc1dffc3c6072d47b988c74e289ca864ef24a8c90b81d9ea8aa41557065d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xmod~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xmod~.c",
+    "sha256": "ed920bbd0a573a7340b2eb67a9b560b60b8ebdf634b2cda88ddbfd78c503eec4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xselect.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect.mc~.c",
+    "sha256": "b6758592be5785c7d867854a6017a0f13f3ffda90289c1400bdbd0f04881f951"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xselect2.mc~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect2.mc~.c",
+    "sha256": "de06ffe79d52ddc3aef515f1affc4d6ff104e72a36cebfdb4841aa2c4d1484db"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xselect2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect2~.c",
+    "sha256": "668a88bec9e33ecb9418f29796a417833447ebf94cf753f1c76413ec524710aa"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/xselect~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect~.c",
+    "sha256": "2ef1c357735ca910f981ca38a9cd94af24a9be7b4de3261c637090df3c4e86c7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Audio/zerocross~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/zerocross~.c",
+    "sha256": "998bbacdc3328a57239a45cb4d851b8d596dc17fa92fab10879faa18976f333b"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/args.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/args.c",
+    "sha256": "7fd25f650f6b45f9be7647766652ad77d7b0020c3271b0b86f3e3b7bc8d90f23"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/bend.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bend.in.c",
+    "sha256": "47c24b528087a289be698aff61fdf41c16081503400f9e555d2d6c71cfc3f378"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/bend.out.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bend.out.c",
+    "sha256": "47f0c9fbaa7a1237efedf5ce8f2648d0c435ad89f923eb3f0368e29e4b1a8ca5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/bicoeff.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bicoeff.c",
+    "sha256": "dfdabf292c19378b4e2307305fefef871d5dc7ccc724e009e7ad2f6a01f95858"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/bicoeff2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bicoeff2.c",
+    "sha256": "2b36bb1aecf72b6e1a1e1f510cea50397bd5c267ad7cb6b5fe07d3d1df1cadec"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/break.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/break.c",
+    "sha256": "633ec5f8ba0a50f84b0dcd42dd10adb8527094f9c15b29a93ea1f70dd12c23d3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/buffer.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/buffer.c",
+    "sha256": "5417410e9de238e0b3ef8e99c4695ab42d08a8b5029a99e6887031c802ddc655"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/button.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/button.c",
+    "sha256": "f5dedd1dd223fd19c746116b87ad4771953df5e5d1d38f1abfd63bc7bf48e50e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.active.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.active.c",
+    "sha256": "e281d7e5c907ae8dc1b1571cfcfdb5c7a8f047e2f5fbda6b418e739658ff3fd2"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.bounds.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.bounds.c",
+    "sha256": "1eed00c796c4d4c223d837ea9db1669a24e8296a68d63b50a59452b3b6ab243d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.edit.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.edit.c",
+    "sha256": "ba535c7fccd0894ac80368db6781141db43ddc4a796a982ad22f5f4f06b00608"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.gop.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.gop.c",
+    "sha256": "e0d1dcbe1b5f18e7a3d23c9cbea885e34db26c5e88dd4602e1915899041f87db"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.mouse.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.mouse.c",
+    "sha256": "b7c6deb6bfe655c0ece8f6bdb34555f48465cf9c70a40a6c6d5efebe48eefed0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.name.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.name.c",
+    "sha256": "30bd67ab19727d55610e2ed75e0930b29239d1a327b8a91b57250342c952d0d4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.pos.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.pos.c",
+    "sha256": "71fba3987ae6556792d876f4aadd2f3e6bdfed66eb5e9457dc4c0ab6ca410bd3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.setname.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.setname.c",
+    "sha256": "cfa6ed4c8010b512b7282cc5344a5096968c889e68f530be4a93a113735db1ce"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.vis.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.vis.c",
+    "sha256": "63cc3de3af8f83b714a1e75cd7db66882b544db526bd37c7025e04f1665dbc7f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/canvas.zoom.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.zoom.c",
+    "sha256": "7a640a15fbde7cfb7eae3af92bca03a4b68557a1576c59330d351dc9f4759035"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/ceil.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ceil.c",
+    "sha256": "7f45032b9d301737d9713a86beb244dab1da4759c03e8e6dd542edf5d151b101"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/cents2ratio.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/cents2ratio.c",
+    "sha256": "3ff5b0f407746fec0872864e1af0620e3db1b89ea668fe7a1be243bbead1a625"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/chance.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/chance.c",
+    "sha256": "cd1ec885bb328f0bfa13f73ba0e4d7668b3b587d4c2aa31dce9b878b8b1574fb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/changed.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/changed.c",
+    "sha256": "4f70306e988c30b9c01afa43d1312f498efc982b6543aa05bdd513c125e6d10d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/click.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/click.c",
+    "sha256": "815c08d76590d9d318ffeb5326b227e97a3cd57c9913ca1c986b5036df12b262"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/colors.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/colors.c",
+    "sha256": "45e8a28bcc5a09aeda1b591c16ebfc81e8a9eb77e6dddad88ab832c07afd74e6"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/ctl.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ctl.in.c",
+    "sha256": "0d604208904f51ce38804175b7d257eba9e118ea86a37607cfbb062698488156"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/ctl.out.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ctl.out.c",
+    "sha256": "c12797e78f1d25257f29d783f6fa47a53a63e4c1af0a94c7ac02507998e6c342"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/datetime.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/datetime.c",
+    "sha256": "67a5cbd94586b9f14d16a024ed3c202d7b1f9373e26e596d8c867965c33389d8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/default.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/default.c",
+    "sha256": "998a14a1025753c11df45f61db3693801dde7c3f348b6b284e71d14589eb8a1d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/delace.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/delace.c",
+    "sha256": "456bb1631c5090dd7cd3887a06abc2b1f706a232586e1dc56ed5d00f5d31a649"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/dollsym.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/dollsym.c",
+    "sha256": "ee54ab22381de4db7706c7b3f785bbe195b529294fcaebb849ba2fef7b1811d0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/factor.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/factor.c",
+    "sha256": "e8751e77a4634706ab18ed9fc1a64f089496001b737fb4e7cf5143ae33aa8d43"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/float2bits.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/float2bits.c",
+    "sha256": "a1935352c60132199a07218c34b9b01b723d3bc940f8f203d6c2e1ce1195ad01"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/floor.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/floor.c",
+    "sha256": "1baee6873e6a4197594661668cf0118c37c45293606d14c1bb30fe35291702b4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/fold.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/fold.c",
+    "sha256": "bd427b97fb51e85082cae661ed53afdcc1ecf35c7ef58420be73084e8f787b88"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/fontsize.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/fontsize.c",
+    "sha256": "aeaf1d53fc3632e60c368b095925a3889d2d5b005cc36deeda63b2da7751e75c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/format.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/format.c",
+    "sha256": "9cb888e52259422789e69c803fcb80caefce2c35b1525b9b8cc3862944417dd1"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/function.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/function.c",
+    "sha256": "083e55f49dc4433dbee0c56f1ed83acd09a46b0b6c4a45e7ba44dadfda819e65"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/gcd.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/gcd.c",
+    "sha256": "f19586f3c9a35b4c9e700898c508e34020a670d465822d57b34de14ba7cb9958"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/hot.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/hot.c",
+    "sha256": "7ecfa428ec890b11450a5f1df2712b217e7fcbbb4982ae00dc3090e273fbf1b3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/hz2rad.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/hz2rad.c",
+    "sha256": "a3cdeb6f30bd3e6d5da799161a54ada14e3da20d44250b738836a74f7e3c0cfa"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/initmess.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/initmess.c",
+    "sha256": "f20334793c4180030eb75e54cb7aa2c4e07df5b31613a319a6ae93aff5401970"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/keyboard.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/keyboard.c",
+    "sha256": "9fefe0c337d3b14e54f5ffd420cee903cf28280f0d8d181f8b0c43a5ec4790dc"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/keycode.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/keycode.c",
+    "sha256": "4063404c505993fd6f9dbfe9654be205d58605d98739722c03a28f5d9762dcb6"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/knob.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/knob.c",
+    "sha256": "85d7a7e3ac495a3b88c1881e9fedc45cf65760d66067120cc9b1ec739a9107f7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/lace.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/lace.c",
+    "sha256": "81b2b0c3e9e723b5969fa3648b0bc52d0e7f037d3189a9d1a655a499235a2ea4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/limit.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/limit.c",
+    "sha256": "bf9a34cc54a6a3de59537d8a6ec597be6c0d94b4eda7f166fe6e0e0c1357de59"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/loadbanger.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/loadbanger.c",
+    "sha256": "7e1ed54da011d20df4b3b563baa732c2c60c2b74271796d13a715cf4efb1ec60"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/loop.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/loop.c",
+    "sha256": "ee6c7490fa9fe111678dc04803fd06ed5fc1c3afd3fec7c2005f5a8579adec17"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/merge.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/merge.c",
+    "sha256": "2629b47fbfd0dcbe1630eb14a181e140ac8c5a2e5547752acc6c49d2270e7784"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/message.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/message.c",
+    "sha256": "14464c383602e465704669ab00efae0d62338e56113c7d65e02af1d9196570f7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/messbox.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/messbox.c",
+    "sha256": "0e0855714c7ac42232951be94a055ae469e5c3eeaf767841691bf5e1fe928eb5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/metronome.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/metronome.c",
+    "sha256": "fef29e5b17447da1f83d3e547be17f405b57a46ffeb3c5e8048a71d5364ec693"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/midi.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/midi.c",
+    "sha256": "e45b2711a6cdbc9b62a060b682c6e10512a1dced19c143629d0720664062cfe4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/mouse.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/mouse.c",
+    "sha256": "2acb07ba88075c836f639fd4adf4369e11ec5b73e1e0876485431bc4eb66284d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/mpe.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/mpe.in.c",
+    "sha256": "c7ad8565cd7854ce29d9e8e4c25847ab6ba9aaec1ace474130dbeed060208a6f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/note.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/note.c",
+    "sha256": "a7fda2ac4aab46f2d4e2aaaf965598f74a57c2d624b076e7427a7c081da8c096"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/note.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/note.in.c",
+    "sha256": "d948f9cc7a490cae1f34995451a4f6ede7c4bbd3fb3a1645f4415a1ef6f16592"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/note.out.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/note.out.c",
+    "sha256": "1bf7757e6c0a4c26e8a110ce03342b5a86cbd25b274cc540b71dfa13e2263953"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/noteinfo.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/noteinfo.c",
+    "sha256": "080d99ab9ab8dc7c022d564c13b96ab85a49fe39323b44cf87fe2fd23b50a47f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/openfile.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/openfile.c",
+    "sha256": "736102db61389158cab5116d85c561f1878afbf815350424d490a8129487f10a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/order.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/order.c",
+    "sha256": "aa9d75bb2b8d2a855523e0716fff37a93e340bb100d53530f3009c443afebd68"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/osc.route.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/osc.route.c",
+    "sha256": "d87e4687a0a8c2637a2d77221c55b5e59dbb3341a7210e1fe68498925e37893d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/pack2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pack2.c",
+    "sha256": "b393e59b464db57a1d0848417009b888962bf1654bd05abd8d946cc71a64b93f"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/pad.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pad.c",
+    "sha256": "f4044929e043d4af77bf6e0b5352e25db3f1d9958c03d7c2ab92ca9b6ef08367"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/panic.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/panic.c",
+    "sha256": "5216f8733a6bef2d850460857068e219cc95e79b3f86bf10b2ff13720269c603"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/pgm.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pgm.in.c",
+    "sha256": "16329fe5afba4dc253c293fd2732a3445e9a0a341fc67c81f5ffda62f3bfa73b"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/pgm.out.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pgm.out.c",
+    "sha256": "42840808b4eedb8377fc186c45c8cacca83ddda31a6d5a68603e75f10fdff980"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/pic.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pic.c",
+    "sha256": "084c15c66511856aaaf633a2271bb335187e8830d0f6ecf9537c7965007f6717"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/pipe2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pipe2.c",
+    "sha256": "a7e8b316f98c5a9fb0e5f6f75ad48ba0794540cec19d4b457855c6c38df3e0c8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/popmenu.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/popmenu.c",
+    "sha256": "707fe8e328820b8eb5bee1b9f4d3e4244d1a9276f4b016f466a6847108987132"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/properties.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/properties.c",
+    "sha256": "74d25a7b6ce47c40d4d1db2726413e187640ba6e569280740d343d2f1588220c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/ptouch.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ptouch.in.c",
+    "sha256": "76f1187828139c2e47cce5dd12eb49d1be1039631f049463cc48bc90438dcd05"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/ptouch.out.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ptouch.out.c",
+    "sha256": "b5af44600a9ca0f147980ec19984dcc5ba8fa300d239670d41e0c57dfae29a86"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/quantizer.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/quantizer.c",
+    "sha256": "bdcf10d555f7d550bc7930ecf70d60f5358a6ab29db0125e9f7292edc45f98b5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rad2hz.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rad2hz.c",
+    "sha256": "c3ed7a9e87f2c238f9d36cbd088ce2234841ee9e12a0b5ac63e3c82cee3c1d70"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rand.f.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.f.c",
+    "sha256": "bce198ff5f0576adb1bf7c2f0a12d13e024726eeb488103a0d58f138ca344c92"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rand.hist.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.hist.c",
+    "sha256": "1d739e28c3bea61e45e29e8efff7813db2a2fda80386ad1068674adb0f2b0b97"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rand.i.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.i.c",
+    "sha256": "0bb56efc8bd6e2d689fff3b0776403722d22504d3aee3267fce7da12e62262b5"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rand.u.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.u.c",
+    "sha256": "835efc5d68989279cb4b4f53afd977a107ec138b18df97cd1f8926edcef22238"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/ratio2cents.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ratio2cents.c",
+    "sha256": "3a6edf165cfbbc4df9a78f5d97b8c1131a7f9e0da9d91cbdef217ef5c23f5ae8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rec.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rec.c",
+    "sha256": "3317a754b3de2621021a645912561564b61fab84146c077cfc634f250cf74aa8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/receiver.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/receiver.c",
+    "sha256": "aa7a00815c584fe926a4c24d26d502e22ebb7f38cc5df0a2352b82323d2c8306"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rescale.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rescale.c",
+    "sha256": "98c3f5fecde43028d3cc12b83c2be3eacb867613f2f9b23dc330fccd314327fa"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/retrieve.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/retrieve.c",
+    "sha256": "a262b57cad7447cfb052bdf0ed30c788cb3ffdbda9779ba825e68059cb2db0a2"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/rint.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rint.c",
+    "sha256": "50fcdaddd2e33a1a0c0df5cb84bc253123c4abbe851b0a6c0fd2ee34126631c3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/route2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/route2.c",
+    "sha256": "a332307bf4971b5fd003cc5b28a0d6b93291103e6a068b1b114275507febdf39"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/routeall.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/routeall.c",
+    "sha256": "d3e7f1504bee79d8d2e107fa7e612403638080aec593e3d550464a4a466d39e3"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/router.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/router.c",
+    "sha256": "6695849f6eedec645d4a9f44c72972382462e02a621f8a9eeaa461794719ac63"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/routetype.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/routetype.c",
+    "sha256": "4791b98aae50a6ba6c67113e58805cbe541525ffa1d6ed4c4a99e9f98cde93f2"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/selector.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/selector.c",
+    "sha256": "3acd48172b4d4cf634663c4b51efa532ae3f4378f796753a3202d3a918c35aed"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/sender.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/sender.c",
+    "sha256": "3acd20846c370c8aadf838734989857237dbdbb0f19ab1fe62d282fea028f107"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/separate.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/separate.c",
+    "sha256": "4fb8f3d51d5c17825b22c42da80f5818f623f2709a52fb41b65822e1a9bd8cc4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/slice.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/slice.c",
+    "sha256": "7a810493c1947b801dd4cbd0720ab8509c4d268465aa7e7f9c860005893e2d3a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/sort.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/sort.c",
+    "sha256": "1dcdc036d03c2a88997b68d8d97dfb7a460799da71eddffff9334cce280f3f8e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/spread.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/spread.c",
+    "sha256": "baa1211031f6c16c31e6b7b0f1e7b3f39dd06a15792df6d0ba29af745c068f37"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/suspedal.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/suspedal.c",
+    "sha256": "fab56fe3932a44ea4bf1baf550466bfe7948057b97b14c3b4a84f502ca1fa681"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/symbol2any.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/symbol2any.c",
+    "sha256": "bc0c6108c34bbb61ef7b20b979c30eb762ba56ac35eb8900fc776ac138edbf81"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/tabreader.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/tabreader.c",
+    "sha256": "211ebef1576ae5b39730706a7069017c2c3d64f997a17d91a71971494ae861f8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/touch.in.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/touch.in.c",
+    "sha256": "c71235074a022ed4bdaa17336f49e5e609b164bead2ee66b11bddd930370faa1"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/touch.out.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/touch.out.c",
+    "sha256": "d1c5b085b0fca754379376aaf4ea1b5763d1392afc39f6a14e9404cc8a8041e7"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/trunc.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/trunc.c",
+    "sha256": "bd35ccc64662943ce0e350d424e857a172e431796cd486bc7392e90c65a5ed2d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/unmerge.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/unmerge.c",
+    "sha256": "e2bb4cff678739d1f8a593bac6717304548f3e7061b3c2eacb99a4aac20d15f9"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/var.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/var.c",
+    "sha256": "8b3a4f55afc5c636b6bf470af58095e8952b7f608c09155999f10eb2ac44142d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/voices.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/voices.c",
+    "sha256": "1835da38f440e37cb68e1ecda6bd431b128ff3d3139c573c3f9d4fb0f6fc770a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Control/wrap2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/wrap2.c",
+    "sha256": "e853226d1aceea2c9a16564aeacc2ced9ba7788589f11527bc617cf682813f83"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/del~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/del~.c",
+    "sha256": "10c70e1e2e3caa21c8e1b2895b024e4dc4b4b3a57962e7bbbebbd7c6a9c8b7c8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/imp2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/imp2~.c",
+    "sha256": "8a3ba91842ce90d8c817732590a04fb8f308b8dc3868ba6b556c7ed5197f01e1"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/imp~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/imp~.c",
+    "sha256": "2f6c11dd655289c4dfc4ca50722ef81242c32e3ce10fade90c5c9259e493647e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/lb.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/lb.c",
+    "sha256": "329b8dc58cf25d2c34b93b990edffe02bcb21887d780480fd538fae5092c33e8"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/s2f~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/s2f~.c",
+    "sha256": "bb078a7326e387f82d11d6743b10c1571a0654fb1daabd6dee0d85acd2dad466"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/trig.delay2~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/trig.delay2~.c",
+    "sha256": "c5c8757d73a0d6f9d7d7aa3391abde7b9aa419f40834eb39851d3a3d369c4148"
+  },
+  {
+    "component": "else",
+    "path": "Source/Extra/Aliases/wt~.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/wt~.c",
+    "sha256": "2a9b5f0fb57c262b5ab82007a86594d0ecb2fb9b38e9e1fdda66d55b431140e0"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/OSC.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/OSC.h",
+    "sha256": "bd7e1276bd057166ff5e04217bc1e0bae04571f068a432be5ad43738cf3514e1"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/blep.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/blep.h",
+    "sha256": "3af487f5fb5ceb3ca4b2e63d6ca39ce5eef8a7c93c1b747ae872b4c07867d622"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/buffer.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/buffer.c",
+    "sha256": "35ab49c626a4b6f78f41b9084ee189d41634a053000a4aead5a42b8ea97e6588"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/buffer.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/buffer.h",
+    "sha256": "8fd0ba02555b695d1789928594eebe5429cc418b15ee2af6ed9f832041e0c5bb"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/dirent_msvc.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/dirent_msvc.h",
+    "sha256": "fd3ea80528f24e0faaa41a0b9fb228beeaad6bbbf55968383354682ddf66a185"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/else_alloca.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/else_alloca.h",
+    "sha256": "6cc66093499a91625b78080ca0ffe491dc1747603573c16466e64dbc8019352e"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/elsefile.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/elsefile.c",
+    "sha256": "b5fca8c9223661c3e2f7d177492954b316be6447b72c8273b8069a7f38e4ae3d"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/elsefile.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/elsefile.h",
+    "sha256": "fa302ad06a689688a610e167ca332f42635ea80bb91504d6dc8212afd0882580"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/magic.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/magic.c",
+    "sha256": "889af890b9135dbcbd16b5ba72fa89432d9846d410989e34e85f53582367bba4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/magic.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/magic.h",
+    "sha256": "4c9dc0fa71e483166faa370e46643b96e6f9c69a9d5f312b768e7301099d6059"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/mifi.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mifi.c",
+    "sha256": "c55dfb53b6ae213c9da722b8bc769ea9afc945fd76510103679db8a32cad4717"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/mifi.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mifi.h",
+    "sha256": "3c5c381c908dae95848af32a56e6484019a1b8b1bfc22be025c8b359271aa935"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/mouse_gui.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mouse_gui.c",
+    "sha256": "8d287b72a0ae84280eb056867d7f3d541a93f2b0c6bc5ec7d2461e8e38c9de7c"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/mouse_gui.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mouse_gui.h",
+    "sha256": "e2be3cfc599bd2d1e46736acf373a0d94b9658fd8a4eab1a56c51736315a5b98"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/opus_compression.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/opus_compression.h",
+    "sha256": "b3fbcd322e250cc9767729c743519121465aba17f1ae9ce619b0cb60287d3f4a"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/random.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/random.c",
+    "sha256": "b8d1a1c61f0b85bd772ab7eb41c2e79b2f1dc8b5cf3657660ea098a2d78a30ce"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/random.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/random.h",
+    "sha256": "521fecdbba3d7305136c093fc160a133af339a3d74854ffedf0e7ee4f15b0862"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/s_elseutf8.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/s_elseutf8.c",
+    "sha256": "8c5ceaa8de340f8539ec62a7eee82a391b2e6401640f7972c7165a4a4af39ef4"
+  },
+  {
+    "component": "else",
+    "path": "Source/Shared/s_elseutf8.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-else/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/s_elseutf8.h",
+    "sha256": "0f46d5016fa56aae8612817bf35e83a6256045d83319a267ca5540f8ff824d4b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/acos.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/acos.c",
+    "sha256": "a03fe4a204c492616595645739ac438392292b44687c42f523b0d9f21046ac1c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/acosh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/acosh.c",
+    "sha256": "0a58b086a623c1b0ad34c984060c5b8444968b1b6fb49d3bbcf5b799185e7e43"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/allpass.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/allpass.c",
+    "sha256": "e4a69b509fb6f41a8e65ce5873964217f1f562380987780e727977a152f3c54e"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/asin.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/asin.c",
+    "sha256": "8e1a38bc13db2376e62f365a5f80285f0b6a4179c5705be59fdf236931edc463"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/asinh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/asinh.c",
+    "sha256": "12c1f3369744c961790121cf85550816f006f2c802874507ddbba92cf3cc39ff"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/atan.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atan.c",
+    "sha256": "4e75ce5e56900cc7c69b54130401c677e3c14b70e5c9baa43eeddcf650d4da81"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/atan2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atan2.c",
+    "sha256": "99f841ebea5ba91c212d1ca6284f97ffdb1ea74777dca6e68bc2de2e17b9042e"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/atanh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atanh.c",
+    "sha256": "e092cba14cac96c8058dd9289f887feedb86e49e89fe6161439530d379c998d9"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/atodb.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atodb.c",
+    "sha256": "e4077c5bbe570123f6e837a5d76cb9160d75e170fbd02c382a91354e14170b07"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/average.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/average.c",
+    "sha256": "275cc5610d25225ede22a8af5c447d4b6c49c23781df19ac3e2bca2fc748b2d9"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/avg.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/avg.c",
+    "sha256": "a5417066f8a762083f0f6082c5535c423573db2667d4e839f178ac413af2d625"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/bitand.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitand.c",
+    "sha256": "4a7c682c0a5b5a12ab5ad3433541a32c12ce28f83e8fa7e5391fb90ed61f4f8f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/bitnot.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitnot.c",
+    "sha256": "d7813c391a43de738cfadee0ae571d56bff78a3a03f51fb6fd6379360b06b530"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/bitor.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitor.c",
+    "sha256": "b4c75439e84fbf05925a29e0c8dadca0ed16860abdcd8a9bf77a92dcbc1de12c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/bitsafe.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitsafe.c",
+    "sha256": "8e9ce4bf2b20f0d98bfed7b7cdc7884bea56586b51cb1848541d89a89900c319"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/bitshift.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitshift.c",
+    "sha256": "18f34a75d323e396bb9dcf81e270b2faeeb032a08bcd733486964e2cb468f6c8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/bitxor.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitxor.c",
+    "sha256": "525d0525aac50de3412b65bba361cbd8d68ff110d9966a512a01485cb107f263"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/buffir.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/buffir.c",
+    "sha256": "48d642ac7706cd6037516faa4f5b4debfab65c3fd314e7512dfd26e3c1881290"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/capture.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/capture.c",
+    "sha256": "fae852f5d261166824663b140faab7ffb7f5f1d8e62b02e4db24bf1aa0572584"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/cartopol.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cartopol.c",
+    "sha256": "1d416b8ed320628c8ba61923aa117b17b1cab4773cd752c3f3832ce94d725e42"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/change.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/change.c",
+    "sha256": "663ec1894009f0104e4701f01b4c27e3dcd27d1121347bb9c71a415f899e9701"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/click.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/click.c",
+    "sha256": "5dc9b077b72258f396b6e5a41b2ab87f133b10993d275851dc6bbaceae9dd290"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/clip.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/clip.c",
+    "sha256": "6ca9305b3027a6d744dd68ab557efb61d885643e293de6cc1494f7d78b6ffe5b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/comb.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/comb.c",
+    "sha256": "84c0b5d465de5c58ec528ec69368a989ce1333096d6c52ebbf471acd76a03d61"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/cosh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cosh.c",
+    "sha256": "6e75e64dd4c3392ac94a685d8dcb0067af209f3e9b2b3ee415186032c30c7e63"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/cosx.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cosx.c",
+    "sha256": "2a0bc1a5ececdcb93d66a4cde36653a9eefddfb99b2825e4cbb1cf3954e314ca"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/count.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/count.c",
+    "sha256": "76948ab18920d832867bfd3e40322d67127b9c0a418e11483a95133f9a1d7343"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/cross.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cross.c",
+    "sha256": "7d3386ad3fc83ed8ab8a90240421698d081f5b37790021791a61cf93b3ecb5c8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/curve.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/curve.c",
+    "sha256": "6c41edafc156908e18586ffa8e8688eaffab937a3940abaed65f7a05ccaea78e"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/cycle.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cycle.c",
+    "sha256": "9500fa1b05408f57f526d2ba34705fa7d0f061a34f2ac08d6780106027ca3097"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/dbtoa.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/dbtoa.c",
+    "sha256": "5f3758bb142174522459c885a7cc603a2639ded5d4d99f344700ebabe8f52cd7"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/degrade.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/degrade.c",
+    "sha256": "18beeb5e30059b89156f7126fdd816c7ef40b29d44d79f58a1f9c054a20f1411"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/delay.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/delay.c",
+    "sha256": "d6c56e93451dbdfeea899a68b1a470aa4d9016f35ad5a5ec92f266b5e75fc636"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/delta.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/delta.c",
+    "sha256": "68f7ce6467fd53f8b0a371400acdf5b5727fbf681776ea8d9f3112b37af1d457"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/deltaclip.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/deltaclip.c",
+    "sha256": "966759e7eb12ab5ec56d3bec3d3bd26140b00dff06ba0228cee726a9223f9584"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/downsamp.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/downsamp.c",
+    "sha256": "e170aacebf188ceddebdb8f7c4ded30919ade22a61789b6e4aa96b2bb02bc5a2"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/edge.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/edge.c",
+    "sha256": "2ea55c4f17aeeca734c37fcd6f85002b1ecf380c62cd78dda778a9c96b4e31a2"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/equals.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/equals.c",
+    "sha256": "7c43c19458e02e92aaf04555afe4a703fbfed14bc399a1de8f03815470f72f91"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/frameaccum.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/frameaccum.c",
+    "sha256": "29bfe9638a18b1f7d78b67fa66b5f9c804ebcda64efae56e80ed98958ec23b43"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/framedelta.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/framedelta.c",
+    "sha256": "be37187a301fc3764487285c07889acd97d62720d0d502eddd496bbfe9a91b31"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/gate.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/gate.c",
+    "sha256": "90995f96f8c0997aaadc497f04851565641a30121899dbc7c51ae9b00c64ee0f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/greaterthan.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/greaterthan.c",
+    "sha256": "3dbcbae1fcd106b89dcc1f6efed41e8f8fb0abbc6908f45784eff4267c87d125"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/greaterthaneq.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/greaterthaneq.c",
+    "sha256": "f55e48f592896c31fa767dcceed1e0aa9da149bda8298176ebd70d390db60736"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/index.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/index.c",
+    "sha256": "bc15797508e0486a134a1bb353cc0aa09f084c3bd969a9e196455d3adf07561d"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/kink.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/kink.c",
+    "sha256": "8ffe20f20a474443d8a373a8c1b172ca28d3135b9a53a290df13618693fa7598"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/lessthan.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lessthan.c",
+    "sha256": "75f5f5cc175125821eade8270731a48d9784d99fb230efe56b7ff822173a7b15"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/lessthaneq.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lessthaneq.c",
+    "sha256": "c6b9b05988b7c3af5f46a894be07c3f0223d325edc77431f16e8b4f39271e9a6"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/line.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/line.c",
+    "sha256": "d89d6be7002f2625094933eae941c2e801aa4024305a50787efac1f156ee3027"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/lookup.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lookup.c",
+    "sha256": "23c35b1ba01e7af021d26747d95eb3b8b92b536ae50fea7c169114f7522812ff"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/lores.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lores.c",
+    "sha256": "e8df62f14c09f736ef02caf30d73aa3332488c7c1eef578dba1457e7469d8d51"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/matrix.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/matrix.c",
+    "sha256": "dc2c595735120d7fc47fafd59c732c0516d4059bb0ca67a9d53ce5dd120db28b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/maximum.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/maximum.c",
+    "sha256": "ee935b8cceca441013ef4811a983bb29abd6c47ea0a3a1c306c534318486540e"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/minimum.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/minimum.c",
+    "sha256": "39c6a7cf94728a77d5e5ed16ca7741ea8107aa8460f97770f7c38f30dec7fe9c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/minmax.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/minmax.c",
+    "sha256": "3b5b27d6a200e70de8f59b5868bad5b747c732a9fcb2f9daefa665b1c3d1fee8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/modulo.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/modulo.c",
+    "sha256": "65a5a4ccb36465424f1eefa7f0a3407f9ca7462a0ffeada6237eabf64f080555"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/mstosamps.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/mstosamps.c",
+    "sha256": "37505095a10294eb404ce9e7a29dc26202466207760e31fa5b7d737eea3256ad"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/notequals.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/notequals.c",
+    "sha256": "69db38b41c5f276dd83280e26a9146b507227439557667dbf2e913aae67de3f0"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/onepole.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/onepole.c",
+    "sha256": "e1ae6cf94aa1f07bd89fc71bf87c1a60731690b883c379f2afede4b166e4f0da"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/overdrive.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/overdrive.c",
+    "sha256": "06392015c0a243f2f6c0e40261a3914d8ba9b1e00774e0fa640a7ab8b895dbdf"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/peakamp.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/peakamp.c",
+    "sha256": "69297736c625fa6804d011341de1198982f05057989ce0796e5c63b5598f96b8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/peek.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/peek.c",
+    "sha256": "9437c789d6190a0497a3524a6672da1d9ad84ea02f9780ab1db92aa0a5c82131"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/phaseshift.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/phaseshift.c",
+    "sha256": "e2754342346a7a5fdaf7c0e1a329429d682c8812e1466e407c3e74ebdd59c4c5"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/phasewrap.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/phasewrap.c",
+    "sha256": "0fc3029eed5af6f99b0fa96781bcbbe80164064b9db494bca703046d301fe758"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/pink.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/pink.c",
+    "sha256": "f5d9229e6f72151b6b923e89f9f88f5f29403f127c7e7daf9dcc177c4ac93037"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/play.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/play.c",
+    "sha256": "4307156980116cd36aa9e62546eb29c064e4a463a36a441b13c5a9bddc52d045"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/plusequals.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/plusequals.c",
+    "sha256": "6a683e3210442f194aca9f3a0aa4df2fc54e966b3816381a66a2dfe0b7ceaed8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/poke.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/poke.c",
+    "sha256": "f068989d4cc880114886dbd2b3a50e3f4035a7b91e7e9e11ffffc0f3860e56de"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/poltocar.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/poltocar.c",
+    "sha256": "23e89b99f1c6b9e4d8d048fd40757eb438f4de47039bb5b2d860e33ad52bc0a0"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/pong.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/pong.c",
+    "sha256": "da26b710e9540d740f469a84b51ab5d03b5436d89ff982a2fd979107e8cf40b4"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/pow.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/pow.c",
+    "sha256": "4b69fd6e0b5afeb4e8618f8b02f7039643fb7f459e5b3913529d10b09667edad"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/rampsmooth.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rampsmooth.c",
+    "sha256": "93579881ac2cabf20fe3c223584f22dfbb12db1db69b5a4d2a91b572ab1da08c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/rand.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rand.c",
+    "sha256": "313fa2268f1978f968e74580cc81228751cbda642c9edbc95c1157174149f9da"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/rdiv.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rdiv.c",
+    "sha256": "8dcf7f5f95beed21c91799b44020a1f9969536aedd793ba85f5109cf97470823"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/record.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/record.c",
+    "sha256": "4da1bbec1e7497ebc9da5569496e2f835e5d34ee5e6cbd98d262bdc088fae7fd"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/reson.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/reson.c",
+    "sha256": "e5f72db8c0ddcd6874a1811134b96434c2bb944072e43592e20f8fa9b67bebdd"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/rminus.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rminus.c",
+    "sha256": "4b04de67dd16f4884d96302c3492d24c9a48dabb3eef5ffbc34e3b9f358d0d64"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/round.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/round.c",
+    "sha256": "a52937e32f047fafe18dd21ec700f7eb8b1a3731e7aeb60178be734f55c7a04c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/sah.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sah.c",
+    "sha256": "042935a1725ad3695497fd4651a9e33a8d18a8ec95ff36f7bd224d0dd9c8c519"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/sampstoms.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sampstoms.c",
+    "sha256": "decbc7dcff65faf088aa1e1341a4a62ff74478497024fe6771664302f2df3135"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/scale.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/scale.c",
+    "sha256": "0aaa7a774f8f1fba8d0c6a7cae57deae584a8724625c9b47d4b595cf62f0c9bd"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/scope.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/scope.c",
+    "sha256": "6026a7c838637b2e9562805d22497a088214f35a52d8418c1608c76e64994708"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/selector.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/selector.c",
+    "sha256": "2603456493e1d9cb7b829094ad6212002b38126be5609151f5a694e27b3b4982"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/sinh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sinh.c",
+    "sha256": "049261b3eb4b147e4d9171f20882fbd745fa35938c031df4f7cbc353ad96ab45"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/sinx.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sinx.c",
+    "sha256": "aa7801b5169d27df8b5c79feeab64f304c456f23edf953f70b455f37cbd2970c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/slide.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/slide.c",
+    "sha256": "3fc66a41af60b1da759091fbb13534172952c6d6fa9a82665cb7ee015085f154"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/snapshot.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/snapshot.c",
+    "sha256": "3323ead5d9e43900b3605d97b0d28cdd9904ddcc5c6fde27c49ac75fc8795737"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/spike.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/spike.c",
+    "sha256": "c1a42b4fb621766dbd428cad9eb4e28c3d7a91bb3cbdd1ba556f27594470c8aa"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/svf.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/svf.c",
+    "sha256": "89165b02df4b8aac2169a5d844122f1854d2df25b460f52a731bebcdeb51146c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/tanh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/tanh.c",
+    "sha256": "181b38f874736cb15d49b29f4f3d6bb22d46685e37883bba44b9a414f9963e83"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/tanx.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/tanx.c",
+    "sha256": "d2e8b7e99ff8e70f41b149737d99a695b02a29043a2c656012c31f60fd9dd1f5"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/teeth.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/teeth.c",
+    "sha256": "a8b761238edbf9f37e48184fea6fe9e38fc0d10a9e1043371684249b5c458307"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/thresh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/thresh.c",
+    "sha256": "597fe4fa4fe01e3e88e64b5d9fff2443d1bf2c9d0711b7a9e15087440fa4ae82"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/train.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/train.c",
+    "sha256": "a60b8c967436aebf81ce89880a9cdf5431dda2d1ccfade886b65766234c84489"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/trapezoid.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/trapezoid.c",
+    "sha256": "a6bf82624b92fe227ec18ce041c033583d5c89107dc0a3768b40225a0ec241b2"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/triangle.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/triangle.c",
+    "sha256": "0680d198e8b21b7f2526fdb0166405129bed540f6b346448890b49ec9ae4d2bf"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/trunc.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/trunc.c",
+    "sha256": "bf1f1639351a43bf55cefb0a9f32e1e093dc2f4d106454da3ace8b1e9be61d26"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/vectral.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/vectral.c",
+    "sha256": "264a22f1937d0c8a0c86d43ecb06063c32c6e6480db69e47f625af9886afab7f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/wave.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/wave.c",
+    "sha256": "ce9082eb3ca36775641810cec2bf16b745fb995c907e4be546466b99fef05029"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/audio/zerox.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/zerox.c",
+    "sha256": "720986c96b1cb9b4c2367cc98563728dac0284924369dea7d984f6c742d7a04b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/accum.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/accum.c",
+    "sha256": "edf520f5c95c36864ef2811217c7e737814f788c3d7de90a2fceed23288ade8f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/acos.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/acos.c",
+    "sha256": "3ed9a4d35927c90dcae2c6e6bd3b081131bbf1d54e9dfe45a6d0ae3bd952b1fd"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/acosh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/acosh.c",
+    "sha256": "2f0ddf26a755c78eddfc2f6fda72604e931ee536710bf4a25dfb573fd250852f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/active.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/active.c",
+    "sha256": "90be4fcd07b4dbcb3d4bc3215a9e3fe5fa560929d7feb37c05e5e6608306d4ed"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/anal.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/anal.c",
+    "sha256": "90cdbfa000f2dfd7abec356f699015fbf8bac6eef2b7cf0e62e9a964c78041f4"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/append.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/append.c",
+    "sha256": "23edeb0389972cfa800eac2c58e2a00d950e2b7922784ba3d2c6e651fe76d2b7"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/asin.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/asin.c",
+    "sha256": "9cc8a243b7e7764834a7e78bc68a006ea18991598ba5c2f0b3da9bd56cc09f75"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/asinh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/asinh.c",
+    "sha256": "1a2ee93ac5d97b995179e16ae808338c6be833afdec5d16fd721b07bc4c28d03"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/atanh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/atanh.c",
+    "sha256": "ca9c7f724ceecf108d6d5fa19f5a4b9f80d8303fb41e469b9457df14ae96ddba"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/atodb.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/atodb.c",
+    "sha256": "2ade7e2b2403230bee4361aa5ffbd181a481fa8df410c98f7ee88cf84aca1bc2"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/bangbang.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/bangbang.c",
+    "sha256": "4b6c99516377bb046fa7fcef321b215c30abb78fc52d0a461338902f6d557a28"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/bondo.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/bondo.c",
+    "sha256": "057943b8f5894b6a4494a60b33a93c2069e16e5d7634fa61e798a9977e241566"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/borax.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/borax.c",
+    "sha256": "a31fd20ba1712b0946cca9ca91f12bb528bf976f2be6d8eb4415bb8407be8946"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/bucket.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/bucket.c",
+    "sha256": "bd93c73af9d175cd7701f5c61be53a292e30324ed2480befd58a4c001330e744"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/buddy.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/buddy.c",
+    "sha256": "67e7f97fd4442b4334cb9879f768fd9dba5e759f9f5c7243fcc55ad3f864dad3"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/capture.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/capture.c",
+    "sha256": "a436fda6e24faf3099029d6d498e4233cd9eee53beb11ff58d0affb2125dee6f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/cartopol.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/cartopol.c",
+    "sha256": "b77d37d6fc294d31deda16aed22789a0f75f5d893a11810f6b5a575e6de8c897"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/clip.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/clip.c",
+    "sha256": "04f4c8c12140902b0a7438bda3b24d58efdc29daf03bc7d53633884a12dbe723"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/comment.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/comment.c",
+    "sha256": "1ad7b1412b855c6b9992476687df90d1bd1a6acd1cc62107c46e66334a76775c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/cosh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/cosh.c",
+    "sha256": "cb3462273ec2399827d936017a4a9abfc70c8448b0ed1adbdb58a4fbc809248d"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/counter.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/counter.c",
+    "sha256": "d3f8735583ad27448d5d98d316ff5ee89ccbff811c9ee2add1fc53e0ed9a619b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/cycle.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/cycle.c",
+    "sha256": "27c80bbb7db8885c21db67d943c7f305f221bb2665133eb9a14eba1fcf87c65f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/dbtoa.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/dbtoa.c",
+    "sha256": "f2ba91db093a944b3de7c805dc6c635953334f4bc8cb8e34060870ad461b40aa"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/decide.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/decide.c",
+    "sha256": "d101fac45325f61c4a7bcdde42628f4c8370f1252d1e974a52246178ccd905e3"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/decode.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/decode.c",
+    "sha256": "fb9f7dece5ca98022522169f8fbac0ba156e6d3a8ee9e35278253a472fa19f9a"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/drunk.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/drunk.c",
+    "sha256": "8a4cfa6280d9b8389722b83ea4ee0c17c5a0126f9638717b6ec428993b25e74c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/flush.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/flush.c",
+    "sha256": "dfdee24dc8ccacfe75eb0208dde3915a6de049af2d55ebc1df6bd2a389c0c37c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/forward.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/forward.c",
+    "sha256": "60f76104a481039184d0f36f6e928c9113d52d4263e2884ef3112defeea0d4e1"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/fromsymbol.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/fromsymbol.c",
+    "sha256": "9111ae9bbb59000e627fc82ce7d8c3c65624989c32bda4f4f8e706c7ccd05af1"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/funbuff.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/funbuff.c",
+    "sha256": "a378160ad36837b8436553370b2e46ed360bb7f6bc34e81e192406cea850cbd8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/funnel.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/funnel.c",
+    "sha256": "3a042b719bce5e552ad8304ac166186bd148709e4f979d3fd6f3e10587c3c34c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/gate.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/gate.c",
+    "sha256": "81dd872f64f6d432b45e3555739629896edd90c6b07801ff1b6e5b9d817f0581"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/grab.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/grab.c",
+    "sha256": "fd72a79612f186fe51fe35fae0a272eb83e627b10529b8a8cbe88a1db721a771"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/histo.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/histo.c",
+    "sha256": "3e5f51423244810bf5ac6d3bb2db074afac6206d395039859cd89352f0adde05"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/iter.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/iter.c",
+    "sha256": "cee9c23787df76fe35e795331e4cb56c8d03832771d554af3069b05a8bea36ed"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/join.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/join.c",
+    "sha256": "b40bbd97c287fa4e7bc0b1b6afb51bfde7abd250595ddb6b6e3fb239f170a4b6"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/linedrive.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/linedrive.c",
+    "sha256": "9cda0805ca6cf77a8e5bd6aba6f1d2869c2a6c48fca2940cd267cff43426a1ee"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/listfunnel.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/listfunnel.c",
+    "sha256": "d4c61a72775605f5754021397f2a29db1e79955adb09cae4fc5e1993085a5543"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/loadmess.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/loadmess.c",
+    "sha256": "c262f1877e93b6e40fec5cabf7f841c41ff4061c9950f86395229188f42144cc"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/match.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/match.c",
+    "sha256": "2e4822e57a9fe830c64ec8719fff47e3b02d225a35d2cbe762312851118ca13a"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/maximum.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/maximum.c",
+    "sha256": "45cd85af15cffadfb8d9e3ceda43058f8c152348746c57898a077b802614c08f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/mean.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mean.c",
+    "sha256": "1413509eabb22c1b9d8acda76d800b95dfd84af672384345f0ae62d15f0baf60"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/midiflush.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/midiflush.c",
+    "sha256": "16898d3c8b8a1cf1070c9552fd37962ff89682620a8d9351f74951f0244b14cb"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/midiformat.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/midiformat.c",
+    "sha256": "d5dea488c635288e7a6314c23afc5bb5bf5fc007df84c1d27b99254e22873b96"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/midiparse.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/midiparse.c",
+    "sha256": "a2e30095efc127110040850435ff53f041eede1df2ba076cfee14c3b866dd9e0"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/minimum.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/minimum.c",
+    "sha256": "356b3bc478cc489dc1478e4f260f673a1002c0ebd45b9840d37090b1e9851f02"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/mousefilter.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mousefilter.c",
+    "sha256": "93f9c1d2a1f3980cf0d963150f7629d7aaf9a3fa3a832d1b6ce92f2be543a6ea"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/mousestate.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mousestate.c",
+    "sha256": "ec66903e3d3bd4bac62a67662273a3ff24a5248dd80c4e0d934e03b94e891a90"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/mtr.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mtr.c",
+    "sha256": "676a582c5c73f6810e210bb982aea29c5b31ac63744bdd3abd3115f0f0a79f86"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/next.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/next.c",
+    "sha256": "16b20cbae730fc83c9dd1b778311e1149634742887ed6d78cd54933f7ab41a68"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/offer.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/offer.c",
+    "sha256": "c5ea989f08e21f4028601a816b92aa2bb15ea00655b9aa7dcc6ff108025e2972"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/onebang.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/onebang.c",
+    "sha256": "60aee966d220a5a282fa9df5fb0f4446440276715ba910223b1c9a7171c58ff0"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/pak.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/pak.c",
+    "sha256": "6166765ac7775d799fe5e0bc3f9eeebd21be94b382d9e9953688f826ae05aa46"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/past.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/past.c",
+    "sha256": "43fe19147a1b19f2e3fd3a574bdd22683be4faedb06d7ce69e231007153568ce"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/peak.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/peak.c",
+    "sha256": "37fc69d9a7c58d6e25427589ce6522edb9df46a9ad43027eed3038db225428cc"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/poltocar.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/poltocar.c",
+    "sha256": "cf9a0cc75557ada271fbee6fb27f3e573b2ab48abd78f4d4b52e77385f297129"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/pong.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/pong.c",
+    "sha256": "6ab7c5f7fd5fb486264aa39dcb8bee12db0e8da239cdcaf562541f6ec1f5962e"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/prepend.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/prepend.c",
+    "sha256": "ddcfb0bfdde6c16963745d14c3e80671639bcabb2dfb159b6cc1e37e8b98f631"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/prob.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/prob.c",
+    "sha256": "7bf3dbaf3a317a8d011197400d4889842a86071978ac3792a93d570ac24c603f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/pv.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/pv.c",
+    "sha256": "26d994544e0e784cc844ed1afe7b402f1abd9e7ff17e635014707a30aa47cae3"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/rdiv.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/rdiv.c",
+    "sha256": "4cde80824dfce0900b0226cc40d83ea131b125e7f60b1edb48500e7d5b13e9ef"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/rminus.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/rminus.c",
+    "sha256": "67b3f5a94ce512e2d5314e197b82766c5b67d96b2150f4f19d759e83e8fcc6db"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/round.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/round.c",
+    "sha256": "813038d8b765af6fab5d38c5ea7ca99db4dd4d5e51b6587bbafad6f89f1e01c0"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/scale.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/scale.c",
+    "sha256": "ae78c0130a7e6520438dce1cca4f6c9533fd33dda4e766837e0deb51f156b0fa"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/seq.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/seq.c",
+    "sha256": "e66b2315e63e8d63f530c4ffe3ed2f05574f37034fbec9df2583c9b55833c3e8"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/sinh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/sinh.c",
+    "sha256": "b09d456fe41eed60cb21dcf1846bf71a956594cff24089b90a7b1a6e1af5fa40"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/speedlim.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/speedlim.c",
+    "sha256": "393eaab328d44bcb46a86d99dbbfba731cedafcfae2c303379e96de33a72c18b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/spell.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/spell.c",
+    "sha256": "425b72399a092716e7b53da90b72c03f5e295dd8d178917c782598563df54d46"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/split.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/split.c",
+    "sha256": "ceca5752c37d4ff48e44c03a79820e05cba3c337989147987b0becb0e54d6f64"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/spray.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/spray.c",
+    "sha256": "1ebbd1af6232d084565e16b186f12b5c3c2310a8cde8ee81b698b2cbe4a437cb"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/sprintf.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/sprintf.c",
+    "sha256": "bace64e4ce52a5142865b6e871098d730ea35f9386a75d649c94039db302e406"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/substitute.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/substitute.c",
+    "sha256": "37b12852c831dd83dd8fa04c64229e2290d2ba9854f0ef04d98b91248bd2d673"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/sustain.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/sustain.c",
+    "sha256": "34207ce0f379b3b28ec7ca335da8b7aff5254b9bd4584e4ef65487ebc0bd915c"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/switch.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/switch.c",
+    "sha256": "09253aaaa3999b465acc06f3a59847e30455f574995cb2d30a8da954a26dd290"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/table.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/table.c",
+    "sha256": "bc12046bac06e18f0e35266167cf1d53b03640c4919b885c2d71bf152accedf4"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/tanh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/tanh.c",
+    "sha256": "8682cc7131332907c9b0dc3a33ea7b32c96a0daccfd1de76931e1c8d31e3403b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/thresh.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/thresh.c",
+    "sha256": "c6b956793f048799367ebbc9b614478b32d35051917e5ce5efc6358e68860c32"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/togedge.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/togedge.c",
+    "sha256": "a39dd5b92f9bec4c705e33f32b73c3601d9b628e7e1b5570ae48ffa9223d89e4"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/tosymbol.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/tosymbol.c",
+    "sha256": "d26ea362caf37fe29d7ebe4380a0c547439eb2e6d9dc6def4183e3f636b61b0f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/trough.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/trough.c",
+    "sha256": "8b597d5e58c16657d1d98da5cea35fe5db7b1bd83dc7282c3a7c7f8831b0dcdd"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/universal.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/universal.c",
+    "sha256": "76cc5061e482d04cdb5dc67c2e1d7ae310ce583243598908b0301bb676f36530"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/unjoin.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/unjoin.c",
+    "sha256": "5366339248213251b79d067e9689748b2ea59a7e898e178c32968da879ff14f4"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/urn.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/urn.c",
+    "sha256": "2ac4850abb12232b9c79305b82aa4b285fb1e769ed4b6a3440ed632a5e8b4276"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/uzi.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/uzi.c",
+    "sha256": "279cdbc7fa3301d1687d2fdfbd237c925a9465f4ac6e58213d52eedd8a3b0a68"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/xbendin.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendin.c",
+    "sha256": "f0bf6c524cc9497d9a52a5bc3b970a01cca491cda5e7d8090be0fc7c145f49a7"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/xbendin2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendin2.c",
+    "sha256": "b1d7497a396d749900336701a40325dbbf300dc8c3d67ce69ec48d59c039404b"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/xbendout.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendout.c",
+    "sha256": "448ab4b9b2603106d5b3dbe2d51cf7f4b9ea9726cafedc68df2a4e4991ac957f"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/xbendout2.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendout2.c",
+    "sha256": "2febbbb32d0aacb6269d6ea2ac9fa871670e36494c319f6ce7d754cf68381805"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/xnotein.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xnotein.c",
+    "sha256": "50830efbfcc5693d4fafaeaa68a90d7d7027121a7ec721f4ba7a9d6968a66fcb"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/xnoteout.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xnoteout.c",
+    "sha256": "bb7be166cdf3a8c251f3b06bbc6def212ddf2ae5c19151b6bfdfb8f71ba26e5a"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/control/zl.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/zl.c",
+    "sha256": "a8b81ca2d36f511a9301d3829b5d4e3ef0d83150c91218940e5bb3f137533075"
+  },
+  {
+    "component": "cyclone",
+    "path": "cyclone_objects/binaries/cyclone_lib.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/cyclone_lib.c",
+    "sha256": "fa968561faa64a74ebc653ddc9349a80f0433cf1d24c90f9c78036180aa96038"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/api.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/api.h",
+    "sha256": "f5ff7e759455eb46e10d950dd11ffcd334325ab428350a11b08d247ffef15dd3"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/file.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/file.c",
+    "sha256": "65328d8ef8c8ffe6d3617d993998888043a3edce5584672beb2b715702bbc12f"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/file.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/file.h",
+    "sha256": "0a637e8a50c1ab60a0896ce77e6217b7ed002b36ae712e43820c0fb6c8be1281"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/grow.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/grow.c",
+    "sha256": "c4e7db9974132131a947deab0a633b55dbb0d283a11130d7f2341c8a9b7d170e"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/grow.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/grow.h",
+    "sha256": "e20645bd404f57b769ccaf0ffac6f069a01aeb5de303917e93deb4cea4caa077"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/magicbit.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/magicbit.c",
+    "sha256": "ac6fc6194ec99d8dec3eb4e3cb69573e56c184729513796838c6bb0e57a26b39"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/magicbit.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/magicbit.h",
+    "sha256": "aaa636e31e440b862fd46ddfeca054e04aad5fe6a288b932e65eac6a3179913e"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/random.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/random.c",
+    "sha256": "4f340beaa909c9a5d0a591acab9dfc3ddb89f4c5b3562401345ee6f18edb2f8e"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/random.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/random.h",
+    "sha256": "2fb2e821b6890c2186ae4481a0e22fd9eef28ea0dbfcedea4ec6aac0778dd624"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/shared.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/shared.c",
+    "sha256": "0d626d8909f3bfaf2b4766a9ea7dc1d7534c83db9200b2067a0a2cb696fcc51b"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/common/shared.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/shared.h",
+    "sha256": "20fe1548101e1c2143ca4205f7bc9a5282955e0594975a7798cdd738df48be52"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/gui.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/gui.c",
+    "sha256": "caeac4b057084ab3a18235d00ba59e34c00c7ae9d793355046f117742b8993b4"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/gui.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/gui.h",
+    "sha256": "cc2726061535a0613fa680a04c762818f4e2737ce825acf4f7fab95b47f71cd7"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/mifi.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/mifi.c",
+    "sha256": "463d37b39cbfd99d46fb5077e85b515536801df68d9fb429ef56aeec9a15ca16"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/mifi.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/mifi.h",
+    "sha256": "3c5c381c908dae95848af32a56e6484019a1b8b1bfc22be025c8b359271aa935"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/rand.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/rand.c",
+    "sha256": "d5c1cd65ba979eafab902cc93917e7426f471009d37a0927d0e05554bc16ba2a"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/rand.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/rand.h",
+    "sha256": "72d3b7b76e2e78a0c9c8e0fbeb6051f809dd65c6c0de68678c18485c4106d702"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/s_cycloneutf8.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/s_cycloneutf8.c",
+    "sha256": "4c3aac22f83e1923ca5bbbf762c6f63c57e0f57c3b54669999f4e9a603164e4a"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/s_cycloneutf8.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/s_cycloneutf8.h",
+    "sha256": "f12894e022efc65dbce59a16713233f409cdf6ab62c4a33aaf1e654dd8107b69"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/tree.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/tree.c",
+    "sha256": "dd2f2d8a8ad994badfcdc48d8cc5e0c855a511d6dcd4e205d87e9b2a1b72c9c6"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/control/tree.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/tree.h",
+    "sha256": "441d6ac9d9babf3ddf482ead38caa46d480b133495b843a69ffe62a70d2ec58c"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/signal/cybuf.c",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/signal/cybuf.c",
+    "sha256": "0ad5518e5a5c37f7b1d11788e5a340c0a496d7fd00299c36ba9c34f51618bf45"
+  },
+  {
+    "component": "cyclone",
+    "path": "shared/signal/cybuf.h",
+    "source": "https://raw.githubusercontent.com/porres/pd-cyclone/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/signal/cybuf.h",
+    "sha256": "d03203cb0174f09e839aed638a0f143861ece23052a14fe9c29a70e2fa4865e5"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/bob~/bob~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/bob~/bob~.c",
+    "sha256": "c613a6feb27c2961e34a5dfa03ab726eb9295c45c30f0564f933ad43a7ee1c98"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/bonk~/bonk~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/bonk~/bonk~.c",
+    "sha256": "8d152c0e3e9f954fb3adcc05173f88ca513b9074f0b6a0c422e877c08015ea26"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/choice/choice.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/choice/choice.c",
+    "sha256": "dac0da0f3c48ade4a4113efe1298120b2011674b4d2cbca225ae19f96b1b87cf"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/fiddle~/fiddle~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/fiddle~/fiddle~.c",
+    "sha256": "2a191474ecdc2a343350cdb2eb222ef2ef99fcbf22e8aeee6fdd3ef87d7e53c9"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/loop~/loop~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/loop~/loop~.c",
+    "sha256": "6b753a2be9e01f77f178f2e2826620ce1f40691adb718179db08879c13b6e0bf"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/lrshift~/lrshift~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/lrshift~/lrshift~.c",
+    "sha256": "4e654d5537cb3bb94079d73b9119930baec42e55425fa795a9f4d4e00a3c2cb0"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/pd~/pdsched.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/pd~/pdsched.c",
+    "sha256": "f5fd504019d8699b761c030d9b376c636bb9f9f51701eeb27618d3e8997849d7"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/pd~/pd~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/pd~/pd~.c",
+    "sha256": "64e972f10bcb6efc1da4b308294824fe44258779b6f8ff96b6f5edf243717f98"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/pique/pique.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/pique/pique.c",
+    "sha256": "61aea88d80a0c89b9351810efc407fd293dce91e821880148b09870f61762718"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/sigmund~/sigmund~.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/sigmund~/sigmund~.c",
+    "sha256": "7b82cb8c0a205a39792819ecd8ca07a4336125fd616ddffd8f156a9a0d903f34"
+  },
+  {
+    "component": "pure-data",
+    "path": "extra/stdout/stdout.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/stdout/stdout.c",
+    "sha256": "eb14cc49a71d7b3a199e29abe9660be6735e8d74a6ad74eef60d921b6c08d439"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_arithmetic.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_arithmetic.c",
+    "sha256": "2a916b1d711f8f60e52c1a202edfd71e636a5a59a179ae3e3881d6be7e93d719"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_array.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_array.c",
+    "sha256": "5da2ec6382f574cdcaa9ac8ed2e211e311478c35f760cd980ad1acfbf4080b61"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_ctl.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_ctl.c",
+    "sha256": "7e17540bbf02b96e9c5ca2470f69c6c9b525088ef49dc51384e7c546d2c2ac4a"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_dac.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_dac.c",
+    "sha256": "cec22679a6097287b70f3674186c19583aba0aac9995f70b9228ad2e7a78af2e"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_delay.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_delay.c",
+    "sha256": "e28e33a14d94e19d4ac3ab61ba34c34fa4bf4eda2203ca217f5cdbabded0239c"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_fft.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_fft.c",
+    "sha256": "2c104ff9a2f90a7f6543dd7e6af1d5c470354ab5b6ba16b70861a961c95775cb"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_fft_fftsg.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_fft_fftsg.c",
+    "sha256": "d8c4d0c72907200c43b4eb958870eaecaca804f01f032ab65c7db70fe4312c3f"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_filter.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_filter.c",
+    "sha256": "d2f8aedf7d7ff2dabdf88445c2241d0de183f1d549f94978152f45fa7b8487ed"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_global.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_global.c",
+    "sha256": "a2f4957a2cda2da26f611824b7780420484f85e3bf63e36c296436838cba4424"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_math.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_math.c",
+    "sha256": "92bb21a6b30abe214f9829a6aadb4ed82d5a1e17aba1c9174f5bbe8ae4c102bf"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_misc.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_misc.c",
+    "sha256": "b4c88dcaf6409e96f9c9dfd6e7b76bb78a574d0eb94eb9bf34f1bb455df40e0e"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_osc.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_osc.c",
+    "sha256": "4908b184e57eee441b520c6db5b0ca64d5eabf945a0b6b31ec61f845b83361af"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_resample.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_resample.c",
+    "sha256": "9b4975d7bda71eaaaba9f691a8dcc5a3d4922886a4d958f487be091ce3c71380"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_soundfile.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile.c",
+    "sha256": "15b88057ff37857e1e426b1c0db0ee1cc945b815548ebc876a8d72e035cc5855"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_soundfile_aiff.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_aiff.c",
+    "sha256": "d6cfba9b1d7e23fbfe49f5eb8d1b09b1e12f1ab33256cc122bfb0ff7bfb89233"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_soundfile_caf.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_caf.c",
+    "sha256": "ca606455c940844e02a47b833c72df9b3fb79a3fd66b884cfbbc7383b13f68dd"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_soundfile_next.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_next.c",
+    "sha256": "d6ba806d47c71faf566d1044a2aa214e030aa8aa2b4f376e4f5517ea193fcef4"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_soundfile_wave.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_wave.c",
+    "sha256": "6cb8deee7dcd2280639314de78287950ceb27ebe0df432c41cd247de5daab62c"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/d_ugen.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_ugen.c",
+    "sha256": "b589996116529dd02518aedfd26b03c3c65edc1727ae822d1f01562fd035bc37"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_all_guis.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_all_guis.c",
+    "sha256": "bb32d4c8c1aa2a4de83ffc075d961fb72d0372108ea67a44a79b8bd4f1cf6470"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_all_guis.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_all_guis.h",
+    "sha256": "261845fa170073c9386d51215f2d028871d5de5b0b69f1d53a5c7d2be18140f8"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_array.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_array.c",
+    "sha256": "0a109945828d57d2924c6d848bd319c511ef72b82ef6365a83930cd7ab796470"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_bang.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_bang.c",
+    "sha256": "e0050c82d00732a02d6df483d4fba5dc229f365f85597ab8b9399dc7f3ed565b"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_canvas.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_canvas.c",
+    "sha256": "01e5c977b2b947187624ef4c8bbd2b82f9628ca1f1a8e8069a5879276487e3c2"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_canvas.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_canvas.h",
+    "sha256": "fda2fd6c7f3118efd551eacee29963f2c5e14e27875594091351cc6c8f073b7b"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_clone.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_clone.c",
+    "sha256": "61a6a3c0a377751339c0fb3690b742bdd8b29ae26e4877ff8c9a28da9212b356"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_editor.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_editor.c",
+    "sha256": "ecab6550a0292f8585e64914e3ed8237523d5e64003738b78bd0521cf051cec0"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_editor_extras.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_editor_extras.c",
+    "sha256": "8b7f17954a8102df362f328758fd708a6fae7bc48f2082052ff4923918b25328"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_graph.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_graph.c",
+    "sha256": "1cec118daac467695e9cef264a03346bda46c7178dec3249406058a2c988fbc4"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_guiconnect.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_guiconnect.c",
+    "sha256": "b2a88e9f3c0c82fe424be438769735f56a5514e19b80c4661467fee585980852"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_io.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_io.c",
+    "sha256": "d4a8b8f2aa533517487c2247c625c703d0129da8bf8ae25cba2b26c4183ebe27"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_mycanvas.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_mycanvas.c",
+    "sha256": "f3670dd1fd0b58530df5e5f279fd8c7d184aa81c8ed00303d5f750e3ceea2e34"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_numbox.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_numbox.c",
+    "sha256": "25b2b3ee616798b9671624b550e3b4743aa3ca03e9aabb69673f3e69cf366a11"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_radio.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_radio.c",
+    "sha256": "7adf4dc568c33ec187db93ce1c783a4599998c04d514b62796ae13584c8ca9eb"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_readwrite.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_readwrite.c",
+    "sha256": "61dce2767f9dcd6149349beee687099805669b970e5a1c4838daf5858130daa0"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_rtext.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_rtext.c",
+    "sha256": "2fbd9ba1c88a4f968c876c318522487aaa3a4ce0ee57e19f3e23e1a55cb7c3ea"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_scalar.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_scalar.c",
+    "sha256": "02c6cb530c7b7e4f18c103935fb4b84e6673b3042b08a260bc517653bea3c95a"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_slider.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_slider.c",
+    "sha256": "d7f919eabd22a456e4fa66b35b5f0905c8bc8ed7fa6291770da83c455ba9ac70"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_template.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_template.c",
+    "sha256": "e013195a566ded4171548851d53046819ef9fe05010a1143d0464316f0c6a1ef"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_text.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_text.c",
+    "sha256": "092405ffc35b904650041a6b491473df90f6d2df649b4faeb6b8fb10cb6f2052"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_toggle.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_toggle.c",
+    "sha256": "9c043c2b3b50007de26abf61813d5a2d2461cb5133c19006d615cf4823553c0b"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_traversal.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_traversal.c",
+    "sha256": "496e5848165e5ee79e13baa9c195d21523224a98640c16dea987b9ca2cbea7cb"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_undo.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_undo.c",
+    "sha256": "446b6314afe16cd247c3cccfd21b9af347772a78f9a986dd9a0afc7a0369c561"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/g_vumeter.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_vumeter.c",
+    "sha256": "96758e6c554dc9574977ca500a2293a5b6196425acbbd2c8c01f573d5ef0ce02"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_atom.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_atom.c",
+    "sha256": "39b60fd26c5a9a2888f825b931216b90bd02eb01fddef55f7910764e00af75ee"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_binbuf.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_binbuf.c",
+    "sha256": "b3d3dcd1436d593cba3cfef16f0770214a29c0531dc74ea4dbf1d8046cb2de3b"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_class.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_class.c",
+    "sha256": "3195bc509241fdf611018b5396e2ad59955dd5bf99d2c6d00b35496e57a846fa"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_conf.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_conf.c",
+    "sha256": "2ab492cc6bb432f935566cecad30d85c91aa75b88b28e7831eb7bdbf748e9a3a"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_glob.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_glob.c",
+    "sha256": "c6c2129f0a90c8f593754358c795cd285f309ee00f9792646fcdc794794c7f06"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_imp.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_imp.h",
+    "sha256": "46d8e452861b89671668aac46a467244c28a2fe7d238f10e6873ab0067d37816"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_memory.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_memory.c",
+    "sha256": "d6853c34ea46e6305d1ec1ee8e01f8c4e0ab6015e3813f28ff2ad3694ff79efc"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_obj.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_obj.c",
+    "sha256": "327fb240a408a18f2c06191ed3072f4f58972b691a18ef769bc420e460941031"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_pd.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_pd.c",
+    "sha256": "702b97753be163c5ce11601fbcd0cb16bac070330986d170b68f47dd3baa9a7a"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_pd.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_pd.h",
+    "sha256": "b02eceac7adcbc19a6a0427bcc1bce0649f4c88a0955699f9b1c9020816f2f8d"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/m_sched.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_sched.c",
+    "sha256": "a2ac5d629632285826958288e56058b169ee920cf16e5ae28dd8bb9650409a09"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_audio.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_audio.c",
+    "sha256": "e6edd22d4b16ab31aca20bbf343eb7690cb8898adc35102f19c8e106f91a12fa"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_audio_dummy.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_audio_dummy.c",
+    "sha256": "541d9f0d5c7979d5c1ad0c9b97147af3a779bb7fa01e363049ded5eb0feffd2a"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_inter.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_inter.c",
+    "sha256": "19d17b6e1b6135040913fe80b67cc272dfbacd877bc9f20f9a84d92b2924f937"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_inter_gui.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_inter_gui.c",
+    "sha256": "05ed2f12e0dfe7dd3d911e63e0fa450aef4f5cad1af938d8acbd8a73bede9012"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_loader.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_loader.c",
+    "sha256": "db2b524838eeba6b49c43633b0008a1acd7bb1007bee53d2378e5cb749cc6313"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_main.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_main.c",
+    "sha256": "9a9a3368bfdebc040640bde1e4dfd4776dd0e4fd357d48be9c41cd8ba6bf7fcf"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_net.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_net.c",
+    "sha256": "c117edb8c58dbb5bb901b19e324f375c89420fd9c3765892ae02000ae0ebcc1c"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_path.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_path.c",
+    "sha256": "42f83f8ff51004b7d5f4e48d05952d128d6da6ddca862c959a22e24672ce7380"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_print.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_print.c",
+    "sha256": "a688ee5fb5a18aa77a15bdf35ca113f86ccb1293e525307864e12b905980351e"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_stuff.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_stuff.h",
+    "sha256": "4b64db373a805f16b59642ca18d308769f3d5bbd55981f10be87bf7b3474f339"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_utf8.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_utf8.c",
+    "sha256": "1a404662ee17cd7a64a964fc8a359c32ffd7782eb72ba8f636787ec4d5f58790"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/s_utf8.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_utf8.h",
+    "sha256": "b6e7632211ebabf9016a223feae2dfdbae567d8177ef2228bc74bb7bcf9914f3"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_acoustics.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_acoustics.c",
+    "sha256": "459950a9a043551c1ff60e46e653150c3143a7fbe34e6567167e22925be3c385"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_arithmetic.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_arithmetic.c",
+    "sha256": "b1957777b361b71bc4872885184749c5b7b85ffe6973949af2e03bfc37620cbe"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_array.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_array.c",
+    "sha256": "0fcb505756d1031cbd5aefa0bb8e48c80576d384e0e8b95942946327668fb1d7"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_connective.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_connective.c",
+    "sha256": "b0c1e384f4ea7868b4984795426af5a440c459b29a767705bd0dede09a02b137"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_file.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_file.c",
+    "sha256": "02f6b74634114feb1418a68367b9a2032af6b7ab98d56b2aa6a44f883855164d"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_gui.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_gui.c",
+    "sha256": "400dcbb4a88e1652bcfdfe92919c79a7bbf1c735048c96d1cc78cb7b134b577c"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_interface.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_interface.c",
+    "sha256": "456845a72e2ce332de67f1dec59e3981e987ee8e7b96dbc2af6b852be4d21987"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_list.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_list.c",
+    "sha256": "6e223f46daddbd2ce793e71ee630cd87672aa19686c8014593df3207b925eb9d"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_midi.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_midi.c",
+    "sha256": "7ac22523f7326582a557907476c2d1f244ad5567c530fc22cf8adc1db59ac3d1"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_misc.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_misc.c",
+    "sha256": "2c13f344e88545e49772ff9f4da5762e1e192a6ef5762f29f3c476851d674453"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_net.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_net.c",
+    "sha256": "ed5a6090b23bbff1a2112f78ec1b4d17141b94b5fe0215d043deb03d59cb4e6b"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_scalar.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_scalar.c",
+    "sha256": "aecc301d31cf683df7bfd9eda14255a5e23125e562537cf091e0e772a81e6a97"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_text.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_text.c",
+    "sha256": "e22a516d5e384dbc52b0fac82c0626cc6ca8ac9d9cf6d1cc0e5abd1fea9ff91c"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_time.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_time.c",
+    "sha256": "6196b080ff2001f8b7d0b6fd94b5cf82acff2ccb2d5b5a5d7f7a9d9e08013ac0"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_vexp.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp.c",
+    "sha256": "8ea947629dd332e1064c0c5bccb257bf79fa6de8a8555c31d65cc39cdc99c292"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_vexp.h",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp.h",
+    "sha256": "eb09b13c72d555b4c87ab8ce998d83e0e2298b06f0fc8c624e03ec69a24111e1"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_vexp_fun.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp_fun.c",
+    "sha256": "f6bfa56a0ee177231c43af8fa36ab9d142eb7287b29036db5c8b7a988600b338"
+  },
+  {
+    "component": "pure-data",
+    "path": "src/x_vexp_if.c",
+    "source": "https://raw.githubusercontent.com/pure-data/pure-data/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp_if.c",
+    "sha256": "edc98fa9b17b32166ee2e5cb44f0a3fdb2bb34e3b764213611fac420c2d92e05"
+  }
+]

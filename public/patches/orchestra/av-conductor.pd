@@ -54,6 +54,11 @@
 #X obj 1015 95 s \$1-perc-delay;
 #X obj 1015 135 r perc-feedback;
 #X obj 1015 175 s \$1-perc-feedback;
+#X obj 1015 215 f 0;
+#X obj 1015 255 + 1;
+#X obj 1015 295 t f f;
+#X obj 1015 335 r av-tick;
+#X obj 1015 375 s generation;
 #X connect 2 0 3 0;
 #X connect 3 0 4 0;
 #X connect 4 0 5 0;
@@ -86,3 +91,8 @@
 #X connect 49 0 50 0;
 #X connect 51 0 52 0;
 #X connect 53 0 54 0;
+#X connect 58 0 55 0;
+#X connect 55 0 56 0;
+#X connect 56 0 57 0;
+#X connect 57 1 55 1;
+#X connect 57 0 59 0;

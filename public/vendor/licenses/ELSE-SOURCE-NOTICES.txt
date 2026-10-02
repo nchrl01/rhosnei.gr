@@ -1,0 +1,1913 @@
+Source copyright and license comments retained verbatim.
+Pinned component: porres/pd-else @ bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0
+Selection follows upstream scripts/build-wasm.sh/CMakeLists.txt; headers accompanying selected sources are included.
+
+
+
+SOURCE: Source/Audio/above~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/above~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/add~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/add~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/adsr~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/adsr~.c
+
+// porres 2017-2025
+
+SOURCE: Source/Audio/allpass.2nd~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/allpass.2nd~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/allpass.rev~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/allpass.rev~.c
+
+// Porres 2017
+// Based on cyclone's allpass
+
+SOURCE: Source/Audio/asr~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/asr~.c
+
+// porres 2017-2025
+
+SOURCE: Source/Audio/autofade.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade.mc~.c
+
+// porres 2017-2024
+
+SOURCE: Source/Audio/autofade2.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade2.mc~.c
+
+// porres 2017-2024
+
+SOURCE: Source/Audio/autofade2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade2~.c
+
+// porres 2017-2024
+
+SOURCE: Source/Audio/autofade~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/autofade~.c
+
+// porres 2017-2024
+
+SOURCE: Source/Audio/balance~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/balance~.c
+
+// Porres 2016-2023
+
+SOURCE: Source/Audio/bandpass~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bandpass~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/bandstop~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bandstop~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/bitnormal~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bitnormal~.c
+
+// based on the code by Matt Barber for cyclone's bitsafe~
+
+SOURCE: Source/Audio/bl.imp2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.imp2~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/bl.imp~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.imp~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/bl.saw2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.saw2~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/bl.saw~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.saw~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/bl.square~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.square~.c
+
+/*
+// Created by Timothy Schoen and Porres
+// Based on Elliptic BLEP by signalsmith-audio: https://github.com/Signalsmith-Audio/elliptic-blep
+
+#include <m_pd.h>
+#include <blep.h>
+
+
+typedef struct blsquare{
+    t_object x_obj;
+    t_float x_f;
+    t_elliptic_blep x_elliptic_blep;
+    t_inlet* x_inlet_sync;
+    t_inlet* x_inlet_phase;
+    t_inlet* x_inlet_width;
+    t_float     x_phase;
+    t_float     x_sr;
+    t_float     x_last_phase_offset;
+    t_float     x_pulse_width;
+    t_int       x_midi;
+    t_int       x_soft;
+}t_blsquare;
+
+t_class *blsquare_class;
+
+static void blsquare_midi(t_blsquare *x, t_floatarg f){
+    x->x_midi = (int)(f != 0);
+}
+
+static void blsquare_soft(t_blsquare *x, t_floatarg f){
+    x->x_soft = (int)(f != 0);
+}
+
+static t_int* blsquare_perform(t_int *w) {
+    t_blsquare* x      = (t_blsquare*)(w[1]);
+    t_elliptic_blep* blep = &x->x_elliptic_blep;
+    t_int n            = (t_int)(w[2]);
+    t_float* freq_vec  = (t_float *)(w[3]);
+    t_float* width_vec = (t_float *)(w[4]);
+    t_float* sync_vec  = (t_float *)(w[5]);
+    t_float* phase_vec = (t_float *)(w[6]);
+    t_float* out       = (t_float *)(w[7]);
+    while(n--){
+        t_float freq = *freq_vec++;
+        t_float sync = *sync_vec++;
+        t_float phase_offset = *phase_vec++;
+        t_float pulse_width = *width_vec++;
+        if(x->x_midi){
+            if(freq > 127)
+                freq = 127;
+            freq = freq <= 0 ? 0 : pow(2, (freq - 69)/12) * 440;
+        }
+        // Update pulse width, limit between 0 and 1
+        pulse_width = fmax(fmin(0.99, pulse_width), 0.01);
+        x->x_pulse_width = pulse_width;
+        
+        if(sync > 0 && sync <= 1){ // Phase sync
+            if(x->x_soft)
+                x->x_soft = x->x_soft == 1 ? -1 : 1;
+            else{
+                x->x_phase = sync;
+                x->x_phase = phasewrap(x->x_phase);
+            }
+        }
+        else { // Phase modulation
+            double phase_dev = phase_offset - x->x_last_phase_offset;
+            if(phase_dev >= 1 || phase_dev <= -1)
+                phase_dev = fmod(phase_dev, 1);
+            x->x_phase = phasewrap(x->x_phase + phase_dev);
+        }
+        
+        *out++ = (x->x_phase <= x->x_pulse_width ? 1.0f : -1.0f) + elliptic_blep_get(blep);
+        
+        t_float phase_increment = freq / x->x_sr; // Update frequency
+        t_float last_phase = x->x_phase;
+        x->x_phase += phase_increment;
+        if(x->x_soft)
+            phase_increment *= x->x_soft;
+        
+        elliptic_blep_step(blep);
+        
+        if(x->x_phase >= 1 || x->x_phase < 0) {
+            x->x_phase = x->x_phase < 0 ? x->x_phase+1 : x->x_phase-1;
+            t_float samples_in_past = x->x_phase / phase_increment;
+            elliptic_blep_add_in_past(blep, 2.0f, 1, samples_in_past);
+        }
+        else if (x->x_phase >= x->x_pulse_width && x->x_phase < x->x_pulse_width + phase_increment) {
+            t_float samples_in_past = (x->x_phase - x->x_pulse_width) / phase_increment;
+            elliptic_blep_add_in_past(blep, -2.0f, 1, samples_in_past);
+        }
+        
+        x->x_last_phase_offset = phase_offset;
+    }
+    return(w+8);
+}
+
+static void blsquare_dsp(t_blsquare *x, t_signal **sp){
+    x->x_sr = sp[0]->s_sr;
+    elliptic_blep_create(&x->x_elliptic_blep, 0, sp[0]->s_sr);
+    dsp_add(blsquare_perform, 7, x, sp[0]->s_n, sp[0]->s_vec,
+        sp[1]->s_vec, sp[2]->s_vec, sp[3]->s_vec, sp[4]->s_vec);
+ }
+
+static void blsquare_free(t_blsquare *x){
+    inlet_free(x->x_inlet_sync);
+    inlet_free(x->x_inlet_phase);
+    inlet_free(x->x_inlet_width);
+}
+
+static void* blsquare_new(t_symbol *s, int ac, t_atom *av){
+    s = NULL;
+    t_blsquare* x = (t_blsquare *)pd_new(blsquare_class);
+    x->x_phase = 0.0;
+    x->x_soft = 0;
+    x->x_midi = 0;
+    x->x_last_phase_offset = 0;
+    x->x_pulse_width = 0.5f;
+    
+    t_float init_freq = 0, init_phase = 0;
+    while(ac && av->a_type == A_SYMBOL){
+        if(atom_getsymbol(av) == gensym("-midi"))
+            x->x_midi = 1;
+        else if(atom_getsymbol(av) == gensym("-soft"))
+            x->x_soft = 1;
+        ac--, av++;
+    }
+    if(ac && av->a_type == A_FLOAT){
+        init_freq = av->a_w.w_float;
+        ac--; av++;
+        if(ac && av->a_type == A_FLOAT){
+            x->x_pulse_width = av->a_w.w_float;
+            ac--; av++;
+        }
+        if(ac && av->a_type == A_FLOAT){
+            init_phase = av->a_w.w_float;
+            ac--; av++;
+        }
+    }
+    x->x_f = init_freq;
+    outlet_new(&x->x_obj, &s_signal);
+    x->x_inlet_width = inlet_new(&x->x_obj, &x->x_obj.ob_pd,  &s_signal, &s_signal);
+    pd_float((t_pd *)x->x_inlet_width, x->x_pulse_width);
+    x->x_inlet_sync = inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal, &s_signal);
+    pd_float((t_pd *)x->x_inlet_sync, 0);
+    x->x_inlet_phase = inlet_new(&x->x_obj, &x->x_obj.ob_pd, &s_signal, &s_signal);
+    pd_float((t_pd *)x->x_inlet_phase, init_phase);
+    return(void *)x;
+}
+
+void setup_bl0x2esquare_tilde(void){
+    blsquare_class = class_new(gensym("bl.square~"), (t_newmethod)blsquare_new,
+        (t_method)blsquare_free, sizeof(t_blsquare), 0, A_GIMME, A_NULL);
+    CLASS_MAINSIGNALIN(blsquare_class, t_blsquare, x_f);
+    class_addmethod(blsquare_class, (t_method)blsquare_soft, gensym("soft"), A_DEFFLOAT, 0);
+    class_addmethod(blsquare_class, (t_method)blsquare_midi, gensym("midi"), A_DEFFLOAT, 0);
+    class_addmethod(blsquare_class, (t_method)blsquare_dsp, gensym("dsp"), A_NULL);
+}
+
+*/
+
+SOURCE: Source/Audio/bl.tri~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.tri~.c
+
+// Created by Timothy Schoen and Porres
+// Based on Elliptic BLEP by signalsmith-audio: https://github.com/Signalsmith-Audio/elliptic-blep
+
+SOURCE: Source/Audio/bl.vsaw~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/bl.vsaw~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/blocksize~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/blocksize~.c
+
+// porres 2018-2020
+
+SOURCE: Source/Audio/brown~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/brown~.c
+
+// Matt Barber and Porres (2017-2022)
+
+SOURCE: Source/Audio/car2pol~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/car2pol~.c
+
+// porres
+
+SOURCE: Source/Audio/ceil~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ceil~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/cents2ratio~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/cents2ratio~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/chance~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/chance~.c
+
+// porres 2020
+
+SOURCE: Source/Audio/changed2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/changed2~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/changed~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/changed~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/comb.filt~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/comb.filt~.c
+
+// porres
+
+SOURCE: Source/Audio/comb.rev~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/comb.rev~.c
+
+// based on the one we did for cyclone
+
+SOURCE: Source/Audio/cosine~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/cosine~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/crackle~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/crackle~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/crossover~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/crossover~.c
+
+// Porres 2016-2018
+
+SOURCE: Source/Audio/cusp~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/cusp~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/db2lin~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/db2lin~.c
+
+// porres 2018
+
+SOURCE: Source/Audio/dbgain~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/dbgain~.c
+
+// porres 2025
+
+SOURCE: Source/Audio/decay~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/decay~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/del.in~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/del.in~.c
+
+// based on delwrite~/delread4~
+
+SOURCE: Source/Audio/del.out~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/del.out~.c
+
+// based on delwrite~/delread4~
+
+SOURCE: Source/Audio/delace~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/delace~.c
+
+// porres
+
+SOURCE: Source/Audio/detect~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/detect~.c
+
+// Porres 2016-2018
+
+SOURCE: Source/Audio/downsample~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/downsample~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/drive~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/drive~.c
+
+// porres 2018
+
+SOURCE: Source/Audio/dust2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/dust2~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/dust~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/dust~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/envgen~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/envgen~.c
+
+// porres 2018-2025
+
+SOURCE: Source/Audio/eq~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/eq~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/fader~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fader~.c
+
+// porres
+
+SOURCE: Source/Audio/fbdelay~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fbdelay~.c
+
+// Porres 2018
+
+SOURCE: Source/Audio/fbsine2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fbsine2~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/fbsine~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fbsine~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/fdn.rev~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fdn.rev~.c
+
+// Feedback Delay Networks with a householder matrix (In - 2/n 11T)
+// modified fom [creb/fdn~] by Porres
+
+// TODO (from original code) - Add: delay time generation code / prime calculation for
+// delay lengths more diffuse feedback matrix (hadamard) & check filtering code
+
+/*   Copyright (c) 2000-2003 by Tom Schouten                                *
+ *   This program is free software; you can redistribute it and/or modify   *
+ *   it under the terms of the GNU General Public License as published by   *
+ *   the Free Software Foundation; either version 2 of the License, or      *
+ *   (at your option) any later version.                                    *
+ *                                                                          *
+ *   This program is distributed in the hope that it will be useful,        *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *   GNU General Public License for more details.                           *
+ *                                                                          *
+ *   You should have received a copy of the GNU General Public License      *
+ *   along with this program; if not, write to the Free Software            *
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.              */
+
+SOURCE: Source/Audio/filterdelay~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/filterdelay~.c
+
+// porres 2023, inspired by and modified from Tom Erbe's [+delay~]
+
+SOURCE: Source/Audio/floor~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/floor~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/fm~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fm~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/fold~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/fold~.c
+
+// Porres
+
+SOURCE: Source/Audio/follow~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/follow~.c
+
+// Porres 2025
+
+SOURCE: Source/Audio/freq.shift~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/freq.shift~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/function~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/function~.c
+
+// porres 2018-2025
+
+SOURCE: Source/Audio/gate2imp~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gate2imp~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/gatedelay~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gatedelay~.c
+
+// Porres 2025
+
+SOURCE: Source/Audio/gaussian~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gaussian~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/gbman~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gbman~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/gendyn~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gendyn~.c
+
+// [gendyn~]: "Dinamic Stochastic Synthesis" based/inspired on Xenakis' GenDyn stuff
+// code by porres, 2022
+
+SOURCE: Source/Audio/get~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/get~.c
+
+// porres
+
+SOURCE: Source/Audio/giga.rev~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/giga.rev~.c
+
+/*
+ Gigaverb/Gverb algorithm
+ 
+ Original code by Juhana Sadeharju Copyright (C) 1999 kouhia at nic.funet.fi
+ 
+ Ported to Pure Data, Edited, reviewed and modified
+ by Alexandre Torres Porres (c) 2019 to include it in the ELSE library
+ 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 2 of the License, or
+ (at your option) any later version.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more delates.
+ 
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+*/
+
+SOURCE: Source/Audio/glide2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/glide2~.c
+
+// porres 2017
+
+SOURCE: Source/Audio/glide~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/glide~.c
+
+// porres 2017
+
+SOURCE: Source/Audio/gray~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/gray~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/group~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/group~.c
+
+// porres 2024
+
+SOURCE: Source/Audio/henon~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/henon~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/highpass~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/highpass~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/highshelf~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/highshelf~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/ikeda~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ikeda~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/impseq~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/impseq~.c
+
+// Porres 2017-2022
+
+SOURCE: Source/Audio/impulse2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/impulse2~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/impulse~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/impulse~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/lace~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lace~.c
+
+// porres
+
+SOURCE: Source/Audio/lag2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lag2~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lag~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lag~.c
+
+// Porres 2019
+
+SOURCE: Source/Audio/lastvalue~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lastvalue~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/latoocarfian~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/latoocarfian~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lfnoise~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lfnoise~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lin2db~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lin2db~.c
+
+// porres 2018-2023
+
+SOURCE: Source/Audio/lincong~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lincong~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/logistic~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/logistic~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lop2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lop2~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lorenz~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lorenz~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lowpass~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lowpass~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/lowshelf~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/lowshelf~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/match~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/match~.c
+
+// porres 2017
+
+SOURCE: Source/Audio/median~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/median~.c
+
+// by schiavoni and porres 2017-2020
+
+SOURCE: Source/Audio/merge~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/merge~.c
+
+// porres
+
+SOURCE: Source/Audio/mix~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mix~.c
+
+// porres 2025
+
+SOURCE: Source/Audio/mtx.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mtx.mc~.c
+
+// porres 2023
+
+SOURCE: Source/Audio/mtx~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/mtx~.c
+
+// porres 2023, rewrote from scratcg and ditched old version based on cyclone's
+
+SOURCE: Source/Audio/nchs~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/nchs~.c
+
+// porres 2023
+
+SOURCE: Source/Audio/numbox~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/numbox~.c
+
+// By Porres and Tim Schoen
+
+SOURCE: Source/Audio/nyquist~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/nyquist~.c
+
+// Porres 2017-2020
+
+SOURCE: Source/Audio/op~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/op~.c
+
+// porrres 2019
+
+SOURCE: Source/Audio/pan.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan.mc~.c
+
+// porres
+
+SOURCE: Source/Audio/pan.stereo~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan.stereo~.c
+
+// Porres 2025
+
+SOURCE: Source/Audio/pan2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan2~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/pan4~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan4~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/pan~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pan~.c
+
+// porres 2023-2025
+
+SOURCE: Source/Audio/parabolic~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/parabolic~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/peak~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/peak~.c
+
+// similar to rms~ but outputs peak amplitude
+
+SOURCE: Source/Audio/phaseseq~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/phaseseq~.c
+
+// Porres
+
+SOURCE: Source/Audio/pick~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pick~.c
+
+// porres
+
+SOURCE: Source/Audio/pimpmul~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pimpmul~.c
+
+// Porres 2021
+
+SOURCE: Source/Audio/pimp~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pimp~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/pink~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pink~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/pluck~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pluck~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/pm2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm2~.c
+
+// Porres 2023
+
+SOURCE: Source/Audio/pm4~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm4~.c
+
+// Porres 2023
+
+SOURCE: Source/Audio/pm6~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm6~.c
+
+// Porres 2023
+
+SOURCE: Source/Audio/pm~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pm~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/pol2car~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pol2car~.c
+
+// porres
+
+SOURCE: Source/Audio/power~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/power~.c
+
+// porres 2021
+
+SOURCE: Source/Audio/pulsecount~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pulsecount~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/pulsediv~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pulsediv~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/pulse~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/pulse~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/quad~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/quad~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/quantizer~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/quantizer~.c
+
+// Porres 2018-2023
+
+SOURCE: Source/Audio/rampnoise~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rampnoise~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/ramp~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ramp~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/rand.f~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rand.f~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/rand.i~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rand.i~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/randpulse2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/randpulse2~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/randpulse~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/randpulse~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/range~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/range~.c
+
+// porres
+
+SOURCE: Source/Audio/ratio2cents~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/ratio2cents~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/repeat~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/repeat~.c
+
+// porres
+
+SOURCE: Source/Audio/rescale~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rescale~.c
+
+// Porres 2017 - 2024
+
+SOURCE: Source/Audio/resonant~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/resonant~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/resonator2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/resonator2~.c
+
+// Porres 2024
+
+SOURCE: Source/Audio/resonator~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/resonator~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/rint~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rint~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/rms~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rms~.c
+
+/* ---------------- rms~ - envelope follower. ----------------- */
+
+/* based on msp's [env~] object: outputs both linear and dBFS rms */
+
+SOURCE: Source/Audio/rotate.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/rotate.mc~.c
+
+// porres 2023
+
+SOURCE: Source/Audio/saw2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/saw2~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/saw~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/saw~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/schmitt~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/schmitt~.c
+
+// Porres 2018
+
+SOURCE: Source/Audio/scope~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/scope~.c
+
+// stolen from (and based on) cyclone/scope~
+
+SOURCE: Source/Audio/select~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/select~.c
+
+// porres
+
+SOURCE: Source/Audio/sequencer~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sequencer~.c
+
+// Porres 2017-2022
+
+SOURCE: Source/Audio/shaper~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/shaper~.c
+
+// porres
+
+SOURCE: Source/Audio/sh~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sh~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/sig2float~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sig2float~.c
+
+// porres
+
+/* requested */
+
+/* effective (truncated) */
+
+SOURCE: Source/Audio/sine~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sine~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/sin~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sin~.c
+
+// porres
+
+SOURCE: Source/Audio/slew2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/slew2~.c
+
+// porres 2021
+
+SOURCE: Source/Audio/slew~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/slew~.c
+
+// porres 2021
+
+SOURCE: Source/Audio/slice~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/slice~.c
+
+// porres
+
+SOURCE: Source/Audio/smooth2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/smooth2~.c
+
+// porres 2017
+
+SOURCE: Source/Audio/smooth~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/smooth~.c
+
+// porres 2017
+
+SOURCE: Source/Audio/spread.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/spread.mc~.c
+
+// porres 2024
+
+SOURCE: Source/Audio/spread~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/spread~.c
+
+// porres 2024
+
+SOURCE: Source/Audio/square~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/square~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/sr~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sr~.c
+
+// Porres 2017-2020
+
+SOURCE: Source/Audio/standard~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/standard~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/status~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/status~.c
+
+// Porres 2017-2018
+
+SOURCE: Source/Audio/stepnoise~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/stepnoise~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/sum~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/sum~.c
+
+// porres
+
+SOURCE: Source/Audio/susloop~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/susloop~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/svfilter~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/svfilter~.c
+
+/* Based on Chamberlin's prototype from "Musical Applications of
+   Microprocessors" (csound's svfilter).  Slightly distorted,
+   no upsampling. */
+
+/* CHECKED scalar case: input preserved (not coefs) after changing mode */
+
+SOURCE: Source/Audio/tabplayer~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tabplayer~.c
+
+// porres 2020
+
+SOURCE: Source/Audio/tabreader~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tabreader~.c
+
+// porres
+
+SOURCE: Source/Audio/tabwriter~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tabwriter~.c
+
+// porres 2020
+
+SOURCE: Source/Audio/tanh~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tanh~.c
+
+// Porres 2025
+
+SOURCE: Source/Audio/tempo~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tempo~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/timed.gate~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/timed.gate~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/toggleff~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/toggleff~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/trig.delay~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/trig.delay~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/trighold~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/trighold~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/tri~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/tri~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/trunc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/trunc~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Audio/unmerge~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/unmerge~.c
+
+// porres
+
+SOURCE: Source/Audio/velvet~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/velvet~.c
+
+// Porres 2024
+
+SOURCE: Source/Audio/vsaw~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/vsaw~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Audio/vu~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/vu~.c
+
+/* ---------------- vu~ - envelope follower. ----------------- */
+
+/* based on msp's env~ object: outputs both linear and dBFS vu */
+
+SOURCE: Source/Audio/wavetable~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/wavetable~.c
+
+// Porres 2018-2025
+
+SOURCE: Source/Audio/white~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/white~.c
+
+// Porres 2017-2024
+
+SOURCE: Source/Audio/width~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/width~.c
+
+// Porres 2016
+
+SOURCE: Source/Audio/wrap2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/wrap2~.c
+
+// Porres
+
+SOURCE: Source/Audio/wt2d~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/wt2d~.c
+
+// Porres 2018-2025
+
+SOURCE: Source/Audio/xfade.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xfade.mc~.c
+
+// porres 2023
+
+SOURCE: Source/Audio/xfade~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xfade~.c
+
+// porres
+
+SOURCE: Source/Audio/xgate.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate.mc~.c
+
+// porres 2017-2020
+
+SOURCE: Source/Audio/xgate2.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate2.mc~.c
+
+// porres 2023
+
+SOURCE: Source/Audio/xgate2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate2~.c
+
+// porres
+
+SOURCE: Source/Audio/xgate~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xgate~.c
+
+// porres 2017-2024
+
+SOURCE: Source/Audio/xmod~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xmod~.c
+
+// Porres 2017
+
+SOURCE: Source/Audio/xselect.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect.mc~.c
+
+// porres
+
+SOURCE: Source/Audio/xselect2.mc~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect2.mc~.c
+
+// porres 2023
+
+SOURCE: Source/Audio/xselect2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect2~.c
+
+// porres 2024
+
+SOURCE: Source/Audio/xselect~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/xselect~.c
+
+// porres 2017-2024
+
+SOURCE: Source/Audio/zerocross~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Audio/zerocross~.c
+
+// Porres 2016
+
+SOURCE: Source/Control/args.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/args.c
+
+// porres
+
+SOURCE: Source/Control/bend.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bend.in.c
+
+// porres 2018-2024
+
+SOURCE: Source/Control/bend.out.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bend.out.c
+
+// porres 2018
+
+SOURCE: Source/Control/bicoeff.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bicoeff.c
+
+// based on filterview
+
+SOURCE: Source/Control/bicoeff2.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/bicoeff2.c
+
+// porres
+
+SOURCE: Source/Control/break.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/break.c
+
+// porres 2017
+
+SOURCE: Source/Control/buffer.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/buffer.c
+
+// based on vanilla's array
+
+SOURCE: Source/Control/button.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/button.c
+
+// porres 2020-2025
+
+SOURCE: Source/Control/canvas.active.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.active.c
+
+// porres 2019, based on cyclone active
+
+SOURCE: Source/Control/canvas.bounds.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.bounds.c
+
+// porres 2019
+
+SOURCE: Source/Control/canvas.edit.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.edit.c
+
+// porres 2019
+
+SOURCE: Source/Control/canvas.mouse.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.mouse.c
+
+// porres 2019-2020
+
+SOURCE: Source/Control/canvas.name.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.name.c
+
+// porres
+
+SOURCE: Source/Control/canvas.setname.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.setname.c
+
+// porres
+
+SOURCE: Source/Control/canvas.vis.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.vis.c
+
+// porres 2019
+
+SOURCE: Source/Control/canvas.zoom.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/canvas.zoom.c
+
+// porres 2020
+
+SOURCE: Source/Control/ceil.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ceil.c
+
+// Porres 2018
+
+SOURCE: Source/Control/cents2ratio.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/cents2ratio.c
+
+// Porres 2016
+
+SOURCE: Source/Control/chance.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/chance.c
+
+// porres 2020
+
+SOURCE: Source/Control/changed.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/changed.c
+
+// porres 2017
+
+SOURCE: Source/Control/click.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/click.c
+
+// based on iemguts/properties
+
+SOURCE: Source/Control/colors.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/colors.c
+
+// based on something I forgot now
+
+SOURCE: Source/Control/ctl.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ctl.in.c
+
+// porres 2018-2024
+
+SOURCE: Source/Control/ctl.out.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ctl.out.c
+
+// porres 2018
+
+SOURCE: Source/Control/datetime.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/datetime.c
+
+// porres, based on zexy's externals, by request on=f a plugdata user
+
+SOURCE: Source/Control/default.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/default.c
+
+// Porres 2021
+
+SOURCE: Source/Control/delace.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/delace.c
+
+// porres
+
+SOURCE: Source/Control/dollsym.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/dollsym.c
+
+// porres 2020
+
+SOURCE: Source/Control/factor.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/factor.c
+
+// porres 2019
+
+SOURCE: Source/Control/float2bits.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/float2bits.c
+
+// matt barber and porres (2017)
+
+SOURCE: Source/Control/floor.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/floor.c
+
+// Porres 2018
+
+SOURCE: Source/Control/fold.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/fold.c
+
+// Porres 2016
+
+SOURCE: Source/Control/fontsize.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/fontsize.c
+
+// porres 2020
+
+SOURCE: Source/Control/format.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/format.c
+
+//#include <locale.h>
+
+/* Pattern types.  These are the parsing routine's return values.
+   If returned value is >= FORMAT_MINSLOTTYPE, then another slot
+   is created (i.e. an inlet, and a proxy handling it). */
+
+SOURCE: Source/Control/function.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/function.c
+
+// porres
+
+SOURCE: Source/Control/gcd.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/gcd.c
+
+// porres
+
+SOURCE: Source/Control/hz2rad.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/hz2rad.c
+
+// Porres 2016
+
+SOURCE: Source/Control/initmess.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/initmess.c
+
+// Porres 2018
+
+SOURCE: Source/Control/keyboard.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/keyboard.c
+
+// Prototype By Flávio Schiavoni, developed by Alexandre Porres
+
+//#include "../extra_source/compat.h"
+
+SOURCE: Source/Control/keycode.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/keycode.c
+
+// seb shader 2023
+
+// common mapping for every platform, from https://github.com/depp/keycode
+
+SOURCE: Source/Control/knob.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/knob.c
+
+// By Porres and Tim Schoen
+// Primarily based on the knob proposal for Vanilla by Ant1, Porres and others
+
+SOURCE: Source/Control/lace.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/lace.c
+
+//#include "else_alloca.h"
+
+SOURCE: Source/Control/limit.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/limit.c
+
+// porres
+
+SOURCE: Source/Control/loadbanger.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/loadbanger.c
+
+// Porres 2017
+
+SOURCE: Source/Control/loop.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/loop.c
+
+// porres 2017
+
+SOURCE: Source/Control/message.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/message.c
+
+// Porres 2019
+
+SOURCE: Source/Control/messbox.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/messbox.c
+
+// based on entry
+
+SOURCE: Source/Control/metronome.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/metronome.c
+
+// porres 2021-2022
+
+SOURCE: Source/Control/midi.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/midi.c
+
+// based on cyclone's [seq]
+
+SOURCE: Source/Control/mouse.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/mouse.c
+
+// based on cyclone's [mousestate]
+
+SOURCE: Source/Control/mpe.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/mpe.in.c
+
+// porres 2023-2024
+
+SOURCE: Source/Control/note.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/note.c
+
+// Based on our work in comment from cyclone, which is now also based on this?
+
+SOURCE: Source/Control/note.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/note.in.c
+
+// porres 2018-2024
+
+SOURCE: Source/Control/note.out.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/note.out.c
+
+// porres 2018-2023
+
+SOURCE: Source/Control/noteinfo.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/noteinfo.c
+
+// based/inspired on MAX's borax
+
+SOURCE: Source/Control/openfile.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/openfile.c
+
+// based on pddplink
+
+SOURCE: Source/Control/osc.route.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/osc.route.c
+
+// stolen from mrpeach's routeOSC
+
+// Copyright (C) 2006-2011 Martin Peach
+// slightly modified, renamed and greatly and vastly simplified by Porres 2023
+
+// GNU license
+
+/*
+Written by Adrian Freed, The Center for New Music and Audio Technologies,
+University of California, Berkeley.  Copyright (c) 1992,93,94,95,96,97,98,99,2000,01,02,03,04
+The Regents of the University of California (Regents).
+
+Permission to use, copy, modify, distribute, and distribute modified versions
+of this software and its documentation without fee and without a signed
+licensing agreement, is hereby granted, provided that the above copyright
+notice, this paragraph and the following two paragraphs appear in all copies,
+modifications, and distributions.
+
+IN NO EVENT SHALL REGENTS BE LIABLE TO ANY PARTY FOR DIRECT, INDIRECT,
+SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES, INCLUDING LOST PROFITS, ARISING
+OUT OF THE USE OF THIS SOFTWARE AND ITS DOCUMENTATION, EVEN IF REGENTS HAS
+BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+REGENTS SPECIFICALLY DISCLAIMS ANY WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+PURPOSE. THE SOFTWARE AND ACCOMPANYING DOCUMENTATION, IF ANY, PROVIDED
+HEREUNDER IS PROVIDED "AS IS". REGENTS HAS NO OBLIGATION TO PROVIDE
+MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
+*/
+
+SOURCE: Source/Control/pack2.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pack2.c
+
+// porres
+
+SOURCE: Source/Control/pad.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pad.c
+
+// porres 2020-2025
+
+SOURCE: Source/Control/pgm.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pgm.in.c
+
+// porres 2018-2024
+
+SOURCE: Source/Control/pgm.out.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pgm.out.c
+
+// porres 2018
+
+SOURCE: Source/Control/pic.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pic.c
+
+// porres 2018-2020
+
+SOURCE: Source/Control/pipe2.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/pipe2.c
+
+// based on vanilla's pipe
+
+SOURCE: Source/Control/popmenu.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/popmenu.c
+
+// porres 2025
+
+SOURCE: Source/Control/ptouch.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ptouch.in.c
+
+// porres 2018
+
+SOURCE: Source/Control/ptouch.out.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ptouch.out.c
+
+// porres 2018
+
+SOURCE: Source/Control/quantizer.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/quantizer.c
+
+// Porres 2018
+
+SOURCE: Source/Control/rad2hz.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rad2hz.c
+
+// Porres 2016
+
+SOURCE: Source/Control/rand.f.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.f.c
+
+// porres
+
+SOURCE: Source/Control/rand.hist.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.hist.c
+
+// porres 2022
+
+SOURCE: Source/Control/rand.i.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.i.c
+
+// porres
+
+SOURCE: Source/Control/rand.u.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rand.u.c
+
+// porres 2022
+
+SOURCE: Source/Control/ratio2cents.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/ratio2cents.c
+
+// Porres 2016
+
+SOURCE: Source/Control/rec.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rec.c
+
+// based on cyclone/mtr
+
+SOURCE: Source/Control/receiver.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/receiver.c
+
+// porres
+
+SOURCE: Source/Control/rescale.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rescale.c
+
+// Porres 2016 - 2024
+
+SOURCE: Source/Control/retrieve.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/retrieve.c
+
+// based from cyclone/grab and simplified
+
+SOURCE: Source/Control/rint.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/rint.c
+
+// Porres 2018
+
+SOURCE: Source/Control/router.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/router.c
+
+// porres
+
+SOURCE: Source/Control/selector.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/selector.c
+
+// porres
+
+SOURCE: Source/Control/sender.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/sender.c
+
+// porres
+
+SOURCE: Source/Control/separate.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/separate.c
+
+// based on zexy/symbol2list
+
+SOURCE: Source/Control/slice.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/slice.c
+
+// porres
+
+SOURCE: Source/Control/sort.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/sort.c
+
+// Based on matt barber's sort method for cyclone's zl
+
+SOURCE: Source/Control/spread.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/spread.c
+
+// porres 2020
+
+SOURCE: Source/Control/tabreader.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/tabreader.c
+
+// porres
+
+SOURCE: Source/Control/touch.in.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/touch.in.c
+
+// porres 2018
+
+SOURCE: Source/Control/touch.out.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/touch.out.c
+
+// porres 2018
+
+SOURCE: Source/Control/trunc.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/trunc.c
+
+// Porres 2018
+
+SOURCE: Source/Control/unmerge.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/unmerge.c
+
+// porres
+
+SOURCE: Source/Control/var.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/var.c
+
+// porres 2023
+
+SOURCE: Source/Control/voices.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/voices.c
+
+// porres 2018-2024
+
+SOURCE: Source/Control/wrap2.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Control/wrap2.c
+
+// Porres 2016
+
+SOURCE: Source/Extra/Aliases/del~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/del~.c
+
+// based on delwrite~/delread4~
+
+// ----------------------------- del~ in -----------------------------
+
+SOURCE: Source/Extra/Aliases/imp2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/imp2~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Extra/Aliases/imp~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/imp~.c
+
+// Porres 2017-2023
+
+SOURCE: Source/Extra/Aliases/lb.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/lb.c
+
+// Porres 2017
+
+SOURCE: Source/Extra/Aliases/s2f~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/s2f~.c
+
+// porres
+
+/* requested */
+
+/* effective (truncated) */
+
+SOURCE: Source/Extra/Aliases/trig.delay2~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/trig.delay2~.c
+
+// Porres 2017-2025
+
+SOURCE: Source/Extra/Aliases/wt~.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Extra/Aliases/wt~.c
+
+// Porres 2018-2025
+
+SOURCE: Source/Shared/OSC.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/OSC.h
+
+/* packingOSC.h */
+
+SOURCE: Source/Shared/blep.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/blep.h
+
+//
+//  main.cpp
+//  elliptic-blep
+//
+//  Created by Timothy Schoen on 13/11/2024.
+//
+
+SOURCE: Source/Shared/buffer.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/buffer.c
+
+////////////////////////////////   INTERPOLATION
+
+SOURCE: Source/Shared/dirent_msvc.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/dirent_msvc.h
+
+/*
+ * Dirent interface for Microsoft Visual Studio
+ *
+ * Copyright (C) 1998-2019 Toni Ronkko
+ * This file is part of dirent.  Dirent may be freely distributed
+ * under the MIT license.  For all details and documentation, see
+ * https://github.com/tronkko/dirent
+ */
+
+/* File type and permission flags for stat(), general mask */
+
+/* Read permission */
+
+/* Write permission */
+
+/* Execute permission */
+
+/* Read user permission */
+
+/* Write user permission */
+
+/* Execute user permission */
+
+/* Read group permission */
+
+/* Write group permission */
+
+/* Execute group permission */
+
+/* Read others permission */
+
+/* Write others permission */
+
+/* Execute others permission */
+
+/*
+ * Read next directory entry.
+ *
+ * Returns pointer to static directory entry which may be overwritten by
+ * subsequent calls to _wreaddir().
+ */
+
+SOURCE: Source/Shared/else_alloca.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/else_alloca.h
+
+/* heap versions */
+
+SOURCE: Source/Shared/elsefile.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/elsefile.c
+
+// The 'file' proxy encapsulates openpanel/savepanel management (stolen from cyclone)
+
+SOURCE: Source/Shared/elsefile.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/elsefile.h
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: Source/Shared/magic.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/magic.c
+
+// from cyclone's magic stuff by matt barber
+
+SOURCE: Source/Shared/mifi.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mifi.c
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/*    static char *printformat[MIFIMETA_MAXPRINTABLE+1] =
+    {
+	"", "text: %s", "copyright: %s", "track name: %s",
+	"instrument name: %s", "lyric: %s", "marker: %s", "cue point: %s"
+    };*/
+
+SOURCE: Source/Shared/mifi.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mifi.h
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: Source/Shared/mouse_gui.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/mouse_gui.h
+
+/* Copyright (c) 2003-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: Source/Shared/random.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/random.c
+
+// random number generator from supercollider
+// coded by matt barber
+
+SOURCE: Source/Shared/random.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/random.h
+
+// random number generator from supercollider
+// coded by matt barber
+
+SOURCE: Source/Shared/s_elseutf8.c
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/s_elseutf8.c
+
+/*
+  Basic UTF-8 manipulation routines
+  by Jeff Bezanson
+  placed in the public domain Fall 2005
+
+  This code is designed to provide the utilities you need to manipulate
+  UTF-8 as an internal string encoding. These functions do not perform the
+  error checking normally needed when handling UTF-8 data, so if you happen
+  to be from the Unicode Consortium you will want to flay me alive.
+  I do this because error checking can be performed at the boundaries (I/O),
+  with these routines reserved for higher performance on data known to be
+  valid.
+
+  modified by Bryan Jurish (moo) March 2009
+  + removed some unneeded functions (escapes, printf etc), added others
+
+  modified by IOhannes m zmölnig (umlaeute) Nov 2021
+  + convert native strings to UTF-8
+*/
+
+SOURCE: Source/Shared/s_elseutf8.h
+URL: https://github.com/porres/pd-else/blob/bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0/Source/Shared/s_elseutf8.h
+
+/* UTF8_SUPPORT_FULL_UCS4
+ *  define this to support the full potential range of UCS-4 codepoints
+ *  (in anticipation of a future UTF-8 standard)
+ */

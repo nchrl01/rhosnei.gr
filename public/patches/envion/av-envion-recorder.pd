@@ -1,0 +1,12 @@
+#N canvas 20 20 840 370 12;
+#X obj 30 40 inlet~;
+#X obj 230 40 inlet~;
+#X obj 30 100 dac~ 3 4;
+#X obj 450 100 fudiformat;
+#X obj 450 140 print av-envion-recorder-bytes;
+#X text 30 220 AV browser recorder adapter / original stereo input and open-start-stop messages.;
+#X text 30 250 Channels 3-4 are captured as float WAV by the full runtime / never mixed into main output.;
+#X connect 0 0 2 0;
+#X connect 1 0 2 1;
+#X connect 0 1 3 0;
+#X connect 3 0 4 0;

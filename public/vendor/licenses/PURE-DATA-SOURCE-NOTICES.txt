@@ -1,0 +1,917 @@
+Source copyright and license comments retained verbatim.
+Pinned component: pure-data/pure-data @ b1ff370c87b579f80130a9cafbf27cd890e90882
+Selection follows upstream scripts/build-wasm.sh/CMakeLists.txt; headers accompanying selected sources are included.
+
+
+
+SOURCE: extra/bob~/bob~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/bob~/bob~.c
+
+/* bob~ - use a differential equation solver to imitate an analogue circuit */
+
+/* copyright 2015 Miller Puckette - BSD license */
+
+SOURCE: extra/bonk~/bonk~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/bonk~/bonk~.c
+
+/*
+ ###########################################################################
+ # bonk~ - a Max/MSP external
+ # by miller puckette and ted apel
+ # http://crca.ucsd.edu/~msp/
+ # Max/MSP port by barry threw
+ # http://www.barrythrew.com
+ # me@barrythrew.com
+ # San Francisco, CA
+ # (c) 2008
+ # for Kesumo - http://www.kesumo.com
+ ###########################################################################
+ // bonk~ detects attacks in an audio signal
+ ###########################################################################
+ This software is copyrighted by Miller Puckette and others.  The following
+ terms (the "Standard Improved BSD License") apply to all files associated with
+ the software unless explicitly disclaimed in individual files:
+ 
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ 
+ 1. Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above  
+ copyright notice, this list of conditions and the following 
+ disclaimer in the documentation and/or other materials provided
+ with the distribution.
+ 3. The name of the author may not be used to endorse or promote
+ products derived from this software without specific prior 
+ written permission.
+ 
+ THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY
+ EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR
+ BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+ TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,   
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+SOURCE: extra/choice/choice.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/choice/choice.c
+
+/* choice -- match incoming list against a collection of stored templates. */
+
+/*  Copyright 1999 Miller Puckette.
+Permission is granted to use this software for any purpose provided you
+keep this copyright notice intact.
+
+THE AUTHOR AND HIS EMPLOYERS MAKE NO WARRANTY, EXPRESS OR IMPLIED,
+IN CONNECTION WITH THIS SOFTWARE.
+ 
+This file is downloadable from http://www.crca.ucsd.edu/~msp .
+*/
+
+SOURCE: extra/fiddle~/fiddle~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/fiddle~/fiddle~.c
+
+/* Copyright (c) 1997-1999 Miller Puckette and Ted Apel.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/*
+         * now redistribute the points to get in effect the odd-numbered
+         * points of the FFT of the H points, zero padded to 4*H in length.
+         */
+
+SOURCE: extra/loop~/loop~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/loop~/loop~.c
+
+/* loop~ -- loop generator for sampling */
+
+/*  Copyright 1997-1999 Miller Puckette.
+Permission is granted to use this software for any purpose provided you
+keep this copyright notice intact.
+
+THE AUTHOR AND HIS EMPLOYERS MAKE NO WARRANTY, EXPRESS OR IMPLIED,
+IN CONNECTION WITH THIS SOFTWARE.
+
+This file is downloadable from http://www.crca.ucsd.edu/~msp .
+
+*/
+
+SOURCE: extra/lrshift~/lrshift~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/lrshift~/lrshift~.c
+
+/* ------------------------ lrshift~ ----------------------------- */
+
+SOURCE: extra/pd~/pdsched.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/pd~/pdsched.c
+
+/* Copyright 2008 Miller Puckette.  Berkeley license; see the
+file LICENSE.txt in this distribution. */
+
+/* A plug-in scheduler that turns Pd into a filter that inputs and
+outputs audio and messages. */
+
+SOURCE: extra/pd~/pd~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/pd~/pd~.c
+
+/*
+  pd~.c - embed a Pd process within Pd or Max.
+
+  Copyright 2008 Miller Puckette
+  BSD license; see README.txt in this distribution for details.
+*/
+
+SOURCE: extra/pique/pique.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/pique/pique.c
+
+/* Copyright (c) 1999 Miller Puckette.  The
+contents of this file are free for any use, but BOTH THE AUTHOR AND UCSD
+DISCLAIM ALL WARRANTIES related to it.  Although not written in Java, this
+still should not be used to control any machinery containing a sharp blade or
+combustible materiel, or as part of any life support system or weapon. */
+
+SOURCE: extra/sigmund~/sigmund~.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/sigmund~/sigmund~.c
+
+/* Copyright (c) 2005 Miller Puckette.  BSD licensed.  No warranties. */
+
+/*
+    fix parameter settings
+    not to report pitch if evidence too scanty?
+    note-on detection triggered by falling envelope (a posteriori)
+    reentrancy bug setting loud flag (other parameters too?)
+    tweaked freqs still not stable enough
+    implement block ("-b") mode
+*/
+
+SOURCE: extra/stdout/stdout.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/extra/stdout/stdout.c
+
+/* stdout -- write messages to standard output.
+
+  Copyright 2008 Miller Puckette
+  BSD license; see README.txt in this distribution for details.
+*/
+
+SOURCE: src/d_arithmetic.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_arithmetic.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_array.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_array.c
+
+/* Copyright (c) 1997-1999 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_ctl.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_ctl.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_dac.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_dac.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_delay.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_delay.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_fft.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_fft.c
+
+/* Copyright (c) 1997- Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_fft_fftsg.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_fft_fftsg.c
+
+/****************** begin Pd-specific prologue ***********************/
+
+/*
+This is the file, "fftsg.c" from the OOURA FFT package.  The copyright notice
+from Ooura's README is:
+
+Copyright:
+    Copyright(C) 1996-2001 Takuya OOURA
+    email: ooura@mmm.t.u-tokyo.ac.jp
+    download: http://momonga.t.u-tokyo.ac.jp/~ooura/fft.html
+    You may use, copy, modify this code for any purpose and
+    without fee. You may distribute this ORIGINAL package.
+
+After the following prologue, the code is essentially Ooura's original, which I
+believe the above notice permits me to redistribute; the only change is to
+replace 'double' with a macro, 'FFTFLT', so that it can optionally
+be run in single precision for greater speed.  See Ooura's website
+for another, more permissive-sounding copyright notice.  -MSP
+*/
+
+SOURCE: src/d_filter.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_filter.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_global.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_global.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_math.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_math.c
+
+/* Copyright (c) 1997-2001 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_misc.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_misc.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_osc.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_osc.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_resample.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_resample.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_soundfile.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile.c
+
+/* Copyright (c) 1997-1999 Miller Puckette. Updated 2019 Dan Wilcox.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_soundfile_aiff.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_aiff.c
+
+/* Copyright (c) 1997-1999 Miller Puckette. Updated 2020 Dan Wilcox.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* AIFF (Audio Interchange File Format) and AIFF-C (AIFF Compressed)
+
+  * RIFF variant with sections split into data "chunks"
+  * chunk sizes do not include the chunk id or size (- 8)
+  * the file header's size is the total size of all subsequent chunks (- 8)
+  * chunk data is big endian
+  * sound data is big endian, unless AIFF-C "sowt" compression type
+  * the sound data chunk can be omitted if common chunk sample frames is 0
+  * chunks start on even byte offsets
+  * chunk string values are pascal strings:
+    - first byte is string length, limited to 255 chars
+    - total length must be even, pad with a '\0' byte, max 256
+    - padding is not added to string length byte value
+  * AIFF-C compression 4 char types & name (pascal) strings:
+    - NONE "not compressed" big endian
+    - sowt "not compressed" little endian
+    - fl32 "32-bit floating point" big endian
+    - FL32 "Float 32" big endian
+    - fl63 "64-bit floating point" big endian
+    - the rest are not relevant to Pd...
+  * limited to ~2 GB files as sizes are signed 32 bit ints
+
+  this implementation:
+
+  * supports AIFF and AIFF-C
+  * implicitly writes AIFF-C header for 32 and 64 bit float (see below)
+  * implements chunks: common, data, version (AIFF-C)
+  * ignores chunks: marker, instrument, comment, name, author, copyright,
+                    annotation, audio recording, MIDI data, application, ID3
+  * assumes common chunk is always before sound data chunk
+  * ignores any chunks after finding the sound data chunk
+  * assumes there is always a sound data chunk
+  * does not block align sound data
+  * sample format: 16 and 24 bit lpcm, 32 and 64 bit float, no 32 bit lpcm
+
+  Pd versions < 0.55 did not read or write 64 bit float.
+
+  Pd versions < 0.51 did *not* read or write AIFF files with a 32 bit float
+  sample format.
+
+*/
+
+SOURCE: src/d_soundfile_caf.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_caf.c
+
+/* Copyright (c) 2020 Dan Wilcox.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_soundfile_next.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_next.c
+
+/* Copyright (c) 1997-1999 Miller Puckette. Updated 2019 Dan Wilcox.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_soundfile_wave.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_soundfile_wave.c
+
+/* Copyright (c) 1997-1999 Miller Puckette. Updated 2019 Dan Wilcox.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/d_ugen.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/d_ugen.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_all_guis.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_all_guis.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_all_guis.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_all_guis.h
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.h written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_array.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_array.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_bang.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_bang.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_canvas.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_canvas.c
+
+/* Copyright (c) 1997-2001 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_canvas.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_canvas.h
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_clone.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_clone.c
+
+/* ---------- clone - maintain copies of a patch ----------------- */
+
+SOURCE: src/g_editor.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_editor.c
+
+/* Copyright (c) 1997-2001 Miller Puckette and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_editor_extras.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_editor_extras.c
+
+/* Copyright (c) 2018 Miller Puckette, IOhannes m zmölnig and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_graph.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_graph.c
+
+/* Copyright (c) 1997-2001 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_guiconnect.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_guiconnect.c
+
+/* Copyright (c) 1997-2000 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_io.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_io.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_mycanvas.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_mycanvas.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_numbox.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_numbox.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* my_numbox.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_radio.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_radio.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* [hv]dial.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_readwrite.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_readwrite.c
+
+/* Copyright (c) 1997-2002 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_rtext.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_rtext.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_scalar.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_scalar.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_slider.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_slider.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_template.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_template.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_text.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_text.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_toggle.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_toggle.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/g_traversal.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_traversal.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/g_vumeter.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/g_vumeter.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution. */
+
+/* g_7_guis.c written by Thomas Musil (c) IEM KUG Graz Austria 2000-2001 */
+
+SOURCE: src/m_atom.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_atom.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_binbuf.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_binbuf.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_class.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_class.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_conf.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_conf.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_glob.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_glob.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_imp.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_imp.h
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_memory.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_memory.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_obj.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_obj.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_pd.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_pd.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_pd.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_pd.h
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/m_sched.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/m_sched.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_audio.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_audio.c
+
+/* Copyright (c) 2003, Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_audio_dummy.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_audio_dummy.c
+
+/*
+ * Copyright (c) 2010 Peter Brinkmann (peter.brinkmann@gmail.com)
+ *
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ */
+
+SOURCE: src/s_inter.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_inter.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_inter_gui.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_inter_gui.c
+
+/* Copyright (c) 2022 IOhannes m zmölnig.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_loader.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_loader.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_main.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_main.c
+
+/* Copyright (c) 1997-1999 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* no audio I/O please, unless overwritten by later args.
+                This is to circumvent a problem running pd~ subprocesses
+                with -nogui; they would open an audio device before pdsched.c
+                could set the API to nothing.  For some reason though, on
+                MACOSX this causes Pd to switch to JACK so we just give up
+                and suppress the workaround there. */
+
+/*
+ * the following string2args function is based on from sash-3.8 (the StandAlone SHell)
+ * Copyright (c) 2014 by David I. Bell
+ * Permission is granted to use, distribute, or modify this source,
+ * provided that this copyright notice remains intact.
+ */
+
+SOURCE: src/s_net.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_net.c
+
+/* Copyright (c) 2019 Dan Wilcox.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_path.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_path.c
+
+/* Copyright (c) 1999 Guenter Geiger and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_print.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_print.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_stuff.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_stuff.h
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/s_utf8.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_utf8.c
+
+/*
+  Basic UTF-8 manipulation routines
+  by Jeff Bezanson
+  placed in the public domain Fall 2005
+
+  This code is designed to provide the utilities you need to manipulate
+  UTF-8 as an internal string encoding. These functions do not perform the
+  error checking normally needed when handling UTF-8 data, so if you happen
+  to be from the Unicode Consortium you will want to flay me alive.
+  I do this because error checking can be performed at the boundaries (I/O),
+  with these routines reserved for higher performance on data known to be
+  valid.
+
+  modified by Bryan Jurish (moo) March 2009
+  + removed some unneeded functions (escapes, printf etc), added others
+
+  modified by IOhannes m zmölnig (umlaeute) Nov 2021
+  + convert native strings to UTF-8
+*/
+
+SOURCE: src/s_utf8.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/s_utf8.h
+
+/* UTF8_SUPPORT_FULL_UCS4
+ *  define this to support the full potential range of UCS-4 codepoints
+ *  (in anticipation of a future UTF-8 standard)
+ */
+
+SOURCE: src/x_acoustics.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_acoustics.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_arithmetic.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_arithmetic.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_array.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_array.c
+
+/* Copyright (c) 1997-2013 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_connective.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_connective.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_file.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_file.c
+
+/* Copyright (c) 2021 IOhannes m zmölnig.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_gui.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_gui.c
+
+/* Copyright (c) 1997-2000 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_interface.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_interface.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_list.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_list.c
+
+/* Copyright (c) 1997- Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_midi.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_midi.c
+
+/* Copyright (c) 1997-2001 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_misc.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_misc.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_net.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_net.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_scalar.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_scalar.c
+
+/* Copyright (c) 1997-2013 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_text.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_text.c
+
+/* Copyright (c) 1997-1999 Miller Puckette and others.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_time.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_time.c
+
+/* Copyright (c) 1997-1999 Miller Puckette.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: src/x_vexp.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp.c
+
+/* Copyright (c) IRCAM.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ */
+
+/* "expr" was written by Shahrokh Yadegari c. 1989. -msp */
+
+SOURCE: src/x_vexp.h
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp.h
+
+/* Copyright (c) IRCAM.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* "expr" was written by Shahrokh Yadegari c. 1989. -msp */
+
+SOURCE: src/x_vexp_fun.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp_fun.c
+
+/* Copyright (c) IRCAM.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* "expr" was written by Shahrokh Yadegari c. 1989. -msp
+ *
+ * Nov. 2001 --sdy
+ *      conversion for expr~
+ *
+ * Jan, 2002 --sdy
+ *      added fmod()
+ *
+ * May  2002
+ *      added floor and ceil for expr -- Orm Finnendahl
+ *
+ * July 2002 --sdy
+ *      added the following math functions:
+ *              cbrt - cube root
+ *              erf - error function
+ *              erfc - complementary error function
+ *              expm1 - exponential minus 1,
+ *              log1p - logarithm of 1 plus
+ *              isinf - is the value infinite,
+ *              finite - is the value finite
+ *              isnan -- is the resut a nan (Not a number)
+ *              copysign - copy sign of a number
+ *              ldexp  -  multiply floating-point number by integral power of 2
+ *              imodf - get signed integral value from floating-point number
+ *              modf - get signed fractional value from floating-point number
+ *              drem - floating-point remainder function
+ *
+ *      The following are done but not popular enough in math libss
+ *      to be included yet
+ *              hypot - Euclidean distance function
+ *              trunc
+ *              round
+ *              nearbyint -
+ *  November 2015
+ *       - drem() is now obsolete but it is kept here so that other
+ *         patches do not break
+ *       - added remainder() - floating-point remainder function
+ *       - fixed the bug that unary operators could be used as
+ *         binary ones (10 ~ 1)
+ *       - fixed ceil() and floor() which should have only one argument
+ *       - added copysign  (the previous one "copysig" which was
+ *         defined with one argument was kept for compatibility)
+ *       - fixed sum("table"), and Sum("table", x, y)
+ *       - deleted avg(), Avg() as they can be simple expressions
+ *       - deleted store as this can be achieved by the '=' operator
+ *  July 2017 --sdy
+ *
+ *      - ex_if() is reworked to only evaluate either the left or the right arg
+ *  October 2020 --sdy
+ *      - fact() (factorial) now calculates and returns its value in double
+ *      - Added mtof(), mtof(), dbtorms(), rmstodb(), powtodb(), dbtopow()
+ *
+ */
+
+SOURCE: src/x_vexp_if.c
+URL: https://github.com/pure-data/pure-data/blob/b1ff370c87b579f80130a9cafbf27cd890e90882/src/x_vexp_if.c
+
+/* Copyright (c) IRCAM.
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* "expr" was written by Shahrokh Yadegari c. 1989. -msp */

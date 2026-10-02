@@ -1,0 +1,1589 @@
+Source copyright and license comments retained verbatim.
+Pinned component: porres/pd-cyclone @ d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a
+Selection follows upstream scripts/build-wasm.sh/CMakeLists.txt; headers accompanying selected sources are included.
+
+
+
+SOURCE: cyclone_objects/binaries/audio/acos.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/acos.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/acosh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/acosh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/allpass.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/allpass.c
+
+//almost complete rewrite since the previous version of Cyclone didn't implement it correctly (used only one delay buffer)
+//- Derek Kwan 2016
+
+SOURCE: cyclone_objects/binaries/audio/asin.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/asin.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/asinh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/asinh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/atan.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atan.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/atan2.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atan2.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/atanh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atanh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/atodb.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/atodb.c
+
+/*
+ Copyright (c) 2016 Marco Matteo Markidis
+ mm.markidis@gmail.com
+ 
+ For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+ 
+ Made while listening:
+ Evan Parker Electro-Acoustic Ensemble -- Hasselt
+ */
+
+SOURCE: cyclone_objects/binaries/audio/average.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/average.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/avg.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/avg.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/bitand.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitand.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/bitnot.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitnot.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/bitor.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitor.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/bitsafe.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitsafe.c
+
+// Barber and Porres 2016
+
+SOURCE: cyclone_objects/binaries/audio/bitshift.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitshift.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/bitxor.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/bitxor.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/buffir.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/buffir.c
+
+/* Copyright (c) 2003-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/capture.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/capture.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/cartopol.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cartopol.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/change.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/change.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/click.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/click.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/clip.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/clip.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/comb.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/comb.c
+
+//almost complete rewrite since the previous version of Cyclone didn't implement it correctly (used only one delay buffer)
+//- Derek Kwan 2016
+
+SOURCE: cyclone_objects/binaries/audio/cosh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cosh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/cosx.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cosx.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/count.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/count.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/cross.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cross.c
+
+// Porres 2016-2025
+
+SOURCE: cyclone_objects/binaries/audio/curve.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/curve.c
+
+/* Copyright (c) 2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/cycle.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/cycle.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/dbtoa.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/dbtoa.c
+
+/*
+  Copyright (c) 2016 Marco Matteo Markidis
+  mm.markidis@gmail.com
+
+  For information on usage and redistribution, and for a DISCLAIMER OF ALL
+  WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+
+  Made while listening:
+  Evan Parker Electro-Acoustic Ensemble -- Hasselt
+*/
+
+SOURCE: cyclone_objects/binaries/audio/degrade.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/degrade.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/audio/delay.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/delay.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/delta.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/delta.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/deltaclip.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/deltaclip.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/downsamp.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/downsamp.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/audio/edge.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/edge.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/equals.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/equals.c
+
+// Copyright (c) 2016 Porres.
+
+SOURCE: cyclone_objects/binaries/audio/frameaccum.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/frameaccum.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/framedelta.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/framedelta.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/gate.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/gate.c
+
+// based on selector~
+
+//#include <math.h>
+
+SOURCE: cyclone_objects/binaries/audio/greaterthan.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/greaterthan.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/greaterthaneq.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/greaterthaneq.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/index.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/index.c
+
+//Derek Kwan 2016 - de-arsiced,.. cybuffed
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/kink.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/kink.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/lessthan.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lessthan.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/lessthaneq.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lessthaneq.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/line.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/line.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/lookup.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lookup.c
+
+//old code scrapped, brand new code by Derek Kwan - 2016
+
+SOURCE: cyclone_objects/binaries/audio/lores.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/lores.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/matrix.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/matrix.c
+
+/* Copyright (c) 2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/maximum.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/maximum.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/minimum.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/minimum.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/minmax.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/minmax.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/modulo.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/modulo.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/mstosamps.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/mstosamps.c
+
+/* Copyright (c) 2003 krzYszcz, and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/notequals.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/notequals.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/onepole.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/onepole.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/overdrive.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/overdrive.c
+
+/* Copyright (c) 2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/peakamp.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/peakamp.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/peek.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/peek.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/phaseshift.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/phaseshift.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/audio/phasewrap.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/phasewrap.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/pink.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/pink.c
+
+// matt barber and porres (2018) for ELSE and it's here lent to Cyclone
+// based on SuperCollider's pink UGen
+
+SOURCE: cyclone_objects/binaries/audio/play.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/play.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/plusequals.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/plusequals.c
+
+// Porres 2016
+
+// MAGIC
+
+SOURCE: cyclone_objects/binaries/audio/poke.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/poke.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/poltocar.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/poltocar.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/pong.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/pong.c
+
+//2016 by Derek Kwan
+
+SOURCE: cyclone_objects/binaries/audio/pow.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/pow.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/rampsmooth.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rampsmooth.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/rand.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rand.c
+
+/* Copyright (c) 1997-2003 Miller Puckette, krzYszcz, and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/rdiv.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rdiv.c
+
+// Copyright (c) 2016 Porres.
+
+SOURCE: cyclone_objects/binaries/audio/record.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/record.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+
+Derek Kwan 2016
+adding defaults for numchannels, append, loopstatus, loopstart, loopend
+adding record_getarraysmp, record_startms, record_endms, record_list, record_loopstart, record_loopend
+adding attribute parsing and making numchannels arg optional 
+rewrite record_perform, record_reset, recor_float, record_startpoint, record_endpoint
+original start and end methods redirect to startms, endms methods
+basically almost everything in this thing
+de-arsic/cybuffing
+
+NOTED CHANGES IN BEHAVIOR:
+start and end point inlets changed from float inlets to sig inlets
+end point inlet set to 0 no longer defaults to the whole array
+I can change this if necessary,.. I just figure if you're sending a phasor that
+starts 0 and goes to some number, you don't want
+the beginning of the ramp to default to the end of the whole array, right?
+*/
+
+SOURCE: cyclone_objects/binaries/audio/reson.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/reson.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/rminus.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/rminus.c
+
+// Copyright (c) 2016 Porres.
+
+// ---------------------------------------------------
+// Class definition
+// ---------------------------------------------------
+
+SOURCE: cyclone_objects/binaries/audio/round.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/round.c
+
+//2016 by Derek Kwan
+
+SOURCE: cyclone_objects/binaries/audio/sah.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sah.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/sampstoms.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sampstoms.c
+
+/* Copyright (c) 2003 krzYszcz, and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/scale.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/scale.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/audio/scope.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/scope.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+
+- LATER cache gui commands & think about resizing - mouse events aren't bound to any of scope~'s
+ 'widget', but to a special item created only for a selected scope~. For the other scheme see the
+ 'comment' class (no indicator there, though - neither a handle, nor a pointer change). One way
+ or the other, the traffic from the gui layer should be kept possibly low, at least in run-mode.
+ 
+- 2016 = Derek Kwan: haven't cleaned out old dependencies (grow/loud/fitter/forky). Methods (bufsize,
+ period, calccount, range, delay, trigger, triglevel, frgb/brgb) are rewritten, as well as attr
+ declaration. Wrote color version that take vals 0-1 instead of 0-255.
+- Matt didn't put what he did but he's the one who did more stuff on this for 0.3, like creating a
+ properties window and implementing the magic stuff
+- 2017-20 = Porres finished cleaning dependencies (sic/grow/loud/fitter/forky/all_guis/math),
+cleaned up and revised the code drastically, fixed a couple of regression bugs from 0.3, improved
+tcl/tk handling avoiding potential errors, fixed issues with GOP visibility, changed the click mechanism,
+handle managemente, added a receive symbol, visible inlets and implemented zoom; */
+
+SOURCE: cyclone_objects/binaries/audio/selector.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/selector.c
+
+// Derek Kwan - 2016
+
+//#include <math.h>
+
+SOURCE: cyclone_objects/binaries/audio/sinh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sinh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/sinx.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/sinx.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/slide.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/slide.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/snapshot.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/snapshot.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/spike.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/spike.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/svf.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/svf.c
+
+/* Copyright (c) 2003-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/tanh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/tanh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/tanx.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/tanx.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/teeth.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/teeth.c
+
+//COPIED FROM comb.c BUT ADDING AN EXTRA INLET AND ARGT FOR SEPARATE DELAYS - DK
+
+//- Derek Kwan 2016
+
+SOURCE: cyclone_objects/binaries/audio/thresh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/thresh.c
+
+/* Copyright (c) 2016 Porres
+* For information on usage and redistribution, and for a DISCLAIMER OF ALL
+* WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/train.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/train.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+// fixed and rewritten by Porres
+
+SOURCE: cyclone_objects/binaries/audio/trapezoid.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/trapezoid.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/triangle.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/triangle.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/trunc.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/trunc.c
+
+// Porres 2017-2023, part of ELSE
+
+SOURCE: cyclone_objects/binaries/audio/vectral.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/vectral.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/wave.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/wave.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/audio/zerox.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/audio/zerox.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/accum.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/accum.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/acos.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/acos.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/acosh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/acosh.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/control/active.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/active.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/anal.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/anal.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/append.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/append.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/asin.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/asin.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/asinh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/asinh.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/control/atanh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/atanh.c
+
+// Porres 2016
+
+SOURCE: cyclone_objects/binaries/control/atodb.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/atodb.c
+
+/*
+ Copyright (c) 2016 Marco Matteo Markidis
+ mm.markidis@gmail.com
+
+ For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+
+ Made while listening:
+ Disclosure -- Caracal
+ */
+
+SOURCE: cyclone_objects/binaries/control/bangbang.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/bangbang.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/bondo.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/bondo.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/borax.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/borax.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* The first version of this code was written by Olaf Matthes.
+   It was entirely reimplemented in the hope of adapting it to
+   cyclone's guidelines. */
+
+SOURCE: cyclone_objects/binaries/control/bucket.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/bucket.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/buddy.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/buddy.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/capture.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/capture.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/cartopol.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/cartopol.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/clip.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/clip.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/comment.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/comment.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/cosh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/cosh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/counter.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/counter.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/cycle.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/cycle.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/dbtoa.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/dbtoa.c
+
+/*
+ Copyright (c) 2016 Marco Matteo Markidis
+ mm.markidis@gmail.com
+
+ Made while listening:
+ Disclosure -- Caracal
+ */
+
+SOURCE: cyclone_objects/binaries/control/decide.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/decide.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/decode.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/decode.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/drunk.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/drunk.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/* The first version of this code was written by Nicola Bernardini.
+   It was entirely reimplemented in the hope of adapting it to the
+   cyclone's guidelines. */
+
+SOURCE: cyclone_objects/binaries/control/flush.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/flush.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/forward.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/forward.c
+
+/* Copyright (c) 1997-2002 Miller Puckette, krzYszcz, and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/fromsymbol.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/fromsymbol.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/funbuff.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/funbuff.c
+
+/* Copyright (c) 2002-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/funnel.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/funnel.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/gate.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/gate.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/grab.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/grab.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/histo.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/histo.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/iter.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/iter.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/join.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/join.c
+
+//Work by Derek Kwan in 2016, built on the work of Pierre Guillot for pak
+
+SOURCE: cyclone_objects/binaries/control/linedrive.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/linedrive.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/listfunnel.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/listfunnel.c
+
+//taken from maxlib
+
+/* ------------------------- listfunnel   ------------------------------------- */
+
+/*                                                                              */
+
+/* Written by Olaf Matthes (olaf.matthes@gmx.de)                                */
+
+/* This program is free software; you can redistribute it and/or                */
+
+/* modify it under the terms of the GNU General Public License                  */
+
+/* of the License, or (at your option) any later version.                       */
+
+/* GNU General Public License for more details.                                 */
+
+/* You should have received a copy of the GNU General Public License            */
+
+//listfunnel v0.1, written by Olaf Matthes <olaf.matthes@gmx.de> (maxlib)
+// Derek Kwan 2017 - ported from maxlib, some restructuring, added offset, support for anythings, symbols
+
+SOURCE: cyclone_objects/binaries/control/loadmess.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/loadmess.c
+
+// modified from [init]
+
+/* Copyright (c) 2000-2006 Thomas Musil @ IEM KUG Graz Austria
+   Copyright (c) 2016      Joel Matthys
+   Copyright (c) 2016      Marco Matteo Markidis
+   */
+
+SOURCE: cyclone_objects/binaries/control/match.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/match.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/maximum.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/maximum.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/mean.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mean.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/midiflush.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/midiflush.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/midiformat.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/midiformat.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/midiparse.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/midiparse.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/minimum.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/minimum.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/mousefilter.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mousefilter.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/mousestate.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mousestate.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/mtr.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/mtr.c
+
+/* Copyright (c) 2003-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/next.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/next.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/offer.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/offer.c
+
+/* Copyright (c) 2002-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/onebang.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/onebang.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/pak.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/pak.c
+
+/*
+ // adapted from code by Pierre Guillot to conform 
+ // with Max/MSP fullest compatibility as possible.
+*/
+
+SOURCE: cyclone_objects/binaries/control/past.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/past.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/peak.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/peak.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/poltocar.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/poltocar.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/pong.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/pong.c
+
+//2016 by Derek Kwan
+
+SOURCE: cyclone_objects/binaries/control/prepend.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/prepend.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/prob.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/prob.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/pv.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/pv.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/rdiv.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/rdiv.c
+
+// Copyright (c) 2016 Porres.
+
+SOURCE: cyclone_objects/binaries/control/rminus.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/rminus.c
+
+// Copyright (c) 2016 Porres.
+
+SOURCE: cyclone_objects/binaries/control/round.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/round.c
+
+//2016 by Derek Kwan
+
+SOURCE: cyclone_objects/binaries/control/scale.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/scale.c
+
+/************
+ Copyright (c) 2016 Marco Matteo Markidis
+ mm.markidis@gmail.com
+ 
+ For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ WARRANTIES, see the file, "LICENSE.txt," in this distribution.
+
+ Made while listening:
+ Hiatus Kaiyote -- Choose Your Weapon
+*************/
+
+SOURCE: cyclone_objects/binaries/control/seq.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/seq.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/sinh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/sinh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/speedlim.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/speedlim.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/spell.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/spell.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/split.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/split.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/spray.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/spray.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/sprintf.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/sprintf.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/substitute.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/substitute.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/sustain.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/sustain.c
+
+//redone 2016 by Derek Kwan (with some inspiration from the old code by krzYszcz (2002-2003)
+
+SOURCE: cyclone_objects/binaries/control/switch.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/switch.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/table.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/table.c
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/tanh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/tanh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/thresh.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/thresh.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/togedge.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/togedge.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/tosymbol.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/tosymbol.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/trough.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/trough.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/universal.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/universal.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/unjoin.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/unjoin.c
+
+//Derek Kwan 2017 - brand new object!
+
+SOURCE: cyclone_objects/binaries/control/urn.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/urn.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/uzi.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/uzi.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/xbendin.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendin.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/xbendin2.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendin2.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/xbendout.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendout.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/xbendout2.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xbendout2.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/xnotein.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xnotein.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/xnoteout.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/xnoteout.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/control/zl.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/control/zl.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: cyclone_objects/binaries/cyclone_lib.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/cyclone_objects/binaries/cyclone_lib.c
+
+/* Copyright © (2003-2020) - Krzysztof Czaja, Hans-Christoph Steiner,
+ Fred Jan Kraan, Alexandre Porres, Derek Kwan, Matt Barber and others.");
+ 
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/api.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/api.h
+
+/* Copyright (c) 2018 Diego Barrios Romero.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/file.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/file.c
+
+/* Copyright (c) 2002-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/file.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/file.h
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/grow.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/grow.c
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/grow.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/grow.h
+
+/* Copyright (c) 2002-2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/magicbit.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/magicbit.c
+
+// from old fragile (bits and pieces likely to break with any new Pd version.)
+// and forky
+
+SOURCE: shared/common/random.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/random.c
+
+// random number generator from supercollider
+// coded by matt barber
+
+SOURCE: shared/common/random.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/random.h
+
+// random number generator from supercollider
+// coded by matt barber
+
+SOURCE: shared/common/shared.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/shared.c
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/common/shared.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/common/shared.h
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/gui.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/gui.c
+
+/* Copyright (c) 2003-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/gui.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/gui.h
+
+/* Copyright (c) 2003-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/mifi.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/mifi.c
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+/*    static char *printformat[MIFIMETA_MAXPRINTABLE+1] =
+    {
+	"", "text: %s", "copyright: %s", "track name: %s",
+	"instrument name: %s", "lyric: %s", "marker: %s", "cue point: %s"
+    };*/
+
+SOURCE: shared/control/mifi.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/mifi.h
+
+/* Copyright (c) 2004-2005 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/rand.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/rand.c
+
+/* Copyright (c) 1997-2004 Miller Puckette, krzYszcz, and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/rand.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/rand.h
+
+/* Copyright (c) 2002-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/s_cycloneutf8.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/s_cycloneutf8.c
+
+/*
+  Basic UTF-8 manipulation routines
+  by Jeff Bezanson
+  placed in the public domain Fall 2005
+
+  This code is designed to provide the utilities you need to manipulate
+  UTF-8 as an internal string encoding. These functions do not perform the
+  error checking normally needed when handling UTF-8 data, so if you happen
+  to be from the Unicode Consortium you will want to flay me alive.
+  I do this because error checking can be performed at the boundaries (I/O),
+  with these routines reserved for higher performance on data known to be
+  valid.
+
+  modified by Bryan Jurish (moo) March 2009
+  + removed some unneeded functions (escapes, printf etc), added others
+
+  modified by IOhannes m zmölnig (umlaeute) Nov 2021
+  + convert native strings to UTF-8
+*/
+
+SOURCE: shared/control/s_cycloneutf8.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/s_cycloneutf8.h
+
+/* UTF8_SUPPORT_FULL_UCS4
+ *  define this to support the full potential range of UCS-4 codepoints
+ *  (in anticipation of a future UTF-8 standard)
+ */
+
+SOURCE: shared/control/tree.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/tree.c
+
+/* Copyright (c) 2003-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/control/tree.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/control/tree.h
+
+/* Copyright (c) 2003-2004 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/signal/cybuf.c
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/signal/cybuf.c
+
+//Derek Kwan - 2016: renaming cybuf to cybuf some restructuring, consilidating, cleaning up
+//notes: now cybuf would be a holder for buffer names and channel info, not the type of the object itself
+//essentially, want to decouple object from buf methods so objects stay t_obj
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+
+SOURCE: shared/signal/cybuf.h
+URL: https://github.com/porres/pd-cyclone/blob/d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a/shared/signal/cybuf.h
+
+//Derek Kwan - 2016: renaming cybuf to cybuf some restructuring, consilidating, cleaning up
+//notes: now cybuf would be a holder for buffer names and channel info, not the type of the object itself
+
+/* Copyright (c) 2003 krzYszcz and others.
+ * For information on usage and redistribution, and for a DISCLAIMER OF ALL
+ * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */

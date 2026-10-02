@@ -1,0 +1,15 @@
+#N canvas 20 20 880 380 12;
+#X obj 30 40 inlet;
+#X obj 30 80 t b;
+#X obj 30 120 list append \$1 \$2 \$3;
+#X obj 30 160 fudiformat;
+#X obj 30 200 print av-envion-file-bytes;
+#X obj 410 40 r av-envion-file-\$1;
+#X obj 410 80 outlet;
+#X text 30 260 AV browser file dialog adapter / args: id kind optional-openpanel-mode.;
+#X text 30 290 The host returns virtual paths after staging files / no host filesystem access.;
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 5 0 6 0;

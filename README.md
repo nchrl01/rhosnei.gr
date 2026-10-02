@@ -5,16 +5,17 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
 ## Automatic orchestra
 
-The browser now combines Envion-shaped live-buffer fragments , ZERO100 tonal lanes,
+The browser runs the supplied original Envion 5.2 sample-and-envelope source alongside ZERO100 tonal lanes,
 polyrhythms and resonant filtering, and Perc Generator synthesized percussion.
-All parts run together with one clock and pitch family. A rule-based conductor
+Market mode uses a shared clock; Envion keeps its original sample tuning. Its source-derived interactive panel also exposes the original clocks and controls. A rule-based conductor
 changes roles every two bars and allocates a shared gain budget from activity,
 traded volume, movement and liquidity. There is no instrument preset chooser.
 Master adjusts listening volume. The black-and-white signal map shows each
 mapping, actual voice activity and measured stereo output.
 
-The hidden original Gen algorithms were unavailable. These are independent
-adaptations, not verified identical reproductions. GrundTon breakcore remains
+The hidden original Gen algorithms for the video-only references were unavailable;
+those parts are independent reconstructions. Envion uses its actual supplied source,
+with explicit browser host adapters documented in `public/patches/envion/PORT-NOTES.txt`. GrundTon breakcore remains
 an aesthetic reference; its original samples/system are not included. ZENOLOGY
 requires the local plugin host and is not part of browser audio. No commercial
 plugin binaries or presets are published. See
@@ -27,13 +28,15 @@ Recording has a separate session log; deterministic replay is not implemented.
 ## Run and deploy
 
 Run `npm start`, open http://localhost:4173, then press Listen.
-For native output, open `public/patches/orchestra/av-desktop.pd`, enable DSP,
-choose Native Pd on the local website, then Listen. Keep abstractions together.
-The loopback bridge validates the orchestra identity and has a 2.5-second
-heartbeat watchdog. Background browser suspension can trigger it.
+Full Envion uses the browser Pd runtime with ELSE and Cyclone. Native AV output is
+currently disabled because desktop Pd does not implement the browser file bridge.
+The supplied standalone desktop source is `public/patches/envion/Envion_v5.2_Plugdata.pd`;
+see `public/patches/envion/PORT-NOTES.txt` for its library requirements.
 
-Rebuild with `python3 build-orchestra.py`. The downloadable ensemble is
-`public/patches/av-orchestra.zip`. Standalone patch studies remain separate.
+Rebuild with `python3 build-envion.py` then `python3 build-orchestra.py`.
+The GitHub repository ZIP contains the source and complete supplied sample folder.
+`public/patches/av-orchestra.zip` is the earlier version4 standalone study, not
+this full Envion browser port. Standalone patch studies remain separate.
 The repository `nchrl01/rhosnei.gr` publishes `public/` through GitHub Pages.
 
 ## Market data and freshness
@@ -102,20 +105,20 @@ without inventing a spectrum. Pausing sound leaves the market path live.
 The implementation is independently written, inspired by SonicSketch’s drawn
 path/spectrum concept; its source, samples and synthesis are not included.
 
-## Envion gesture adaptation
+## Original Envion 5.2
 
-The active 20-string bank has been removed. Eight stereo fragment voices use
-Envion’s value/time/delay triplet core (Emiliano Pennisi, 2025, MIT). They read
-up to six seconds of AV’s own tonal/polyrhythmic audio through shaped delay
-trajectories and amplitude envelopes. They introduce no sampled loops or
-network audio. Activity sets gesture probability; movement changes articulation
-and shortens duration; liquidity extends it. The live buffer needs a few seconds
-to fill after starting. Other orchestra parts can sound immediately.
+The earlier eight-voice approximation is replaced by the supplied full Envion
+source (Emiliano Pennisi, 2025, MIT). Its 109 canvases preserve the original
+sample engine, envelope banks, routing, Nuke, Echo, Dynagran and tape processing.
+The web panel follows the saved patch coordinates and connects its controls to
+that running source. All 44 supplied audio files and 19 banks are included;
+large preset samples load on demand. The original source is also preserved.
 
-This is a portable core adaptation, not the full Envion PlugData ecosystem.
-The original string study remains archived; the downloadable active orchestra
-contains the replacement and Envion’s license. This revision has not had a new
-desktop or browser audio audition.
+Market mode clocks the original row/speed randomizers and controls ensemble
+balance. Original clock mode is available within the patch. Shared liquidity
+Freeverb and the other orchestra parts remain active. Browser file, recording,
+keyboard, display and network adaptations are documented in
+`public/patches/envion/PORT-NOTES.txt`. The old string bank and pad remain removed.
 
 ## Liquidity-driven Freeverb
 

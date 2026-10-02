@@ -37,19 +37,19 @@ export function createEngineView(container){
    const label=document.createElementNS(NS,'text');label.setAttribute('x',node.kind==='text'?0:6);label.setAttribute('y',15);label.setAttribute('class',node.kind==='text'?'pd-comment':'pd-label');label.textContent=node.kind==='text'?node.label:node.label.length>44?node.label.slice(0,41)+'…':node.label;group.append(label);
    const hint=document.createElementNS(NS,'title');hint.textContent=node.label+(target&&files[target]?' — click to inspect':'');group.append(hint);svg.append(group);
   }
-  get('[data-code]').textContent=source;get('[data-download]').href='patches/orchestra/'+encodeURIComponent(name)+'?v=26';
+  get('[data-code]').textContent=source;get('[data-download]').href=(name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=27';
   get('[data-caption]').textContent=`${name} · ${wires.length} connections · ${loaded&&!view.native?'sources used by this browser engine':view.native?'published preview; native patch contents cannot be read from the desktop':'published source preview'} · scroll to explore`;
  }
  function setFiles(incoming,info,isLoaded=false){
-  files=Object.fromEntries(Object.entries(incoming).map(([name,source])=>[name.replace(/^orchestra\//,''),source]));manifest=info;loaded=isLoaded;
+  files=Object.fromEntries(Object.entries(incoming).filter(([name,source])=>name.endsWith('.pd')&&typeof source==='string').map(([name,source])=>[name.replace(/^orchestra\//,''),source]));manifest=info;loaded=isLoaded;
   select.replaceChildren(...Object.keys(files).sort().map(name=>{const option=document.createElement('option');option.value=name;option.textContent=name;return option;}));
   get('[data-source]').textContent=`${isLoaded?'Loaded browser sources':'Published source preview'} · orchestra v${info.version} · ${info.files.length} files`;
   draw(files[selected]?selected:info.entry);
  }
  select.onchange=()=>draw(select.value);get('[data-home]').onclick=()=>draw(manifest?.entry||'market.pd');
  async function preview(){try{
-  const response=await fetch('patches/orchestra/manifest.json?v=26');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
-  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch('patches/orchestra/'+encodeURIComponent(name)+'?v=26');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
+  const response=await fetch('patches/orchestra/manifest.json?v=27');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
+  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch((name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=27');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
   if(!disposed&&!loaded)setFiles(Object.fromEntries(entries),info);
  }catch(error){if(!disposed&&!loaded)get('[data-source]').textContent=error.message;}}
  function paint(force=false){

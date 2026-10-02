@@ -1,0 +1,342 @@
+--- a/demo/libpd-worklet-full.js
++++ b/demo/libpd-worklet-full.js
+@@ -13869,12 +13869,14 @@
+   var QUANTUM = 128;
+   var TICKS = QUANTUM / PD_BLOCK;
+   var IN_CH = 0;
+-  var OUT_CH = 2;
++  // 1-2: audible ensemble; 3-4: original Envion recorder; 5-11: scope taps.
++  var OUT_CH = 12;
+   var PATCH_DIR = "/patches";
+   var LibPdProcessor = class extends AudioWorkletProcessor {
+     constructor() {
+       super();
+       this.ready = false;
++      this.closed = false;
+       this.lib = null;
+       this.processFloat = null;
+       this.inPtr = 0;
+@@ -13882,6 +13884,11 @@
+       this.patchHandle = 0;
+       this.bindings = /* @__PURE__ */ new Map();
+       this.printBuf = "";
++      this.recording = null;
++      this.scopesEnabled = true;
++      this.scopeBuffers = Array.from({length:7}, () => new Float32Array(512));
++      this.scopePosition = 0;
++      this.scopeElapsed = 0;
+       this.port.onmessage = (e) => this._onMessage(e.data);
+       this._boot().catch((err) => {
+         this.port.postMessage({ type: "error", message: String(err) });
+@@ -13932,10 +13939,53 @@
+       const lib = this.lib;
+       if (!lib) return;
+       switch (msg.type) {
++        case "enable-scopes": {
++          this.scopesEnabled = Boolean(msg.enabled);
++          break;
++        }
++        case "start-recording":
++        case "stop-recording": {
++          try {
++            let result;
++            if (msg.type === "start-recording") {
++              if (this.recording) throw new Error("An Envion recording is already active.");
++              const path = virtualFilePath(msg.path);
++              mkdirp(lib, path.slice(0, path.lastIndexOf("/")));
++              this.recording = {path:msg.path, chunks:[], chunk:new Float32Array(32768), used:0, frames:0, error:null};
++              result = {path:msg.path, sampleRate, channels:2, format:"float32"};
++            } else {
++              const recording = this.recording;
++              if (!recording) throw new Error("No Envion recording is active.");
++              this.recording = null;
++              if (recording.error) throw recording.error;
++              const size = recording.frames * 8;
++              const bytes = new Uint8Array(44 + size);
++              const view = new DataView(bytes.buffer);
++              const fourCC = (offset, value) => {for (let i=0;i<4;i++) bytes[offset+i]=value.charCodeAt(i);};
++              fourCC(0,"RIFF"); view.setUint32(4,36+size,true); fourCC(8,"WAVE");
++              fourCC(12,"fmt "); view.setUint32(16,16,true); view.setUint16(20,3,true);
++              view.setUint16(22,2,true); view.setUint32(24,sampleRate,true);
++              view.setUint32(28,sampleRate*8,true); view.setUint16(32,8,true); view.setUint16(34,32,true);
++              fourCC(36,"data"); view.setUint32(40,size,true);
++              let offset=44;
++              for (const chunk of [...recording.chunks,recording.chunk.subarray(0,recording.used)]) {
++                for (let i=0;i<chunk.length;i++,offset+=4) view.setFloat32(offset,chunk[i],true);
++              }
++              lib.FS.writeFile(virtualFilePath(recording.path),bytes);
++              result={path:recording.path,frames:recording.frames,sampleRate,channels:2,format:"float32"};
++            }
++            this.port.postMessage({type:"file-result",requestId:msg.requestId,ok:true,result});
++          } catch(error) {
++            this.port.postMessage({type:"file-result",requestId:msg.requestId,ok:false,message:String(error?.message||error)});
++          }
++          break;
++        }
+         case "load": {
+           if (this.patchHandle) {
+-            lib._libpd_closefile(this.patchHandle);
+-            this.patchHandle = 0;
++            // Some original GUI externals have incompatible WASM destructors.
++            // Preserve the running graph; the host must create a new runtime.
++            this.port.postMessage({type:"error", message:"The full Pd runtime requires a new instance to replace an open patch."});
++            return;
+           }
+           for (const handle2 of this.bindings.values()) lib._libpd_unbind(handle2);
+           this.bindings.clear();
+@@ -13978,13 +14028,43 @@
+           this.port.postMessage({ type: "patch-opened", ok: handle !== 0 });
+           break;
+         }
++        // AV extension: files remain in the worklet's virtual /patches tree.
++        // Request acknowledgements let the host stage audio before Pd reads it.
++        case "write-file":
++        case "read-file": {
++          const requestId = msg.requestId;
++          try {
++            const relative = msg.path;
++            const fullPath = virtualFilePath(relative);
++            if (msg.type === "write-file") {
++              if (typeof msg.content !== "string" && !(msg.content instanceof Uint8Array)) {
++                throw new Error("File content must be a string or Uint8Array.");
++              }
++              mkdirp(lib, fullPath.slice(0, fullPath.lastIndexOf("/")));
++              lib.FS.writeFile(fullPath, msg.content);
++              this.port.postMessage({type:"file-result", requestId, ok:true, path:relative});
++            } else {
++              const content = new Uint8Array(lib.FS.readFile(fullPath));
++              this.port.postMessage({type:"file-result", requestId, ok:true, path:relative, content}, [content.buffer]);
++            }
++          } catch (error) {
++            this.port.postMessage({type:"file-result", requestId, ok:false, message:String(error?.message || error)});
++          }
++          break;
++        }
+         case "close-patch": {
+-          if (this.patchHandle) {
+-            lib._libpd_closefile(this.patchHandle);
+-            this.patchHandle = 0;
+-          }
+-          for (const handle of this.bindings.values()) lib._libpd_unbind(handle);
++          // AV: retire the complete instance instead of invoking GUI external
++          // C destructors that trap in this upstream WASM build. The host closes
++          // its AudioContext; disconnect + false from process releases this heap.
++          this.ready = false;
++          this.closed = true;
++          this.patchHandle = 0;
+           this.bindings.clear();
++          this.processFloat = null;
++          this.recording = null;
++          this.scopeBuffers = [];
++          this.lib = null;
++          this.inPtr = this.outPtr = 0;
+           break;
+         }
+         case "bind": {
+@@ -14035,22 +14115,65 @@
+       }
+     }
+     process(_inputs, outputs) {
++      if (this.closed) return false;
+       if (!this.ready) return true;
+       this.processFloat(TICKS, this.inPtr, this.outPtr);
+       const out = outputs[0];
+-      if (!out || out.length === 0) return true;
+       const heap = this.lib.HEAPF32;
+       const base = this.outPtr >> 2;
+-      const channels = Math.min(out.length, OUT_CH);
++      const channels = Math.min(out?.length || 0, 2);
+       for (let ch = 0; ch < channels; ch++) {
+         const dst = out[ch];
+         for (let i = 0; i < QUANTUM; i++) {
+           dst[i] = heap[base + i * OUT_CH + ch];
+         }
+       }
++      const recording=this.recording;
++      if (recording && !recording.error) {
++        try {
++          if ((recording.frames + QUANTUM) * 8 > 0xffffffff-36) throw new Error("Recording exceeds the WAV file size limit; recording was stopped.");
++          for (let i=0;i<QUANTUM;i++) {
++            if (recording.used === recording.chunk.length) {
++              recording.chunks.push(recording.chunk);
++              recording.chunk=new Float32Array(32768); recording.used=0;
++            }
++            recording.chunk[recording.used++]=heap[base+i*OUT_CH+2];
++            recording.chunk[recording.used++]=heap[base+i*OUT_CH+3];
++          }
++          recording.frames+=QUANTUM;
++        } catch(error) {
++          recording.error=error;
++          this.port.postMessage({type:"error",message:"Envion recording failed: "+String(error?.message||error)});
++        }
++      }
++      if (this.scopesEnabled) {
++        for (let i=0;i<QUANTUM;i++) {
++          for (let ch=0;ch<7;ch++) this.scopeBuffers[ch][this.scopePosition]=heap[base+i*OUT_CH+ch+4];
++          this.scopePosition=(this.scopePosition+1)%512;
++        }
++        this.scopeElapsed+=QUANTUM;
++        if (this.scopeElapsed>=sampleRate/20) {
++          this.scopeElapsed%=sampleRate/20;
++          const channels=this.scopeBuffers.map(buffer=>{
++            const samples=new Float32Array(512);
++            samples.set(buffer.subarray(this.scopePosition));
++            samples.set(buffer.subarray(0,this.scopePosition),512-this.scopePosition);
++            return samples;
++          });
++          this.port.postMessage({type:"scope-data",channels,sampleRate},channels.map(channel=>channel.buffer));
++        }
++      }
+       return true;
+     }
+   };
++  function virtualFilePath(relative) {
++    if (typeof relative !== "string" || !relative || relative.startsWith("/") ||
++        relative.includes("\\") || relative.includes("\0") ||
++        relative.split("/").some(part=>part===".." || part==="." || part==="")) {
++      throw new Error("File path must be a relative virtual path without traversal.");
++    }
++    return PATCH_DIR+"/"+relative;
++  }
+   function mkdirp(lib, path) {
+     const parts = path.split("/").filter(Boolean);
+     let cur = "";
+--- a/demo/libpd-wasm.js
++++ b/demo/libpd-wasm.js
+@@ -989,19 +989,20 @@
+ function prepareRuntimeFiles(files, packages, manifest2) {
+   return Object.fromEntries(Object.entries(files).map(([path, source]) => [
+     path,
+-    prepareRuntimeSource(source, packages, manifest2)
++    // AV: preserve WAVs and other binary assets in the virtual filesystem.
++    typeof source === "string" ? prepareRuntimeSource(source, packages, manifest2) : source
+   ]));
+ }
+ 
+ // npm/dist/runtime.js
+ function validatePath(path) {
+-  if (path === "")
++  if (typeof path !== "string" || path === "")
+     throw new Error("Pd file path cannot be empty.");
+   if (path.startsWith("/")) {
+     throw new Error(`Pd file path must be relative: ${path}`);
+   }
+-  if (path.split("/").includes("..")) {
+-    throw new Error(`Pd file path cannot contain '..': ${path}`);
++  if (path.includes("\\") || path.includes("\0") || path.split("/").some(part => part === ".." || part === "." || part === "")) {
++    throw new Error(`Pd file path cannot contain traversal or empty segments: ${path}`);
+   }
+ }
+ function normalizeFiles(files) {
+@@ -1045,9 +1046,13 @@
+   subscribers = /* @__PURE__ */ new Map();
+   printHandlers = /* @__PURE__ */ new Set();
+   errorHandlers = /* @__PURE__ */ new Set();
++  scopeHandlers = new Set();
+   readyWaiter = null;
+   patchWaiter = null;
+   closed = false;
++  // AV extension: correlate asynchronous virtual file transfers.
++  fileRequests = new Map();
++  nextFileRequest = 1;
+   constructor(options) {
+     this.audioContext = options.audioContext;
+     this.node = options.node;
+@@ -1092,12 +1097,59 @@
+     if (this.closed)
+       return;
+     this.closed = true;
++    for (const pending of this.fileRequests.values()) {
++      clearTimeout(pending.timer);
++      pending.reject(new Error("Pd closed during a virtual file request."));
++    }
++    this.fileRequests.clear();
+     this.node.port.postMessage({ type: "close-patch" });
+     this.node.disconnect();
+     this.subscribers.clear();
++    this.scopeHandlers.clear();
+     if (this.ownsAudioContext) {
+       await this.audioContext.close();
+     }
++  }
++  // Paths are relative to /patches, the same root used by loadPatch().
++  // A successful write resolves only after the worklet has staged every byte.
++  writeFile(path, content) {
++    if (typeof content !== "string" && !(content instanceof Uint8Array)) {
++      return Promise.reject(new TypeError("File content must be a string or Uint8Array."));
++    }
++    return this.requestFile("write-file", path, content);
++  }
++  readFile(path) {
++    return this.requestFile("read-file", path);
++  }
++  // Record Envion's dedicated stereo bus, separately from the audible ensemble.
++  startRecording(path) {
++    return this.requestFile("start-recording", path);
++  }
++  stopRecording() {
++    return this.requestFile("stop-recording");
++  }
++  requestFile(type, path, content) {
++    try {
++      if (this.closed) throw new Error("Cannot access files after Pd was closed.");
++      if (type !== "stop-recording") validatePath(path);
++    } catch (error) {
++      return Promise.reject(error);
++    }
++    const requestId = this.nextFileRequest++;
++    return new Promise((resolve, reject) => {
++      const timer = setTimeout(() => {
++        this.fileRequests.delete(requestId);
++        reject(new Error(`Pd virtual file request timed out: ${path}`));
++      }, 30000);
++      this.fileRequests.set(requestId, {resolve, reject, timer, type});
++      try {
++        this.node.port.postMessage({type, requestId, path, ...(content === undefined ? {} : {content})});
++      } catch (error) {
++        clearTimeout(timer);
++        this.fileRequests.delete(requestId);
++        reject(error);
++      }
++    });
+   }
+   sendBang(name) {
+     this.node.port.postMessage({ type: "bang", receiver: name });
+@@ -1144,6 +1196,17 @@
+       this.printHandlers.delete(callback);
+     };
+   }
++  subscribeScopes(callback) {
++    if (this.closed) throw new Error("Cannot subscribe after Pd was closed.");
++    this.scopeHandlers.add(callback);
++    this.node.port.postMessage({type:"enable-scopes", enabled:true});
++    return () => {
++      this.scopeHandlers.delete(callback);
++      if (!this.closed && this.scopeHandlers.size === 0) {
++        this.node.port.postMessage({type:"enable-scopes", enabled:false});
++      }
++    };
++  }
+   onError(callback) {
+     this.errorHandlers.add(callback);
+     return () => {
+@@ -1151,6 +1214,19 @@
+     };
+   }
+   handleMessage(data) {
++    if (data.type === "scope-data") {
++      for (const handler of this.scopeHandlers) handler(data);
++      return;
++    }
++    if (data.type === "file-result") {
++      const pending = this.fileRequests.get(data.requestId);
++      if (!pending) return;
++      clearTimeout(pending.timer);
++      this.fileRequests.delete(data.requestId);
++      if (data.ok) pending.resolve(pending.type === "read-file" ? data.content : data.result);
++      else pending.reject(new Error(data.message || "Pd virtual file request failed."));
++      return;
++    }
+     if (data.type === "ready") {
+       this.readyWaiter?.resolve();
+       this.readyWaiter = null;

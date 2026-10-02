@@ -2,4 +2,19 @@ libpd-wasm browser runtime
 https://github.com/hyrfilm/libpd-wasm
 Commit: 5570d36ec99820b4c6fb9662be6ead7bfbd59572
 Artifacts: demo/libpd-wasm.js and demo/libpd-worklet.js
-License: LICENSE.txt alongside these files
+License: LICENSE.txt covers libpd. The full runtime also includes component-specific licenses; see licenses/README.txt and the retained notices in licenses/.
+
+Full runtime added for original Envion:
+Artifact: demo/libpd-worklet-full.js at the same upstream commit.
+Packages: Pure Data vanilla + Cyclone + ELSE.
+AV modifications: asynchronous validated virtual file read/write message handlers.
+Wrapper additions: binary asset pass-through and writeFile/readFile promises.
+The embedded WASM is unchanged. No audio device or host filesystem access is exposed by the virtual file handlers.
+
+Pinned third-party submodules from the upstream git tree:
+Pure Data: b1ff370c87b579f80130a9cafbf27cd890e90882
+Cyclone: d2cff143021c8b1a1f3cd5c71cdb32c5576ba85a
+ELSE: bd3fbb5a688276dcf650de8bb6a18ec0fd6017b0
+ELSE contains mixed-license components, including GPL-2.0-or-later giga.rev~ and fdn.rev~ linked by the upstream full build.
+Pinned source archives, build instructions, copyright notices and the complete AV JavaScript modification patch are available in licenses/README.txt.
+Full-runtime lifecycle compatibility: close retires the whole WASM instance instead of calling failing upstream GUI destructors; process returns false. Replacing an open full-runtime patch requires creating a new instance and closing its previous AudioContext.
