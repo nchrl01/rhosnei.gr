@@ -1,138 +1,65 @@
-# $AV — music-only prototype
+# $AV — market instrument
 
-Static web instrument running an original vanilla Pure Data patch through libpd-wasm. No wallet, transactions, microphone permission, or VST installation required.
+AV turns observed cryptocurrency market behavior into a Pure Data instrument.
+The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
-## Local preview
+## Current implementation
 
-Run `python3 build-patch.py` after editing the patch builder, then `npm start`. Open http://localhost:4173 and press Listen. Audio starts only after a user gesture. Start with a low output level.
+- Contract lookup across DEX Screener indexed chains, with explicit network and pool selection.
+- TradingView Lightweight Charts: candles, price line, timeframe, zoom/pan, logarithmic scale and available origin history.
+- Browser Pd: 20 Karplus–Strong string voices, six PWM pad voices and stereo delay. Pd schedules the musical clock; JavaScript supplies market controls.
+- Live signal map: selectable mappings, normalized controls, genotype/rule state and individual browser voice triggers.
+- Browser audio recording with a separate session log. Deterministic replay is not implemented.
+- Local desktop Pd output using a validated loopback UDP bridge and a 2.5-second heartbeat watchdog.
 
-## Hosting on GitHub Pages
+The music is an adaptation of Rolando Rampoldi's visible Gameta rules, not a verified reproduction of the complete patch or recording. See [reference details](public/patches/REFERENCE.md). GrundTon's original breakcore system and samples remain unresolved. There is no drum layer in the public browser engine.
 
-Publish the `public/` directory with the included GitHub Actions workflow. In the repository's Settings → Pages, select GitHub Actions. The browser generates audio locally; the hosting service only serves static files. No secret API keys are needed.
+The workspace's `native/` directory contains a prepared ZENOLOGY companion and a local VST host. Its kit selection, activation and audio have not been verified. ZENOLOGY cannot run inside GitHub Pages; the public map marks it as prepared. Plugin binaries, presets and samples are not published with the site.
 
-## Robinhood v4 direct RPC and chart timezone (v8)
+## Run and deploy
 
-The token `0x87ec194b106f7a6a3bf8eb7cdd6cac0f5e9c5520` resolves to Robin Hood (HOOD) on Robinhood Chain. The selected high-liquidity Uniswap market is the 32-byte v4 pool identifier `0xa3fb3aef3524f8bf3a50024b6baa1d2cdca82c570952230929fcdb4cc458be67`. Prior adapters handled seven chains' V2/V3 pools and could not subscribe to this market. Indexed fallback did not establish real-time coverage here.
+Run `npm start`, then open http://localhost:4173. Choose Browser Pd and press Listen.
+Audio requires a user gesture. Only master listening volume is manually adjusted; market data drives layer levels and musical controls.
 
-`v4.js` adds Robinhood Chain direct HTTP RPC polling, using its documented public RPC, chain ID 4663 and Uniswap's deployed PoolManager/StateView. Startup checks the chain ID and verifies the pool's Initialize event currencies before reading decimals (native ETH uses 18). Initialize lookback is bounded to eight queries of up to ten million blocks. StateView supplies the current on-chain pool price immediately; startup does not sound historical swaps. New Swap logs are filtered by both manager and pool ID, decoded for amount/direction and Q64.96 post-swap price, and sent to the chart/music. The v4 caller-delta sign convention is distinct from V2/V3. USD conversion and liquidity still use market snapshots.
+For desktop Pd, open `public/patches/av-desktop.pd`, enable DSP, choose Native Pd on the local page, then Listen. Native recording uses Pd or a separate audio application. Closing the native client waits for pending controls and its stop packet. Connection failures still rely on the desktop watchdog. A backgrounded browser can suspend heartbeats; pause/resume on returning.
 
-The adapter checks the head and logs every two seconds after each successful poll, plus network time. It catches up in chunks of up to 10,000 blocks, overlaps 64 blocks for late log availability and deduplicates by transaction hash/log index. Block timestamps arrive asynchronously for telemetry and chart placement. Quiet periods query pool state about every ten seconds; these are explicit state observations, not manufactured trades, and never increase the trade count or trigger immediate trade accents. Failures back off and retain indexed fallback. This is direct chain polling, not a WebSocket stream, and provides no guaranteed end-to-end latency. Reorganization deletions are not comprehensively reconciled by the HTTP route; already-played audio cannot be reversed.
+Edit `build-patch.py` and run `python3 build-patch.py` to regenerate the Pd files. Keep sibling abstractions together. `public/patches/av-gameta.zip` is the downloadable bundle and must be refreshed after patch edits.
 
-Chart tick labels and crosshair timestamps now both use the browser's local timezone, displayed below the chart. The previous library defaults used UTC for axis labels while tooltip text used local time. No evidence established an exact two-hour transport delay; this mismatch could look like a fixed-hour lag independently of real source staleness.
+The hosting repository is `nchrl01/rhosnei.gr`; its GitHub Actions workflow publishes `public/` to Pages. This workspace itself is not a Git checkout. The deployment checkout is `/private/tmp/av-host-repo`.
 
-Read-only provider diagnostics returned: the official chain head; a matching pool Initialize event; valid StateView price; a real six-word v4 Swap log for this token; and 52 recent matching chain logs. The direct RPC returned 200 and wildcard CORS with AV's origin. The latest sampled chain swap was later than the latest sampled GeckoTerminal trade. These diagnostics check provider data, not the deployed browser adapter. No automated tests were added/run, and browser/audio verification remains unavailable.
+## Market data and freshness
 
-References: https://docs.robinhood.com/chain/connecting/ and https://developers.uniswap.org/docs/protocols/v4/deployments and https://github.com/Uniswap/v4-core/blob/main/src/interfaces/IPoolManager.sol.
+Standard V2/V3 swaps have PublicNode WebSocket adapters for Ethereum, Base, BNB Chain, Arbitrum, Polygon, Optimism and Avalanche. Solana Orca Whirlpools decode confirmed swap logs. Other Solana pools provide transaction activity, without a general swap decoder. Robinhood Chain Uniswap v4 uses direct HTTP RPC polling at least two seconds apart, plus request duration.
 
-## Direct Orca swaps and update visibility (v7)
+Other indexed markets fall back to GeckoTerminal cached trade polling or DEX Screener snapshots. GeckoTerminal requests share a queue with at least eight seconds between starts; metadata, history and trending compete for that budget. Polling intervals are not end-to-end market latency guarantees. Coverage is not universal across every chain and DEX. WebSocket gaps are not backfilled; the v4 HTTP route does not comprehensively reconcile reorganizations.
 
-The supplied PSOL token `pSo1f9nQXWgXibFtKf7NWYxb5enAM4qfP6UJSiXRQfL` resolves to Phantom Staked SOL. Its highest-liquidity discovery result is the PSOL/SOL Orca Whirlpool `3XLkRVg69AgwKAbnSjJpm3PB4QgVeXFEjiXfw5shWMBT`. The former Solana adapter observed transaction activity without decoding prices; its chart still depended on cached polling.
+Decoded trade controls use a rolling 30-second receipt window. Pool activity uses ten seconds. Snapshot fallback uses five-minute aggregates. Price movement is a proxy, not statistical volatility. A healthy decoded feed continues driving the music during snapshot outages. Snapshot-only signals remain fully weighted for 20 seconds, then fade over 40 seconds. Liquidity and native USD conversion retain their last snapshot values; their age is displayed when delayed. Quote conversion can therefore be stale even when new swaps arrive.
 
-`orca.js` now verifies the pool owner, 653-byte Whirlpool layout, account discriminator, mint addresses and parsed mint decimals via public Solana RPC. It subscribes to confirmed pool logs and decodes Orca's 121-byte Traded events only while Orca is the active program invocation and the embedded pool address matches. Swap amounts, direction and the post-swap Q64.64 square-root price feed the app directly, without requesting each transaction or waiting for REST trade polling. Multiple swaps within a transaction retain their log indexes. Amounts use the reported event amounts; prices/volumes in USD use snapshot quote conversion. Native event timestamps are receipt times; there is no measured end-to-end latency for this adapter. Unsupported Orca layouts retain fallback rather than guessed decoding. Other Solana DEXes still need their own decoders.
+## Chart and musical history
 
-The default chart now opens on the latest one-minute candles. Origin history loads separately and still sets the music's historical reference. Chart telemetry shows the most recently received price, age and observation count, including explicit snapshot/demo source labels. Prices display greater precision so small PSOL changes remain visible. Direct-route errors are visible alongside the fallback feed.
+Provider candle coverage takes precedence over older observations inside that coverage. The current candle can extend with observations after its request boundary, and new intervals remain live. Extended candle volume contains only received observations and is labelled partial. Acquisition boundaries are retained in the versioned history cache; provider-side caching can still make a current candle incomplete.
 
-GeckoTerminal's current free API docs state a one-minute response cache and an approximate ten-requests-per-minute limit: https://api.geckoterminal.com/docs/index.html. History and trade polling now share a request queue with at least eight seconds between requests; cancelled requests leave the queue. HTTP trade polling remains cached and must not be described as real-time streaming. Older sections below describing five-second trade polling refer to previous versions; market snapshot polling still uses five seconds.
+Origin means earliest available pool history, not a verified token launch. Missing coverage is explicit. The root register depends on price relative to the earliest available open. Historical backfill can change that reference. Chart controls do not change the music's historical timeframe.
 
-Read-only provider diagnostics: the pool account owner/layout and both nine-decimal token mints matched; a real confirmed transaction contained the expected 121-byte Traded event; metadata HTTP requests returned 200 with AV's origin and CORS support; the WebSocket handshake accepted that origin with HTTP 101. A separate Node subscription inspection received no events during its observation window, so live event delivery through the deployed adapter is not verified. No automated implementation tests were added or run. The browser plugin reported no available browser, preventing browser inspection and audio audition.
+## Signal-map feedback
 
-Sources: Orca account and event definitions at https://github.com/orca-so/whirlpools/tree/main/programs/whirlpool/src and Solana logsSubscribe at https://solana.com/docs/rpc/websocket/logssubscribe.
+Browser voice pulses come from actual Pd messages; percentage bars show control gains rather than measured loudness. The advancing Pd clock establishes feedback health. After 1.5 seconds without advancement, the map reports stale feedback, even if cached native values continue arriving. Native state is sampled every 250 ms and does not claim to show every note event. Changing coin or restarting playback resets the display counters.
 
-## Standard chart controls (v6)
+## Verification
 
-TradingView Lightweight Charts 5.0.9 now supplies the chart UI, served from a local vendored ES module with its Apache 2.0 license and attribution notices. Candles are the default. Controls include 1m, 5m, 15m, 1h, 4h and 1d candles; closing-price line; crosshair OHLC and volume readings; mouse/touch zoom and pan; explicit zoom buttons; linear/log price scales; Fit history and Latest. Auto origin retains the age-based historical resolution. Selecting a timeframe fetches matching provider OHLCV, up to three pages, and never subdivides coarse historical candles into invented finer bars. Coverage messages stay visible. The chart timeframe does not change the music's origin baseline.
+Run:
 
-Incoming observations update the current candle; reorganization removals rebuild affected observations. Provider trade timestamps locate polled trades; native swaps first use receipt time and are relocated when an approximate block timestamp arrives. Historical volume is provider OHLCV. A candle receiving live observations shows only received swap volume, labelled partial, to avoid counting provider volume twice. Snapshots have unknown volume. Live candles are not a complete exchange feed. Time axes use the library's trading-bar spacing, so missing periods are not proportional calendar gaps; coverage dates remain the reference for missing history.
+```sh
+node --test checks/integration.mjs
+python3 checks/gameta.py
+```
 
-Chart data is bounded by the history pagination limit and 3,600 live observations. Browse/pan position is retained during updates; Fit history restores the full loaded range. This adds standard interaction but does not add TradingView drawing tools, token coverage or a faster market feed. No tests or browser verification were run for this update.
+The integration checks cover completed/current candle precedence, out-of-order timestamps and retiming, independent signal freshness, feedback expiry/recovery, and native shutdown during successful or failed in-flight requests. They use controlled data and mocked transport, not live provider availability.
 
-## Historical market context (v5)
+The local browser was checked in Helium: playback advanced the Pd clock and note counters, selecting liquidity highlighted its connections and explanation, Pause showed zero output, and the compact voice layout was inspected visually. Native transport failures were exercised with controlled requests rather than a new desktop audio audition.
 
-The chart opens in Origin context and appends incoming observations to available GeckoTerminal OHLC history for the selected pool. Live detail remains selectable. First known market creation is the earliest pool creation date in the discovered results on the selected chain; those results are not exhaustive, and this is not a verified token mint or launch date. Earliest available price is shown separately. Gaps before available history remain empty.
-
-Readings show current price relative to the earliest available candle open and to the highest loaded historical price. The instrument's melodic register uses the same historical open: a bounded offset of `round(12 * tanh(log(current / firstOpen)))` semitones. Immediate accents and layer activity retain their live market inputs. Partial history can change the baseline as older pages arrive; unavailable history leaves the original seeded register.
-
-History uses minute candles for pools younger than one day, hourly candles below thirty days, otherwise daily candles. Requests paginate backward with up to 1,000 candles per page, ten seconds between pages, and a twenty-page limit. Completed results are cached locally for ten minutes. Provider retention, indexing and throttling can prevent reaching pool creation; status reports partial or unavailable coverage. Pool history does not reconstruct a coin's earlier trading on other pools or chains, and loading history does not reduce live-feed latency.
-
-Implementation reviewed from source; no automated tests or browser verification were run for this change.
-
-## Responsiveness and timing indicators (v4)
-
-Default chart view now shows every received price observation as a tick trace; observed ten-second candles remain an option. The old candle interval grouped observations but did not delay incoming updates. Telemetry shows the age and count of received trades, and timestamp-to-receipt delay where available. Native EVM block timestamps are fetched asynchronously after the trade has already been emitted; block-to-receipt values are approximate and include block timestamp granularity and local clock differences. They are not measured audio latency. Polled trades use the provider's trade timestamp. Unknown timing is shown explicitly.
-
-Immediate note accents now use the logarithmic change between received execution prices rather than the generative sequencer's step index. Continuous layers still express rolling market behavior. This does not make polled or cached data into a streaming source; exact-token diagnosis is needed to identify the active feed and its delay.
-
-## Multi-chain chart and trades (v3)
-
-The UI discovers networks and pools for an exact token identifier from DEX Screener search results. It supports chain-specific identifiers beyond EVM/Solana address shapes and matches either side of a pair. Quote-side selections invert the displayed pair price and buy/sell counts; their five-minute change is marked unavailable because it cannot be inferred from the original base-token change. Results remain provider-limited; this is not an exhaustive registry of all blockchains or tokens. Users choose the network and pool, which remain pinned during polling.
-
-The live-detail chart groups received observations into ten-second candles. Origin context also loads available historical provider candles as described above. Received observations do not constitute complete exchange OHLCV history. It shares trade observations with the music. Snapshot-only sources plot snapshots. Rendering is coalesced through animation frames; chart samples are bounded. EVM reorganization removals remove matching observations, though already-played sound cannot be reversed.
-
-Native EVM swap adapters: Ethereum, Base, BNB Smart Chain, Arbitrum One, Polygon, Optimism and Avalanche C-Chain, using free PublicNode WebSockets and standard JSON-RPC. The adapter checks pool token0/token1 and decimals before subscribing to standard V2/V3 Swap topics. It decodes amounts, derives executed quote-per-base price, base size, and buy/sell direction. Prices in USD use the current snapshot quote conversion and are estimates. Nonstandard pool ABIs (including V4 pool managers) require another decoder. Unsupported pools keep the fallback feeds.
-
-Broad trade fallback: GeckoTerminal's public REST pool-trades API is polled every five seconds with a small network-ID alias map; otherwise the discovered chain ID is tried directly. It provides observed trade price, USD volume, and direction for pools it indexes across chains. Its initial response is a baseline; old trades are not sounded. HTTP 429 backs off, 404 stops the unavailable feed, and missing token-address/amount fields are not guessed. This route is polling, not streaming, and provider caching/indexing adds delay. Unknown or unindexed networks/pools remain snapshot-only. No API key is embedded and no additional server is required. The fallback is cancelled when native swaps begin and restarted after native disconnection.
-
-Events are deduplicated within a feed. Cross-feed handover uses transaction signatures to avoid replaying the same transaction; this may omit additional swaps within that transaction during handover. Reconnection gaps are not comprehensively backfilled. Trade metrics use thirty seconds of received observations, pool activity uses ten seconds, snapshot aggregates use five minutes. Activity and traded USD volume are normalized as per-second rates before setting musical levels. These are partial observed windows during warm-up. Snapshot-derived liquidity and USD conversion become stale after failed updates, causing levels to fade. High-rate events are coalesced to a maximum of 25 immediate melodic excitations per second while all received observations still affect activity metrics.
-
-Sources:
-
-- https://publicnode.com/
-- https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Pair.sol
-- https://github.com/Uniswap/v3-core/blob/main/contracts/interfaces/pool/IUniswapV3PoolEvents.sol
-- https://api.geckoterminal.com/docs/index.html
-- https://docs.dexscreener.com/api/reference
-
-This update has been reviewed by reading the implementation. No automated tests or browser playback verification were performed.
-
-## Automatic mix and free streaming (v2)
-
-The instrument exposes one listening-volume slider. Melody, pad, drums, bass, space and energy follow market metrics automatically; read-only meters show their current normalized levels. Traded 5-minute USD volume controls musical energy and layer amplitudes. Activity controls density and loudness; price movement, liquidity and buy/sell balance distinguish layers. These are authored mappings with explicit fixed normalization ranges, not objective acoustic properties of a token. Snapshot-derived values fade when their data becomes stale.
-
-Solana pools subscribe directly to free `wss://solana-rpc.publicnode.com` via `logsSubscribe`, with `confirmed` commitment, filtered by the selected pool address. Successful pool transactions drive a rolling ten-second activity estimate and immediate melodic excitations. Pool transactions are not decoded swaps, trade size or buy/sell direction. Signatures are deduplicated; disconnects reconnect with exponential backoff. A slot subscription provides a heartbeat; an unresponsive connection reconnects after 30 seconds. Errors retain their reason and display the retry delay. Public endpoints can block or throttle browser connections. No API key or separate server is required for this prototype; public RPC availability is not guaranteed. Stream state is explicit, and activity falls back to snapshots when disconnected. Price and trade-volume information still comes from DEX Screener. Production trade-level sonification needs protocol-specific swap decoding and a reliable RPC connection.
-
-Origin diagnostic: the original Solana Foundation endpoint returned HTTP 403 with `Origin: https://nchrl01.github.io`, despite accepting a connection without that browser origin. PublicNode accepted the origin handshake (HTTP 101) and a separate log-subscription probe. This validates the connection path from the development machine, not every visitor's network. Provider: https://solana.publicnode.com/
-
-References: https://solana.com/docs/rpc/websocket/logssubscribe and https://solana.com/docs/rpc
-
-## Data
-
-DEX Screener search resolves exact base-token contract matches across indexed chains and selects the highest USD liquidity pool. Polls every 5 seconds; snapshots are aggregates, not a trade stream. Missing markets show an error. Demo mode is explicitly synthetic. Absolute 5-minute price change is used as a motion proxy, not statistically measured volatility. Snapshot activity derives from 5-minute trade counts; buy/sell balance from those counts; liquidity shapes resonance filtering. A contract-derived seed sets register and note-generation probabilities. Each instrument has a four-phase recurring motif.
-
-## Engine
-
-`public/patches/market.pd` contains sine-based melodic excitation with filtered feedback delay, two-tone sustained atmosphere, enveloped bass, synthesized kick, noise snare and hats. UI and market mapping send Pd messages; a browser timer drives sequencing. This is an original starting instrument, not a reconstruction of either reference. Browser timer jitter and suspended background tabs can affect rhythm. Deterministic replay is not implemented.
-
-Recording saves browser-supported audio and a separate JSON log of snapshots and controls. Download links remain until page refresh. The log is useful provenance, not a guaranteed bit-identical replay format.
+The Pd checks run actual patches with Pd 0.56.2: neutral-mutation state progression, repeat suppression, mutation effects, stereo rendering and silence at zero master. Set `PD_BIN` to use another Pd executable. These checks do not prove perceptual fidelity to the reference videos.
 
 ## Runtime attribution
 
-Vendored `libpd-wasm` browser artifacts from https://github.com/hyrfilm/libpd-wasm, commit recorded in `public/vendor/SOURCE.txt`. Preserve its LICENSE.txt when distributing. PlugData is an optional desktop Pd/plugin host; it is not required for this web version.
-
-Computer Use could not connect to its native service during creation, so local Pd UI interaction was unavailable. Browser/audio behavior has not been manually verified.
-
-## Coin image beside title
-
-The market title now displays a coin image from provider token/pair metadata, with a symbol-initial fallback when no image exists or loading fails. Quote-side selections only reuse an image from an original base-side market of the selected token, so the other token's logo is not shown. Images use HTTPS and omit the referrer. Image requests are changed only when the image URL changes. When pair metadata lacks a logo, a GeckoTerminal token-info lookup uses the shared request budget and caches the result for the session. Returning to demo cancels pending image work. No browser verification or tests were run for this UI change.
-
-Coin artwork is now displayed at 80px on desktop and 64px on mobile in a rounded square, using contain sizing to preserve the full logo. Image lookup begins before historical backfill requests. The downloaded HOOD artwork was inspected; page layout was not browser-verified.
-
-## Trending header
-
-The header uses GeckoTerminal's cross-chain trending-pools endpoint with included base-token and network metadata. It paginates through up to ten pages (200 pool results), preserving provider order and deduplicating coins by network/address. The feed ranks pools rather than every coin on the internet; quote tokens are not separately listed. Rankings can change between page requests. Cards show image, symbol, network, full CA, copy action and market cap. Unknown market caps remain Unknown; available FDV is separately labelled. Clicking a coin loads AV on its network through DEX Screener discovery; unindexed markets may be unavailable. Trending images also seed the selected coin's image cache.
-
-The ranking-period selector supports 5m, 1h, 6h and 24h. The initial list appears after the first page and grows as remaining pages arrive. Refresh runs five minutes after completion, shares the public provider request queue with other metadata, and retains partial results on failure with an explicit status. This is cached discovery data, not a real-time market feed. The expanded list scrolls vertically; the compact header scrolls horizontally. No automated tests or browser verification were run.
-
-## Minimal Pure Data interface
-
-The interface uses a white patch-canvas palette, monospace type, thin black rectangular controls, a small coin → market → sound connection strip and grayscale coin artwork. Chart candles are hollow for up and black for down, with grayscale volume. The introductory copy is compact; origin context, automatic layer details and mapping explanations live in expandable sections. Feed freshness and listening volume remain directly visible. This is a Pure Data-inspired web interface rather than an editable Pd patch canvas. No tests or browser verification were run for the design update.
-
-
-## Current engine: Gameta / market adaptation
-
-The current source replaces the earlier ambient/break draft with Rolando Rampoldi's visible genotype/codon/phenotype rules: https://www.youtube.com/watch?v=Atttrb0hoEc . Twenty resonant string voices and six PWM pad voices follow a Pd clock. Repeated states produce pauses. Existing price, activity, volume, volatility, liquidity and buy/sell balance controls are retained; the former drum layer is removed. Full attribution and deviations are in `public/patches/REFERENCE.md`.
-
-Open `public/patches/av-desktop.pd` in Pure Data. Run `npm start`, visit http://localhost:4173, choose Native Pd, select the token and Listen. The local server validates and forwards the market controls to Pd over loopback UDP. The desktop patch acknowledges its presence; a 2.5-second heartbeat watchdog mutes abandoned sessions. The browser version loads the same synthesis and sequencer files with libpd. GitHub Pages offers Browser Pd; Native Pd requires the local server. Download the complete `public/patches/av-gameta.zip`, since market.pd needs its sibling abstractions. Native audio is not recorded by the page's browser recorder.
-
-Validation: `python3 checks/gameta.py` passed against Pd 0.56.2: thirty exact reference states, eighteen notes after repeat suppression, changed sequences under volatility, stereo rendering, and zero-master silence. Twelve-second render at master 0.3: RMS 0.01533, peak 0.09265. This is an adaptation, not a verified perceptual match to the reference recording.
-
-Native bridge integration was exercised from Helium with the user's HOOD token: the direct Robinhood feed reported a swap, and Pd acknowledged run=1, tempo=90, master=0.35 and texture=0.578406 while its DNA state advanced. The watchdog returned run/master to zero after heartbeats stopped. Browser Pd also loaded and entered audio playback in Helium. Native control packets contain one newline-terminated FUDI message each; batching several commands into one UDP packet was corrected during integration.
+The vendored libpd-wasm build and commit are recorded in `public/vendor/SOURCE.txt`, with its license alongside it. Lightweight Charts is vendored with its license and on-page TradingView attribution. Preserve these notices when distributing.

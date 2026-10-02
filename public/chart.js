@@ -43,6 +43,9 @@ export class MarketChart{
  reset(){this.points=[];this.history=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
+  // Provider coverage takes precedence over observations already included in
+  // that interval. Only observations after its acquisition boundary extend it.
+  if(bar?.observedThrough!=null&&point.at<bar.observedThrough)return;
   if(!bar){bar={time,open:point.price,high:point.price,low:point.price,close:point.price,volume:null,firstAt:point.at,lastAt:point.at};this.buckets.set(time,bar);}
   bar.high=Math.max(bar.high,point.price);bar.low=Math.min(bar.low,point.price);
   if(bar.firstAt!=null&&point.at<bar.firstAt){bar.open=point.price;bar.firstAt=point.at;}
@@ -60,7 +63,7 @@ export class MarketChart{
  retime(id,at){if(!Number.isFinite(at))return;const point=this.points.find(p=>p.id===id);if(point){point.at=at;this.rebuild=true;this.schedule();}}
  draw(){
   const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
-  if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
+  if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
   const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);
   if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.rebuild=false;return;}
   const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});

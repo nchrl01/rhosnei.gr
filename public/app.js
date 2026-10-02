@@ -1,5 +1,6 @@
-import {createSignalMap} from './signal-map.js?v=16';
-import {createNativePd} from './native-pd.js?v=16';
+import {signalFreshness,mixTargets} from './market-controls.js?v=17';
+import {createSignalMap} from './signal-map.js?v=17';
+import {createNativePd} from './native-pd.js?v=17';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
 import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
@@ -7,8 +8,8 @@ import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=1';
-import {MarketChart} from './chart.js?v=13';
-import {loadHistory} from './history.js?v=8';
+import {MarketChart} from './chart.js?v=17';
+import {loadHistory} from './history.js?v=17';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -60,7 +61,7 @@ function marketRoot(){const current=currentPrice(),anchor=historyContext?.first?
 function send(name,value){pd?.sendFloat(name,value);}
 function event(name){pd?.sendBang(name);}
 function metrics(){
- if(!market){const t=performance.now()/1000;return {motion:.3+.25*Math.sin(t/19),activity:.45+.25*Math.sin(t/31),balance:.5+.2*Math.sin(t/23),texture:.6,volume:.4+.3*Math.sin(t/27),fresh:1};}
+ if(!market){const t=performance.now()/1000;return {motion:.3+.25*Math.sin(t/19),activity:.45+.25*Math.sin(t/31),balance:.5+.2*Math.sin(t/23),texture:.6,volume:.4+.3*Math.sin(t/27),fresh:1,snapshotFresh:1,snapshotAge:0};}
  const tx=market.txns?.m5||{};const total=(tx.buys||0)+(tx.sells||0);
  tradeEvents=tradeEvents.filter(e=>Date.now()-e.receivedAt<30000);
  poolEvents=poolEvents.filter(e=>Date.now()-e.receivedAt<10000);
@@ -70,16 +71,16 @@ function metrics(){
  const observedVolume=tradeEvents.reduce((sum,e)=>sum+(e.usdVolume||0),0);
  const rate=decoded?tradeEvents.length/30:streamConnected&&streamKind==='pool'?poolEvents.length/10:total/300;
  const volumeRate=decoded?observedVolume/30:(Number(market.volume?.m5)||0)/300;
- return {motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:decoded?(tradeEvents.length?buys/tradeEvents.length:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,market.liquidity?.usd||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),fresh:clamp(1-(Date.now()-lastSnapshot-20000)/40000,0,1),decoded,observedVolume};
+ return {motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:decoded?(tradeEvents.length?buys/tradeEvents.length:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,market.liquidity?.usd||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
 }
 function syncLevels(m){
- const activity=m.activity*(streamConnected?1:m.fresh);
- const target={melody:(.12+.58*m.motion)*Math.sqrt(activity)*m.fresh,pad:.48*m.texture*Math.sqrt(activity)*m.fresh,space:.75*m.texture*m.fresh};
- for(const name of Object.keys(levels)){if(name!=='space')target[name]*=Math.sqrt(m.volume*m.fresh);levels[name]+=(target[name]-levels[name])*.2;send(name,levels[name]);$(name).value=levels[name];$(name+'-value').textContent=Math.round(levels[name]*100)+'%';}
+ const target=mixTargets(m,streamConnected);
+ for(const name of Object.keys(levels)){levels[name]+=(target[name]-levels[name])*.2;send(name,levels[name]);$(name).value=levels[name];$(name+'-value').textContent=Math.round(levels[name]*100)+'%';}
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
  $('volume').textContent=market?cash(m.decoded?m.observedVolume:market.volume?.m5):'DEMO';
  $('volume-window').textContent=m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
  $('signal-source').textContent=m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Synthetic demo signals';
+ if(market&&m.snapshotAge>20000)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity held at last value'+(m.decoded&&['swap','rpc-poll'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
  updateSignalMap(m);
 }
 function setupStream(){
@@ -135,7 +136,7 @@ function tick(){
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
- if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
+ if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>signalMap.setTransport(state));for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx=new AudioContext();await ctx.resume();
  const names=['market.pd','av-sequencer.pd','av-genome.pd','av-pluck.pd','av-pad.pd'];
  const files=Object.fromEntries(await Promise.all(names.map(async name=>{const r=await fetch('patches/'+name+'?v=16');if(!r.ok)throw Error('Cannot load '+name);return [name,await r.text()];})));
@@ -152,8 +153,13 @@ $('play').onclick=async()=>{
  finally{starting=false;$('play').disabled=false;}
 };
 if(!['localhost','127.0.0.1'].includes(location.hostname))$('native-option').disabled=true;
-$('audio-output').onchange=async()=>{if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;gain=null;status($('audio-output').value==='native'?'Open av-desktop.pd · then Listen':'Browser instrument ready');};
-for(const id of controls)$(id).addEventListener('input',()=>{send(id,Number($(id).value));session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
+$('audio-output').onchange=async()=>{
+ starting=true;$('play').disabled=true;$('audio-output').disabled=true;
+ try{if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;gain=null;signalMap.reset();status($('audio-output').value==='native'?'Open av-desktop.pd · then Listen':'Browser instrument ready');}
+ catch(e){status('Could not change audio output: '+e.message);}
+ finally{starting=false;$('play').disabled=false;$('audio-output').disabled=false;}
+};
+for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
 function orientPair(pair,token){
@@ -215,7 +221,7 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair){
- generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
+ signalMap.reset();generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
  $('network').value=pair.chainId;renderPools(pair);$('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
@@ -249,7 +255,7 @@ $('coin-form').onsubmit=async e=>{
 };
 $('network').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value);if(pair)chooseMarket(pair);};
 $('pool').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value&&p.pairAddress===$('pool').value);if(pair)chooseMarket(pair);};
-$('demo').onclick=()=>{imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
+$('demo').onclick=()=>{signalMap.reset();imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.textContent='Download '+name;a.style.color='var(--accent)';a.style.fontSize='11px';a.style.display='block';$('downloads').append(a);}
 const downloads=document.createElement('div');downloads.id='downloads';$('record').parentElement.after(downloads);
 $('record').onclick=()=>{

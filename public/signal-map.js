@@ -6,7 +6,7 @@ const sources=[
  ['texture','LIQUIDITY','log10(liquidity USD) / 7, clipped to 0–1. Liquidity comes from snapshots.'],
  ['balance','BUY / SELL','Fraction of observed buys; snapshot fallback uses the 5-minute buy fraction.'],
  ['root','PRICE / HISTORY','MIDI root = 45 + token seed % 12 + round(12 × tanh(log(current price / earliest available open))). Missing history gives a zero offset.'],
- ['fresh','DATA FRESHNESS','Snapshot freshness stays at 1 for 20 seconds, then fades to 0 over 40 seconds. This attenuates the automatic mix.'],
+ ['fresh','SIGNAL AVAILABILITY','A connected decoded feed uses its rolling trade window, independently of snapshot age. Snapshot-only signals stay at 1 for 20 seconds, then fade over 40 seconds. Liquidity and native USD conversion retain their last known snapshot values, with their age shown below the mix.'],
 ];
 const stages=[
  ['clock','CLOCK','tempo','Activity + volume → tempo','80 + 70 × activity + 40 × energy BPM. Pd schedules a sixteenth-note tick every 15000 / BPM milliseconds.'],
@@ -17,11 +17,21 @@ const stages=[
  ['zenology','ZENOLOGY / DRUMS','zenology','Activity + motion + energy → MIDI','Prepared native companion: activity above 0.65 adds hats; motion above 0.6 adds a snare; velocity = int(35 + 75 × energy). Kick 36, snare 38, hat 42. Kit mappings still require confirmation in ZENOLOGY. The browser engine does not contain this plugin.'],
 ];
 const links={motion:['rules','strings','zenology'],activity:['clock','strings','pads','zenology'],volume:['clock','strings','pads','zenology'],texture:['strings','pads','space'],balance:['pads'],root:['strings','pads'],fresh:['strings','pads','space']};
+export function createFeedbackMonitor(now=()=>performance.now()){
+ let lastBeat=null,generation=null,transport=null;
+ return {
+  observe(name,value){if(name==='generation'&&value!==generation){generation=value;lastBeat=now();}},
+  setTransport(state){transport=state;},
+  status(){if(transport?.connected===false)return 'DISCONNECTED';if(transport?.running===false)return 'ENGINE STOPPED';return lastBeat===null?'AWAITING FEEDBACK':now()-lastBeat>1500?'STALE FEEDBACK':'ENGINE FEEDBACK';},
+  reset(){lastBeat=null;generation=null;transport=null;},
+ };
+}
 export function createSignalMap(container){
  container.innerHTML=`<div class="signal-map-heading"><span>SIGNAL / SOUND PATCH</span><span data-status>PAUSED · CONTROL PREVIEW</span></div><p class="signal-map-help">Select a box to trace its connections. Values are controls; pulses are received Pd events.</p><div class="signal-board"><svg class="signal-wires" aria-hidden="true"></svg><div class="signal-column"><small>MARKET SIGNALS · NORMALIZED</small>${sources.map(([id,label])=>`<button type="button" class="signal-node" data-node="${id}" aria-pressed="false"><span>${label}</span><output data-value="${id}">—</output><i class="signal-bar" aria-hidden="true"></i></button>`).join('')}</div><div class="signal-column"><small>SOUND PRODUCTION</small>${stages.map(([id,label,value,caption])=>`<button type="button" class="signal-node ${id==='zenology'?'signal-pending':''}" data-node="${id}" aria-pressed="false"><span>${label}</span><output data-value="${value}">—</output><small>${caption}</small></button>`).join('')}</div><div class="signal-column signal-output"><small>OUTPUT</small><button type="button" class="signal-node" data-node="output" aria-pressed="false"><span>STEREO / MASTER</span><output data-value="master">—</output><small>Listening volume</small></button><p>Strings + pads → delay → high-pass 80 Hz → clip ±0.85 → master × 0.8 → stereo.</p><p data-events>No Pd events received</p></div></div><div class="signal-inspector" role="status" aria-live="polite">Select a market signal or sound stage to inspect its mapping.</div><p class="signal-map-help">ZENOLOGY is a prepared local companion. Drum audio and kit status are not reported by this web view.</p>`;
  const board=container.querySelector('.signal-board'),svg=container.querySelector('svg'),buttons=[...container.querySelectorAll('[data-node]')],nodes=new Map(buttons.map(b=>[b.dataset.node,b]));
  for(const [id,count] of [['strings',20],['pads',6]]){const row=document.createElement('span');row.className='signal-voice-row';row.setAttribute('aria-label',`${count} individual ${id} voices`);for(let i=0;i<count;i++){const voice=document.createElement('span');voice.dataset.voice=String(i);voice.textContent=String(i+1).padStart(2,'0');voice.title=`${id} voice ${i+1}`;row.append(voice);}nodes.get(id).append(row);}
- let selected=null,connected=false,latest={},eventState={},counts={note:0,pad:0},lastEvent=0;
+ let selected=null,latest={},eventState={},counts={note:0,pad:0};
+ const feedback=createFeedbackMonitor();
  const edges=[...Object.entries(links).flatMap(([from,tos])=>tos.map(to=>[from,to])),['clock','rules'],['rules','strings'],['strings','pads'],['strings','output'],['pads','output'],['space','output']];
  function trace(){
   const related=new Set(selected?[selected]:[]);
@@ -44,17 +54,17 @@ export function createSignalMap(container){
   set('pads',`${Math.round(levels.pad*100)}% · ${(1200+4800*m.texture).toFixed(0)} ms release`);
   set('space',`${Math.round(levels.space*100)}% wet · 263 / 431 ms`);
   set('zenology','PREPARED · NOT VERIFIED');set('master',playing?`${Math.round(master*100)}%`:'0% · paused');
-  container.querySelector('[data-status]').textContent=!playing?'PAUSED · CONTROL PREVIEW':`${native?'NATIVE':'BROWSER'} PD · ${connected?'ENGINE FEEDBACK':'AWAITING FEEDBACK'}`;
+  container.querySelector('[data-status]').textContent=!playing?'PAUSED · CONTROL PREVIEW':`${native?'NATIVE':'BROWSER'} PD · ${feedback.status()}`;
   if(!playing){for(const b of container.querySelectorAll('.signal-pulse'))b.classList.remove('signal-pulse');}
  }
  function receive(name,value){
-  if(!latest.playing||!Number.isFinite(value))return;connected=true;eventState[name]=value;
+  if(!latest.playing||!Number.isFinite(value))return;feedback.observe(name,value);eventState[name]=value;
   if(!latest.native&&(name==='av-string-voice'||name==='av-pad-voice')){const voice=nodes.get(name==='av-string-voice'?'strings':'pads').querySelector(`[data-voice="${value}"]`);if(voice){voice.classList.remove('signal-pulse');void voice.offsetWidth;voice.classList.add('signal-pulse');}}
-  if(!latest.native&&(name==='note'||name==='pad-note')){counts[name==='note'?'note':'pad']++;lastEvent=performance.now();const b=nodes.get(name==='note'?'strings':'pads');b.classList.remove('signal-pulse');void b.offsetWidth;b.classList.add('signal-pulse');}
+  if(!latest.native&&(name==='note'||name==='pad-note')){counts[name==='note'?'note':'pad']++;const b=nodes.get(name==='note'?'strings':'pads');b.classList.remove('signal-pulse');void b.offsetWidth;b.classList.add('signal-pulse');}
   set('rules',`DNA ${eventState['av-dna']??'—'} / rule ${eventState['av-codon']??'—'} / state ${eventState['av-phenotype']??'—'}`);
   container.querySelector('[data-events]').textContent=latest.native?`Native state sampled every 250 ms. Last melody: ${eventState.note??'—'} / pad: ${eventState['pad-note']??'—'} MIDI. Clock: ${eventState.generation??'—'}.`:`Received: ${counts.note} string notes / ${counts.pad} pad notes. Last melody: ${eventState.note??'—'} MIDI. Clock: ${eventState.generation??'—'}.`;
  }
- function reset(){connected=false;eventState={};counts={note:0,pad:0};lastEvent=0;set('rules','Awaiting engine');container.querySelector('[data-events]').textContent='No Pd events received';}
+ function reset(){feedback.reset();eventState={};counts={note:0,pad:0};for(const b of container.querySelectorAll('.signal-pulse'))b.classList.remove('signal-pulse');set('rules','Awaiting engine');container.querySelector('[data-events]').textContent='No Pd events received';}
  reset();
- return {update,receive,reset};
+ return {update,receive,reset,setTransport:state=>feedback.setTransport(state)};
 }
