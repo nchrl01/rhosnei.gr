@@ -4,7 +4,7 @@ import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode}
 export class MarketChart{
  constructor(container){
   this.points=[];this.history=[];this.buckets=new Map();this.interval=60000;this.origin=null;
-  this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
+  this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
    autoSize:true,layout:{background:{color:'#ffffff'},textColor:'#666666',fontSize:11,attributionLogo:true},
    grid:{vertLines:{visible:false},horzLines:{color:'#eeeeee'}},
@@ -32,7 +32,7 @@ export class MarketChart{
   setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},500);
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
- setScale(mode){this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
+ setScale(mode){this.scale=mode;this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
  setRange(range){this.range=range;this.manual=false;this.needsFit=true;this.schedule();}
  setHistory(candles,interval,origin){this.history=candles;this.interval=interval;this.origin=origin;this.rebuild=true;if(!this.manual&&this.range==='history')this.needsFit=true;this.schedule();}
  setInterval(interval){this.history=[];this.interval=interval;this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
@@ -62,6 +62,7 @@ export class MarketChart{
  remove(id){this.points=this.points.filter(p=>p.id!==id);this.rebuild=true;this.schedule();}
  retime(id,at){if(!Number.isFinite(at))return;const point=this.points.find(p=>p.id===id);if(point){point.at=at;this.rebuild=true;this.schedule();}}
  draw(){
+  this.revision=(this.revision||0)+1;
   const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
   if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
   const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);

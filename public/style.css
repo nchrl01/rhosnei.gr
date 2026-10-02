@@ -24,3 +24,10 @@ footer{display:flex;flex-wrap:wrap;gap:16px;border-top:1px solid #111;padding-to
 .signal-node>.signal-voice-row{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}.signal-voice-row span{display:block;border:1px solid #ddd;padding:2px;font:7px monospace;min-width:18px;text-align:center}.signal-voice-row .signal-pulse{animation:signal-voice .5s ease-out}@keyframes signal-voice{from{background:#111;color:#fff}to{background:transparent;color:inherit}}@media(prefers-reduced-motion:reduce){.signal-voice-row .signal-pulse{animation:none;background:transparent;color:inherit}}
 
 .orchestra-state{font:10px monospace;letter-spacing:.06em;color:#111;margin:14px 0}.voices{grid-template-columns:repeat(3,minmax(0,1fr))}@media(max-width:700px){.voices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.market-sketch{margin:22px 0;border:1px solid var(--line,#ddd);background:#fff;overflow:hidden}
+.sketch-heading,.sketch-readings{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;font:10px monospace;color:#666}
+.sketch-heading{border-bottom:1px solid #ddd;letter-spacing:.07em;color:#111}
+.market-sketch canvas{display:block;width:100%;height:340px}
+.market-sketch p{margin:0;padding:0 16px 14px;font:10px/1.6 monospace;color:#777;max-width:none}
+@media(max-width:600px){.sketch-heading,.sketch-readings{flex-direction:column;gap:5px}.market-sketch canvas{height:270px}}

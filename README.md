@@ -78,3 +78,16 @@ The combined orchestra is checked headlessly against the actual browser WASM:
 each part renders finite audio, the ensemble reports voice/output feedback, and
 Stop and zero master produce silence. No new GUI audition or visual check was
 performed under the current computer-control restriction.
+
+## Dynamic market sketch
+
+The monochrome Canvas visualization follows the chart’s visible price history.
+The chart’s linear/log scale sets geometry, actual candle volume marks the path, Pd clock
+and voice events leave short-lived traces, and a Web Audio analyser displays
+actual post-master browser spectrum/waveform. The clock scans the path as a
+visual correspondence; this does not sonify/replay old candles. Native mode
+shows Pd output meters without inventing a frequency spectrum. Pausing sound
+leaves the market path live. Reduced-motion users receive slower redraws and
+no expanding trade rings. No random animation or new sound generator is added.
+The implementation is independently written, inspired by SonicSketch’s drawn
+path/spectrum concept; its source, samples and synthesis are not included.
