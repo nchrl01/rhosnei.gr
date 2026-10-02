@@ -30,7 +30,7 @@ export function createMarketSketch(container,chart){
   if(!playing||!Number.isFinite(value))return;
   if(name==='generation')clock=value;
   if(name==='av-output-left'||name==='av-output-right')audioDb=value;
-  if(groups[name]){const [kind,count]=groups[name];voices.push({kind,index:value,count,clock,born:performance.now()});if(voices.length>160)voices.shift();}
+  if(groups[name]&&!native){const [kind,count]=groups[name];voices.push({kind,index:value,count,clock,born:performance.now()});if(voices.length>160)voices.shift();}
  }
  function reset(){voices=[];clock=0;lastTrade=chart.received;tradeAt=-Infinity;pathVersion='';audioDb=-100;}
  function attachAudio(node){analyser=node;if(node){spectrum=new Uint8Array(node.frequencyBinCount);wave=new Float32Array(node.fftSize);}else{spectrum=null;wave=null;}}
