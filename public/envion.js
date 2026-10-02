@@ -1,4 +1,4 @@
-import {createEnvionView} from './envion-view.js?v=28';
+import {createEnvionView} from './envion-view.js?v=30';
 
 const BASE = 'patches/envion/';
 const ROOT = 'orchestra/envion/';
@@ -74,7 +74,7 @@ export function applyEnvionMarket(pd,namespace,m){
   for(const name of ['raw-mix-l','raw-mix-r'])send(name,1-pan);
   for(const name of ['delay-mix-l','delay-mix-r'])send(name,echo);
   for(const index of [355,356])pd.sendFloat('av-envion-ui-c0-'+index,motion>.3?1:0);
-  const values={nuke:Math.round(cutoff)+' Hz',grains:grain?'ACTIVE · '+Math.round(activity*100)+'%':'QUIET · '+Math.round(activity*100)+'%',pan:Math.round(balance*100)+'% BUY',echo:Math.round(volume*65)+'%',reverb:Math.round(liquidity*55)+'%'};
+  const values={nuke:Math.round(cutoff)+' Hz',grains:grain?'ACTIVE · '+Math.round(activity*100)+'%':'QUIET · '+Math.round(activity*100)+'%',pan:Math.round(balance*100)+'% BUY',echo:Math.round(volume*65)+'%',reverb:Math.round(liquidity*25)+'%'};
   return values;
 }
 
@@ -85,7 +85,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [];
   let presetRequest = 0, recordingOperation = Promise.resolve();
   const view = createEnvionView(container, {onControl:control, onFile:openFile, onCommand:command});
-  const ready = fetch(BASE+'model.json?v=28').then(async response => {
+  const ready = fetch(BASE+'model.json?v=30').then(async response => {
     if (!response.ok) throw Error('Envion source layout unavailable');
     model = await response.json();
     for (const canvas of Object.values(model.canvases)) for (const node of canvas.nodes) {
@@ -108,7 +108,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     else if(force) pd.sendFloat(namespace+'-met0',1);
   }
   async function fetchBytes(path) {
-    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=28');
+    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=30');
     if (!response.ok) throw Error('Cannot load Envion asset: '+path);
     return new Uint8Array(await response.arrayBuffer());
   }
@@ -344,10 +344,10 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     view, ready, printed,
     async files() {
       await ready;
-      const response=await fetch(BASE+'manifest.json?v=28');if(!response.ok)throw Error('Envion source manifest unavailable');
+      const response=await fetch(BASE+'manifest.json?v=30');if(!response.ok)throw Error('Envion source manifest unavailable');
       const manifest=await response.json();
       const files=Object.fromEntries(await Promise.all(manifest.files.map(async path=>{
-        const r=await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=28');if(!r.ok)throw Error('Cannot load '+path);
+        const r=await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=30');if(!r.ok)throw Error('Cannot load '+path);
         return [ROOT+path,await r.text()];
       })));
       for(const path of manifest.initialAssets)if(!(ROOT+path in files))files[ROOT+path]=await fetchBytes(path);

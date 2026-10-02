@@ -1,80 +1,28 @@
-AV / AUTO ORCHESTRA
+AV / ENVION ONLY
 
-Browser: enter a contract, choose its indexed pool and press Listen.
-There is one ensemble. The five meters display automatic part gain, not selectors.
-The market conductor uses a sixteenth-note clock. Its reconstructed tonal
-parts use the pitch family 0 2 3 5 7 9 10; Envion keeps its original sample DSP.
-Every 32 ticks (two bars) phrase roles change. Activity and USD volume set a
-bounded total gain budget; movement and liquidity distribute prominence.
-Mix changes use a 650 ms time constant. Missing snapshot-only signals fade.
-Master adjusts listening volume only. This is a rule-based conductor, not AI.
+The browser runs the supplied original Envion 5.2 source, including its samples,
+envelope banks, Nuke, grain processing, stereo routing and authored effects.
+No ZERO100 tonal bank, polyrhythm bank, resonant bank, Perc Generator,
+external Freeverb, external feedback delay, pad or genotype is instantiated.
 
-Parts: original Envion 5.2 stereo instrument; ZERO100 32 tonal lanes / 12 polyrhythms /
-8 resonant bands; Perc Generator 32 synthesized percussion voices.
-The percussion uses FM and filtered noise, not sampled breaks or ZENOLOGY.
-ZENOLOGY remains a separately hosted local plugin companion.
+Four host patches: market.pd, av-envion.pd, av-conductor.pd and av-random.pd.
+The clock is a Pd metro: each sixteenth note lasts 15000 / BPM milliseconds.
+Market cap: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM.
+Logarithmic interpolation, bounded at 10 and 200; missing cap uses 120 BPM.
+Activity drives original Envion row/speed randomizer probability.
+Activity, traded volume and signal freshness determine a smoothed Envion gain.
+Volatility controls Nuke filtering; activity controls grains; buy/sell balance
+controls pan; traded volume controls echo; liquidity controls Envion's own
+reverb wet amount (up to 25%) and decay. Original authored effects remain.
+Chart pan/zoom do not schedule notes or change fixed historical context.
 
-Browser orchestra version: 5. The Native Pd selector is temporarily disabled:
-the full Envion browser file bridge is not implemented by the desktop host.
-Older av-orchestra.zip downloads are archived version-4 studies and do not
-contain this full Envion integration. For the original standalone desktop
-source and library setup, see ../envion/PORT-NOTES.txt. No working full AV
-native orchestra is claimed for this version.
+Envion stereo -> market gain -> run gate -> listening volume -> clip -> output.
+Listening volume starts at 50% on a normalized 0..1 slider, available from the
+fixed upper-left Volume button. Changes use a 50 ms Pd ramp; zero mutes output.
+Pause also stops the source clocks and mutes the host output.
 
-Reference adaptations:
-Rolando Rampoldi / Gameta https://www.youtube.com/watch?v=Atttrb0hoEc
-ZeroPoint Zero / 100h https://www.youtube.com/watch?v=ziJ4md4IvKY
-ZeroPoint Zero / Perc Generator https://www.youtube.com/watch?v=CpNo7f6aMnI
-Original hidden Gen code was unavailable. DSP and transitions are independent
-approximations, not original patch ports or verified identical sound.
-GrundTon ambient breakcore https://www.youtube.com/watch?v=xZMCVewUXCY remains
-an aesthetic reference; its original patch and drum samples are not bundled.
-No reference video audio, commercial plugin, or preset is distributed.
-
-Rebuild: python3 build-orchestra.py (in the project root).
-The browser loads Envion separately through ../envion/manifest.json.
-Voice pulses report Pd triggers/envelopes; Envion activity is measured from
-its actual stereo output. L/R meters measure orchestra output.
-
-Envion: Emiliano Pennisi (2025), MIT. See ENVION-LICENSE.txt and
-../envion/LICENSE.txt for the original source notice.
-https://www.peamarte.it/env/envion_v3.6.html
-The supplied original 5.2 source replaces the former fragment approximation:
-109 canvases, 5,597 nodes, 4,380 wires, all 44 supplied audio files, 19 envelope
-banks and six tape impulse responses. The browser port retains the original
-DSP, presets and effects with adapters for controls, files, keyboard and output.
-Market clock mode drives the original speed/row controls; Original clocks
-mode uses Envion's own clocks. Both join the same AV stereo ensemble.
-Only the recorder's unbound inputs are redirected to the original pre-out
-$0-vul/$0-vur signals; other orphan reg1/reg2 inputs remain silent.
-Original recorder controls use a browser WAV writer: the runtime's native
-writesf~ produces no frames. Dedicated output channels 3/4 carry the actual
-pre-out samples to a 44,100 Hz, 32-bit float WAV. This is separate from AV's
-main post-master Record function. The original desktop source is unchanged.
-The four-triplet main-envelope path and hardcoded 44,100 Hz timing are retained.
-Scopes without taps are labelled; live canvas-label changes are not mirrored.
-Sample waveforms are displayed. NETaudio requires remote access/CORS; browser
-decoding may resample compressed formats. Source PCM WAV data is preserved.
-Full port notes, exact-source checksum and desktop directions:
-../envion/PORT-NOTES.txt. Runtime ELSE/Cyclone licenses are mixed; see
-../../vendor/licenses/ and ../envion/audiolab/ source/license notices.
-
-Market context: latest received state + fixed five-minute candles, independently
-of chart zoom/pan. Return size/speed and recent shocks retain recent intensity;
-shocks cool with a two-hour time constant. Volume relative to loaded history and
-liquidity turnover also contribute. Missing context remains explicit. Typical
-market cap is a price-based estimate using snapshot supply, not historical cap.
-
-Freeverb processes the combined stereo orchestra before master output.
-Liquidity increases wet mix (up to 55%) and room decay (room 0.35 to 0.95).
-This vanilla-Pd algorithm port uses eight combs and four diffusion stages per
-channel. Original algorithm: Jezar at Dreampoint (2000), public domain.
-See FREEVERB.txt. The active cartridge feature has been removed.
-
-Clock mapping: market cap $10k -> 10 BPM, $1m -> 100 BPM, $10m -> 200 BPM.
-Logarithmic interpolation between anchors; endpoint limits at 10/200 BPM.
-Missing cap uses a labelled 120 BPM fallback. Market intensity shapes
-articulation, density and mix independently of this cap-based clock.
-
-Genotype and its sequencer are disabled in the current graph. The generation
-telemetry name now reports shared clock ticks only.
+The hidden Pure Data view opens/closes by submitting pdata in the address box.
+Desktop output remains disabled because the browser file bridge is required.
+Envion source, assets, licenses and browser adaptations:
+../envion/PORT-NOTES.txt and ../envion/LICENSE.txt.
+Rebuild: python3 build-orchestra.py. Browser host version: 6.

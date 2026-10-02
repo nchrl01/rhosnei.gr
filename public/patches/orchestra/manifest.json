@@ -1,33 +1,13 @@
 {
-  "version": 5,
+  "version": 6,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
     "av-envion.pd",
-    "av-freeverb-comb.pd",
-    "av-freeverb-diffuse.pd",
-    "av-freeverb.pd",
-    "av-orchestra-tables.pd",
     "av-random.pd",
-    "av-zero-ensemble.pd",
-    "market.pd",
-    "zp-band.pd",
-    "zp-clock.pd",
-    "zp-cross.pd",
-    "zp-delay.pd",
-    "zp-lane.pd",
-    "zp-perc-clock.pd",
-    "zp-perc-markov.pd",
-    "zp-perc-voice.pd",
-    "zp-perc.pd",
-    "zp-poly.pd",
-    "zp-tone.pd"
+    "market.pd"
   ],
   "layers": [
-    "melody",
-    "tones",
-    "poly",
-    "filtered",
-    "percussion"
+    "melody"
   ]
 }
