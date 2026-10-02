@@ -51,6 +51,36 @@ The piano uses samples resampled to 24 kHz stereo PCM16 with up to ten-second ta
 Source, license and mapping records are in `public/samples/piano/`.
 Rebuild them with the local audio Python environment and `build-piano.py`.
 
+## Seeded math functions
+
+Two additional original Pd voices use bounded adaptations of the functions in
+the supplied Instagram reel. The token's chain/address seed consistently selects
+one rhythmic family (3+3+2, drift envelope, reverse kick, bouncing ball, drop) and
+one tonal family (Fourier series, tangent, wobble, heart, chirp). No video audio
+is bundled; these are interpretations, not identical reconstructions of its sound.
+
+The first slot enters at $1m and the second at $10m. Gain increases gradually
+toward twice that threshold, and a 12% hysteresis band avoids repeated switching.
+Unknown cap, missing trade cadence or stale market controls close the gates.
+Phrase timing follows observed trades per second, bounded to four beats per
+second for these additional voices. Piano still responds to every accepted trade.
+Two eight-beat windows alternate within a 32-beat cycle, with rests and a
+seeded 35–70% phrase probability based on volume. A phrase lasts at most five
+seconds, even when trading is slow. No continuous ambient-string source is used.
+
+The compact UI shows only the coin's selected two functions. Curve position and
+normalized value drive the same pitch/cutoff/gate controls sent to Pd at about
+30 Hz. Curves show pitch controls, not audio waveforms. Pd smooths pitch, gain,
+filter and timbre; the details show its measured RMS before master volume.
+If gate updates stop for 400 ms, Pd closes the voice in 15 ms.
+Mute each slot on its card, or the complete Math functions bundle through `pdata`.
+Changing coins resets phase and clears sound. Historical candle-only regions do
+not fabricate trade cadence and therefore do not trigger these patterns.
+
+Sources: `public/math-patterns.js`, `public/math-pattern-view.js`, and
+`public/patches/orchestra/av-math*.pd`. Rebuild with `python3 build-math-patterns.py`
+followed by `python3 build-orchestra.py`. The working trade piano is unchanged.
+
 ## Run and deploy
 
 Run `npm start`, open http://localhost:4173, then press Listen.

@@ -4,6 +4,13 @@ The default website source is the CC0 sampled Web Audio trade piano:
 one chord per decoded trade; trade arrival frequency is rhythm; market cap
 controls resonance. See ../../trade-piano.js and ../../samples/piano/.
 
+Two additional seeded math voices are enabled above their market-cap thresholds.
+av-math.pd mixes two av-math-voice instances. The browser supplies the plotted
+pitch function, timbre and phrase envelope; Pd synthesizes the sound and reports
+measured RMS. No independent math clock runs in Pd. A 400ms gate watchdog avoids
+stuck tones. Individual card toggles or the pdata math bundle can mute them.
+The source reel is interpreted using bounded functions; its audio is not copied.
+
 This optional Pd graph contains original Envion 5.2 and an independently
 authored hardstyle kick inspired by GrundTon's demo, both OFF by default:
 https://www.youtube.com/watch?v=v5btDT3sjao
@@ -24,6 +31,6 @@ Type pdata into the address box to remove/restore each complete sound bundle.
 Pause and listening volume apply to the entire stereo mix.
 Gameta, ZERO100 and Perc Generator are removed from the published engine.
 
-Rebuild: python3 build-celebration.py;
+Rebuild: python3 build-celebration.py; python3 build-math-patterns.py;
 python3 build-orchestra.py. Tests: node checks/market-layers.mjs.
 Envion provenance: ../envion/PORT-NOTES.txt and ../envion/LICENSE.txt.

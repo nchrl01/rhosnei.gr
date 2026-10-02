@@ -1,11 +1,13 @@
 import {createEnvion} from './envion.js?v=40';
-import {createEngineView} from './engine-view.js?v=48';
-import {hardstyleActive} from './hardstyle-state.js?v=48';
-import {createTradePiano,marketResonance} from './trade-piano.js?v=48';
+import {createEngineView} from './engine-view.js?v=49';
+import {hardstyleActive} from './hardstyle-state.js?v=49';
+import {createTradePiano,marketResonance} from './trade-piano.js?v=49';
+import {createMathPatterns,mathIdentity} from './math-patterns.js?v=49';
+import {createMathPatternView} from './math-pattern-view.js?v=49';
 import {contextualizeMarket} from './market-state.js?v=30';
 import {createMarketReplay,candleEnd} from './market-replay.js?v=33';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=48';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=49';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {subscribePool} from './realtime.js?v=4';
@@ -26,6 +28,7 @@ const controls=['master'];
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='';
 let streamKind='snapshot',tradeEvents=[],lastTrade=null,lastChainPrice=null,discovered=[],lastExcitation=0;
 let piano=null,pianoEnabled=true,pianoHistory=[],pianoReplayCursor=null,pianoChordCount=0;
+let mathMarket=null,mathSeed=seed;
 let receivedTradeCount=0;
 let stopMusicHistory,musicHistoryTimer,musicalCandles=[],musicalInterval=300000;
 let stopHistory,stopChartHistory,historyContext=null,originDate=null,contextCandles=[],contextInterval=60000,chartRequest=0;
@@ -59,14 +62,17 @@ function displayCoinImage(){
  img.src=url;
 }
 const conductor=createOrchestraConductor();
+const mathView=createMathPatternView($('math-functions'),{onToggle:(slot,enabled)=>{mathPatterns.setSlot(slot,enabled);session?.controls.push({at:Date.now(),name:'math-slot',slot,enabled});}});
+const mathPatterns=createMathPatterns({send,onView:view=>mathView.update(view)});
+mathPatterns.setSeed(mathSeed);
 const levels=Object.fromEntries(ORCHESTRA_LAYERS.map(name=>[name,0]));
 let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 let hardstyleEnabled=false;
-const engineView=createEngineView($('engine-view'),{onBundle:(name,enabled)=>{if(name==='piano'){pianoEnabled=enabled;piano?.setEnabled(enabled);}else if(name==='hardstyle'){hardstyleEnabled=enabled;if(!enabled)send('hardstyle-active',0);}else conductor.setBundle(name,enabled);if(market)syncLevels(metrics());}});
+const engineView=createEngineView($('engine-view'),{onBundle:(name,enabled)=>{if(name==='math'){mathPatterns.setEnabled(enabled);}else if(name==='piano'){pianoEnabled=enabled;piano?.setEnabled(enabled);}else if(name==='hardstyle'){hardstyleEnabled=enabled;if(!enabled)send('hardstyle-active',0);}else conductor.setBundle(name,enabled);if(market)syncLevels(metrics());}});
 const envion=createEnvion($('envion'),{onTransport:command=>{if((command==='start'&&!playing)||(command==='stop'&&playing))$('play').click();}});
-function resetEnsemble(){conductor.reset();piano?.reset(seed);pianoReplayCursor=replay.state.active?replay.state.cursor:null;for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
+function resetEnsemble(){conductor.reset();mathPatterns.reset();piano?.reset(seed);pianoReplayCursor=replay.state.active?replay.state.cursor:null;for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
 function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),pianoChordCount,resonance:marketResonance(m.context?.latestCap),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:market?streamKind:'loading',liquidity:m.replay?m.observation?.liquidity:market?.liquidity?.usd});}
-function bindSignalMap(){resetEnsemble();for(const name of ['generation','av-envion-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);engineView.receive(name,value);});}
+function bindSignalMap(){resetEnsemble();for(const name of ['generation','av-envion-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);engineView.receive(name,value);});for(let slot=0;slot<2;slot++)pd.subscribe?.(`math-${slot}-meter`,message=>mathView.receive(slot,Number(message.values[0])));}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
@@ -114,6 +120,7 @@ function updateReplayUI(m){
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
 }
 function syncLevels(m){
+ mathMarket=m;
  piano?.resonance(m.context?.latestCap);
  send('hardstyle-active',hardstyleActive(m,hardstyleEnabled)?1:0);
  send('hardstyle-chance',15+30*Math.max(m.activity||0,m.pressure||0));
@@ -191,12 +198,14 @@ function tick(){
 }
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);}
+function mathLoop(){mathPatterns.frame(mathMarket||{},{playing:playing&&!!pd&&!replay.state.dragging,clock:ctx?.currentTime??performance.now()/1000});setTimeout(mathLoop,playing?33:250);}
+mathLoop();
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>{engineView.setTransport(state);});for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx??=new AudioContext({sampleRate:44100});await ctx.resume();
- const manifestResponse=await fetch('patches/orchestra/manifest.json?v=48');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=49');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
  const manifest=await manifestResponse.json();
- const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=48');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=49');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
  Object.assign(files,await envion.files());
  pd=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=30',onPrint:text=>{if(!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{engineView.log(error.message);status('Audio engine: '+error.message);}});
  engineView.setFiles(files,manifest,true);
@@ -306,10 +315,11 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair){
+ mathMarket=null;
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
- resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);applySnapshot(pair);startHistory(pair);setupStream();loadCoinImage(pair);
+ resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);applySnapshot(pair);startHistory(pair);setupStream();loadCoinImage(pair);
  $('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
@@ -351,7 +361,7 @@ $('record').onclick=()=>{
  const destination=ctx.createMediaStreamDestination(),recordNode=outputTap||gain;recordNode.connect(destination);chunks=[];
  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
  recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined);
- session={version:10,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'CC0 sampled Web Audio trade piano; optional Pd bundles',mapping:'trade-chord-market-cap-resonance-v1',pianoEnabled,hardstyleEnabled,source:streamKind,historyContext,originDate,initialObservedSwaps:pianoHistory.slice(),replay:replay.state.active?{cursor:replay.state.cursor,source:replay.state.source,speed:replay.state.speed}:null};
+ session={version:10,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'CC0 sampled Web Audio trade piano; optional Pd bundles',mapping:'trade-chord-market-cap-resonance-math-v2',mathSeed,mathPatterns:mathIdentity(mathSeed).map(({id,slot,threshold})=>({id,slot,threshold})),pianoEnabled,hardstyleEnabled,source:streamKind,historyContext,originDate,initialObservedSwaps:pianoHistory.slice(),replay:replay.state.active?{cursor:replay.state.cursor,source:replay.state.source,speed:replay.state.speed}:null};
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
  recorder.onstop=()=>{const name='AV-'+new Date(session.started).toISOString().replace(/[:.]/g,'-');download(new Blob(chunks,{type:recorder.mimeType}),name+(recorder.mimeType.includes('mp4')?'.m4a':'.webm'));download(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}),name+'.json');try{recordNode.disconnect(destination);}catch{}session=null;$('record').textContent='● Record';status('Recording ready to download · session log included');};
  recorder.start(1000);$('record').textContent='■ Finish';status('Recording audio and session changes…');

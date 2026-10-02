@@ -1,0 +1,54 @@
+.math-pattern-view{width:100%;max-width:600px;margin:18px 0 0;padding:10px 0 0;border-top:1px solid #ddd;color:#111;font:11px/1.4 Arial,sans-serif}
+.math-pattern-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;min-width:0}
+.math-pattern-header h3{flex:none;margin:0;font:700 10px/1.4 Arial,sans-serif}
+.math-pattern-seed{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666;font-size:9px;font-variant-numeric:tabular-nums;text-align:right}
+.math-pattern-waiting{margin:0;padding:10px 0;color:#666;font-size:10px}
+.math-pattern-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.math-pattern-card{min-width:0}
+.math-pattern-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+.math-pattern-identity{min-width:0}
+.math-pattern-identity h4{margin:0;font:700 11px/1.35 Arial,sans-serif;overflow-wrap:anywhere}
+.math-pattern-threshold{display:block;margin-top:2px;color:#666;font-size:9px;font-variant-numeric:tabular-nums}
+.math-pattern-toggle{flex:none;min-height:30px;padding:6px 7px;border:1px solid #111;background:#fff;color:#111;font:400 9px/1.2 Arial,sans-serif}
+.math-pattern-toggle[aria-pressed=true]{background:#111;color:#fff}
+.math-pattern-toggle[aria-pressed=true]:hover:not(:disabled){background:#333}
+.math-pattern-toggle:focus-visible,.math-pattern-details>summary:focus-visible{outline:2px solid #111;outline-offset:3px}
+.math-pattern-plot{height:78px;margin:8px 0 4px}
+.math-pattern-plot svg{display:block;width:100%;height:100%;overflow:visible}
+.math-pattern-baseline{stroke:#ddd;stroke-width:1;fill:none;vector-effect:non-scaling-stroke}
+.math-pattern-curve{stroke:#111;stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.math-pattern-marker{fill:#ff00ff}
+.math-pattern-card[data-enabled=false] .math-pattern-curve{stroke:#999}
+.math-pattern-card[data-enabled=false] .math-pattern-marker{fill:#999}
+.math-pattern-caption{display:flex;justify-content:space-between;align-items:baseline;gap:8px;color:#666;font-size:9px;line-height:1.4}
+.math-pattern-caption>span:last-child{flex:none;font-size:8px}
+.math-pattern-state{overflow-wrap:anywhere}
+.math-pattern-card[data-active=true] .math-pattern-state{color:#111}
+.math-pattern-details{margin-top:8px;padding:7px 0 0;border-top:1px solid #eee}
+.math-pattern-details>summary{width:max-content;max-width:100%;font:400 9px/1.5 Arial,sans-serif;color:#666;cursor:pointer}
+.math-pattern-formula{margin-top:10px;font-size:10px;overflow-wrap:anywhere;white-space:pre-wrap}
+.math-pattern-details dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 8px;margin:10px 0;font-size:9px;font-variant-numeric:tabular-nums}
+.math-pattern-details dt{color:#666}
+.math-pattern-details dd{margin:0;text-align:right;overflow-wrap:anywhere}
+.math-pattern-details p{margin:8px 0 0;color:#666;font-size:9px;line-height:1.5}
+@media(max-width:760px){
+ .math-pattern-view{max-width:440px;margin:24px auto 0;padding-top:14px}
+ .math-pattern-header{margin-bottom:14px}
+ .math-pattern-header h3{font-size:12px}
+ .math-pattern-seed{font-size:10px}
+ .math-pattern-cards{gap:16px}
+ .math-pattern-heading{align-items:flex-start;flex-direction:column;gap:10px}
+ .math-pattern-identity h4{font-size:12px}
+ .math-pattern-threshold{font-size:10px}
+ .math-pattern-toggle{min-height:44px;min-width:74px;padding:10px;font-size:11px}
+ .math-pattern-plot{height:90px;margin-top:12px}
+ .math-pattern-caption{display:block;font-size:10px}
+ .math-pattern-caption>span:last-child{display:block;margin-top:3px;font-size:9px}
+ .math-pattern-details{padding-top:0}
+ .math-pattern-details>summary{display:flex;align-items:center;min-height:44px;font-size:10px}
+ .math-pattern-formula{margin-top:4px;font-size:11px}
+ .math-pattern-details dl,.math-pattern-details p{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+ .math-pattern-view *{animation:none!important;transition:none!important}
+}
