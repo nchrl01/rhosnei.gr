@@ -3,7 +3,7 @@ import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=53';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=53';
-import {createEngineView} from './engine-view.js?v=53';
+import {createEngineView} from './engine-view.js?v=54';
 import {hardstyleActive} from './hardstyle-state.js?v=53';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=53';
 import {createMathPatterns,mathIdentity,MATH_SLOT_COUNT} from './math-patterns.js?v=53';
@@ -134,7 +134,7 @@ function updateReplayUI(m){
  const active=replay.state.active,source=m.replay?.source;
  $('replay-live').disabled=!active;
  $('replay-play').disabled=!(chart.renderedBars?.length);
- $('replay-play').textContent=active&&playing?'Ⅱ Pause':replay.state.ended?'↻ Replay':'▶ Replay';
+ $('replay-play').textContent=active&&playing?'Ⅱ Pause':replay.state.ended?'↻ Replay':'▶︎ Replay';
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?(replay.state.ended?'END':playing?'REPLAY':'PAUSED')+' · '+rate+'×':'LIVE';
  $('replay-info').textContent=!active?'Live trades trigger contextual piano chords. Replay freezes the loaded candles and writes a repeatable candle score.':'Repeatable candle interpretation: one contextual piano chord per completed candle. These notes are generated from OHLC, not reconstructed historical trades. Historical cap uses frozen snapshot supply.';
@@ -300,7 +300,7 @@ async function closeAudio(){
  if(runtime)await runtime.close();await context?.close();
 }
 function setPlayState(active){
- const button=$('play');button.dataset.playing=String(active);button.textContent=active?'Ⅱ Pause':'▶ Listen';
+ const button=$('play');button.dataset.playing=String(active);button.textContent=active?'Ⅱ Pause':'▶︎ Listen';
  button.setAttribute('aria-label',active?'Pause audio':'Listen to market');button.setAttribute('aria-pressed',String(active));
 }
 setPlayState(false);
@@ -498,7 +498,7 @@ function audioContext(){
   context.onstatechange=()=>{
    if(context!==ctx||!playing)return;
    if(context.state==='running'){flushPianoTrade();setPlayState(true);}
-   else{mathPatterns.stop();$('play').textContent='▶ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
+   else{mathPatterns.stop();$('play').textContent='▶︎ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
    audioStatus();
   };
  }
