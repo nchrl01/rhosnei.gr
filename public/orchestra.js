@@ -1,9 +1,10 @@
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
-export function orchestraTempo(m){const cap=Number(m.context?.latestCap);if(!Number.isFinite(cap)||cap<=0)return 120;if(cap<=10000)return 10;if(cap>=10000000)return 200;return Math.round(cap<=1000000?10+90*Math.log10(cap/10000)/2:100+100*Math.log10(cap/1000000));}
+// Informational trade cadence; the piano is triggered by events, not this clock.
+export function orchestraTempo(m){return Math.round(Math.max(0,Number(m.tradeRate)||0)*60);}
 export const ORCHESTRA_LAYERS=['melody','ambience'];
 export const ORCHESTRA_BUNDLES={envion:['melody'],ambience:['ambience']};
 export function createOrchestraConductor(){
- let ticks=0,lastTime=null,level=0,enabled=true,strings=false;
+ let ticks=0,lastTime=null,level=0,enabled=false,strings=false;
  return {
   observe(name,value){if(name==='generation'&&Number.isFinite(value))ticks=Math.max(0,value);},
   setBundle(name,value){if(name==='envion')enabled=Boolean(value);if(name==='ambience')strings=Boolean(value);},

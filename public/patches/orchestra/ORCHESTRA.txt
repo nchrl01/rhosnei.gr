@@ -1,7 +1,11 @@
 AV / MARKET INSTRUMENT
 
-Active sources: original Envion 5.2,
-and an independently authored hardstyle kick inspired by GrundTon's demo:
+The default website source is the CC0 sampled Web Audio trade piano:
+one chord per decoded trade; trade arrival frequency is rhythm; market cap
+controls resonance. See ../../trade-piano.js and ../../samples/piano/.
+
+This optional Pd graph contains original Envion 5.2 and an independently
+authored hardstyle kick inspired by GrundTon's demo, both OFF by default:
 https://www.youtube.com/watch?v=v5btDT3sjao
 The kick uses pitch decay and successive filtering/distortion stages; it is
 an approximation, not the original patch or recorded video audio.
@@ -11,7 +15,8 @@ Every four bars, market activity/pressure gives a 15–45% chance of a short
 four-beat phrase, followed by at least twelve beats of rest.
 Below the threshold, unavailable cap or stale signals close its trigger gate.
 History playback uses the chart's estimated historical capitalization.
-Market cap tempo: $10k=10 BPM, $1m=100 BPM, $10m=200 BPM.
+Optional Pd tempo follows trade cadence, bounded to 10–240 BPM. The default
+piano is event-driven and does not use the Pd clock.
 
 Harmonic strings are OFF by default at the user's request. They can be restored
 explicitly in pdata. They use sustained partials, slow detuning and stereo delay.

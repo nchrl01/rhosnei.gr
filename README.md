@@ -5,19 +5,35 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
 ## Active instruments
 
-Envion 5.2 is the main sound source. The original source, 44 samples,
-19 envelope banks and authored effects run in the full Pure Data browser engine.
+The default instrument is the CC0 VSCO 2 CE soft upright piano, played through
+Web Audio. Each accepted decoded swap triggers one three-note chord immediately
+on receipt. Chords are not quantized to a metronome. The displayed trade cadence
+is accepted trades received in the last 30 seconds, expressed per minute.
+Snapshots and generic pool transactions do not trigger piano notes. Provider
+polling and caching can deliver chords in bursts; this does not remove feed delay.
+
+Market cap controls resonance on a logarithmic scale: $10k or less = 0%,
+$1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.5 to 2.5
+and room-reverb amount from 0 to 0.4. Unknown cap leaves the piano dry.
+These are sound-design mappings, not physical measurements of resonance.
+
+Envion, synthetic harmonic strings and hardstyle are OFF by default and can be
+restored separately via `pdata`. The violin research output is not in the site.
+Envion's original source, 44 samples, 19 envelope banks and authored effects
+remain available in the full Pure Data browser engine.
 ZERO100, polyrhythms, resonant banks, synthesized percussion, external Freeverb,
 external feedback delays and genotype are removed from the published host graph.
 Source studies under `native/` are archival; they are not loaded by the app.
 
-Above $1m market cap, an independent hardstyle kick can play occasional four-beat
+If explicitly restored, above $1m market cap an independent hardstyle kick can play occasional four-beat
 phrases with at least twelve beats of rest. Activity and pressure give each
 four-bar opportunity a 15–45% chance. Harmonic-string ambience is off by default;
 it can be restored explicitly under `pdata`. Each bundle can be removed there.
 The harmonic-string patch is original Pd synthesis, not CoDiCodec inference.
 
-Market cap sets tempo: $10k = 10 BPM, $1m = 100 BPM, $10m = 200 BPM.
+The old market-cap-to-tempo mapping has been replaced by trade cadence.
+Optional Pd sources use a bounded 10–240 BPM cadence-derived clock; the default
+piano has no clock, so no trades means no new chords (existing notes can decay).
 The market controls Envion's envelope sequence, playback speed, Nuke, grains, pan,
 echo, internal reverb and smoothed output gain. Chart pan/zoom do not schedule sound.
 Listening volume starts at 50%; the volume button at the right of the single-line trending header opens a 0–100% slider. Clicking a trending coin loads its market and starts playback.
@@ -25,6 +41,16 @@ The interface has no dot grid. Enter `pdata` and submit to show/hide Pure Data.
 
 Chart, token lookup, market feeds and recording remain available.
 Recording includes a separate session log; deterministic replay is not implemented.
+
+Piano history replay only uses trades captured during the current market visit,
+at their receipt times. At most 20,000 trades are retained; switching market clears
+them. OHLC candles cannot supply missing trade events. Pausing or seeking clears
+active voices and room tails; returning live never replays a backlog. Busy bursts
+are limited to 48 simultaneous piano voices, replacing oldest tails as necessary.
+Shared volume and audio recording include both the piano and any restored Pd sources.
+The piano uses samples resampled to 24 kHz stereo PCM16 with up to ten-second tails.
+Source, license and mapping records are in `public/samples/piano/`.
+Rebuild them with the local audio Python environment and `build-piano.py`.
 
 ## Run and deploy
 
