@@ -14,11 +14,14 @@ function parsePatch(source){
  }
  return {nodes,wires};
 }
-export function createEngineView(container){
- container.innerHTML=`<details class="engine-panel" open><summary>LIVE ENGINE / PURE DATA</summary><p class="engine-note">Read-only view of the real patch files. Click a subpatch to look inside. Controls are values sent to the engine; feedback comes back from Pd.</p><div class="engine-status"><span data-state>Paused</span><span data-feedback>No engine feedback yet</span><span data-source>Loading patch sources…</span></div><div class="engine-overview"><dl data-market></dl><div><small>CONTROLS SENT TO PD</small><dl data-controls></dl></div><div><small>FEEDBACK FROM PD</small><dl data-events></dl></div></div><div class="engine-toolbar"><label>Inspect patch <select data-patch aria-label="Inspect a Pure Data patch"></select></label><button type="button" data-home>Top-level patch</button><a data-download download>Download this patch ↗</a></div><p class="engine-note" data-caption></p><div class="engine-graph" role="region" tabindex="0" aria-label="Scrollable read-only Pure Data patch"><svg data-graph role="img" aria-label="Pure Data objects and connections"></svg></div><details class="engine-source"><summary>Patch source</summary><pre data-code></pre></details><details class="engine-console"><summary>Pd console</summary><pre data-log>No console messages yet.</pre></details></details>`;
+export function createEngineView(container,{onBundle=()=>{}}={}){
+ container.innerHTML=`<details class="engine-panel" open><summary>LIVE ENGINE / PURE DATA</summary><p class="engine-note">Read-only view of the real patch files. Click a subpatch to look inside. Controls are values sent to the engine; feedback comes back from Pd.</p><div class="engine-status"><span data-state>Paused</span><span data-feedback>No engine feedback yet</span><span data-source>Loading patch sources…</span></div><section class="engine-bundles" aria-label="Pure Data instrument bundles"><small>INSTRUMENT BUNDLES</small><p>Enable or remove a complete Pd source from the automatic orchestra.</p><div data-bundles></div></section><div class="engine-overview"><dl data-market></dl><div><small>CONTROLS SENT TO PD</small><dl data-controls></dl></div><div><small>FEEDBACK FROM PD</small><dl data-events></dl></div></div><div class="engine-toolbar"><label>Inspect patch <select data-patch aria-label="Inspect a Pure Data patch"></select></label><button type="button" data-home>Top-level patch</button><a data-download download>Download this patch ↗</a></div><p class="engine-note" data-caption></p><div class="engine-graph" role="region" tabindex="0" aria-label="Scrollable read-only Pure Data patch"><svg data-graph role="img" aria-label="Pure Data objects and connections"></svg></div><details class="engine-source"><summary>Patch source</summary><pre data-code></pre></details><details class="engine-console"><summary>Pd console</summary><pre data-log>No console messages yet.</pre></details></details>`;
  const get=selector=>container.querySelector(selector),select=get('[data-patch]'),svg=get('[data-graph]');
  let files={},manifest=null,selected='market.pd',loaded=false,lastFeedback=0,lastPaint=0,view={},transport=null,disposed=false;
- const controls=new Map(),events=new Map(),messages=[];
+ const controls=new Map(),events=new Map(),messages=[],bundleState={gameta:true,zero100:true,percussion:true,envion:true};
+ const bundleLabels={gameta:'Gameta / strings + pads',zero100:'ZERO100 / tonal system',percussion:'Perc Generator',envion:'Envion'};
+ const bundleHost=get('[data-bundles]');
+ for(const [name,label] of Object.entries(bundleLabels)){const button=document.createElement('button');button.type='button';button.dataset.bundle=name;button.onclick=()=>{bundleState[name]=!bundleState[name];button.setAttribute('aria-pressed',String(bundleState[name]));button.textContent=(bundleState[name]?'Remove ':'Restore ')+label;onBundle(name,bundleState[name]);};button.setAttribute('aria-pressed','true');button.textContent='Remove '+label;bundleHost.append(button);}
  const row=(name,value)=>{const fragment=document.createDocumentFragment(),term=document.createElement('dt'),definition=document.createElement('dd');term.textContent=name;definition.textContent=value;fragment.append(term,definition);return fragment;};
  const table=(selector,items)=>{const node=get(selector);node.replaceChildren(...items.map(([name,value])=>row(name,value)));};
  function draw(name){
@@ -37,7 +40,7 @@ export function createEngineView(container){
    const label=document.createElementNS(NS,'text');label.setAttribute('x',node.kind==='text'?0:6);label.setAttribute('y',15);label.setAttribute('class',node.kind==='text'?'pd-comment':'pd-label');label.textContent=node.kind==='text'?node.label:node.label.length>44?node.label.slice(0,41)+'…':node.label;group.append(label);
    const hint=document.createElementNS(NS,'title');hint.textContent=node.label+(target&&files[target]?' — click to inspect':'');group.append(hint);svg.append(group);
   }
-  get('[data-code]').textContent=source;get('[data-download]').href=(name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=40';
+  get('[data-code]').textContent=source;get('[data-download]').href=(name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=42';
   get('[data-caption]').textContent=`${name} · ${wires.length} connections · ${loaded&&!view.native?'sources used by this browser engine':view.native?'published preview; native patch contents cannot be read from the desktop':'published source preview'} · scroll to explore`;
  }
  function setFiles(incoming,info,isLoaded=false){
@@ -48,8 +51,8 @@ export function createEngineView(container){
  }
  select.onchange=()=>draw(select.value);get('[data-home]').onclick=()=>draw(manifest?.entry||'market.pd');
  async function preview(){try{
-  const response=await fetch('patches/orchestra/manifest.json?v=40');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
-  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch((name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=40');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
+  const response=await fetch('patches/orchestra/manifest.json?v=42');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
+  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch((name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=42');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
   if(!disposed&&!loaded)setFiles(Object.fromEntries(entries),info);
  }catch(error){if(!disposed&&!loaded)get('[data-source]').textContent=error.message;}}
  function paint(force=false){

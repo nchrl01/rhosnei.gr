@@ -1,6 +1,6 @@
 AV / ENVION ONLY
 
-The browser runs the supplied original Envion 5.2 source, including its samples,
+The browser runs four Pd sources under one market clock: the supplied original Envion 5.2 source, Gameta strings and pads, ZERO100 tonal voices, and Perc Generator percussion.
 envelope banks, Nuke, grain processing, stereo routing and authored effects.
 No ZERO100 tonal bank, polyrhythm bank, resonant bank, Perc Generator,
 external Freeverb, external feedback delay, pad or genotype is instantiated.

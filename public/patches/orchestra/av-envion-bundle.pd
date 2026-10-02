@@ -1,0 +1,18 @@
+#N canvas 80 80 620 360 12;
+#X text 25 15 Envion stereo bundle / one gain for the entire authored patch.;
+#X obj 25 55 av-envion;
+#X obj 285 55 r envion;
+#X obj 285 85 pack f 50;
+#X obj 285 115 line~;
+#X obj 25 155 *~;
+#X obj 245 155 *~;
+#X obj 25 205 outlet~;
+#X obj 245 205 outlet~;
+#X connect 1 0 5 0;
+#X connect 1 1 6 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 4 0 5 1;
+#X connect 4 0 6 1;
+#X connect 5 0 7 0;
+#X connect 6 0 8 0;
