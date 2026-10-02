@@ -13,7 +13,7 @@ import {subscribeOrca} from './orca.js?v=1';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=1';
 import {startTrending} from './trending.js?v=1';
-import {MarketChart} from './chart.js?v=19';
+import {MarketChart} from './chart.js?v=28';
 import {loadHistory} from './history.js?v=28';
 import {pollPoolTrades} from './trades.js?v=5';
 const $=id=>document.getElementById(id);
