@@ -28,7 +28,10 @@ export function createPianoPolicy(seed=0){
    if(event.historical&&event.volume===0)return null;
    const gap=quietAt-(lastTrade??started);lastTrade=Math.max(lastTrade??quietAt,quietAt);
    const move=(price/anchor-1)*100;
-   if(Math.abs(move)+1e-9>=PIANO_MOVE_PCT)return select(price,at,music,'movement',quietAt);
+   // A cached burst or overdue replay batch cannot strike many notes at once.
+   // Suppressed observations leave the price anchor intact for the next move.
+   const spacing=Math.max(600,60000/Math.max(40,Math.min(140,Number(music.tempo)||40)));
+   if(Math.abs(move)+1e-9>=PIANO_MOVE_PCT&&(lastNote===null||quietAt-lastNote>=spacing))return select(price,at,music,'movement',quietAt);
    if(!event.historical&&gap>=PIANO_QUIET_MS&&(lastNote===null||quietAt-lastNote>=quietSpacing()))return select(price,at,music,'quiet',quietAt);
    return null;
   },

@@ -1,46 +1,75 @@
 {
   "instrument": "VSCO 2 CE soft upright piano",
   "license": "CC0-1.0",
+  "sampleRate": 16000,
+  "channels": 1,
+  "bitDepth": 16,
+  "maxSeconds": 6,
+  "peak": 0.65,
   "files": [
     {
       "file": "piano-45.wav",
       "midi": 45,
-      "source": "Player_dyn1_rr1_012.wav"
+      "source": "Player_dyn1_rr1_012.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-49.wav",
       "midi": 49,
-      "source": "Player_dyn1_rr1_014.wav"
+      "source": "Player_dyn1_rr1_014.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-53.wav",
       "midi": 53,
-      "source": "Player_dyn1_rr1_016.wav"
+      "source": "Player_dyn1_rr1_016.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-57.wav",
       "midi": 57,
-      "source": "Player_dyn1_rr1_018.wav"
+      "source": "Player_dyn1_rr1_018.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-61.wav",
       "midi": 61,
-      "source": "Player_dyn1_rr1_020.wav"
+      "source": "Player_dyn1_rr1_020.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-65.wav",
       "midi": 65,
-      "source": "Player_dyn1_rr1_022.wav"
+      "source": "Player_dyn1_rr1_022.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-69.wav",
       "midi": 69,
-      "source": "Player_dyn1_rr1_024.wav"
+      "source": "Player_dyn1_rr1_024.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     },
     {
       "file": "piano-73.wav",
       "midi": 73,
-      "source": "Player_dyn1_rr1_026.wav"
+      "source": "Player_dyn1_rr1_026.wav",
+      "trim": 1,
+      "seconds": 6.0,
+      "bytes": 192044
     }
   ]
 }

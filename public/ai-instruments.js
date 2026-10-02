@@ -29,12 +29,21 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
  };
 }
 export function createCoinVoice({onStatus=()=>{}}={}){
- let ctx,destination,master,input,space,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=false,source=null,lastClock=null,elapsed=0,next=12,cache=new Map(),retryAt=0;
+ let ctx,destination,master,input,space,speechGate,clearTimer,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=false,source=null,tailActive=false,lastClock=null,elapsed=0,next=12,cache=new Map(),retryAt=0;
  const runner=backgroundModel('./voice-ai-worker.js?v=58',onStatus,240000);
- function hush(){if(source){try{source.stop();}catch{}source.disconnect();source=null;}space?.clear();}
+ // A silent frame must not rebuild a long stereo convolution every 150 ms.
+ // Clear only once after actual speech or its tail has entered this room.
+ function hold(param,time){if(param.cancelAndHoldAtTime)param.cancelAndHoldAtTime(time);else{const value=param.value;param.cancelScheduledValues(time);param.setValueAtTime(value,time);}}
+ function hush(){
+  if(!tailActive&&!source)return;
+  tailActive=false;const retiring=source;source=null;
+  const time=ctx.currentTime;hold(speechGate.gain,time);speechGate.gain.linearRampToValueAtTime(0,time+.025);
+  if(retiring)try{retiring.stop(time+.03);}catch{}
+  clearTimeout(clearTimer);clearTimer=setTimeout(()=>{clearTimer=null;retiring?.disconnect();space?.clear();},50);
+ }
  function update(){if(master&&ctx)master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.03);}
  return {
-  attach(context,out){if(ctx===context)return;ctx=context;destination=out;master=ctx.createGain();master.gain.value=0;master.connect(destination);space=createVoiceReverb(ctx,master);input=space.input;update();},
+  attach(context,out){if(ctx===context)return;ctx=context;destination=out;master=ctx.createGain();master.gain.value=0;master.connect(destination);speechGate=ctx.createGain();speechGate.gain.value=0;speechGate.connect(master);space=createVoiceReverb(ctx,speechGate);input=space.input;update();},
   setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=12+seed%8;onStatus('Coin whisper · loads with Listen');},
   setMaster(value){volume=Math.max(0,Math.min(1,Number(value)||0));update();},
   setEnabled(value){enabled=Boolean(value);update();if(!enabled)hush();else if(running)void this.prepare();},
@@ -59,8 +68,9 @@ export function createCoinVoice({onStatus=()=>{}}={}){
    if(!moving||!audible||volume===0){hush();return;}
    if(!buffer){void this.prepare();return;}
    if(elapsed<next||source)return;
-   source=ctx.createBufferSource();source.buffer=buffer;const spoken=source;source.onended=()=>{spoken.disconnect();if(source===spoken)source=null;};source.connect(input);source.start();next=elapsed+110+seed%50;
+   clearTimeout(clearTimer);clearTimer=null;hold(speechGate.gain,clock);speechGate.gain.linearRampToValueAtTime(1,clock+.02);
+   source=ctx.createBufferSource();source.buffer=buffer;const spoken=source;source.onended=()=>{spoken.disconnect();if(source===spoken)source=null;};source.connect(input);source.start();tailActive=true;next=elapsed+110+seed%50;
   },
-  close(){this.setRunning(false);runner.stop();epoch++;buffer=null;loading=false;space?.close();space=null;master?.disconnect();master=null;input=null;ctx=null;},
+  close(){this.setRunning(false);clearTimeout(clearTimer);clearTimer=null;runner.stop();epoch++;buffer=null;loading=false;space?.close();space=null;speechGate?.disconnect();speechGate=null;master?.disconnect();master=null;input=null;ctx=null;},
  };
 }

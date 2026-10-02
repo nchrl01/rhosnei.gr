@@ -57,11 +57,11 @@ note selection uses the seed and candle context. Envion reseeds each four-candle
 granular textures and asynchronous sample arrival can still vary. A shared score
 starts its context from its included candles; use the audio take for exact fidelity. Pausing or seeking clears
 active voices and room tails; returning live never replays a backlog. Busy bursts
-are limited to 32 simultaneous piano voices, replacing oldest tails as necessary.
+are limited to six active piano voices, replacing oldest tails as necessary.
 Shared volume and audio recording include both the piano and enabled Pd sources.
-The piano uses samples resampled to 24 kHz stereo PCM16 with up to ten-second tails.
-Decoded samples receive per-note playback trims toward a 0.65 peak (at most 12×),
-before note dynamics and master volume. This corrects the quiet source recordings
+The piano uses samples resampled to 16 kHz mono PCM16 with six-second tails.
+Samples are normalized offline toward a 0.65 peak before note dynamics and master
+volume, avoiding decoded-sample scans during playback startup. This corrects the quiet source recordings
 while retaining the soft-note envelopes.
 Source, license and mapping records are in `public/samples/piano/`.
 Rebuild them with the local audio Python environment and `build-piano.py`.
@@ -337,3 +337,36 @@ The global gain and listening slider are unchanged. Shared scores declare engine
 
 Syntax checks passed for the changed JavaScript. No new listening or runtime
 checks were run for this update.
+
+## Lighter piano, click-safe releases and fine coin art (v59)
+
+The eight sampled pitches now total 1,536,352 bytes (about 79% less than the prior
+7,390,288-byte stereo pack). Mono/shortening reduces decoded 48 kHz sample memory
+from roughly 29.6 MB to 9.2 MB; lower WAV rate alone would not reduce decoded RAM.
+The original sample sources and CC0 license remain. Rebuild with
+`native/codicodec/.venv/bin/python build-piano.py`.
+
+Normal releases and stolen voices ramp fully to zero before stopping. Six active
+voices can overlap; fading replacements live only for their 35 ms release. Piano
+room length is 2.2 seconds, and resets clear it behind a briefly closed output
+gate. The coin voice clears its longer room only after actual speech/tail; quiet
+frames no longer rebuild convolution repeatedly. Voice interruptions fade out for
+25 ms before stopping/clearing, preventing arbitrary-phase waveform cuts. Unchanged
+cap values do not
+continually reschedule filter automation. Movement attacks have at least one beat
+of spacing (minimum 600 ms), checked before the price anchor advances.
+
+Authored piano phrasing advances the existing four-stage harmony with accepted
+notes, holds its character through that phrase, prefers nearby pitches and avoids
+long repeated-note runs. Coin-seeded 12–28 ms onset variation and ±6% touch
+variation are repeatable; finite arpeggios freeze their harmony at phrase start.
+References: https://github.com/tonejs/tone.js/wiki/Events and
+https://magenta.tensorflow.org/performance-rnn . No extra model/runtime is installed.
+
+Coin art no longer uses the SVG Bayer threshold that could stamp a rectangle on
+iOS. Pixel-readable artwork uses fine serpentine error diffusion once per image;
+CORS-blocked artwork keeps a recognizable grayscale source with a soft CSS fade.
+Image reveal animates opacity instead of recalculating dithering on every frame.
+
+Source review and syntax checks completed. The reported iPhone crackling and new
+image appearance have not been verified on the physical phone.
