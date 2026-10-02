@@ -1,4 +1,5 @@
 // CC0 sampled piano. Only an explicit trade() call creates a chord.
+import {pianoHarmony} from './music-context.js?v=52';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
 async function loadSampleAsset(path,format){
@@ -62,14 +63,13 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
   reset(value=seed){clear();seed=Number(value)>>>0;index=0;},
   resonance(cap){const r=marketResonance(cap);filter.Q.setTargetAtTime(.5+2*r,ctx.currentTime,.6);wet.gain.setTargetAtTime(.2+.22*r,ctx.currentTime,.6);return r;},
-  trade(event,cap){
+  trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
    // Stable, consonant voicings change slowly; arrival timing remains untouched.
-   const root=48+seed%5,voicings=[[0,4,7],[0,7,14],[0,4,9],[0,5,9]];
-   const notes=voicings[Math.floor(index++/8)%voicings.length].map(note=>root+note);
+   const harmony=pianoHarmony(seed,event,music),notes=harmony.notes;
    const time=ctx.currentTime+.008;
-   const dynamics=.34/(1+voices.size/18);
+   const dynamics=.4*(.5+.5*unit(music.intensity))/(1+voices.size/18)/Math.sqrt(notes.length/3);
    for(const midi of notes){
     while(voices.size>=48)stopVoice(voices.values().next().value);
     const sample=samples.reduce((a,b)=>Math.abs(a.midi-midi)<=Math.abs(b.midi-midi)?a:b);
@@ -78,7 +78,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{}}={}){
     gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(dynamics*sample.trim,time+.012);gain.gain.setTargetAtTime(0,time+duration-.2,.045);
     source.connect(gain);gain.connect(input);const voice={source,gain};voices.add(voice);source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(time+duration);
    }
-   onVoice({id:event.id,notes,resonance:marketResonance(cap),at:Date.now()});return true;
+   onVoice({id:event.id,notes,harmony,resonance:marketResonance(cap),at:Date.now()});return true;
   },
   close(){closed=true;clear();for(const node of [input,filter,dry,wet,room,master])node.disconnect();},
  };

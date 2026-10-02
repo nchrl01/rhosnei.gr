@@ -402,7 +402,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
       }
  current = model.root; trail = [current]; values.clear(); pending.clear(); fitting = true; render(); },
     receive(receiver, data) { if (destroyed) return; pending.set(String(receiver), Array.isArray(data) ? data : [data]); if (!frame) frame = requestAnimationFrame(flush); },
-    setScopes(data){for(const [id,channels] of Object.entries(data))scopeValues.set(id,channels);drawScopes();},
+    setScopes(data){for(const [id,channels] of Object.entries(data))scopeValues.set(id,channels);if(!container.hidden)drawScopes();},
     receiveCanvas(id,data){canvasValues.set(id,data);canvasViews.get(id)?.(data);},
     setPerformance(text,active,loading) { performanceStatus.textContent=(active?'Playing '+active+' · ':'')+(loading?'Loading next sound · ':'')+text; },
     setStatus(text) { status.textContent = String(text); },

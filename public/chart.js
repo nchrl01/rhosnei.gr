@@ -1,6 +1,6 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
-import {candleEnd} from './market-replay.js?v=33';
-import {createChartTicks} from './chart-ticks.js?v=33';
+import {candleEnd} from './market-replay.js?v=52';
+import {createChartTicks} from './chart-ticks.js?v=52';
 
 // One series per view, with provider candles and explicitly partial live observations.
 export class MarketChart{
@@ -39,7 +39,7 @@ export class MarketChart{
  bindReplay(readState,isPlaying){
   this.readReplay=readState;this.replayIsPlaying=isPlaying;
   this.playhead=document.getElementById('replay-playhead');
-  const animate=()=>{if(!document.hidden)this.followReplay();this.replayFrame=requestAnimationFrame(animate);};
+  const animate=now=>{if(!document.hidden&&now-(this.lastReplayPaint||0)>=32){this.lastReplayPaint=now;this.followReplay();}this.replayFrame=requestAnimationFrame(animate);};
   this.replayFrame=requestAnimationFrame(animate);
  }
  replayLogical(at){
@@ -66,7 +66,7 @@ export class MarketChart{
   const logical=this.replayLogical(cursor),range=scale.getVisibleLogicalRange();
   if(logical==null||!range)return;
   const span=Math.max(2,range.to-range.from),middle=(range.from+range.to)/2;
-  if(Math.abs(middle-logical)>.00001){
+  if(Math.abs(middle-logical)>span/Math.max(1,width)*.35){
    this.manual=true;this.needsFit=false;
    scale.setVisibleLogicalRange({from:logical-span/2,to:logical+span/2});
   }
@@ -96,11 +96,19 @@ export class MarketChart{
  }
  add(point){
   if(!(point.price>0)||!Number.isFinite(point.price))return;this.points.push(point);this.received++;this.lastReceived={...point,receivedAt:Date.now()};
-  if(this.points.length>3600){this.points.shift();this.rebuild=true;}
+  if(this.points.length>3600){this.points.splice(0,this.points.length-3000);this.rebuild=true;}
   if(!this.rebuild)this.merge(point);this.schedule();
  }
  remove(id){this.points=this.points.filter(p=>p.id!==id);this.rebuild=true;this.schedule();}
- retime(id,at){if(!Number.isFinite(at))return;const point=this.points.find(p=>p.id===id);if(point){point.at=at;this.rebuild=true;this.schedule();}}
+ retime(id,at){
+  if(!Number.isFinite(at))return;const point=this.points.find(p=>p.id===id);if(!point||point.at===at)return;
+  const oldTime=Math.floor(point.at/this.interval)*this.interval,newTime=Math.floor(at/this.interval)*this.interval;point.at=at;
+  if(oldTime!==newTime||this.rebuild){this.rebuild=true;this.schedule();return;}
+  const base=this.history.find(bar=>bar.time===oldTime);
+  if(base)this.buckets.set(oldTime,{...base,observedThrough:base.observedThrough??base.time+this.interval,lastAt:(base.observedThrough??base.time+this.interval)-1});else this.buckets.delete(oldTime);
+  for(const observation of this.points.filter(p=>Math.floor(p.at/this.interval)*this.interval===oldTime).sort((a,b)=>a.at-b.at))this.merge(observation);
+  this.dirty.add(oldTime);this.schedule();
+ }
  draw(){
   this.revision=(this.revision||0)+1;
   const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
@@ -110,11 +118,12 @@ export class MarketChart{
   const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});
   const volume=b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#cccccc':'#555555'}:{time:b.time/1000};
   const last=bars.at(-1).time;
-  if(this.rebuild||[...this.dirty].some(t=>t<last)){
+  if(this.rebuild||[...this.dirty].some(time=>time<last&&!this.publishedTimes?.has(time))){
    const gap=this.origin&&this.origin<bars[0].time?[{time:Math.floor(this.origin/1000)}]:[];
    this.candles.setData([...gap,...bars.map(candle)]);this.line.setData([...gap,...bars.map(b=>({time:b.time/1000,value:b.close}))]);this.volume.setData([...gap,...bars.map(volume)]);
+   this.publishedTimes=new Set(bars.map(bar=>bar.time));
    if(visible&&!this.needsFit)scale.setVisibleRange(visible);
-  }else if(this.dirty.size){const bar=bars.at(-1);this.candles.update(candle(bar));this.line.update({time:last/1000,value:bar.close});this.volume.update(volume(bar));}
+  }else if(this.dirty.size){for(const time of [...this.dirty].sort((a,b)=>a-b)){const bar=this.buckets.get(time);if(!bar)continue;const historical=time<last;this.candles.update(candle(bar),historical);this.line.update({time:time/1000,value:bar.close},historical);this.volume.update(volume(bar),historical);this.publishedTimes?.add(time);}}
   this.rebuild=false;this.dirty.clear();
   if(this.readReplay?.().active){this.followReplay();}
   else if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}

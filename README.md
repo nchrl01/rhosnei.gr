@@ -6,9 +6,10 @@ The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 ## Active instruments
 
 The piano is the CC0 VSCO 2 CE soft upright piano, played through
-Web Audio. Each accepted decoded swap triggers one three-note chord immediately
-on receipt. Chords are not quantized to a metronome. The displayed trade cadence
-is accepted trades received in the last 30 seconds, expressed per minute.
+Web Audio. Each accepted decoded swap triggers one contextual chord immediately
+on receipt. Chords are not quantized to a metronome. Stable timestamp/seed-based
+progressions express serene, hopeful, confident, reflective, bittersweet, tense
+or restless movement. These characters are artistic interpretations, not predictions.
 Snapshots and generic pool transactions do not trigger piano notes. Provider
 polling and caching can deliver chords in bursts; this does not remove feed delay.
 
@@ -31,20 +32,26 @@ phrases with at least twelve beats of rest. Activity and pressure give each
 four-bar opportunity a 15–45% chance. Each remaining bundle can be removed
 separately under `pdata`.
 
-The old market-cap-to-tempo mapping has been replaced by trade cadence.
-Envion and standalone hardstyle use a bounded 10–240 BPM cadence-derived clock; the
-piano has no clock, so no trades means no new chords (existing notes can decay).
+Ensemble tempo follows 40–140 BPM contextual movement: absolute five-minute
+percentage change, movement relative to recent median candle volatility, and a
+logarithmic market-cap weight. Quiet/small markets are gentler. Hardstyle also
+requires intensity above 20%. Live piano remains trade-triggered.
 The market controls Envion's envelope sequence, playback speed, Nuke, grains, pan,
 echo, internal reverb and smoothed output gain. Chart pan/zoom do not schedule sound.
 Listening volume starts at 50%; the volume button at the right of the single-line trending header opens a 0–100% slider. Clicking a trending coin loads its market and starts playback.
 The interface has no dot grid. Enter `pdata` and submit to show/hide Pure Data.
 
-Chart, token lookup, market feeds and recording remain available.
-Recording includes a separate session log; deterministic replay is not implemented.
+Share replaces Record. Listening automatically captures a bounded five-minute
+audio take; Share downloads that exact performance and a frozen candle score.
+A replay link embeds up to 128 candles when its encoded payload is under 18,000
+characters. Longer scores remain downloadable; video export/API are future work.
 
-Piano history replay only uses trades captured during the current market visit,
-at their receipt times. At most 20,000 trades are retained; switching market clears
-them. OHLC candles cannot supply missing trade events. Pausing or seeking clears
+Piano replay generates one contextual chord per completed historical candle,
+including history from before this visit. This is an OHLC interpretation, not
+reconstructed trades. Replay freezes history and market-cap supply estimates;
+chord selection is stable per seed/candle. Envion reseeds each four-candle phrase;
+granular textures and asynchronous sample arrival can still vary. A shared score
+starts its context from its included candles; use the audio take for exact fidelity. Pausing or seeking clears
 active voices and room tails; returning live never replays a backlog. Busy bursts
 are limited to 48 simultaneous piano voices, replacing oldest tails as necessary.
 Shared volume and audio recording include both the piano and enabled Pd sources.
@@ -267,3 +274,18 @@ listening and the browser interface have not been checked for this revision.
 Provider source: https://api.geckoterminal.com/docs/index.html. Its documented
 one-minute cache means polling alone cannot produce an uncached live stream.
 No runtime timing measurements or browser checks have been run for this update.
+
+## Interface and rendering (v52)
+
+Date/time, rolling market cap and harmonic character appear beneath the coin name.
+Historical market cap is explicitly an estimate using frozen snapshot supply.
+All corners are square. Existing compact desktop/mobile layout is retained.
+The browser chart now updates existing historical candles in place, batches
+trade retention, and bounds replay scrolling to about 30 FPS. Hidden engine and
+Envion scope views skip painting. These changes reduce browser work, not upstream
+provider latency. No Python chart server has been added.
+
+Focused check: `node checks/music-context.mjs`. A headless Web Audio check also
+verified live and replay piano output, exact-audio downloads, replay-link restore,
+390px mobile overflow and square controls. The legacy `checks/integration.mjs`
+currently imports the previously removed `signal-map.js` and cannot run as-is.

@@ -1,4 +1,5 @@
 // Musical context uses fixed historical data and the latest observation.
+import {musicContext} from './music-context.js?v=52';
 // Chart viewport, drawing geometry and zoom never enter this calculation.
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 const median=values=>{const s=values.filter(Number.isFinite).sort((a,b)=>a-b);return s.length?s[Math.floor(s.length/2)]:null;};
@@ -35,6 +36,7 @@ export function contextualizeMarket(raw,{price,marketCap,snapshotPrice,history=[
  const path=points.filter(b=>b.through>=now-21600000).slice(-180).map(b=>({time:b.through,close:b.close,volume:b.volume}));
  if(price>0){const time=Math.min(now,Math.max(observedAt||now,(path.at(-1)?.time||0)+1));path.push({time,close:price,volume:0});}
  const context={pressure,pace,shock,direction,winningWindow,ratio,baseline,latestCap,impliedBaselineCap,capEstimated:latestCap!==marketCap,volumeRatio,turnover,path,historyAvailable:!!points.length,historyInterval:interval};
- return {...raw,raw:{motion:raw.motion,activity:raw.activity,volume:raw.volume},pressure,context,
+ const music=musicContext({price,rows,interval,changes,cap:latestCap,fresh:raw.fresh,now});
+ return {...raw,music,raw:{motion:raw.motion,activity:raw.activity,volume:raw.volume},pressure,context,
   motion:Math.max(raw.motion,pressure),activity:Math.max(raw.activity,.85*pressure),volume:Math.max(raw.volume,.8*pressure)};
 }

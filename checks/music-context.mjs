@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {musicContext,pianoHarmony} from '../public/music-context.js';
+import {createMarketReplay,scoreCandle} from '../public/market-replay.js';
+import {encodeScore,decodeScore} from '../public/take-share.js';
+const quiet=musicContext({cap:20000,changes:{m5:0}}),moving=musicContext({cap:20000000,changes:{m5:10}}),small=musicContext({cap:20000,changes:{m5:10}});
+assert.equal(quiet.intensity,0);assert.ok(moving.intensity>small.intensity);assert.ok(moving.tempo>quiet.tempo);
+const bars=[{time:0,open:100,high:100,low:90,close:90,volume:100},{time:60000,open:90,high:90,low:89,close:89,volume:100}];
+assert.equal(musicContext({price:89,rows:bars,interval:60000,now:120000,cap:10000000}).character,'reflective');
+const market={chainId:'ethereum',dexId:'uniswap',pairAddress:'pool',baseToken:{address:'base',name:'Base',symbol:'B'},quoteToken:{address:'quote',name:'Quote',symbol:'Q'},priceUsd:100,marketCap:10000000};
+const replay=createMarketReplay();replay.freeze(bars,market,60000);replay.seek(bars[1],60000);
+const first=replay.metrics(bars,market,60000);market.marketCap=100;bars[1].close=2;
+assert.deepEqual(replay.metrics(bars,market,60000),first);
+const frozen=replay.state.frozen;const score=scoreCandle(frozen.bars,frozen.market,60000,frozen.bars[1]);
+assert.deepEqual(pianoHarmony(42,{chordStep:1},score.music),pianoHarmony(42,{chordStep:1},first.music));
+const payload={version:1,engine:52,interval:60000,market:frozen.market,rows:frozen.bars.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume])};
+assert.deepEqual(decodeScore('#score='+encodeScore(payload)),payload);
+assert.throws(()=>decodeScore('#score='+encodeScore({...payload,market:{...payload.market,dexId:null}})));
+console.log('PASS: contextual intensity, reflective decline, frozen replay, repeatable chords, shared score validation');

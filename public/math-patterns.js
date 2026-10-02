@@ -61,14 +61,15 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
    const count=Math.max(1,slots.filter((slot,i)=>slot.enabled&&unlocked[i]).length);
    // Once unlocked, curves keep moving on fresh market controls, even when
    // individual trade events are unavailable. This does not trigger piano notes.
-   if(running&&fresh>0)beat+=Math.min(.25,elapsed)*(1.6+1.4*(1-Math.exp(-rate-clamp(m.activity))));
+   if(Number.isFinite(options.position))beat=options.position*(m.music?.tempo??40)/60;
+   else if(running&&fresh>0)beat+=Math.min(.25,elapsed)*(m.music?.tempo??40)/60;
    if(!running&&wasRunning)silence();wasRunning=running;
    const views=profile.map((pattern,i)=>{
     const state=slots[i],entered=unlocked[i];
     const allowed=enabled&&state.enabled&&running&&fresh>0&&entered;
     const emergence=clamp(cap/pattern.threshold-1);
     const phase=fract(beat/8+i/4),[raw,gate]=pattern.sample(phase),value=normalize(raw);
-    const target=allowed?(.18+.14*emergence)*fresh/Math.sqrt(count):0;
+    const target=allowed ? .28*(.04+.96*clamp(m.music?.intensity))*fresh/Math.sqrt(count):0;
     state.level+=(target-state.level)*(1-Math.exp(-dt/(target>state.level ? .12 : .35)));
     if(!running||!enabled||!state.enabled)state.level=0;
     const audibleGate=allowed?clamp(gate):0;

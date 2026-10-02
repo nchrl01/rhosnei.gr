@@ -30,7 +30,7 @@ details{border-top:1px solid #ddd;padding:12px 0}summary{font-size:12px;line-hei
 .trending-card{flex:none;width:auto;min-width:0;padding:0 14px;border-right:1px solid #111}
 .trending-pick{height:32px;min-height:32px;display:flex;align-items:center;gap:9px;border:0;padding:0;width:auto;background:transparent;white-space:nowrap}
 .trending-pick:hover:not(:disabled){background:transparent;opacity:.6}
-.trending-avatar{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#f4f4f4;font-size:10px;overflow:hidden}
+.trending-avatar{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:0;background:#f4f4f4;font-size:10px;overflow:hidden}
 .trending-avatar img{display:block;width:100%;height:100%;object-fit:contain;filter:grayscale(1)}
 .trending-name{font-size:14px;font-weight:700;line-height:20px}.trending-market-cap{font-size:14px;font-weight:400;line-height:20px;font-variant-numeric:tabular-nums}
 .volume-widget{position:relative;z-index:30;padding:0 10px;border-left:1px solid #111}
@@ -40,16 +40,16 @@ details{border-top:1px solid #ddd;padding:12px 0}summary{font-size:12px;line-hei
 
 /* Floating label stays vertically centred until the field is active. */
 #coin-form{margin:18px 0}.address-row{display:flex;align-items:center;gap:10px;margin:0;padding-top:8px}
-.address-field{position:relative;flex:1;min-width:0;height:56px;border:1px solid #d8d8d8;border-radius:12px;background:#f8f8f8;transition:border-color .24s,box-shadow .24s}
+.address-field{position:relative;flex:1;min-width:0;height:56px;border:1px solid #d8d8d8;border-radius:0;background:#f8f8f8;transition:border-color .24s,box-shadow .24s}
 .address-field:focus-within{border-color:#111;box-shadow:inset 0 0 0 .5px #111}
-#address{display:block;width:100%;min-width:0;height:100%;margin:0;padding:0 16px;border:0;border-radius:inherit;background:transparent;font-size:14px;font-weight:400;line-height:normal;color:#111;outline:none}
+#address{display:block;width:100%;min-width:0;height:100%;margin:0;padding:0 16px;border:0;border-radius:0;background:transparent;font-size:14px;font-weight:400;line-height:normal;color:#111;outline:none}
 #address:focus-visible{outline:none}
 #address-label{position:absolute;left:12px;top:50%;margin:0;padding:0 4px;background:#f8f8f8;color:#777;pointer-events:none;transform-origin:left center;transform:translateY(-50%);font-size:12px;font-weight:700;line-height:16px;letter-spacing:.03em;white-space:pre;transition:transform .42s cubic-bezier(.22,1,.36,1),color .2s}
 .address-field:focus-within #address-label,.address-field.has-value #address-label,.address-field:has(input:not(:placeholder-shown)) #address-label{transform:translateY(-50%) translateY(-28px) scale(.85);color:#666}
 .address-field:focus-within #address-label{color:#111}#address-label span{display:inline-block}
 .address-field:focus-within #address-label span{animation:address-label-hop .46s cubic-bezier(.3,.7,.3,1) both;animation-delay:calc(var(--letter)*24ms)}
 @keyframes address-label-hop{0%,100%{transform:translateY(0)}38%{transform:translateY(-3px)}}
-#load{height:44px;min-height:44px;width:44px;flex:0 0 44px;border-radius:10px;padding:0;font-size:23px;line-height:1}
+#load{height:44px;min-height:44px;width:44px;flex:0 0 44px;border-radius:0;padding:0;font-size:23px;line-height:1}
 #lookup{font-size:12px;line-height:1.5;color:#666}
 
 /* Parameters, identity, chart and transport share consistent spacing. */
@@ -121,10 +121,10 @@ details{border-top:1px solid #ddd;padding:12px 0}summary{font-size:12px;line-hei
 @media(min-width:761px){
  .market-header{min-height:40px;padding-block:4px;margin-bottom:8px}
  #coin-form{margin:8px 0}.address-row{gap:6px;padding-top:4px}
- .address-field{height:32px;border-radius:6px}#address{padding:0 10px;font-size:12px}
+ .address-field{height:32px;border-radius:0}#address{padding:0 10px;font-size:12px}
  #address-label{left:8px;font-size:9px;line-height:12px;padding-inline:3px;letter-spacing:0}
  .address-field:focus-within #address-label,.address-field.has-value #address-label,.address-field:has(input:not(:placeholder-shown)) #address-label{transform:translateY(-50%) translateY(-16px) scale(.85)}
- #load{width:26px;flex-basis:26px;height:26px;min-height:26px;border-radius:5px;font-size:16px}
+ #load{width:26px;flex-basis:26px;height:26px;min-height:26px;border-radius:0;font-size:16px}
  .instrument{margin-top:10px}.instrument-top{grid-template-columns:210px minmax(0,1fr) 66px;gap:10px;margin:10px 0 8px}
  .coin-title{gap:12px;margin-top:10px}.coin-title h2{font-size:16px;line-height:1.2}
  .coin-avatar{flex-basis:64px;width:64px;height:64px;font-size:19px}
@@ -145,28 +145,34 @@ details{border-top:1px solid #ddd;padding:12px 0}summary{font-size:12px;line-hei
  .market-header{margin:0 -20px 12px;min-height:40px;padding-block:4px}
  .trending-heading{padding-inline:10px}.trending-menu>summary{font-size:10px}.trending-card{padding-inline:10px}.trending-name,.trending-market-cap{font-size:12px}
  .volume-widget{padding-inline:6px}#volume-button{font-size:11px;padding-inline:8px;gap:5px}.trending-menu-panel{left:0}
- #coin-form{max-width:none;margin:12px 0 20px}.address-row{padding-top:6px;gap:8px}.address-field{height:44px;border-radius:8px}
+ #coin-form{max-width:none;margin:12px 0 20px}.address-row{padding-top:6px;gap:8px}.address-field{height:44px;border-radius:0}
  #address{font-size:13px;padding-inline:12px}#address-label{left:8px;font-size:10px;line-height:14px}
  .address-field:focus-within #address-label,.address-field.has-value #address-label,.address-field:has(input:not(:placeholder-shown)) #address-label{transform:translateY(-50%) translateY(-22px) scale(.85)}
- #load{width:36px;flex-basis:36px;height:36px;min-height:36px;border-radius:8px;font-size:20px}
+ #load{width:36px;flex-basis:36px;height:36px;min-height:36px;border-radius:0;font-size:20px}
  .instrument{margin-top:0}.instrument-top{display:flex;flex-direction:column;align-items:stretch;gap:22px;max-width:440px;margin:0 auto 22px}
  .coin-identity{width:100%;min-width:0}.coin-context{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:18px}
  .coin-context .eyebrow{font-size:10px}.coin-context .badge{font-size:9px;min-height:24px}
  .coin-title{display:flex;flex-direction:column;align-items:stretch;gap:20px;margin:0}
- .coin-avatar{flex:none;align-self:center;width:min(100%,72vw,32svh,320px);height:auto;aspect-ratio:1;border-radius:8px;background:#f7f7f7;font-size:72px;line-height:1}
- .coin-avatar img{padding:0;border-radius:inherit}.coin-title h2{font-size:26px;line-height:1.15;letter-spacing:-.4px}
+ .coin-avatar{flex:none;align-self:center;width:min(100%,72vw,32svh,320px);height:auto;aspect-ratio:1;border-radius:0;background:#f7f7f7;font-size:72px;line-height:1}
+ .coin-avatar img{padding:0;border-radius:0}.coin-title h2{font-size:26px;line-height:1.15;letter-spacing:-.4px}
  .chart-panel{width:100%;order:2}.coin-identity{order:1}.compact-chart-toolbar{min-height:28px;margin-bottom:4px}
  .replay-actions>button{min-height:32px;height:32px;font-size:12px;padding:6px}.chart-menu>summary{width:32px;height:32px}
  #market-chart{height:86px}.chart-ticks{margin-top:8px}#tick-position{font-size:9px}#tick-reading{font-size:10px}
  #chart-tick-row{height:44px;margin-top:4px}.chart-status{margin-top:6px;gap:8px;line-height:14px}.chart-status>span{font-size:10px}
  .transport{order:3;display:grid;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);align-items:center;gap:12px}
- .transport #play{grid-column:2;width:76px;min-width:76px;height:76px;min-height:76px;border-radius:50%;padding:0;font-size:0;gap:0;background:#111;color:#fff;border-color:#111}
+ .transport #play{grid-column:2;width:76px;min-width:76px;height:76px;min-height:76px;border-radius:0;padding:0;font-size:0;gap:0;background:#111;color:#fff;border-color:#111}
  .transport #play::before{content:'▶';font-family:Arial,sans-serif;font-size:25px;line-height:1;transform:translateX(2px)}
  .transport #play[data-playing=true]::before{content:'Ⅱ';transform:none;font-size:29px}
  .transport #play:hover:not(:disabled){background:#333}
- .transport #record{grid-column:3;justify-self:end;width:92px;min-width:0;height:44px;min-height:44px;border-radius:22px;font-size:12px;font-weight:400;padding:8px}
+ .transport #share{grid-column:3;justify-self:end;width:92px;min-width:0;height:44px;min-height:44px;border-radius:0;font-size:12px;font-weight:400;padding:8px}
  .transport #downloads{grid-column:1/-1;max-width:100%;text-align:center}
  .readings{max-width:440px;margin:0 auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px;padding:16px 0;border-color:#ddd}
  .readings small{font-size:9px}.readings strong{font-size:17px;margin-top:5px}
  .chart-menu-panel{width:min(420px,calc(100vw - 40px))}
 }
+
+/* Compact live numbers beneath the coin name. */
+.coin-copy{min-width:0;flex:1}.coin-live-readings{display:grid;gap:6px;margin-top:9px;font-variant-numeric:tabular-nums;font-size:10px;line-height:1.3}.coin-live-readings>div{display:flex;gap:5px;align-items:baseline;flex-wrap:wrap}.coin-live-readings small{display:block;flex-basis:100%;font-size:8px;font-weight:400;color:#666;letter-spacing:.03em}.coin-live-readings strong{font-weight:700;font-size:13px}.rolling-cell{display:inline-block;overflow:hidden;vertical-align:bottom;height:1.25em}.rolling-cell>span{display:inline-block;white-space:pre}#coin-progression{font-size:9px;color:#666}.coin-clock-stale{color:#888}
+*,*::before,*::after{border-radius:0!important}
+#share-dialog{width:min(420px,calc(100vw - 32px));border:1px solid #111;padding:22px;background:#fff;color:#111}#share-dialog::backdrop{background:#0005}#share-dialog h2{font-size:18px}#share-dialog p{font-size:12px;line-height:1.5}#share-dialog form{float:right}#share-dialog button{padding:9px;margin:4px 4px 4px 0}#share-files a{display:block;font-size:12px;margin:12px 0;color:#111}
+@media(max-width:760px){.coin-live-readings{grid-template-columns:1fr 1fr;font-size:12px;gap:12px}.coin-live-readings small{font-size:9px}.coin-live-readings strong{font-size:17px}.coin-live-readings>div:last-child{grid-column:1/-1}}

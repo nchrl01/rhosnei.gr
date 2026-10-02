@@ -40,7 +40,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    const label=document.createElementNS(NS,'text');label.setAttribute('x',node.kind==='text'?0:6);label.setAttribute('y',15);label.setAttribute('class',node.kind==='text'?'pd-comment':'pd-label');label.textContent=node.kind==='text'?node.label:node.label.length>44?node.label.slice(0,41)+'…':node.label;group.append(label);
    const hint=document.createElementNS(NS,'title');hint.textContent=node.label+(target&&files[target]?' — click to inspect':'');group.append(hint);svg.append(group);
   }
-  get('[data-code]').textContent=source;get('[data-download]').href=(name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=51';
+  get('[data-code]').textContent=source;get('[data-download]').href=(name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=52';
   get('[data-caption]').textContent=`${name} · ${wires.length} connections · ${loaded&&!view.native?'sources used by this browser engine':view.native?'published preview; native patch contents cannot be read from the desktop':'published source preview'} · scroll to explore`;
  }
  function setFiles(incoming,info,isLoaded=false){
@@ -51,17 +51,18 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
  }
  select.onchange=()=>draw(select.value);get('[data-home]').onclick=()=>draw(manifest?.entry||'market.pd');
  async function preview(){try{
-  const response=await fetch('patches/orchestra/manifest.json?v=51');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
-  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch((name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=51');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
+  const response=await fetch('patches/orchestra/manifest.json?v=52');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
+  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch((name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=52');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
   if(!disposed&&!loaded)setFiles(Object.fromEntries(entries),info);
  }catch(error){if(!disposed&&!loaded)get('[data-source]').textContent=error.message;}}
  function paint(force=false){
+  if(container.hidden)return;
   const now=performance.now();if(!force&&now-lastPaint<250)return;lastPaint=now;
   const active=view.playing;
   get('[data-state]').textContent=(view.native?'NATIVE PD':'BROWSER PD')+' · '+(active?'RUNNING':'PAUSED');
   get('[data-feedback]').textContent=!active?'Feedback paused':transport?.connected===false?'Native connection lost':lastFeedback?`${now-lastFeedback>3000?'STALE':'LIVE'} feedback · ${((now-lastFeedback)/1000).toFixed(1)}s ago`:'Awaiting engine feedback';
   const m=view.m||{},c=m.context||{};
-  table('[data-market]',[['Market',view.coin||'Loading'],['Feed',view.feed||'Loading'],['Market cap',c.latestCap?'$'+Math.round(c.latestCap).toLocaleString('en')+(c.capEstimated?' (estimate)':''):'Unavailable'],['Liquidity',Number.isFinite(view.liquidity)?'$'+Math.round(view.liquidity).toLocaleString('en'):'Unavailable'],['Trade cadence',`${view.bpm||0} trades/min · 30-second receipt window`],['Piano trigger','One chord per decoded trade; no fixed metronome'],['Piano resonance',c.latestCap?Math.round((view.resonance||0)*100)+'% · market cap':'Base room · market cap unavailable'],['Piano room',Math.round((.2+.22*(view.resonance||0))*100)+'% wet gain · always on'],['Piano chords',String(view.pianoChordCount||0)],['Historical intensity',pretty(m.pressure??0)],['Snapshot age',Number.isFinite(m.snapshotAge)?(m.snapshotAge/1000).toFixed(1)+'s':'—']]);
+  table('[data-market]',[['Market',view.coin||'Loading'],['Feed',view.feed||'Loading'],['Market cap',c.latestCap?'$'+Math.round(c.latestCap).toLocaleString('en')+(c.capEstimated?' (estimate)':''):'Unavailable'],['Liquidity',Number.isFinite(view.liquidity)?'$'+Math.round(view.liquidity).toLocaleString('en'):'Unavailable'],['Ensemble tempo',`${view.bpm||0} BPM · contextual percentage movement`],['Piano trigger',m.replay?'One chord per completed candle':'One chord per decoded trade'],['Piano resonance',c.latestCap?Math.round((view.resonance||0)*100)+'% · market cap':'Base room · market cap unavailable'],['Piano room',Math.round((.2+.22*(view.resonance||0))*100)+'% wet gain · always on'],['Piano chords',String(view.pianoChordCount||0)],['Historical intensity',pretty(m.music?.intensity??0)],['Snapshot age',Number.isFinite(m.snapshotAge)?(m.snapshotAge/1000).toFixed(1)+'s':'—']]);
   table('[data-controls]',controls.size?[...controls].map(([name,value])=>[name,pretty(value)]):[['Engine','No controls sent yet']]);
   table('[data-events]',events.size?[...events].map(([name,value])=>[name,pretty(value)]):[['Engine','No feedback received yet']]);
  }
