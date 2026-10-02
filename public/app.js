@@ -240,7 +240,7 @@ function tick(){
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);}
 function mathLoop(){
- const active=playing&&!replay.state.dragging&&!replay.state.ended&&(!ctx||ctx.state==='running');
+ const active=playing&&!replay.state.dragging&&!replay.state.ended&&replay.state.endHold===null&&(!ctx||ctx.state==='running');
  const frozen=replay.state.frozen,interval=frozen?.interval||chart.interval;
  const rate=replay.state.speed==='candle'?interval/1000:Number(replay.state.speed)||1;
  const position=replay.state.active?(replay.state.cursor-candleEnd((frozen?.bars||chart.renderedBars)[0]||{time:replay.state.cursor},interval))/rate/1000:undefined;
@@ -511,7 +511,7 @@ function seekHistory(bar,dragging=false){
  if(!bar)return;
  if(!playing)primeAudio();
  if(!replay.state.active){resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);}
- replayPianoPrimed=false;replayPhrase=null;
+ replayPianoPrimed=false;replayPhrase=null;mathPatterns.reset();
  replay.seek(bar,chart.interval,dragging);
  piano?.reset(seed);pianoReplayCursor=replay.state.cursor;
  session?.controls.push({at:Date.now(),name:'history-seek',cursor:replay.state.cursor,source:'loaded-candle',speed:replay.state.speed});
