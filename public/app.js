@@ -1,6 +1,7 @@
-import {signalFreshness,mixTargets} from './market-controls.js?v=17';
-import {createSignalMap} from './signal-map.js?v=17';
-import {createNativePd} from './native-pd.js?v=17';
+import {signalFreshness} from './market-controls.js?v=18';
+import {createOrchestraConductor,ORCHESTRA_LAYERS} from './orchestra.js?v=18';
+import {createSignalMap} from './signal-map.js?v=18';
+import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js';
 import {subscribePool} from './realtime.js?v=4';
 import {subscribeEvm,EVM_RPC} from './evm.js?v=5';
@@ -48,10 +49,13 @@ function displayCoinImage(){
  img.onerror=()=>{if(coinImageURL===url){img.hidden=true;fallback.hidden=false;}};
  img.src=url;
 }
-const levels={melody:0,pad:0,space:0};
+const conductor=createOrchestraConductor();
+const levels=Object.fromEntries([...ORCHESTRA_LAYERS,'space'].map(name=>[name,0]));
+let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 const signalMap=createSignalMap($('signal-map'));
-function updateSignalMap(m){signalMap.update({m,levels,bpm:Math.round(80+m.activity*70+m.volume*m.fresh*40),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'});}
-function bindSignalMap(){signalMap.reset();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','pad-note','av-string-voice','av-pad-voice'])pd.subscribe?.(name,message=>signalMap.receive(name,Number(message.values[0])));}
+function resetEnsemble(){conductor.reset();for(const name of Object.keys(levels))levels[name]=0;signalMap.reset();}
+function updateSignalMap(m){signalMap.update({m,levels,orchestra:orchestraState,bpm:Math.round(80+m.activity*70+m.volume*m.fresh*40),root:marketRoot(),master:Number($('master').value),playing,native:$('audio-output').value==='native'});}
+function bindSignalMap(){resetEnsemble();for(const name of ['av-dna','av-codon','av-phenotype','generation','note','pad-note','av-string-voice','av-pad-voice','av-tone-voice','av-poly-voice','av-perc-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);signalMap.receive(name,value);});}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
@@ -74,8 +78,10 @@ function metrics(){
  return {motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:decoded?(tradeEvents.length?buys/tradeEvents.length:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,market.liquidity?.usd||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
 }
 function syncLevels(m){
- const target=mixTargets(m,streamConnected);
- for(const name of Object.keys(levels)){levels[name]+=(target[name]-levels[name])*.2;send(name,levels[name]);$(name).value=levels[name];$(name+'-value').textContent=Math.round(levels[name]*100)+'%';}
+ orchestraState=conductor.update(m,streamConnected);
+ for(const name of Object.keys(levels)){levels[name]=orchestraState.levels[name];send(name,levels[name]);$(name).value=levels[name];$(name+'-value').textContent=Math.round(levels[name]*100)+'%';}
+ for(const [name,value] of Object.entries(orchestraState.parameters))send(name,value);
+ $('orchestra-state').textContent=orchestraState.state+' · PHRASE '+(orchestraState.phrase+1)+'/4';
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
  $('volume').textContent=market?cash(m.decoded?m.observedVolume:market.volume?.m5):'DEMO';
  $('volume-window').textContent=m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
@@ -138,9 +144,10 @@ function loop(){if(!playing)return;tick();timer=setTimeout(loop,150);}
 async function initialize(){
  if($('audio-output').value==='native'){pd=await createNativePd(e=>{status(e.message+' · press Pause and reconnect');},state=>signalMap.setTransport(state));for(const id of controls)send(id,Number($(id).value));bindSignalMap();return;}
  ctx=new AudioContext();await ctx.resume();
- const names=['market.pd','av-sequencer.pd','av-genome.pd','av-pluck.pd','av-pad.pd'];
- const files=Object.fromEntries(await Promise.all(names.map(async name=>{const r=await fetch('patches/'+name+'?v=16');if(!r.ok)throw Error('Cannot load '+name);return [name,await r.text()];})));
- pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'market.pd',workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
+ const manifestResponse=await fetch('patches/orchestra/manifest.json?v=18');if(!manifestResponse.ok)throw Error('Cannot load orchestra manifest');
+ const manifest=await manifestResponse.json();
+ const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=18');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+ pd=await createPd({audioContext:ctx,packages:['vanilla'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet.js',onPrint:text=>console.log('[Pd]',text),onError:error=>status('Audio engine: '+error.message)});
  gain=ctx.createGain();gain.gain.value=0;pd.connect(gain);gain.connect(ctx.destination);bindSignalMap();
  for(const id of controls)send(id,Number($(id).value));
 }
@@ -148,14 +155,14 @@ $('play').onclick=async()=>{
  if(starting)return;
  if(playing){playing=false;send('run',0);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status('Paused');return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!pd)await initialize();signalMap.reset();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;send('seed',seed%16777216);loop();send('run',1);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(mode==='demo'?'Playing · synthetic demo signals':'Playing · live market snapshots');}
+ try{if(!pd)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;send('seed',seed%16777216);loop();send('run',1);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(mode==='demo'?'Orchestra playing · synthetic demo signals':'Orchestra playing · market-driven arrangement');}
  catch(e){$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
  finally{starting=false;$('play').disabled=false;}
 };
 if(!['localhost','127.0.0.1'].includes(location.hostname))$('native-option').disabled=true;
 $('audio-output').onchange=async()=>{
  starting=true;$('play').disabled=true;$('audio-output').disabled=true;
- try{if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;gain=null;signalMap.reset();status($('audio-output').value==='native'?'Open av-desktop.pd · then Listen':'Browser instrument ready');}
+ try{if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;gain=null;resetEnsemble();status($('audio-output').value==='native'?'Open patches/orchestra/av-desktop.pd · then Listen':'Browser orchestra ready');}
  catch(e){status('Could not change audio output: '+e.message);}
  finally{starting=false;$('play').disabled=false;$('audio-output').disabled=false;}
 };
@@ -222,7 +229,7 @@ function applySnapshot(pair){
 }
 function chooseMarket(pair){
  signalMap.reset();generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
- mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
+ resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);state=seed;step=0;send('seed',seed%16777216);applySnapshot(pair);setupStream();loadCoinImage(pair);startHistory(pair);
  $('network').value=pair.chainId;renderPools(pair);$('last-event').textContent='Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
@@ -255,7 +262,7 @@ $('coin-form').onsubmit=async e=>{
 };
 $('network').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value);if(pair)chooseMarket(pair);};
 $('pool').onchange=()=>{const pair=discovered.find(p=>p.chainId===$('network').value&&p.pairAddress===$('pool').value);if(pair)chooseMarket(pair);};
-$('demo').onclick=()=>{signalMap.reset();imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
+$('demo').onclick=()=>{resetEnsemble();imageController?.abort();imageToken='';generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();contextCandles=[];historyContext=null;originDate=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;chart.reset();$('market-selectors').hidden=true;market=null;mode='demo';seed=1917;state=seed;step=0;send('seed',seed%16777216);display();$('history-status').textContent='Demo has no launch history';loadChartTimeframe();$('feed').textContent='Synthetic demo signals';$('last-event').textContent='No on-chain stream';$('lookup').textContent='Synthetic signals · enter a contract address for live market data';$('chart-source').textContent='Synthetic demo prices · no market feed';status(playing?'Playing · synthetic demo signals':'Demo ready');session?.controls.push({at:Date.now(),name:'demo'});};
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.textContent='Download '+name;a.style.color='var(--accent)';a.style.fontSize='11px';a.style.display='block';$('downloads').append(a);}
 const downloads=document.createElement('div');downloads.id='downloads';$('record').parentElement.after(downloads);
 $('record').onclick=()=>{
@@ -265,7 +272,7 @@ $('record').onclick=()=>{
  const destination=ctx.createMediaStreamDestination();gain.connect(destination);chunks=[];
  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm'].find(t=>MediaRecorder.isTypeSupported(t));
  recorder=new MediaRecorder(destination.stream,mime?{mimeType:mime}:undefined);
- session={version:4,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'market.pd / 003 gameta',mapping:'automatic-v6-genotype-phenotype',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
+ session={version:5,started:Date.now(),seed,randomState:state,step,mode,bpm,controls:controls.map(name=>({at:Date.now(),name,value:Number($(name).value)})),snapshots:market?[{at:Date.now(),market}]:[],events:[],patch:'orchestra/market.pd / 004 ensemble',mapping:'auto-orchestra-v1',source:streamKind,historyContext,originDate,initialObservedSwaps:tradeEvents.slice()};
  recorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data);};
  recorder.onstop=()=>{const name='AV-'+new Date(session.started).toISOString().replace(/[:.]/g,'-');download(new Blob(chunks,{type:recorder.mimeType}),name+(recorder.mimeType.includes('mp4')?'.m4a':'.webm'));download(new Blob([JSON.stringify(session,null,2)],{type:'application/json'}),name+'.json');gain.disconnect(destination);session=null;$('record').textContent='● Record';status('Recording ready to download · session log included');};
  recorder.start(1000);$('record').textContent='■ Finish';status('Recording audio and session changes…');

@@ -1,7 +1,7 @@
 // The local server forwards only whitelisted numeric controls to desktop Pd.
 export async function createNativePd(onError,onTelemetry=()=>{}){
  const health=await fetch('/pd/status',{signal:AbortSignal.timeout(2000)}).then(r=>r.ok?r.json():Promise.reject(Error('Start the local AV server to use Native Pd')));
- if(!health.connected)throw Error('Open av-desktop.pd in Pure Data first');
+ if(!health.connected||!health.orchestra)throw Error('Open patches/orchestra/av-desktop.pd in Pure Data first');
  let pending=new Map(),flight=null,closed=false,closing=false,closePromise=null,failed=false;
  const subscribers=new Map();let telemetryBusy=false;
  const telemetry=setInterval(async()=>{
@@ -10,8 +10,8 @@ export async function createNativePd(onError,onTelemetry=()=>{}){
    const r=await fetch('/pd/status',{signal:AbortSignal.timeout(1500)});
    if(!r.ok)throw Error('Native telemetry unavailable');
    const report=await r.json();if(closed||closing)return;
-   onTelemetry({connected:report.connected,running:report.state?.run===1});
-   if(!report.connected||report.state?.run!==1)return;
+   onTelemetry({connected:report.connected&&report.orchestra,running:report.state?.run===1});
+   if(!report.connected||!report.orchestra||report.state?.run!==1)return;
    for(const [name,callbacks] of subscribers){const value=report.state[name];if(Number.isFinite(value))for(const callback of callbacks)callback({receiver:name,selector:'float',values:[value]});}
   }catch{if(!closed&&!closing)onTelemetry({connected:false,running:false});}
   finally{telemetryBusy=false;}

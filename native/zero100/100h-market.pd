@@ -1,0 +1,9 @@
+#N canvas 50 50 960 480 12;
+#X text 25 15 AV / ZERO100 local-market launcher - open this instead of av-desktop.pd;
+#X obj 30 65 declare -path ../../public/patches;
+#X obj 30 110 av-bridge;
+#X obj 30 160 100h;
+#X text 30 230 Open the 100h object. Enable MARKET and DSP there.;
+#X text 30 270 localhost:4173 -> Native Pd -> choose coin -> Listen.;
+#X text 30 310 Close other AV native launchers first - only one bridge may bind UDP 3001.;
+#X text 30 350 The website signal-map voice names still describe Gameta - not this instrument.;

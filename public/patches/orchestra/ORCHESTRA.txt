@@ -1,0 +1,34 @@
+AV / AUTO ORCHESTRA
+
+Browser: enter a contract, choose its indexed pool and press Listen.
+There is one ensemble. The six meters display automatic part gain, not selectors.
+All parts share a sixteenth-note clock and the pitch family 0 2 3 5 7 9 10.
+Every 32 ticks (two bars) phrase roles change. Activity and USD volume set a
+bounded total gain budget; movement and liquidity distribute prominence.
+Mix changes use a 650 ms time constant. Missing snapshot-only signals fade.
+Master adjusts listening volume only. This is a rule-based conductor, not AI.
+
+Parts: Gameta 20 strings / 6 PWM pads; ZERO100 32 tonal lanes / 12 polyrhythms /
+8 resonant bands; Perc Generator 32 synthesized percussion voices.
+The percussion uses FM and filtered noise, not sampled breaks or ZENOLOGY.
+ZENOLOGY remains a separately hosted local plugin companion.
+
+Desktop: keep this folder together, open av-desktop.pd, enable DSP, start the
+local AV server, choose Native Pd on localhost:4173, then Listen.
+The bridge validates the orchestra version and stops after missing heartbeats.
+Do not open another market instrument alongside it: controls are global.
+
+Reference adaptations:
+Rolando Rampoldi / Gameta https://www.youtube.com/watch?v=Atttrb0hoEc
+ZeroPoint Zero / 100h https://www.youtube.com/watch?v=ziJ4md4IvKY
+ZeroPoint Zero / Perc Generator https://www.youtube.com/watch?v=CpNo7f6aMnI
+Original hidden Gen code was unavailable. DSP and transitions are independent
+approximations, not original patch ports or verified identical sound.
+GrundTon ambient breakcore https://www.youtube.com/watch?v=xZMCVewUXCY remains
+an aesthetic reference; its original patch and drum samples are not bundled.
+No reference video audio, commercial plugin, or preset is distributed.
+
+Rebuild: python3 build-orchestra.py (in the project root).
+Runtime check: node checks/orchestra.mjs uses the actual embedded browser WASM.
+Voice pulses report actual Pd triggers/envelopes. L/R meters measure output.
+Native telemetry is sampled and cannot show every note event.

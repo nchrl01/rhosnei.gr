@@ -3,29 +3,38 @@
 AV turns observed cryptocurrency market behavior into a Pure Data instrument.
 The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
-## Current implementation
+## Automatic orchestra
 
-- Contract lookup across DEX Screener indexed chains, with explicit network and pool selection.
-- TradingView Lightweight Charts: candles, price line, timeframe, zoom/pan, logarithmic scale and available origin history.
-- Browser Pd: 20 Karplus–Strong string voices, six PWM pad voices and stereo delay. Pd schedules the musical clock; JavaScript supplies market controls.
-- Live signal map: selectable mappings, normalized controls, genotype/rule state and individual browser voice triggers.
-- Browser audio recording with a separate session log. Deterministic replay is not implemented.
-- Local desktop Pd output using a validated loopback UDP bridge and a 2.5-second heartbeat watchdog.
+The browser now combines Gameta strings and pads, ZERO100 tonal lanes,
+polyrhythms and resonant filtering, and Perc Generator synthesized percussion.
+All parts run together with one clock and pitch family. A rule-based conductor
+changes roles every two bars and allocates a shared gain budget from activity,
+traded volume, movement and liquidity. There is no instrument preset chooser.
+Master adjusts listening volume. The black-and-white signal map shows each
+mapping, actual voice activity and measured stereo output.
 
-The music is an adaptation of Rolando Rampoldi's visible Gameta rules, not a verified reproduction of the complete patch or recording. See [reference details](public/patches/REFERENCE.md). GrundTon's original breakcore system and samples remain unresolved. There is no drum layer in the public browser engine.
+The hidden original Gen algorithms were unavailable. These are independent
+adaptations, not verified identical reproductions. GrundTon breakcore remains
+an aesthetic reference; its original samples/system are not included. ZENOLOGY
+requires the local plugin host and is not part of browser audio. No commercial
+plugin binaries or presets are published. See
+[orchestra notes](public/patches/orchestra/ORCHESTRA.txt) and the standalone
+studies in `native/zero100/` and `native/perc-generator/`.
 
-The workspace's `native/` directory contains a prepared ZENOLOGY companion and a local VST host. Its kit selection, activation and audio have not been verified. ZENOLOGY cannot run inside GitHub Pages; the public map marks it as prepared. Plugin binaries, presets and samples are not published with the site.
+Chart, contract lookup, recording and market adapters remain available.
+Recording has a separate session log; deterministic replay is not implemented.
 
 ## Run and deploy
 
-Run `npm start`, then open http://localhost:4173. Choose Browser Pd and press Listen.
-Audio requires a user gesture. Only master listening volume is manually adjusted; market data drives layer levels and musical controls.
+Run `npm start`, open http://localhost:4173, then press Listen.
+For native output, open `public/patches/orchestra/av-desktop.pd`, enable DSP,
+choose Native Pd on the local website, then Listen. Keep abstractions together.
+The loopback bridge validates the orchestra identity and has a 2.5-second
+heartbeat watchdog. Background browser suspension can trigger it.
 
-For desktop Pd, open `public/patches/av-desktop.pd`, enable DSP, choose Native Pd on the local page, then Listen. Native recording uses Pd or a separate audio application. Closing the native client waits for pending controls and its stop packet. Connection failures still rely on the desktop watchdog. A backgrounded browser can suspend heartbeats; pause/resume on returning.
-
-Edit `build-patch.py` and run `python3 build-patch.py` to regenerate the Pd files. Keep sibling abstractions together. `public/patches/av-gameta.zip` is the downloadable bundle and must be refreshed after patch edits.
-
-The hosting repository is `nchrl01/rhosnei.gr`; its GitHub Actions workflow publishes `public/` to Pages. This workspace itself is not a Git checkout. The deployment checkout is `/private/tmp/av-host-repo`.
+Rebuild with `python3 build-orchestra.py`. The downloadable ensemble is
+`public/patches/av-orchestra.zip`. Standalone patch studies remain separate.
+The repository `nchrl01/rhosnei.gr` publishes `public/` through GitHub Pages.
 
 ## Market data and freshness
 
@@ -51,15 +60,21 @@ Run:
 
 ```sh
 node --test checks/integration.mjs
+node checks/orchestra.mjs
 python3 checks/gameta.py
 ```
 
 The integration checks cover completed/current candle precedence, out-of-order timestamps and retiming, independent signal freshness, feedback expiry/recovery, and native shutdown during successful or failed in-flight requests. They use controlled data and mocked transport, not live provider availability.
 
-The local browser was checked in Helium: playback advanced the Pd clock and note counters, selecting liquidity highlighted its connections and explanation, Pause showed zero output, and the compact voice layout was inspected visually. Native transport failures were exercised with controlled requests rather than a new desktop audio audition.
+Earlier Gameta-only playback was checked in Helium: playback advanced the Pd clock and note counters, selecting liquidity highlighted its connections and explanation, Pause showed zero output, and the compact voice layout was inspected visually. Native transport failures were exercised with controlled requests rather than a new desktop audio audition.
 
 The Pd checks run actual patches with Pd 0.56.2: neutral-mutation state progression, repeat suppression, mutation effects, stereo rendering and silence at zero master. Set `PD_BIN` to use another Pd executable. These checks do not prove perceptual fidelity to the reference videos.
 
 ## Runtime attribution
 
 The vendored libpd-wasm build and commit are recorded in `public/vendor/SOURCE.txt`, with its license alongside it. Lightweight Charts is vendored with its license and on-page TradingView attribution. Preserve these notices when distributing.
+
+The combined orchestra is checked headlessly against the actual browser WASM:
+each part renders finite audio, the ensemble reports voice/output feedback, and
+Stop and zero master produce silence. No new GUI audition or visual check was
+performed under the current computer-control restriction.

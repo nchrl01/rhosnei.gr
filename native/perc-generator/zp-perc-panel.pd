@@ -1,0 +1,18 @@
+#N canvas 50 50 1000 390 12;
+#X text 25 15 PERC / extended controls;
+#X text 25 45 Uses this instrument clock / transport / master. Open from perc-generator.;
+#X obj 25 110 nbx 8 20 0 1 0 0 \$1-perc-edit \$1-perc-ui LEVEL 0 -10 0 12 #ffffff #000000 #000000 0 256;
+#X obj 25 138 zp-control \$1 perc;
+#X obj 335 110 nbx 8 20 0 2 0 0 \$1-perc-density-edit \$1-perc-density-ui GATE_SCALE 0 -10 0 12 #ffffff #000000 #000000 0 256;
+#X obj 335 138 zp-control \$1 perc-density;
+#X obj 645 110 nbx 8 20 10 1000 0 0 \$1-perc-decay-edit \$1-perc-decay-ui DECAY_ms 0 -10 0 12 #ffffff #000000 #000000 0 256;
+#X obj 645 138 zp-control \$1 perc-decay;
+#X obj 25 180 nbx 8 20 0 1 0 0 \$1-perc-color-edit \$1-perc-color-ui FM_COLOR 0 -10 0 12 #ffffff #000000 #000000 0 256;
+#X obj 25 208 zp-control \$1 perc-color;
+#X obj 335 180 nbx 8 20 5 1900 0 0 \$1-perc-delay-edit \$1-perc-delay-ui DELAY_ms 0 -10 0 12 #ffffff #000000 #000000 0 256;
+#X obj 335 208 zp-control \$1 perc-delay;
+#X obj 645 180 nbx 8 20 0 0.75 0 0 \$1-perc-feedback-edit \$1-perc-feedback-ui FEEDBACK 0 -10 0 12 #ffffff #000000 #000000 0 256;
+#X obj 645 208 zp-control \$1 perc-feedback;
+#X text 25 265 Edit notes and probabilities in the main instrument. Its lower graph shows live envelopes.;
+#X text 25 305 Market mode controls level / density / decay / color / feedback automatically.;
+#X text 25 345 This adaptation synthesizes percussion. No sample loader is visible in the reference.;

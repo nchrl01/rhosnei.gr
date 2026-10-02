@@ -46,7 +46,7 @@ test('feedback expires when clock stops despite repeated cached native state, th
 });
 function nativeMocks(t,post){
  t.mock.method(globalThis,'setInterval',()=>1);t.mock.method(globalThis,'clearInterval',()=>{});
- t.mock.method(globalThis,'fetch',async(url,options)=>url==='/pd/status'?{ok:true,json:async()=>({connected:true,state:{run:1}})}:post(JSON.parse(options.body).messages));
+ t.mock.method(globalThis,'fetch',async(url,options)=>url==='/pd/status'?{ok:true,json:async()=>({connected:true,orchestra:true,state:{run:1}})}:post(JSON.parse(options.body).messages));
 }
 test('native close waits for in-flight controls AND subsequent stop delivery',async t=>{
  const requests=[],releases=[];nativeMocks(t,messages=>{requests.push(messages);return new Promise(resolve=>releases.push(resolve));});
