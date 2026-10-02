@@ -111,3 +111,17 @@ The interface and chart use Arial. Regular (400) text and bold (700) identity/la
 use a consistent type scale; controls centre their text within fixed heights.
 The playback marker is pure magenta (#ff00ff). Previously bundled TINY assets
 retain their license but are no longer loaded by the interface.
+
+
+## Desktop and mobile player layouts
+
+Desktop (above 760px) places a compact 600px player at the upper left beneath
+the full-width trending tape. Its artwork, chart and transport remain on one
+row; the address field and readouts use the same width. Sound parameters are
+available in the chart menu instead of occupying an extra dashboard row.
+
+Mobile uses a now-playing layout: large square artwork, coin identity, compact
+chart and touch-sized history strip, then a central circular Listen/Pause
+control and Record. The same DOM, market stream, replay clock and sound engine
+serve both layouts. The play control has an explicit accessible label/state.
+Arial, monochrome styling and the magenta replay playhead are retained.

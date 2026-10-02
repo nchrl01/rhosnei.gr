@@ -193,12 +193,17 @@ async function initialize(){
  await envion.attach(pd,ctx,files);
  for(const id of controls)send(id,Number($(id).value));
 }
+function setPlayState(active){
+ const button=$('play');button.dataset.playing=String(active);button.textContent=active?'Ⅱ Pause':'▶ Listen';
+ button.setAttribute('aria-label',active?'Pause audio':'Listen to market');button.setAttribute('aria-pressed',String(active));
+}
+setPlayState(false);
 $('play').onclick=async()=>{
  if(starting)return;
- if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;$('play').textContent='▶ Listen';if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
+ if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);if(recorder?.state==='recording')recorder.stop();$('record').disabled=true;status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  starting=true;$('play').disabled=true;status('Opening instrument…');
- try{if(!pd)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;replay.state.clock=performance.now();send('seed',seed%16777216);loop();send('run',1);envion.setRunning(true);$('play').textContent='Ⅱ Pause';$('record').disabled=!!pd.native;status(replay.state.active?'Envion playing · history replay':mode==='demo'?'Envion playing · synthetic demo signals':'Envion playing · market signals');}
- catch(e){playing=false;envion.detach();$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
+ try{if(!pd)await initialize();resetEnsemble();if(ctx)await ctx.resume();if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;replay.state.clock=performance.now();send('seed',seed%16777216);loop();send('run',1);envion.setRunning(true);setPlayState(true);$('record').disabled=!!pd.native;status(replay.state.active?'Envion playing · history replay':mode==='demo'?'Envion playing · synthetic demo signals':'Envion playing · market signals');}
+ catch(e){playing=false;setPlayState(false);envion.detach();$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(pd)await pd.close();pd=null;await ctx?.close();ctx=null;}
  finally{starting=false;$('play').disabled=false;}
 };
 $('native-option').disabled=true;
@@ -389,4 +394,7 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },100);
 setInterval(()=>{if(mode==='demo'){const t=performance.now()/1000;lastDemoPrice=100+2*Math.sin(t/19)+Math.sin(t/31);chart.add({at:Date.now(),price:lastDemoPrice,source:'demo'});$('chart-source').textContent='Synthetic demo prices · no market feed';}},1000);
-document.fonts.ready.then(()=>chart.chart.applyOptions({layout:{fontFamily:'Arial, sans-serif'}}));
+const playerScreen=window.matchMedia('(max-width:760px)');
+function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'Arial, sans-serif',fontSize:playerScreen.matches?11:9}});}
+playerScreen.addEventListener('change',syncChartTypography);
+document.fonts.ready.then(syncChartTypography);
