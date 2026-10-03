@@ -388,11 +388,9 @@ input{caret-color:#fff}
 .upic-brand .brand-beta{font-size:.85em;font-weight:400;letter-spacing:0;color:var(--muted)}
 .trending-menu>summary{gap:6px}
 #trending-period{font-weight:400;color:var(--muted)}
-.trending-periods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.trending-periods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .trending-periods button{width:100%;min-height:36px;padding:7px 8px;border-color:#444;font-size:13px}
 .trending-periods button[aria-pressed=true]{background:#f2f2f2;color:#000;border-color:#f2f2f2}
-.trending-periods button:disabled{opacity:.45}
-#trending-week-note{margin:10px 0 0;font-size:11px;line-height:1.4;color:var(--muted)}
 .trending-empty{display:flex;align-items:center;cursor:default;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 @media(max-width:760px){
  .trending-menu{position:static}

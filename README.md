@@ -990,8 +990,7 @@ live/replay clock, with radix-six minute/second wheels and immediate updates on
 seeks or fast playback. Both controls honor reduced motion.
 
 The header reads $UPIC (BETA) / TRENDING 24H. Its period menu offers 24H, 1H
-and 5M; 1W is visibly unavailable because the current feed does not supply a
-weekly ranking. Trending refresh and error recovery remain automatic, without
+and 5M. Trending refresh and error recovery remain automatic, without
 click-to-refresh prompts. Changing periods discards the previous ranking.
 
 These are small React islands loaded separately from the player. Native volume,
