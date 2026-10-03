@@ -1,5 +1,5 @@
 import {createMarketAnnouncement} from './market-announcement.js?v=98';
-import {createPixelBlastField} from './pixel-blast-field.js?v=96';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=101';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -14,7 +14,12 @@ export function fieldState(m={}){
  const holder=m.replay?null:finite(m.audience?.holders);
  const liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const values=[finite(m.music?.changePct),m.decoded?finite(m.tradeRate):null,finite(m.replay?.volume??(m.decoded?m.observedVolume:m.observation?.volume)),m.availability?.balance===false?null:finite(m.balance),liquidity,finite(context.latestCap),holder];
- return {drive,fresh,trace,values,activity,volume,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ // Missing historical liquidity stays neutral, never borrowed from today's pool.
+ const capital=values[5]>0?unit((Math.log10(values[5])-4)/4):.5;
+ const depth=liquidity>0?unit((Math.log10(liquidity)-3)/4):.5;
+ const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
+ const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
+ return {drive,fresh,trace,values,activity,volume,motion:unit(raw.motion),capital,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Sound develops its density; silence retains
@@ -33,7 +38,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
- let formation=0,birth=0,layoutKey=null;
+ let formation=0,birth=0,layoutKey=null,visualCursor=null;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -46,7 +51,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
  function clear(newCoin=false){
-  previous=null;smoothed=null;seen.clear();sourceClock=null;sourceAt=0;
+  previous=null;smoothed=null;visualCursor=null;seen.clear();sourceClock=null;sourceAt=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
@@ -136,18 +141,24 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const transient=active?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
-  for(const key of ['drive','activity','volume','pressure','balance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
-  // The source replay cursor changes inside each candle. Candle timestamps are
-  // deliberately not a frame trigger. Seeking/replaying the same source point
-  // retains the seeded phase rather than accumulating a new local history.
+  for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','depth','surge','imbalance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
+  const visualInputs={...smoothed,level,formation,active,reducedMotion:reduced.matches};
+  const visualParams=pixelBlastParameters(visualInputs);
+  // Integrate speed rather than multiplying a large clock by changing speed:
+  // a new observation then changes motion smoothly, without jumping patterns.
   if(!reduced.matches){
-   if(active&&replaying&&sourceClock!==null)clock=sourceClock+Math.min(.25,Math.max(0,(now-sourceAt)/1000))*(Number(options.rate)||1);
-   else clock+=dt*(.06+formation*(.15+.8*level+.5*smoothed.drive));
+   if(replaying&&sourceClock!==null){
+    const cursor=sourceClock+(active?Math.min(.25,Math.max(0,(now-sourceAt)/1000))*(Number(options.rate)||1):0);
+    const delta=visualCursor===null?0:cursor-visualCursor;
+    if(visualCursor===null||options.seeking||delta<0||delta>Math.max(2,(Number(options.rate)||1)*2))clock=cursor*.75;
+    else if(active)clock+=delta*visualParams.speed;
+    visualCursor=cursor;
+   }else{visualCursor=null;clock+=dt*visualParams.speed;}
    dirty=true;
   }
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,level,formation,birth,active,mobile:mobile.matches,reducedMotion:reduced.matches,drive:smoothed.drive,pressure:smoothed.pressure,activity:smoothed.activity,tempo:latest.tempo,dither:getState().dither===true});
+  blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,...visualInputs,birth,mobile:mobile.matches,dither:getState().dither===true});
   Object.assign(canvas.dataset,{composition:host?.dataset.pixelBlast==='ready'?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
@@ -177,7 +188,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(running())announcement?.show(trade.side?.toLowerCase()==='buy'?'BUY':trade.side?.toLowerCase()==='sell'?'SELL':'MARKET UPDATE',Number(trade.usdVolume)>0?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(trade.usdVolume):'');
    lastEvent=performance.now();excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
   },
-  pulse(strength=.7){const at=replaying?(sourceClock??clock):performance.now()/1000;excite(unit(strength)||.7,'onset:'+Math.floor(at*latest.tempo/60*4));},
+  pulse(strength=.7){excite(unit(strength)||.7);},
   refresh(){dirty=true;},
   reset(){clear();},
   close(){

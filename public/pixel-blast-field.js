@@ -176,16 +176,25 @@ void main(){
 `;
 
 const unit = n => Math.max(0, Math.min(1, Number(n) || 0));
-export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,tempo=40,active=false,reducedMotion=false}={}){
- const sound=unit(level),presence=unit(formation),motion=active?unit(drive):0;
+// The supplied studio preset (2px / 7.75 scale / .6 density / .75 speed /
+// .15 edge fade) is the centre of bounded, market-controlled ranges.
+export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,active=false,reducedMotion=false}={}){
+ const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
+ const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
+ const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
  return {
-  density:.45+1.35*unit(.55*sound+.25*presence+.2*motion),
-  opacity:.045+.55*presence,
-  scale:2+unit(pressure)*1.2,
-  rippleIntensity:.5+sound,
-  rippleSpeed:.16+Math.max(10,Math.min(240,Number(tempo)||40))/240*.22,
-  rippleThickness:.035+.025*unit(activity),
-  ripples:active&&!reducedMotion&&sound>.015,
+  pixelSize:1.25+2.75*movement,
+  scale:4+7.5*unit(capital),
+  density:.25+1.35*flow,
+  speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),
+  edgeFade:.03+.24*(1-unit(depth)),
+  jitter:.03+.35*movement,
+  opacity:.14+.6*unit(.6*flow+.25*presence+.15*sound),
+  rippleIntensity:.35+1.1*unit(.65*unit(surge)+.35*unit(imbalance)),
+  rippleSpeed:.12+.45*movement,
+  rippleThickness:.02+.055*flow,
+  // Quiet/ordinary updates remain like the reference's ripple-off state.
+  ripples:active&&!reducedMotion&&current>.05&&(movement>.3||unit(surge)>.45),
  };
 }
 function hash(key,seed){
@@ -226,25 +235,26 @@ export function createPixelBlastField(host){
    const h=hash(key,seed),x=.15+.7*((h&65535)/65535),y=.15+.7*((h>>>16)/65535);
    ripples.push({key,time,strength:unit(strength),x:unit(.75*x+.25*unit(balance)),y});ripples=ripples.slice(-6);lastPulse=time;
   },
-  render({width,height,time,eventTime,level,formation,birth=1,active,mobile,reducedMotion,drive,pressure,activity,tempo,dither}={}){
+  render({width,height,time,eventTime,level,formation,birth=1,active,mobile,reducedMotion,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,dither}={}){
    if(closed||lost||!program)return;
    const limit=mobile?384:640,scale=Math.min(1,limit/Math.max(width,height));
    const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
-   const params=pixelBlastParameters({level,formation,drive,pressure,activity,tempo,active,reducedMotion});
+   const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,active,reducedMotion});
    const positions=new Float32Array(12).fill(-1),times=new Float32Array(6),strengths=new Float32Array(6);
    ripples.forEach((p,i)=>{positions[i*2]=p.x*w;positions[i*2+1]=p.y*h;times[i]=p.time;strengths[i]=p.strength;});
    gl.viewport(0,0,w,h);gl.useProgram(program);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uOpacity',params.opacity*unit(birth));
-   f('uPixelSize',mobile?2:2.5);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',.12);
-   i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);f('uEdgeFade',0);i('uShapeType',dither?0:1);
+   f('uPixelSize',params.pixelSize);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
+   i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);f('uEdgeFade',params.edgeFade);i('uShapeType',dither?0:1);
    gl.uniform2fv(locations['uClickPos[0]'],positions);gl.uniform1fv(locations['uClickTimes[0]'],times);gl.uniform1fv(locations['uClickStrengths[0]'],strengths);
    gl.drawArrays(gl.TRIANGLES,0,3);
-   canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(level).toFixed(3);canvas.dataset.ripples=String(ripples.length);
+   canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);
+   Object.assign(canvas.dataset,{pixelSize:params.pixelSize.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),rippleEnabled:String(params.ripples)});
   },
   clear(){if(gl&&!lost){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ripples=[];},
   close(){closed=true;release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);canvas.remove();},
