@@ -1,5 +1,5 @@
-// Original data score inspired by the dimensionality of datamatics and the
-// complementary bands of test pattern. Geometry never feeds the audio engine.
+// Original market score: precise raster, binary registers and price topography.
+// Every image belongs to a received observation. Geometry never feeds audio.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 const hash=(seed,index)=>{let n=Math.imul((seed>>>0)^index,1597334677);n=Math.imul(n^(n>>>16),2246822507);return ((n^(n>>>13))>>>0)/4294967296;};
@@ -16,7 +16,7 @@ export function fieldState(m={}){
  const holder=m.replay?null:finite(m.audience?.holders);
  const liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const values=[finite(m.music?.changePct),m.decoded?finite(m.tradeRate):null,finite(m.replay?.volume??(m.decoded?m.observedVolume:m.observation?.volume)),m.availability?.balance===false?null:finite(m.balance),liquidity,finite(context.latestCap),holder];
- return {drive,fresh,trace,values,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {drive,fresh,trace,values,activity,volume,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 // Marks exist for a bounded observation, never for a rolling activity level.
 // Keep separate flashes below three per second; no full-canvas inversion.
@@ -85,18 +85,105 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    }
   }
  }
- function barcode(x,y,width,height,drive){
-  const cols=Math.max(96,Math.min(240,Math.floor(width/2))),cw=width/cols,groups=5,gh=height/groups;
-  for(let group=0;group<groups;group++){
-   const data=model.values[group%model.values.length];if(data==null)continue;
-   const word=Math.round(Math.abs(data)*10000)>>>0;
-   for(let col=0;col<cols;col++){
-    const pick=hash(burst.word^word,col+group*617),on=((word>>>(col%31))&1)===1;
-    if(pick>(.06+drive*.36))continue;
-    const half=gh*.5-1;c.fillStyle=ink();
-    c.fillRect(Math.floor(x+col*cw),y+group*gh+(on?0:half+2),Math.max(1,cw*(.2+pick*.75)),Math.max(1,half*(.55+bands[(col+group*7)%64]*.45)));
+ // Raster rows follow historical returns/volume; columns expose bits of the
+ // current measurements. Missing measurements leave gaps instead of fake data.
+ function raster(x,y,width,height,drive){
+  const columns=Math.max(48,Math.min(164,Math.floor(width/3.6))),rows=Math.max(24,Math.min(96,Math.floor(height/4))),cw=width/columns,rh=height/rows;
+  const trace=model.trace,word=burst.word;
+  c.fillStyle=ink();
+  for(let row=0;row<rows;row++){
+   const point=trace[Math.min(trace.length-1,Math.floor(row/rows*trace.length))];
+   const datum=model.values[row%model.values.length];if(!point&&datum==null)continue;
+   const payload=datum==null?Math.round((point?.height||0)*0xffffffff):Math.round(Math.abs(datum)*1000)>>>0;
+   const density=.14+drive*.35+(point?.volume||0)*.12;
+   const crease=point?Math.floor(point.height*(columns-1)):-100;
+   for(let col=0;col<columns;col++){
+    const bit=(payload>>>(col%32))&1,variation=hash(word^payload,row*193+col);
+    if(variation>density&&(Math.abs(col-crease)>1))continue;
+    const accent=Math.abs(col-crease)<1;
+    // Thin marks keep the white field visible even at maximum activity.
+    const length=accent?cw*.9:cw*(bit?.83:.29);
+    const thickness=accent?Math.min(2,rh*.6):1;
+    c.fillRect(Math.round(x+col*cw),Math.round(y+row*rh),Math.max(1,length),thickness);
    }
   }
+ }
+ function barcode(x,y,width,height,drive){
+  const cols=Math.max(56,Math.min(180,Math.floor(width/2.8))),cw=width/cols,groups=7,gh=height/groups;
+  c.fillStyle=ink();
+  for(let group=0;group<groups;group++){
+   const data=model.values[group];if(data==null)continue;
+   const word=Math.round(Math.abs(data)*10000)>>>0;
+   for(let col=0;col<cols;col++){
+    const pick=hash(burst.word^word,col+group*617),on=((word>>>(col%32))&1)===1;
+    if(pick>(.18+drive*.42))continue;
+    const half=Math.max(1,gh*.5-2);
+    c.fillRect(Math.floor(x+col*cw),Math.round(y+group*gh+(on?0:half+3)),Math.max(1,cw*(.24+pick*.7)),Math.max(1,half*(.6+bands[(col+group*7)%64]*.4)));
+   }
+  }
+ }
+ function ribbons(x,y,width,height,drive){
+  const trace=model.trace;if(trace.length<2)return;
+  const rows=4,step=height/rows,cols=Math.min(trace.length,160),cw=width/cols;
+  c.fillStyle=ink();
+  for(let row=0;row<rows;row++){
+   const base=y+(row+1)*step-2;
+   for(let col=0;col<cols;col++){
+    const point=trace[Math.round(col/(cols-1)*(trace.length-1))];
+    const value=row===0?point.height:row===1?Math.abs(point.move):row===2?point.volume:Math.abs(point.move)*point.volume;
+    const top=Math.round(base-value*(step-5));
+    c.fillRect(Math.round(x+col*cw),top,Math.max(1,cw*.58),1);
+    if(row===2&&hash(burst.word,col+1411)<drive*.55)c.fillRect(Math.round(x+col*cw),top,1,Math.max(1,base-top));
+   }
+  }
+ }
+ function registers(x,y,width,height,drive){
+  const lanes=mobile.matches?8:12,gap=width/lanes;
+  c.fillStyle=ink();
+  for(let lane=0;lane<lanes;lane++){
+   const datum=model.values[lane%model.values.length];if(datum==null)continue;
+   const word=Math.round(Math.abs(datum)*1000)>>>0,offset=Math.floor(hash(burst.word,lane+2800)*24);
+   for(let bit=0;bit<32;bit++){
+    if(!((word>>>((bit+offset)%32))&1))continue;
+    const yy=y+bit*height/32;
+    c.fillRect(Math.round(x+lane*gap),Math.round(yy),Math.max(1,gap*(.12+drive*.2)),Math.max(1,height/64));
+   }
+  }
+ }
+ function spectrumField(x,y,width,height){
+  const cw=width/bands.length;c.fillStyle=ink();
+  for(let b=0;b<bands.length;b++){
+   const length=bands[b]*height;if(length<1)continue;
+   const xx=Math.round(x+b*cw),yy=Math.round(y+height-length);
+   c.fillRect(xx,yy,Math.max(1,cw*.6),1);
+   for(let step=0;step<length;step+=4)c.fillRect(xx,Math.round(y+height-step),1,1);
+  }
+ }
+ function score(x,y,width,height,drive){
+  const family=Math.floor(hash(burst.word,73)*3),gutter=mobile.matches?10:14;
+  const headH=height*.12,bodyY=y+headH+gutter,bodyH=height*.66,tailY=bodyY+bodyH+gutter,tailH=Math.max(4,y+height-tailY);
+  // A short register across the top gives every event an individual signature.
+  registers(x,y,width,headH,drive);
+  if(family===0){
+   raster(x,bodyY,width*.66,bodyH,drive);
+   barcode(x+width*.69,bodyY,width*.31,bodyH,drive);
+  }else if(family===1){
+   barcode(x,bodyY,width,bodyH*.44,drive);
+   raster(x,bodyY+bodyH*.49,width*.7,bodyH*.51,drive);
+   ribbons(x+width*.74,bodyY+bodyH*.49,width*.26,bodyH*.51,drive);
+  }else{
+   raster(x,bodyY,width*.28,bodyH,drive);
+   terrain(x+width*.31,bodyY,width*.69,bodyH*.78,drive);
+   barcode(x+width*.31,bodyY+bodyH*.8,width*.69,bodyH*.2,drive);
+  }
+  ribbons(x,tailY,width*.69,tailH,drive);
+  spectrumField(x+width*.73,tailY,width*.27,tailH);
+  // The fine brackets are part of the current event, so they disappear with it.
+  c.fillStyle=ink();
+  for(const [xx,yy,dx,dy] of [[x,y,1,1],[x+width,y,-1,1],[x,y+height,1,-1],[x+width,y+height,-1,-1]]){
+   c.fillRect(xx+(dx<0?-9:0),yy,9,1);c.fillRect(xx,yy+(dy<0?-9:0),1,9);
+  }
+  canvas.dataset.composition=['raster-registers','split-barcode','price-topography'][family];
  }
  function draw(now){
   if(closed)return;animation=requestAnimationFrame(draw);
@@ -121,13 +208,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   }
   if(burst){
    c.save();c.beginPath();c.rect(margin,fieldY,fieldW,fieldH);c.clip();
-   terrain(margin,fieldY,fieldW,fieldH*.88,drive);
-   const bandTop=fieldY+fieldH*.56;barcode(margin,bandTop,fieldW,fieldH*.27,drive);
-   const spectrumY=fieldY+fieldH*.94,binWidth=fieldW/bands.length;
-   c.fillStyle=ink();for(let b=0;b<bands.length;b++){const length=bands[b]*fieldH*.105;if(length>1)c.fillRect(margin+b*binWidth,spectrumY-length,1,length);}
+   score(margin,fieldY+1,fieldW-1,fieldH-2,drive);
+   const bandTop=fieldY+fieldH*.56;
    // Pd can mark an existing market burst, but cannot start or prolong it.
    if(lastPulse&&tap&&tap.context.currentTime-lastPulse.at<.16){const x=margin+(lastPulse.voice+.5)*fieldW/5;c.fillRect(x,bandTop-7,8,1);c.fillRect(x,bandTop-7,1,5);}
-   for(let i=0;i<Math.round(3+drive*9);i++){
+   for(let i=0;i<Math.round(5+drive*13);i++){
     const x=margin+hash(burst.word,i+99)*Math.max(0,fieldW-35),y=fieldY+hash(burst.word,i+171)*fieldH;
     text(['+','[ ]','|','0','1',':'][Math.floor(hash(burst.word,i+801)*6)],x,y,'#111',9);
    }

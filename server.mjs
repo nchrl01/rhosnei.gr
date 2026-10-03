@@ -1,4 +1,5 @@
 import http from 'node:http';
+import {oscFrame,validateVisualFrame} from './touchdesigner/osc-bridge.mjs';
 import dgram from 'node:dgram';
 import {readFile} from 'node:fs/promises';
 import {resolve,extname} from 'node:path';
@@ -14,6 +15,13 @@ http.createServer(async(req,res)=>{
   const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
   const connected=()=>Date.now()-lastPd<3000;
   if(path==='/pd/status'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({connected:connected(),orchestra:Date.now()-lastOrchestra<3000,state:pdState}));return;}
+  if(path==='/visual/control'){
+   if(req.method!=='POST'||!['http://localhost:'+port,'http://127.0.0.1:'+port].includes(req.headers.origin)){res.writeHead(403);res.end();return;}
+   let body='';for await(const chunk of req){body+=chunk;if(body.length>8192){res.writeHead(413);res.end();return;}}
+   const packet=oscFrame(validateVisualFrame(JSON.parse(body)));
+   await new Promise((done,fail)=>udp.send(packet,7000,'127.0.0.1',error=>error?fail(error):done()));
+   res.writeHead(204);res.end();return;
+  }
   if(path==='/pd/control'){
    // Browser requests must originate from this local page, never a remote website.
    if(req.method!=='POST'||!['http://localhost:'+port,'http://127.0.0.1:'+port].includes(req.headers.origin)){res.writeHead(403);res.end();return;}

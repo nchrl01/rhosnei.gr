@@ -36,12 +36,15 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  const decoded=await Promise.allSettled(downloaded.map(async item=>({midi:item.midi,trim:Number(item.trim)||1,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
  const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
  if(!samples.length)throw Error('This browser could not decode the piano samples');
- const input=ctx.createGain(),filter=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
+ const input=ctx.createGain(),filter=ctx.createBiquadFilter(),roomInput=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
  // Keep the sampled hammer, then let its body merge into a long diffuse room.
  // One fixed convolution is shared by all notes; no delay loop or extra voice
  // runs after a market note. Seeking/pause still clears the complete tail.
  filter.type='lowpass';filter.frequency.value=2200;filter.Q.value=.55;
- dry.gain.value=.34;wet.gain.value=1;master.gain.value=0;
+ // Remove sub-bass only from the room so overlapping low notes can stay
+ // suspended without accumulating rumble. The hammer's direct path is intact.
+ roomInput.type='highpass';roomInput.frequency.value=75;roomInput.Q.value=.707;
+ dry.gain.value=.34;wet.gain.value=1.45;master.gain.value=0;
  // Eight seconds at ordinary phone sample rates; cap unusually high
  // device rates at 3.84 MB for the two floating-point impulse channels.
  const impulse=ctx.createBuffer(2,Math.min(480000,Math.ceil(ctx.sampleRate*8)),ctx.sampleRate);
@@ -51,13 +54,14 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   for(let i=0;i<data.length;i++){
    noise=(Math.imul(noise,1664525)+1013904223)>>>0;
    smooth=.84*smooth+.16*(noise/2147483648-1);diffuse=.96*diffuse+.04*smooth;
-   const t=i/ctx.sampleRate,bloom=Math.min(1,t/.14),fade=Math.min(1,(data.length-1-i)/(ctx.sampleRate*.9));
-   // The old room lost nearly all of its energy in the first few seconds.
-   // Slower decay keeps the pitch suspended between infrequent market notes.
-   data[i]=(.65*smooth+.35*diffuse)*bloom*Math.exp(-t*.58)*fade;
+   const t=i/ctx.sampleRate,bloom=Math.min(1,t/.18),fade=Math.min(1,(data.length-1-i)/(ctx.sampleRate*1.2));
+   // A flatter late decay holds the note's harmonic body like a pad. The
+   // complete response still ends within this one fixed eight-second buffer.
+   // This bloom affects the room only, never the sampled hammer's attack.
+   data[i]=(.65*smooth+.35*diffuse)*bloom*Math.exp(-t*.38)*fade;
   }
  }
- room.buffer=impulse;input.connect(filter);filter.connect(dry);filter.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
+ room.buffer=impulse;input.connect(filter);filter.connect(dry);filter.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
  let enabled=true,running=false,volume=.5,seed=1917,closed=false,arp=null,pattern=[],nextArp=0,lastArpBucket=null,roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
  const policy=createPianoPolicy(seed);
  const phrasing=createPianoPhrasing(seed);
@@ -137,7 +141,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   reset(value=seed){clear();seed=Number(value)>>>0;policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){if(arp){arp.tempo=Math.max(40,Math.min(140,Number(value)||40));arp.step=30/arp.tempo;}},
-  resonance(cap){const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;filter.Q.setTargetAtTime(.55+1.4*r,ctx.currentTime,.8);filter.frequency.setTargetAtTime(2200-500*r,ctx.currentTime,.8);dry.gain.setTargetAtTime(.34-.08*r,ctx.currentTime,.8);wet.gain.setTargetAtTime(1+.45*r,ctx.currentTime,.8);}return r;},
+  resonance(cap){const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;filter.Q.setTargetAtTime(.55+1.4*r,ctx.currentTime,.8);filter.frequency.setTargetAtTime(2200-500*r,ctx.currentTime,.8);dry.gain.setTargetAtTime(.34-.08*r,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45+.55*r,ctx.currentTime,.8);}return r;},
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
@@ -150,6 +154,6 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const selection=policy.idle({at,quietAt:ctx.currentTime*1000,price,music:m.music,known,quiet,referencePrice});
    return selection?play(selection,{id:'quiet:'+selection.at,at:selection.at},m.context?.latestCap,m.music||{}):false;
   },
-  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [input,filter,dry,wet,room,tailGate,master])node.disconnect();},50);},
+  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [input,filter,roomInput,dry,wet,room,tailGate,master])node.disconnect();},50);},
  };
 }
