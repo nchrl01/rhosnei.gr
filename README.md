@@ -934,12 +934,14 @@ oscillators, including auxiliary voices, with the existing filter, level
 ramps, watchdog and phrase/cap gates. Function formulas stay unchanged.
 No browser or audio audition was run.
 
-## Layered graphic score (v88)
+## Quiet formation (v89)
 
-The audible visual field now combines subdued binary rows, a bending perspective
-dot sheet, broad analytic contour trails and angular attack lines. Geometry is
-seeded and follows market drive, balance, source phase and measured output level.
-Magenta traces decay over roughly three seconds after significant observed moves;
-there is no full-screen color flash. Reduced motion suppresses accents and phase
-animation. Existing post-master silence, pause, seek and mute gates still clear
-the entire surface. Mobile retains its separate panel. No audio changes.
+The v88 contour/dot-sheet/angular layers and magenta accents were undone.
+The monochrome binary row field remains visible in silence, pause and mute.
+A sparse seeded form develops gradually at startup. Measured post-master
+output grows the fragment density and row definition; quiet passages settle
+back into a thin, slowly moving structure over a few seconds instead of
+hiding the canvas. Quiet motion is aesthetic, not represented as trade activity.
+Reduced motion disables drifting; hidden tabs and offscreen panels suspend
+drawing. Mobile retains its own panel. Audio and market controls are unchanged.
+No browser or audio audition was performed.

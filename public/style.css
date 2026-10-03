@@ -186,11 +186,11 @@ button,summary,a{font-variant-emoji:text}
 .coin-avatar{position:relative;border:0;background:transparent;overflow:hidden}
 .coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:pixelated}
 .coin-avatar #coin-image-fallback{grid-area:1/1}
-/* The sound field owns its area. Silence clears the pixels, not the layout. */
+/* The field owns its area and stays visible while sound is quiet or paused. */
 .audio-visualizer{display:block;position:relative;width:100%;height:auto;aspect-ratio:4/3;min-width:0;margin:0;max-width:none;background:transparent;contain:layout paint;isolation:isolate;overflow:hidden;pointer-events:none;mix-blend-mode:normal}
 #audio-dots{display:block;width:100%;height:100%;pointer-events:none}
-.audio-visualizer:not([data-audible=true]) #audio-dots{opacity:0}
-.audio-visualizer[data-audible=true]{background:#000}
+.audio-visualizer:not([data-visible=true]) #audio-dots{opacity:0}
+.audio-visualizer[data-visible=true]{background:#000}
 body.inspecting .audio-visualizer{display:none}
 /* Use the whole window before there is room for a separate right-hand field. */
 @media(min-width:761px) and (max-width:1049px){

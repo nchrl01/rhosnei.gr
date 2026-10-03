@@ -58,6 +58,7 @@ export function binaryRowParameters(options = {}) {
   const balance = unit(options.balance), marketCap = unit(options.marketCap);
   const liquidity = unit(options.liquidity), change = Math.tanh(finite(options.change, 0) / 20);
   const level = unit(options.level, 1), transient = unit(options.transient, 0);
+  const presence = unit(options.presence, 1);
   const energy = unit(drive * .38 + activity * .24 + Math.sqrt(level) * .24 + transient * .14);
   const flowBias = clamp(change * .65 + (balance - .5) * .7, -1, 1);
   const mobile = Boolean(options.mobile);
@@ -76,8 +77,9 @@ export function binaryRowParameters(options = {}) {
     dither: options.dither !== false,
     columns: clamp(Math.round(rows * width / height), 16, 768),
     ruleStride,
+    ruleAlpha: Math.round(255 * presence * presence),
     targetCoverage,
-    fragmentCoverage: clamp((targetCoverage - ruleCoverage) / (1 - ruleCoverage || 1), .015, .75),
+    fragmentCoverage: .016 * (1 - presence) + presence * clamp((targetCoverage - ruleCoverage) / (1 - ruleCoverage || 1), .015, .75),
     // The tutorial's -frame/512 displacement is -60/512 UV per motion second.
     // The caller integrates this rate so market changes accelerate the flow
     // without teleporting its source phase.
@@ -208,7 +210,8 @@ function rowDisplacement(parameters, row, time, field) {
  * Pixels are straight-alpha white RGBA marks over transparent gaps. Paint black
  * behind the image on both desktop and mobile. This is a contained visual
  * panel, not an overlay. `coverage` is the fraction of pixels with nonzero alpha.
- * Fragment interiors and full-width rules are solid white; the threshold has a
+ * Presence thins fragments and softens rules during quiet formation.
+ * At full presence, fragment interiors and full-width rules are solid white; the threshold has a
  * narrow soft boundary. Three analytic delayed samples (1, 2, and 3 frames at
  * 60fps) add at most 1/16 intensity around moving edges. Optional monochrome
  * dithering applies only to those trails, preserving central fragments and
@@ -257,8 +260,9 @@ export function renderBinaryRows(options = {}) {
     const stripOffset = row * width;
     for (let y = top; y < bottom; y++) {
       const outputOffset = y * width;
-      if (rule && y === top) {
-        packed.fill(0xffffffff, outputOffset, outputOffset + width);
+      if (rule && y === top && parameters.ruleAlpha > 0) {
+        const alpha = parameters.ruleAlpha;
+        packed.fill(LITTLE_ENDIAN ? (alpha << 24) | 0xffffff : 0xffffff00 | alpha, outputOffset, outputOffset + width);
         litPixels += width;
         continue;
       }

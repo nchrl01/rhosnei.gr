@@ -1,5 +1,4 @@
-import {drawGraphicDepth} from './graphic-depth.js?v=88';
-import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=86';
+import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=89';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 const logarithmic=(value,decades)=>value==null?.5:unit(Math.log10(Math.max(1,value))/decades);
@@ -18,23 +17,22 @@ export function fieldState(m={}){
  return {drive,fresh,trace,values,activity,volume,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
-// Market data shapes the field; measured post-master sound opens its surface.
-// There is no preview image, autonomous demo or event timeout that can freeze
-// a visible frame while the music continues.
+// Market data shapes the field. Sound develops its density; silence retains
+// a sparse, slowly forming structure. Quiet motion is visual, not a trade signal.
 export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={}){
  const c=canvas?.getContext('2d',{alpha:true});
  if(!c)return {frame(){},event(){},pulse(){},refresh(){},reset(){},close(){}};
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
- if(host){host.after(anchor);host.dataset.audible='false';}
+ if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
  const surface=document.createElement('canvas'),paint=surface.getContext('2d');
  const buffers=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
- let accentAt=-Infinity,accentStrength=0;
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
+ let formation=0,birth=0;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -42,12 +40,14 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  function hide(){
   audible=false;level=0;previousLevel=0;lastSound=-Infinity;
   c.clearRect(0,0,canvas.width,canvas.height);
-  if(host)host.dataset.audible='false';
+  if(host){host.dataset.audible='false';host.dataset.visible='false';}
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
- function clear(){
-  previous=null;smoothed=null;seen.clear();clock=0;sourceClock=null;sourceAt=0;
-  lastEvent=-Infinity;accentAt=-Infinity;accentStrength=0;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;hide();
+ function clear(newCoin=false){
+  previous=null;smoothed=null;seen.clear();sourceClock=null;sourceAt=0;
+  lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
+  audible=false;previousLevel=level;lastSound=-Infinity;
+  if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
  }
  function fitHeight(){
   if(!host||mobile.matches)return;
@@ -101,20 +101,24 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  function draw(now){
   if(closed)return;frameID=requestAnimationFrame(draw);
   if(layoutPending){layoutPending=false;size();}
-  if(document.hidden||!visible||width<1||height<1){if(audible)hide();lastPaint=0;return;}
-  if(now-lastPaint<(mobile.matches?1000/24:1000/30))return;
+  if(document.hidden||!visible||width<1||height<1){lastPaint=0;return;}
+  if(now-lastPaint<(audible?(mobile.matches?1000/24:1000/30):1000/15))return;
   const dt=lastPaint?Math.min(.1,(now-lastPaint)/1000):1/30;lastPaint=now;
   const active=running()&&hasMarket;
-  if(!active){if(audible||dirty){hide();dirty=false;}return;}
-  const rms=measure();
+  if(!active){pulseStrength=0;pulseAt=-Infinity;}
+  const rms=active?measure():0;
   if(rms>(audible?.0002:.0005))lastSound=now;
-  const sounding=rms>.0005||(audible&&now-lastSound<100);
-  if(!sounding){if(audible)hide();return;}
-  if(!audible){audible=true;dirty=true;if(host)host.dataset.audible='true';}
-  const target=unit((20*Math.log10(Math.max(1e-8,rms))+70)/52);
-  level+=(target-level)*(1-Math.exp(-dt/(target>level?.045:.18)));
+  audible=active&&(rms>.0005||now-lastSound<100);
+  if(host){host.dataset.audible=String(audible);host.dataset.visible='true';}
+  const target=audible?unit((20*Math.log10(Math.max(1e-8,rms))+70)/52):0;
+  level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:1.4)));
+  const shapeTarget=.035+.965*unit(level*1.6);
+  formation+=(shapeTarget-formation)*(1-Math.exp(-dt/(shapeTarget>formation?.85:2.8)));
+  birth=Math.min(1,birth+dt/2);
+  // Keep settling after pause/mute even when no market frames are arriving.
+  if(Math.abs(shapeTarget-formation)>.0001||birth<1||Math.abs(target-level)>.0001)dirty=true;
   const envelopeRise=unit((level-previousLevel)*9);previousLevel=level;
-  const transient=Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise);
+  const transient=active?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
@@ -122,40 +126,32 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // deliberately not a frame trigger. Seeking/replaying the same source point
   // retains the seeded phase rather than accumulating a new local history.
   if(!reduced.matches){
-   if(replaying&&sourceClock!==null)clock=sourceClock+Math.min(.25,Math.max(0,(now-sourceAt)/1000))*(Number(options.rate)||1);
-   else clock+=dt*binaryRowParameters({...smoothed,level,transient}).motionRate;
+   if(active&&replaying&&sourceClock!==null)clock=sourceClock+Math.min(.25,Math.max(0,(now-sourceAt)/1000))*(Number(options.rate)||1);
+   else clock+=dt*(.06+formation*binaryRowParameters({...smoothed,level,transient}).motionRate);
    dirty=true;
   }
   if(!dirty)return;dirty=false;
   const limit=mobile.matches?512:896,scale=Math.min(1,limit/Math.max(width,height));
   const rw=Math.max(64,Math.round(width*scale)),rh=Math.max(64,Math.round(height*scale));
-  const result=renderBinaryRows({width:rw,height:rh,seed,time:clock,activity:smoothed.activity,volume:smoothed.volume,drive:smoothed.drive,pressure:smoothed.pressure,balance:smoothed.balance,change:latest.change,marketCap:logarithmic(latest.values[5],10),liquidity:logarithmic(latest.liquidity,8),level,transient:reduced.matches?0:transient,mobile:mobile.matches,reducedMotion:reduced.matches,dither:getState().dither===true});
+  const result=renderBinaryRows({width:rw,height:rh,seed,time:clock,presence:formation,activity:smoothed.activity,volume:smoothed.volume,drive:smoothed.drive,pressure:smoothed.pressure,balance:smoothed.balance,change:latest.change,marketCap:logarithmic(latest.values[5],10),liquidity:logarithmic(latest.liquidity,8),level,transient:reduced.matches?0:transient,mobile:mobile.matches,reducedMotion:reduced.matches,dither:getState().dither===true});
   if(surface.width!==rw)surface.width=rw;if(surface.height!==rh)surface.height=rh;
   paint.putImageData(new ImageData(result.pixels,rw,rh),0,0);
   c.fillStyle='#000';c.fillRect(0,0,canvas.width,canvas.height);
-  c.imageSmoothingEnabled=false;c.globalAlpha=.18+.14*level;c.drawImage(surface,0,0,canvas.width,canvas.height);c.globalAlpha=1;
-  // Significant observed moves create a local magenta trace, never a full-screen flash.
-  const accent=reduced.matches?0:accentStrength*Math.exp(-Math.max(0,now-accentAt)/1000);
-  drawGraphicDepth(c,{width:canvas.width,height:canvas.height,time:clock,seed,level,drive:smoothed.drive,balance:smoothed.balance,transient:reduced.matches?0:transient,accent,reducedMotion:reduced.matches});
-  Object.assign(canvas.dataset,{composition:'layered-graphic-score',active:'true',visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:'false'});
+  c.imageSmoothingEnabled=false;c.globalAlpha=birth*(.35+.65*formation);c.drawImage(surface,0,0,canvas.width,canvas.height);c.globalAlpha=1;
+  Object.assign(canvas.dataset,{composition:'binary-horizontal-rows',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
  return {
   frame(next={},settings={}){
    const nextSeed=settings.seed==null?seed:Number(settings.seed)>>>0,nextReplay=!!next.replay;
-   if(nextSeed!==seed||nextReplay!==replaying){clear();seed=nextSeed;replaying=nextReplay;}
+   if(nextSeed!==seed||nextReplay!==replaying){clear(nextSeed!==seed);seed=nextSeed;replaying=nextReplay;}
    options=settings;latest=fieldState(next);dirty=true;
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
    if(incoming!==null&&incoming!==sourceClock){sourceClock=incoming;sourceAt=performance.now();}
-   const current={change:latest.change,at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
+   const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
-   if(!running()){hide();return;}
+   if(!running())return;
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
-   const relativeMove=changed?Math.abs(current.price/old.price-1):0;
-   const sourceChanged=replaying?current.at!==old?.at:changed;
-   const crossedMoveBand=old?.change!=null&&latest.change!=null&&Math.trunc(latest.change/5)!==Math.trunc(old.change/5)&&Math.abs(latest.change)>=5;
-   if(old&&sourceChanged&&(relativeMove>=.05||(crossedMoveBand&&latest.drive>.55))){accentAt=performance.now();accentStrength=unit(.4+relativeMove*4+latest.drive*.3);}
-
    if(replaying){
     if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive);
    }else if(!next.decoded&&performance.now()-lastEvent>1000&&old){
