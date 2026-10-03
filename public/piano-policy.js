@@ -1,6 +1,6 @@
 // Price selection uses received market data; silence uses the playback clock.
 // Compressed history must not accelerate the quiet piano into a repetitive loop.
-export const PIANO_MOVE_PCT=20;
+export const PIANO_MOVE_PCT=5;
 export const PIANO_QUIET_MS=30000;
 const priceOf=event=>Number(event.priceUsd??event.price);
 export function createPianoPolicy(seed=0){

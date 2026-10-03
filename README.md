@@ -1,12 +1,12 @@
-# $AV — market instrument
+# $UPIC — market instrument
 
-AV turns observed cryptocurrency market behavior into a Pure Data instrument.
+$UPIC turns observed cryptocurrency market behavior into a Pure Data instrument.
 The public prototype is https://nchrl01.github.io/rhosnei.gr/.
 
 ## Active instruments
 
 The piano is the CC0 VSCO 2 CE soft upright piano, played through
-Web Audio. During active trading, a cumulative move of at least 20% since the
+Web Audio. During active trading, a cumulative move of at least 5% since the
 previous piano note selects one harmonic note on receipt. Its initial price
 anchor uses available five-minute context. There are no block chords. Stable
 timestamp/seed-based progressions provide a serene, hopeful, confident,
@@ -48,7 +48,7 @@ audio take; Share downloads that exact performance and a frozen candle score.
 A replay link embeds up to 128 candles when its encoded payload is under 18,000
 characters. Longer scores remain downloadable; video export/API are future work.
 
-Piano replay applies the same 20% cumulative-movement selection to completed
+Piano replay applies the same 5% cumulative-movement selection to completed
 historical candles, including history from before this visit. Empty zero-volume
 candles allow the quiet fallback; quiet spacing uses listening time so accelerated
 history cannot create a rapid ambient loop. This is an OHLC interpretation, not
@@ -408,3 +408,33 @@ CORS-blocked art has a complete grayscale fallback.
 
 Changed JavaScript was syntax checked and routing/source reviewed. No browser,
 listening or physical-iPhone runtime checks were run for this update.
+
+## UPIC identity, five-percent piano and transport lamp (v61)
+
+The user-supplied icon is served as `public/upic-mark.png` and rendered with
+the existing error-diffusion dither at the far left of the trending header.
+The source image is preserved; its grayscale artwork is not regenerated.
+`public/upic-brand.js` also creates the dithered favicon from those pixels.
+The website title and share filenames now use $UPIC.
+
+Piano movement selection is now 5% from its last accepted note, governed by
+`PIANO_MOVE_PCT` in `piano-policy.js`. Both live and replay use that value, and
+visible captions import it to stay consistent. The original 14–26 ms attack
+is restored for notes and arpeggios; the strong 4.8-second room, longer release,
+six-voice cap and burst spacing remain.
+
+A compact NTS-inspired lamp marks connected native activity in red and running
+historical playback in magenta. Paused, seeking, ended or interrupted audio
+holds the lamp. Cached trades and snapshots carry distinct delayed labels.
+The round dot is an explicit exception to the page’s square-corner rule.
+Reference: https://www.nts.live/ .
+
+GMGN installation was researched only. No skill/CLI installation, account
+registration or key generation was performed. Its public key is Ed25519 API
+authentication, separate from wallet credentials. Market/token data need an
+API key; an eventual public web integration would require a server relay.
+Sources: https://github.com/GMGNAI/gmgn-skills and
+https://github.com/GMGNAI/gmgn-skills/blob/main/src/commands/config.ts .
+
+Syntax and source checks completed; no browser or audio runtime checks were
+run for this update.
