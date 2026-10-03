@@ -1,5 +1,5 @@
 // Fine serpentine error diffusion preserves image detail at device resolution.
-// Clear near-white paper and near-black ink before diffusing the midtones.
+// Preprocess grain and gamma before quantization, as separate tonal controls.
 // Composite onto white and keep every pixel opaque: no edge fade or reveal.
 export function ditherPixels(source,width,height){
  const out=new Uint8ClampedArray(width*height*4);
@@ -9,8 +9,12 @@ export function ditherPixels(source,width,height){
   for(let step=0;step<width;step++){
    const x=start+step*direction,i=(y*width+x)*4,alpha=source[i+3]/255;
    const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha);
-   const base=Math.max(0,Math.min(1,(luminance-16)/223));
-   const tone=255*(.42+.58*Math.pow(base,.55));
+   // Fixed grain avoids flicker when the image is resized or loaded again.
+   let hash=Math.imul(x+1,374761393)^Math.imul(y+1,668265263);
+   hash=Math.imul(hash^(hash>>>13),1274126177);
+   const noise=(((hash^(hash>>>16))>>>0)/4294967296-.5)*120;
+   const base=luminance>=245?1:Math.max(0,Math.min(1,(luminance+48+noise)/255));
+   const tone=255*Math.pow(base,.55);
    const gray=Math.max(0,Math.min(255,tone+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
    row[x+direction+1]+=error*7/16;
    next[x-direction+1]+=error*3/16;next[x+1]+=error*5/16;next[x+direction+1]+=error/16;
