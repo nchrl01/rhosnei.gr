@@ -10,6 +10,9 @@ const modulo = (value, period) => ((value % period) + period) % period;
 const LITTLE_ENDIAN = new Uint8Array(new Uint32Array([0x01020304]).buffer)[0] === 4;
 const BAYER_4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 const HISTOGRAM_SIZE = 1024;
+// Memoized source fields contain no animation state: seeking to the same source
+// phase and controls produces the same pixels, with or without these entries.
+const sourceFields = new Map();
 
 function seedNumber(seed) {
   if (typeof seed === 'number' && Number.isFinite(seed)) return seed >>> 0;
@@ -39,7 +42,9 @@ function noise(x, y, seed) {
 /**
  * Map normalized market observations to stable visual controls. `change` is a
  * signed change value. `time` is seconds supplied by the caller; there is no
- * internal clock, retained frame state, or random number generator.
+ * internal clock, feedback state, or random number generator. The caller
+ * integrates `motionRate` while its measured audio output is audible; changing
+ * a market input therefore never multiplies a large absolute timestamp.
  *
  * Rows can be selected explicitly (including 32, 64, 96, 128, and 192). The default
  * is 128. The returned dimensions are integer pixel dimensions, up to 4096.
@@ -52,16 +57,19 @@ export function binaryRowParameters(options = {}) {
   const drive = unit(options.drive), pressure = unit(options.pressure);
   const balance = unit(options.balance), marketCap = unit(options.marketCap);
   const liquidity = unit(options.liquidity), change = Math.tanh(finite(options.change, 0) / 20);
+  const level = unit(options.level, 1), transient = unit(options.transient, 0);
+  const energy = unit(drive * .38 + activity * .24 + Math.sqrt(level) * .24 + transient * .14);
+  const flowBias = clamp(change * .65 + (balance - .5) * .7, -1, 1);
   const mobile = Boolean(options.mobile);
   // A narrow rule remains a single physical pixel. At small render sizes, use
   // fewer rules so they cannot occupy the entire image or swamp the mobile view.
-  const ruleStride = Math.max(1, Math.ceil(rows / (height * (mobile ? .115 : .26))));
+  const ruleStride = Math.max(1, Math.ceil(rows / (height * .18)));
   const ruleCount = Math.ceil(rows / ruleStride);
   const ruleCoverage = ruleCount / height;
-  const targetCoverage = clamp((mobile ? .245 : .485)
-    + (volume - .5) * .035 + (drive - .5) * .025 + (pressure - .5) * .025
-    + (activity - .5) * .015 + (balance - .5) * .012 + change * .004,
-  mobile ? .20 : .40, mobile ? .29 : .56);
+  // Volume determines occupied area; measured sound and incoming events open
+  // it further. Keep the black/white palette stable at every intensity.
+  const targetCoverage = clamp(.235 + volume * .235 + energy * .17
+    + transient * .055 + pressure * .015, .235, .71);
   return {
     width, height, rows, seed: seedNumber(options.seed), mobile,
     time: options.reducedMotion ? 0 : finite(options.time, 0),
@@ -70,12 +78,16 @@ export function binaryRowParameters(options = {}) {
     ruleStride,
     targetCoverage,
     fragmentCoverage: clamp((targetCoverage - ruleCoverage) / (1 - ruleCoverage || 1), .015, .75),
-    // The tutorial's -frame/512 displacement is -60/512 UV per second.
-    // The caller supplies playback time; market updates cannot change phase.
+    // The tutorial's -frame/512 displacement is -60/512 UV per motion second.
+    // The caller integrates this rate so market changes accelerate the flow
+    // without teleporting its source phase.
+    motionRate: .22 + activity * 1.25 + drive * 1.55 + Math.sqrt(level) * .75 + transient * .9,
     velocity: 60 / 512,
-    displacement: .12,
-    bandDepth: .72 + (marketCap - .5) * .06 + (liquidity - .5) * .025,
-    grain: .085 + (1 - liquidity) * .035,
+    displacement: .04 + pressure * .14 + energy * .13 + transient * .08,
+    warp: .008 + energy * .075 + transient * .035,
+    flowBias,
+    bandDepth: .32 + marketCap * .55 + (1 - liquidity) * .28 + flowBias * .12,
+    grain: .03 + (1 - liquidity) * .29 + transient * .03,
     threshold: .523,
     softness: .124,
     delay: options.reducedMotion ? 0 : 1 / 60,
@@ -115,58 +127,87 @@ function rowPermutation(rows, seed) {
   return permutation;
 }
 
-function sampleField(parameters, scores, histogram) {
-  const { rows, columns, seed, bandDepth, grain, threshold, softness } = parameters;
-  const source = new Float32Array(rows * columns);
+function sourceField({ rows, columns, seed }) {
+  const key = `${seed}:${rows}:${columns}`;
+  if (sourceFields.has(key)) return sourceFields.get(key);
+  const length = rows * columns;
+  const base = new Float32Array(length), detail = new Float32Array(length);
+  const ramps = new Float32Array(rows), drivers = new Float32Array(rows);
+  const offsets = new Float32Array(rows), phases = new Float32Array(rows);
   const permutation = rowPermutation(rows, seed);
   // Build the static square noise and apply its vertical ramp before shuffling.
   // The permutation affects entire scanlines, retaining the noise's horizontal
   // correlation while redistributing dense and empty rows throughout the view.
-  for (let sourceRow = 0; sourceRow < rows; sourceRow++) {
+  for (let row = 0; row < rows; row++) {
+    const sourceRow = permutation[row];
     const ramp = (sourceRow + .5) / rows;
     const noiseY = ramp * 21.5;
-    const offset = sourceRow * columns;
+    const offset = row * columns;
+    ramps[row] = ramp - .5;
+    drivers[row] = .08 + noise((row + .5) / rows * 29.7, 3.17, seed ^ 0x812ab) * .84;
+    offsets[row] = hash(row, 83, seed) - .5;
+    phases[row] = hash(row, 173, seed ^ 0x12877) * Math.PI * 2;
     for (let column = 0; column < columns; column++) {
       // Neighboring cells share noise, yielding runs several cells long. Only
       // the small last term breaks a run into occasional one-cell fragments.
       const large = noise(column * .29, noiseY, seed ^ 0x92351);
       const small = noise(column * .713 + 5.31, noiseY * 2.37, seed ^ 0x6a17b);
-      const detail = hash(column, sourceRow, seed ^ 0x431ff);
-      source[offset + column] = large * (.74 - grain) + small * .26
-        + detail * grain + (ramp - .5) * bandDepth;
+      base[offset + column] = large * .74 + small * .26;
+      detail[offset + column] = hash(column, sourceRow, seed ^ 0x431ff) - large;
     }
   }
+  const field = { base, detail, ramps, drivers, offsets, phases,
+    scores: new Float32Array(length), histogram: new Uint32Array(HISTOGRAM_SIZE),
+    texture: null, textureKey: null };
+  sourceFields.set(key, field);
+  // A resized view and its current coin fit; old coins cannot grow the cache.
+  if (sourceFields.size > 2) sourceFields.delete(sourceFields.keys().next().value);
+  return field;
+}
+
+function sampleField(parameters, field) {
+  const { rows, columns, bandDepth, grain, threshold, softness } = parameters;
+  const key = [bandDepth, grain, parameters.fragmentCoverage, threshold, softness].join(':');
+  if (field.textureKey === key) return field.texture;
+  const { scores, histogram, base, detail, ramps } = field;
   for (let row = 0; row < rows; row++) {
-    const offset = permutation[row] * columns;
-    scores.set(source.subarray(offset, offset + columns), row * columns);
+    const offset = row * columns, ramp = ramps[row] * bandDepth;
+    for (let column = 0; column < columns; column++) {
+      const index = offset + column;
+      scores[index] = base[index] + detail[index] * grain + ramp;
+    }
   }
   // A single static remap offset controls occupancy without changing the Less
   // threshold or modulating the noise over time. Softness is confined to the
   // narrow input range immediately below that threshold.
   const remap = threshold - thresholdFor(scores, parameters.fragmentCoverage, histogram);
-  const texture = new Uint8Array(scores.length);
+  const texture = field.texture || new Uint8Array(scores.length);
   for (let index = 0; index < scores.length; index++) {
     texture[index] = Math.round(255 * smooth(clamp((threshold - scores[index] - remap) / softness, 0, 1)));
   }
-  return texture;
+  field.textureKey = key;
+  return field.texture = texture;
 }
 
-function rowDisplacement(parameters, row, time) {
-  const { columns, rows, seed, velocity, displacement } = parameters;
-  const vertical = (row + .5) / rows;
+function rowDisplacement(parameters, row, time, field) {
+  const { columns, velocity, displacement, warp, flowBias } = parameters;
   // This independent one-column noise driver is strictly positive. Repeat
   // sampling produces continuous displacement without evolving the source.
-  const driver = .08 + noise(vertical * 29.7, 3.17, seed ^ 0x812ab) * .84;
-  const base = (hash(row, 83, seed) - .5) * columns * displacement;
-  return modulo(base - time * velocity * columns * driver, columns);
+  const driver = field.drivers[row], phase = field.phases[row];
+  const base = field.offsets[row] * columns * displacement;
+  // Signed price/buy pressure shears neighboring rows in opposite directions.
+  // Its effect is bounded, avoiding jumps proportional to an old timestamp.
+  const shear = columns * warp * (Math.sin(time * .67 + phase)
+    + flowBias * Math.sin(time * .43 + phase * .71));
+  return modulo(base + shear - time * velocity * columns * driver, columns);
 }
 
 /**
  * Return { pixels, rows, coverage } for a Canvas2D ImageData upload.
  *
  * Pixels are straight-alpha white RGBA marks over transparent gaps. Paint black
- * behind the image for the desktop reference; leave gaps transparent for the
- * mobile overlay. `coverage` is the fraction of pixels with nonzero alpha.
+ * behind the image on both desktop and mobile. This is a contained visual
+ * panel, not an overlay. `coverage` is the fraction of pixels with nonzero alpha.
  * Fragment interiors and full-width rules are solid white; the threshold has a
  * narrow soft boundary. Three analytic delayed samples (1, 2, and 3 frames at
  * 60fps) add at most 1/16 intensity around moving edges. Optional monochrome
@@ -178,12 +219,11 @@ export function renderBinaryRows(options = {}) {
   const { width, height, rows, columns, time, delay, dither, ruleStride } = parameters;
   const pixels = new Uint8ClampedArray(width * height * 4);
   const packed = new Uint32Array(pixels.buffer);
-  const scores = new Float32Array(rows * columns);
-  const histogram = new Uint32Array(HISTOGRAM_SIZE);
   const strips = new Uint8Array(rows * width);
   const trails = new Uint16Array(rows * width);
   const cellWidth = width / columns;
-  const texture = sampleField(parameters, scores, histogram);
+  const field = sourceField(parameters);
+  const texture = sampleField(parameters, field);
 
   // Sample the same static texture at current and three adjacent-frame row
   // displacements. No mutable feedback is needed, so seeking remains exact.
@@ -191,7 +231,7 @@ export function renderBinaryRows(options = {}) {
     if (delay === 0 && sample > 0) continue;
     const sampleTime = time - sample * delay;
     for (let row = 0; row < rows; row++) {
-      const shift = rowDisplacement(parameters, row, sampleTime);
+      const shift = rowDisplacement(parameters, row, sampleTime, field);
       const firstCell = Math.floor(shift);
       const scoreOffset = row * columns, stripOffset = row * width;
       // An extra cell covers the partial run at the right edge. Wrapping is in

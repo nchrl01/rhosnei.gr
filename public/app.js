@@ -9,7 +9,7 @@ import {createCoinDither} from './coin-dither.js?v=79';
 import {createUpicBrand} from './upic-brand.js?v=79';
 import {createTransportIndicator} from './transport-indicator.js?v=61';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=85';
+import {createAudioDots} from './audio-dots.js?v=86';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=76';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -34,7 +34,7 @@ import {loadHistory} from './history.js?v=39';
 import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-let pd,ctx,gain,outputTap,instrumentTap,instrumentSamples,playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
+let pd,ctx,gain,outputTap,outputMeters,instrumentTap,instrumentSamples,playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let requestedNetwork=null,requestedAutoplay=false;
 let seed=1917,state=1917,step=0,timer,next=0,bpm=120,session=null;
 const controls=['master'];
@@ -55,7 +55,7 @@ const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>piano?.setArpeggioPattern(pattern)});
 const coinVoice=createCoinVoice({onStatus:text=>$('voice-ai-status').textContent=text});
 const displaySettings={dither:false};
-const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputTap,getState:()=>({playing,...displaySettings})});
+const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters}:outputTap,getState:()=>({playing,master:Number($('master').value),...displaySettings})});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
 const dataSonification=createDataSonification({send,event});
 const touchDesigner=createTouchDesignerBridge();
@@ -297,6 +297,10 @@ async function initialize(){
   const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;
   const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;
   gain.connect(limiter);limiter.connect(analyser);analyser.connect(ctx.destination);outputTap=analyser;
+  // Measure final stereo output separately: a mono downmix can cancel a wide
+  // piano/reverb signal. This sidechain does not change listening or recording.
+  const splitter=ctx.createChannelSplitter(2);limiter.connect(splitter);
+  outputMeters=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;splitter.connect(meter,channel);return meter;});
   // Piano and Pd share a music-only tap. Voice joins after it, preserving the
   // original master path while preventing voice/reverb from opening its own gate.
   instrumentTap=ctx.createAnalyser();instrumentTap.fftSize=2048;instrumentSamples=new Float32Array(instrumentTap.fftSize);instrumentTap.connect(gain);
@@ -339,7 +343,7 @@ async function initialize(){
 }
 async function closeAudio(){
  coinVoice.close();arpeggioAI.close();stopLegacyPlayback();audioEpoch++;pianoLoading=null;pdLoading=null;pendingPianoTrade=null;
- piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;outputGateOpen=null;outputTap=null;instrumentTap=null;instrumentSamples=null;
+ piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;instrumentSamples=null;
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
  if(runtime)await runtime.close();await context?.close();
 }

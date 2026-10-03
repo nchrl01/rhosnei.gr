@@ -850,3 +850,34 @@ settings/branches. The NDS12 font remains. Source review covered equations,
 selection, threshold gates, phase alignment and Pd wiring. Static desktop and
 mobile panel renders were compared with the reference. No automated test
 suite or audio audition was run for this revision.
+
+
+## Audible market field and contained mobile panel (v86)
+
+The binary field now uses measured final stereo output to open its visual
+surface. A parallel post-limiter channel splitter provides separate L/R RMS
+measurements, including piano, Pd, voice and reverb, without altering the
+listening or recording path. The gate opens above 0.0005 RMS, sustains above
+0.0002 RMS, and allows a 100 ms silence hold to avoid chatter. Pause, mute, seek,
+end and audio interruption clear it. A loaded price alone cannot show a field.
+Unmetered native audio does not pretend to have browser output.
+
+While audible, the field keeps moving through note and reverb tails. Live
+activity/intensity and measured output drive its continuous motion rate;
+volume changes coverage, signed price/buy pressure changes bounded row shear,
+and liquidity controls grain. Real trades and Pd onsets add short movement
+accents but cannot bypass the sound gate. Market controls and audio envelope
+are smoothed. Replay retains the chart cursor as its phase, including between
+candle changes. This phase is reproducible; live measured audio still shapes
+the frame, so this is not a promise of pixel-identical recordings. Reduced
+motion disables continuous travel while preserving incoming state updates.
+Seeded source noise is cached for at most two field dimensions/coins.
+
+Desktop fills the right-hand column to the viewport's right and bottom edges.
+Mobile uses its own opaque, full-width panel after player/readings and before
+market phrases. Removed the body reparent, fixed positioning and difference
+overlay. Silence clears both marks and black backdrop without moving controls.
+
+Source review covered the stereo sidechain, gating, replay clock, rendering
+inputs, layout sizing and responsive placement. No automated test suite or
+audio audition was run for this revision.
