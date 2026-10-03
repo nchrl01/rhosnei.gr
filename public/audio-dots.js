@@ -1,5 +1,5 @@
 import {createMarketAnnouncement} from './market-announcement.js?v=98';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=102';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=103';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){

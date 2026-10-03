@@ -46,3 +46,19 @@
 #volume-dial{width:44px;flex:0 0 44px}
 #volume-dial .comet-dial{--cd-figure:11px!important}
 #volume-panel #master{width:44px}
+
+/* Mobile opens the volume control from a compact, accessible speaker button. */
+#volume-button{display:none}
+#volume-button svg{display:block;width:23px;height:23px}
+#volume-button .volume-muted{display:none}
+#volume-button[data-muted=true] .volume-muted{display:block}
+#volume-button[data-muted=true] .volume-waves{display:none}
+@media(max-width:760px){
+ #volume-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:#fff}
+ #volume-button[aria-expanded=true]{background:#202020}
+ #volume-panel{position:absolute;top:calc(100% + 8px);right:6px;display:flex;flex-direction:column;align-items:center;gap:12px;width:168px;max-width:calc(100vw - 24px);padding:16px;border:1px solid #777;background:#080808;box-shadow:0 8px 24px #0009;z-index:50}
+ #volume-panel>label{display:block;font-size:14px}
+ #volume-panel #volume-dial{width:128px;flex:0 0 128px}
+ #volume-dial .comet-dial{--cd-size:128px!important;--cd-figure:22px!important}
+ #volume-panel #master{width:136px}
+}

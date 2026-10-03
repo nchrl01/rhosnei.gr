@@ -5,6 +5,23 @@ export function createUIControls(){
  const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
  let components,volume,clock,lastClock=null,sequence=0;
  const dial=document.createElement('div');dial.id='volume-dial';dial.hidden=true;input.before(dial);
+ const volumeButton=$('volume-button'),mobile=matchMedia('(max-width:760px)');
+ let volumeOpen=false;
+ function setVolumeOpen(open,focus=false){
+  volumeOpen=mobile.matches&&Boolean(open);panel.hidden=mobile.matches&&!volumeOpen;
+  volumeButton.hidden=!mobile.matches;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
+  if(focus&&volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;if(!volume?.focus())input.focus({preventScroll:true});});
+ }
+ function volumeLabel(){
+  const amount=Math.round(Number(input.value)*100);
+  volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);
+ }
+ volumeButton.addEventListener('click',()=>setVolumeOpen(!volumeOpen,true));
+ document.addEventListener('pointerdown',event=>{if(volumeOpen&&!volumeButton.parentElement.contains(event.target))setVolumeOpen(false);});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
+ volumeButton.parentElement.addEventListener('focusout',event=>{if(volumeOpen&&event.relatedTarget&&!volumeButton.parentElement.contains(event.relatedTarget))setVolumeOpen(false);});
+ mobile.addEventListener('change',()=>setVolumeOpen(false));
+ input.addEventListener('input',volumeLabel);setVolumeOpen(false);volumeLabel();
  const clockFallback=document.createElement('span'),clockHost=document.createElement('span');
  clockFallback.className='clock-fallback';clockHost.className='clock-island';time.replaceChildren(clockFallback,clockHost);
  function hostFor(name){return $(name+'-loader');}
