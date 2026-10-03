@@ -513,3 +513,21 @@ Piano tuning, the diffuse piano room and the master volume are unchanged.
 
 Review for this update: static source/routing review and syntax validation.
 No audio renders, browser playback checks or physical-iPhone checks were run.
+
+
+## Mobile overlay and voice recovery (v64)
+
+Mobile moves the signal canvas to the page root: transparent white marks use
+`mix-blend-mode: difference` across the viewport. The mobile canvas omits all
+heading/footer labels; its caption is hidden. It is pointer-transparent, and
+returns to the desktop player position when the breakpoint changes. Expired
+bursts clear every pixel, so quiet periods leave the underlying page untouched.
+
+Coin voice now admits active low-volatility trading as well as price movement.
+The first phrase can accompany music after 4–8 seconds; actual audible music
+must be present for 300 ms before it starts. The speech gate uses a small RMS
+hysteresis, excludes voice/reverb, and closes on silence, pause or seek. Cut-off
+phrases retry after four seconds; only completed names enter the 90–139 second
+cooldown. Switching coin during model generation schedules the new name when
+the obsolete job finishes. Whisper loudness is bounded by both RMS and peak.
+Kokoro still requires its first model download; no device speech fallback is used.

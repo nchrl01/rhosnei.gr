@@ -1,19 +1,19 @@
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=53';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,decodeScore} from './take-share.js?v=63';
+import {createTakeShare,decodeScore} from './take-share.js?v=64';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=53';
-import {createEngineView} from './engine-view.js?v=63';
-import {createCoinDither} from './coin-dither.js?v=63';
-import {createUpicBrand} from './upic-brand.js?v=63';
+import {createEngineView} from './engine-view.js?v=64';
+import {createCoinDither} from './coin-dither.js?v=64';
+import {createUpicBrand} from './upic-brand.js?v=64';
 import {createTransportIndicator} from './transport-indicator.js?v=61';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=63';
+import {createAudioDots} from './audio-dots.js?v=64';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
-import {createDataSonification} from './data-sonification.js?v=63';
-import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=59';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=63';
+import {createDataSonification} from './data-sonification.js?v=64';
+import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=64';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=64';
 import {createMathPatterns,mathIdentity,MATH_SLOT_COUNT} from './math-patterns.js?v=53';
 import {createMathPatternView} from './math-pattern-view.js?v=53';
 import {contextualizeMarket} from './market-state.js?v=53';
@@ -248,11 +248,13 @@ function replayPiano(m){
  }
  pianoReplayCursor=cursor;
 }
+let instrumentWasAudible=false;
 function otherInstrumentsAudible(){
- if(!instrumentTap||!instrumentSamples||!playing||ctx?.state!=='running')return false;
+ if(!instrumentTap||!instrumentSamples||!playing||ctx?.state!=='running'){instrumentWasAudible=false;return false;}
  instrumentTap.getFloatTimeDomainData(instrumentSamples);
  let power=0;for(const sample of instrumentSamples)power+=sample*sample;
- return Math.sqrt(power/instrumentSamples.length)>.0005;
+ const rms=Math.sqrt(power/instrumentSamples.length);
+ instrumentWasAudible=rms>(instrumentWasAudible?.0002:.0005);return instrumentWasAudible;
 }
 function tick(){
  const m=metrics(),music=musicalFrame(m),energy=music.volume*m.fresh;
@@ -305,9 +307,9 @@ async function initialize(){
   audioErrors.pd='';audioErrors.envion='';
   pdLoading=(async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{
-    const response=await fetch('patches/orchestra/manifest.json?v=63');if(!response.ok)throw Error('Cannot load orchestra manifest');
+    const response=await fetch('patches/orchestra/manifest.json?v=64');if(!response.ok)throw Error('Cannot load orchestra manifest');
     const manifest=await response.json();
-    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=63');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=64');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
     return {manifest,files};
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');
@@ -504,7 +506,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:63,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:64,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollTime=rollingText($('coin-time')),rollCap=rollingText($('coin-cap'));

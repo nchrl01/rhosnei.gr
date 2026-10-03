@@ -195,7 +195,11 @@ body.inspecting .audio-visualizer{display:none}
  .audio-visualizer{position:fixed;left:648px;right:16px;top:76px;bottom:16px;width:auto;height:auto;max-width:none;margin:0;z-index:0}
  .instrument{position:relative;z-index:1}
 }
-@media(max-width:760px){.audio-visualizer{max-width:440px;height:350px;margin-top:24px}}
+@media(max-width:760px){
+ .audio-visualizer{position:fixed;inset:0;width:100%;height:100%;max-width:none;margin:0;background:transparent;z-index:1000;mix-blend-mode:difference;pointer-events:none;contain:none}
+ #audio-dots{height:100%;pointer-events:none}
+ .visualizer-caption{display:none}
+}
 .trending-empty{border:0;height:32px;min-height:32px;max-width:100%;font-size:11px;padding:0 12px;background:transparent;color:#666;text-align:left;justify-content:flex-start}
 .trending-empty:disabled{opacity:1}
 .is-loading::after{content:'···';display:inline-block;letter-spacing:3px;margin-left:6px;animation:loading-dots 1.2s ease-in-out infinite}

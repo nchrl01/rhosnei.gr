@@ -29,14 +29,14 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
  };
 }
 export function createCoinVoice({onStatus=()=>{}}={}){
- let ctx,destination,master,input,space,speechGate,clearTimer,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=false,source=null,tailActive=false,lastClock=null,elapsed=0,next=12,cache=new Map(),retryAt=0;
- const runner=backgroundModel('./voice-ai-worker.js?v=58',onStatus,240000);
+ let ctx,destination,master,input,space,speechGate,clearTimer,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=null,source=null,tailActive=false,lastClock=null,musicSince=null,elapsed=0,next=4,cache=new Map(),retryAt=0;
+ const runner=backgroundModel('./voice-ai-worker.js?v=64',onStatus,240000);
  // A silent frame must not rebuild a long stereo convolution every 150 ms.
  // Clear only once after actual speech or its tail has entered this room.
  function hold(param,time){if(param.cancelAndHoldAtTime)param.cancelAndHoldAtTime(time);else{const value=param.value;param.cancelScheduledValues(time);param.setValueAtTime(value,time);}}
  function hush(){
   if(!tailActive&&!source)return;
-  tailActive=false;const retiring=source;source=null;
+  tailActive=false;const retiring=source;source=null;if(retiring)next=elapsed+4;
   const time=ctx.currentTime;hold(speechGate.gain,time);speechGate.gain.linearRampToValueAtTime(0,time+.025);
   if(retiring)try{retiring.stop(time+.03);}catch{}
   clearTimeout(clearTimer);clearTimer=setTimeout(()=>{clearTimer=null;retiring?.disconnect();space?.clear();},50);
@@ -44,33 +44,44 @@ export function createCoinVoice({onStatus=()=>{}}={}){
  function update(){if(master&&ctx)master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.03);}
  return {
   attach(context,out){if(ctx===context)return;ctx=context;destination=out;master=ctx.createGain();master.gain.value=0;master.connect(destination);speechGate=ctx.createGain();speechGate.gain.value=0;speechGate.connect(master);space=createVoiceReverb(ctx,speechGate);input=space.input;update();},
-  setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=12+seed%8;onStatus('Coin whisper · loads with Listen');},
+  setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=4+seed%5;musicSince=null;onStatus('Coin whisper · loads with Listen');},
   setMaster(value){volume=Math.max(0,Math.min(1,Number(value)||0));update();},
   setEnabled(value){enabled=Boolean(value);update();if(!enabled)hush();else if(running)void this.prepare();},
-  setRunning(value){running=Boolean(value);lastClock=null;update();if(!running)hush();},
-  reset(){hush();elapsed=0;lastClock=null;next=12+seed%8;},
-  async prepare(){if(!ctx||!name||!enabled||loading||buffer||Date.now()<retryAt)return;loading=true;const token=epoch,current=name;
-   try{let result=cache.get(current);if(!result){result=await runner.request({text:current});cache.set(current,result);if(cache.size>8)cache.delete(cache.keys().next().value);}
-    if(token!==epoch)return;const samples=result.samples;if(!(samples instanceof Float32Array)||!samples.length||samples.length>24000*30||!Number.isFinite(result.rate)||result.rate<8000||result.rate>48000)throw Error('Invalid voice audio');
-    buffer=ctx.createBuffer(1,samples.length,result.rate);let peak=0;for(const n of samples)if(Number.isFinite(n))peak=Math.max(peak,Math.abs(n));const trim=peak>0?Math.min(3,.16/peak):1;buffer.copyToChannel(Float32Array.from(samples,n=>Number.isFinite(n)?n*trim:0),0);onStatus('Coin whisper ready · accompanies instruments only');
-   }catch{retryAt=Date.now()+60000;if(token===epoch)onStatus('Coin voice unavailable · click Retry');}
-   finally{loading=false;}
+  setRunning(value){running=Boolean(value);lastClock=null;musicSince=null;update();if(!running)hush();},
+  reset(){hush();elapsed=0;lastClock=null;next=4+seed%5;musicSince=null;},
+  async prepare(){if(!ctx||!name||!enabled||loading||buffer||Date.now()<retryAt)return;
+   const request={epoch,name,context:ctx};loading=request;
+   try{let result=cache.get(request.name);if(!result){result=await runner.request({text:request.name});}
+    if(request.epoch!==epoch||request.context!==ctx)return;
+    const samples=result.samples;if(!(samples instanceof Float32Array)||!samples.length||samples.length>24000*30||!Number.isFinite(result.rate)||result.rate<8000||result.rate>48000)throw Error('Invalid voice audio');
+    let peak=0,power=0;for(const n of samples)if(Number.isFinite(n)){peak=Math.max(peak,Math.abs(n));power+=n*n;}
+    if(peak<1e-6)throw Error('Empty voice audio');
+    cache.set(request.name,result);if(cache.size>8)cache.delete(cache.keys().next().value);
+    // Loudness-normalize the whisper without turning sharp consonants into peaks.
+    const rms=Math.sqrt(power/samples.length),trim=Math.min(6,.28/peak,.045/Math.max(rms,1e-6));
+    buffer=ctx.createBuffer(1,samples.length,result.rate);buffer.copyToChannel(Float32Array.from(samples,n=>Number.isFinite(n)?n*trim:0),0);onStatus('Coin whisper ready · waiting for accompanying music');
+   }catch(error){if(request.epoch===epoch){retryAt=Date.now()+60000;onStatus('Coin voice unavailable · '+error.message+' · Retry');}}
+   finally{if(loading===request){loading=null;if(request.epoch!==epoch&&ctx&&enabled&&running)void this.prepare();}}
   },
   retry(){retryAt=0;void this.prepare();},
   frame(m,{playing=false,seeking=false,ended=false,audible=false}={}){
    if(!ctx)return;const active=running&&enabled&&playing&&!seeking&&!ended&&ctx.state==='running';const clock=ctx.currentTime,dt=lastClock===null?0:Math.max(0,clock-lastClock);lastClock=clock;
-   if(!active){hush();return;}elapsed+=dt;
-   // Both % movement and contextual intensity must be present. Quiet markets
-   // never become a timed announcement loop; each call is one finite name.
-   const moving=(m.fresh||0)>0&&(m.music?.intensity||0)>.035&&Math.abs(m.music?.changePct||0)>.3;
-   // The isolated music tap excludes this voice and its reverb. Announcements
-   // cannot start, or sustain themselves, when the other instruments are silent.
-   if(!moving||!audible||volume===0){hush();return;}
-   if(!buffer){void this.prepare();return;}
-   if(elapsed<next||source)return;
+   if(!active){musicSince=null;hush();return;}elapsed+=Math.min(dt,1);
+   // Prepare independently of the speech gate, including after switching coins
+   // while the previous name is still being generated.
+   if(!buffer)void this.prepare();
+   const raw=m.raw||m;
+   const moving=(m.fresh||0)>0&&((raw.activity||0)>.005||(m.tradeRate||0)>0||Math.abs(m.music?.changePct||0)>.3||Number(m.replay?.volume)>0);
+   // A finite phrase needs actual accompanying music; its own reverb is excluded.
+   if(!audible||volume===0){musicSince=null;hush();return;}
+   musicSince??=clock;
+   if(source||!buffer||!moving||elapsed<next||clock-musicSince<.3)return;
    clearTimeout(clearTimer);clearTimer=null;hold(speechGate.gain,clock);speechGate.gain.linearRampToValueAtTime(1,clock+.02);
-   source=ctx.createBufferSource();source.buffer=buffer;const spoken=source;source.onended=()=>{spoken.disconnect();if(source===spoken)source=null;};source.connect(input);source.start();tailActive=true;next=elapsed+110+seed%50;
+   source=ctx.createBufferSource();source.buffer=buffer;const spoken=source;
+   source.onended=()=>{spoken.disconnect();if(source===spoken){source=null;next=elapsed+90+seed%50;onStatus('Coin whisper ready · accompanies instruments only');}};
+   source.connect(input);source.start();tailActive=true;onStatus('Whispering coin name');
+
   },
-  close(){this.setRunning(false);clearTimeout(clearTimer);clearTimer=null;runner.stop();epoch++;buffer=null;loading=false;space?.close();space=null;speechGate?.disconnect();speechGate=null;master?.disconnect();master=null;input=null;ctx=null;},
+  close(){this.setRunning(false);clearTimeout(clearTimer);clearTimer=null;runner.stop();epoch++;buffer=null;loading=null;musicSince=null;space?.close();space=null;speechGate?.disconnect();speechGate=null;master?.disconnect();master=null;input=null;ctx=null;},
  };
 }

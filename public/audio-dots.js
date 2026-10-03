@@ -23,8 +23,11 @@ export function fieldState(m={}){
 const BURST_MS=180,BURST_GAP_MS=360;
 const fingerprint=value=>{let n=2166136261;for(const ch of String(value))n=Math.imul(n^ch.charCodeAt(0),16777619);return n>>>0;};
 export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={}){
- const c=canvas?.getContext('2d',{alpha:false});if(!c)return {frame(){},event(){},pulse(){},reset(){},close(){}};
- const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ const c=canvas?.getContext('2d',{alpha:true});if(!c)return {frame(){},event(){},pulse(){},reset(){},close(){}};
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)'),mobile=matchMedia('(max-width:760px)');
+ const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('market visual home');
+ if(host)host.after(anchor);
+ const ink=()=>mobile.matches?'#fff':'#111';
  let w=0,h=0,last=0,tap=null,wave,spectrum,animation=0,closed=false,visible=true,dirty=true;
  let metrics={},options={},seed=1917,phase=0,activeBefore=false,energy=0,events=[],lastPulse=null,model=fieldState(),lastReplay=false;
  let burst=null,lastBurst=-Infinity,observation=null,lastEvent=-Infinity;
@@ -34,7 +37,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   visible=entries[0]?.isIntersecting??true;if(!visible)clearBurst();dirty=true;
  }):null;visibility?.observe(canvas);
  function size(){const b=canvas.getBoundingClientRect();w=b.width;h=b.height;const d=Math.min(globalThis.devicePixelRatio||1,w<600?1.25:1.5);canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);c.setTransform(d,0,0,d,0,0);dirty=true;}
- function text(label,x,y,color='#555',size=8){c.fillStyle=color;c.font=`${size}px Arial, sans-serif`;c.fillText(label,x,y);}
+ function text(label,x,y,color='#555',size=8){c.fillStyle=mobile.matches?'#fff':color;c.font=`${size}px Arial, sans-serif`;c.fillText(label,x,y);}
  function running(){return Boolean(getState().playing&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');}
  function clearBurst(){burst=null;lastPulse=null;energy=0;bands.fill(0);dirty=true;}
  function trigger(key,strength=0){
@@ -75,7 +78,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
     const py=heightValue+stripe+(point?.volume||0)*.22*Math.cos(px*3)+pitch*px*.06,pz=progression*3.8;
     const rx=px*cs-pz*sn,rz=px*sn+pz*cs,ry=py*ct-rz*st,depth=py*st+rz*ct+3.25;
     const sx=Math.round(cx+rx*f/depth),sy=Math.round(cy-ry*f/depth);
-    c.fillStyle='#111';
+    c.fillStyle=ink();
     const dot=selected<.12&&drive>.45?1.65:1;c.fillRect(sx,sy,dot,dot);
     // Plus signs and crosshairs expose the same history samples as the dots.
     if(point&&selected<drive*.025){c.fillRect(sx-3,sy,7,1);c.fillRect(sx,sy-3,1,7);}
@@ -90,7 +93,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    for(let col=0;col<cols;col++){
     const pick=hash(burst.word^word,col+group*617),on=((word>>>(col%31))&1)===1;
     if(pick>(.06+drive*.36))continue;
-    const half=gh*.5-1;c.fillStyle='#111';
+    const half=gh*.5-1;c.fillStyle=ink();
     c.fillRect(Math.floor(x+col*cw),y+group*gh+(on?0:half+2),Math.max(1,cw*(.2+pick*.75)),Math.max(1,half*(.55+bands[(col+group*7)%64]*.45)));
    }
   }
@@ -109,17 +112,19 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(active&&burst&&!reduced.matches)sample(dt);
   activeBefore=active;dirty=false;
   const drive=burst?unit(.22+model.drive*.45+burst.strength*.33):0,margin=w<450?12:20;
-  const fieldY=47,fieldH=Math.max(20,h-105),fieldW=w-margin*2;
-  c.fillStyle='#fff';c.fillRect(0,0,w,h);c.textBaseline='alphabetic';c.textAlign='left';
+  const fieldY=mobile.matches?0:47,fieldH=mobile.matches?h:Math.max(20,h-105),fieldW=w-margin*2;
+  c.clearRect(0,0,w,h);if(!mobile.matches){c.fillStyle='#fff';c.fillRect(0,0,w,h);}c.textBaseline='alphabetic';c.textAlign='left';
+  if(!mobile.matches){
   text('U P I C  /  D A T A   S C O R E',margin,22,'#111',8);
   c.textAlign='right';text(!active?'PAUSED':burst?(metrics.replay?'CANDLE':'EVENT'):'WAITING',w-margin,22,'#555',8);c.textAlign='left';
   c.strokeStyle='#ddd';c.beginPath();c.moveTo(margin,33.5);c.lineTo(w-margin,33.5);c.stroke();
+  }
   if(burst){
    c.save();c.beginPath();c.rect(margin,fieldY,fieldW,fieldH);c.clip();
    terrain(margin,fieldY,fieldW,fieldH*.88,drive);
    const bandTop=fieldY+fieldH*.56;barcode(margin,bandTop,fieldW,fieldH*.27,drive);
    const spectrumY=fieldY+fieldH*.94,binWidth=fieldW/bands.length;
-   c.fillStyle='#111';for(let b=0;b<bands.length;b++){const length=bands[b]*fieldH*.105;if(length>1)c.fillRect(margin+b*binWidth,spectrumY-length,1,length);}
+   c.fillStyle=ink();for(let b=0;b<bands.length;b++){const length=bands[b]*fieldH*.105;if(length>1)c.fillRect(margin+b*binWidth,spectrumY-length,1,length);}
    // Pd can mark an existing market burst, but cannot start or prolong it.
    if(lastPulse&&tap&&tap.context.currentTime-lastPulse.at<.16){const x=margin+(lastPulse.voice+.5)*fieldW/5;c.fillRect(x,bandTop-7,8,1);c.fillRect(x,bandTop-7,1,5);}
    for(let i=0;i<Math.round(3+drive*9);i++){
@@ -128,6 +133,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    }
    c.restore();
   }
+  if(!mobile.matches){
   const y=h-44;
   text('Δ '+(model.change==null?'—':(model.change>=0?'+':'')+model.change.toFixed(2)+'%')+'    VOL '+compact(model.values[2]),margin,y);
   c.textAlign='right';text('CAP '+compact(model.values[5]),w-margin,y);c.textAlign='left';
@@ -135,8 +141,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const holderLabel=model.holder==null?'HOLDERS —':'HOLDERS '+compact(model.holder)+' / '+(model.holderWeight<=0?'STALE':ageText);
   text(metrics.replay?'CANDLE SCORE / NO HISTORICAL HOLDERS':holderLabel,margin,y+15,'#666',7);
   c.textAlign='right';text(metrics.replay?'REPLAY':model.fresh<=0?'STALE':metrics.decoded?'OBSERVED SWAPS':'SNAPSHOTS',w-margin,y+15,'#666',7);c.textAlign='left';
-  canvas.dataset.active=String(active);canvas.dataset.burst=String(Boolean(burst));canvas.dataset.energy=energy.toFixed(3);canvas.dataset.density=drive.toFixed(3);canvas.dataset.phase=phase.toFixed(3);
+  }
+  canvas.dataset.overlay=String(mobile.matches);canvas.dataset.active=String(active);canvas.dataset.burst=String(Boolean(burst));canvas.dataset.energy=energy.toFixed(3);canvas.dataset.density=drive.toFixed(3);canvas.dataset.phase=phase.toFixed(3);
  }
+ function layout(){if(host){if(mobile.matches)document.body.append(host);else anchor.parentNode?.insertBefore(host,anchor);}size();}
+ mobile.addEventListener('change',layout);layout();
  animation=requestAnimationFrame(draw);
  return {
   frame(next={},settings={}){
@@ -166,6 +175,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    trigger(id||[trade.kind,trade.occurredAt||trade.receivedAt,trade.priceUsd].join(':'),Math.max(model.drive,unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(1e6))));
   },
   reset(){clearBurst();observation=null;lastBurst=-Infinity;lastEvent=-Infinity;events=[];phase=0;},
-  close(){closed=true;cancelAnimationFrame(animation);observer.disconnect();visibility?.disconnect();},
+  close(){closed=true;cancelAnimationFrame(animation);observer.disconnect();visibility?.disconnect();mobile.removeEventListener('change',layout);if(host)anchor.parentNode?.insertBefore(host,anchor);anchor.remove();},
  };
 }
