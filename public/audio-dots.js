@@ -147,13 +147,14 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    options=settings;latest=fieldState(next);dirty=true;
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
    if(incoming!==null&&incoming!==sourceClock){sourceClock=incoming;sourceAt=performance.now();}
-   const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
+   const current={change:latest.change,at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running()){hide();return;}
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
    const relativeMove=changed?Math.abs(current.price/old.price-1):0;
    const sourceChanged=replaying?current.at!==old?.at:changed;
-   if(old&&sourceChanged&&(relativeMove>=.05||(Math.abs(latest.change||0)>=5&&latest.drive>.55))){accentAt=performance.now();accentStrength=unit(.4+relativeMove*4+latest.drive*.3);}
+   const crossedMoveBand=old?.change!=null&&latest.change!=null&&Math.trunc(latest.change/5)!==Math.trunc(old.change/5)&&Math.abs(latest.change)>=5;
+   if(old&&sourceChanged&&(relativeMove>=.05||(crossedMoveBand&&latest.drive>.55))){accentAt=performance.now();accentStrength=unit(.4+relativeMove*4+latest.drive*.3);}
 
    if(replaying){
     if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive);
