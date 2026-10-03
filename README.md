@@ -563,3 +563,19 @@ Cold voice startup still needs a model download. Shared scores preserve candles
 and arpeggio phrases, but cross-version synthesis and granular textures are not
 bit-identical; downloaded audio is the exact take. External history cache and
 rate limits still bound loading speed.
+
+
+## Consistent source-ink artwork (v74)
+
+All displayed coin art and the UPIC mark now use one source-only SVG filter.
+It extracts the existing near-black strokes, lifts coloured fills to white and
+adds stable fine gaps to the ink. It does not generate extra contours around
+existing lines. Images whose hosts block canvas reads receive exactly the same
+filter as local images; there is no separate Laplacian fallback. The favicon
+uses an equivalent dark-ink threshold with deterministic grain. No edge fade.
+
+The visual check used the original coloured Robin Pepe artwork from its public
+coin listing, rather than reprocessing an already stylized screenshot. Isolated
+WebKit renders from hosts with and without CORS matched pixel for pixel. The
+original image was reviewed at 512px and 160px display sizes; white interiors,
+original single strokes and dark pupils were preserved.

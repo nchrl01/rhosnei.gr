@@ -1,5 +1,5 @@
-// The supplied mark and favicon use the same sparse contour dither as coins.
-import {createCoinDither,ditherPixels} from './coin-dither.js?v=73';
+// The supplied mark and favicon use the same source-ink dither as coins.
+import {createCoinDither,ditherPixels} from './coin-dither.js?v=74';
 export function createUpicBrand(img,fallback){
  createCoinDither(img,fallback).set('upic-mark.png?v=61');
  const source=new Image();source.onload=()=>{
