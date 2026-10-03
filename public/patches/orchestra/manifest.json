@@ -1,8 +1,9 @@
 {
-  "version": 18,
+  "version": 19,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
+    "av-data-low.pd",
     "av-data-pulse.pd",
     "av-data.pd",
     "av-envion.pd",

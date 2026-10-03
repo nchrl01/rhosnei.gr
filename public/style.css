@@ -184,17 +184,18 @@ button,summary,a{font-variant-emoji:text}
 /* Fine image dithering, with the entire coin image retained. */
 .coin-avatar{position:relative;border:0;background:transparent;overflow:hidden}
 .coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:auto}
-.coin-avatar[data-dither=fallback] img{filter:grayscale(1);mask-image:none;-webkit-mask-image:none}
 .coin-avatar #coin-image-fallback{grid-area:1/1}
-.audio-visualizer{display:none}
+/* A full data field beside the compact player, also available below it on phones. */
+.audio-visualizer{display:block;position:relative;width:100%;height:380px;margin:28px auto 0;max-width:600px;background:#080808;contain:layout paint;pointer-events:none}
+#audio-dots{display:block;width:100%;height:calc(100% - 30px)}
+.visualizer-caption{position:absolute;bottom:0;left:12px;right:12px;height:30px;display:flex;justify-content:space-between;gap:16px;align-items:center;font-size:8px;color:#888;border-top:1px solid #252525;overflow:hidden;white-space:nowrap}
+#visualizer-coin{font-weight:700;color:#bbb;overflow:hidden;text-overflow:ellipsis}#visualizer-state{font-weight:400;font-size:8px;flex-shrink:0}
+body.inspecting .audio-visualizer{display:none}
 @media(min-width:1050px){
- .audio-visualizer{display:block;position:fixed;left:660px;right:24px;top:76px;bottom:36px;pointer-events:none;z-index:0;contain:layout paint}
- #audio-dots{display:block;width:100%;height:100%}
- .visualizer-caption{position:absolute;bottom:0;left:clamp(12px,3.5%,28px);right:clamp(12px,3.5%,28px);display:flex;justify-content:space-between;gap:16px;align-items:center;font-size:9px;color:#777;letter-spacing:.03em;border-top:1px solid #bbb;padding-top:8px}
- #visualizer-coin{font-weight:700;color:#555}#visualizer-state{font-weight:400;font-size:9px}
- body.inspecting .audio-visualizer{display:none}
+ .audio-visualizer{position:fixed;left:648px;right:16px;top:76px;bottom:16px;width:auto;height:auto;max-width:none;margin:0;z-index:0}
  .instrument{position:relative;z-index:1}
 }
+@media(max-width:760px){.audio-visualizer{max-width:440px;height:350px;margin-top:24px}}
 .trending-empty{border:0;height:32px;min-height:32px;max-width:100%;font-size:11px;padding:0 12px;background:transparent;color:#666;text-align:left;justify-content:flex-start}
 .trending-empty:disabled{opacity:1}
 .is-loading::after{content:'···';display:inline-block;letter-spacing:3px;margin-left:6px;animation:loading-dots 1.2s ease-in-out infinite}

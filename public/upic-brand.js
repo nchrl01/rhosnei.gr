@@ -1,5 +1,5 @@
 // The user's supplied mark, processed by the same deterministic image dither.
-import {createCoinDither,ditherPixels} from './coin-dither.js?v=60';
+import {createCoinDither,ditherPixels} from './coin-dither.js?v=62';
 export function createUpicBrand(img,fallback){
  createCoinDither(img,fallback).set('upic-mark.png?v=61');
  const source=new Image();source.onload=()=>{

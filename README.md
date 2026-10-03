@@ -438,3 +438,47 @@ https://github.com/GMGNAI/gmgn-skills/blob/main/src/commands/config.ts .
 
 Syntax and source checks completed; no browser or audio runtime checks were
 run for this update.
+
+
+## Reviewed audiovisual implementation (v62)
+
+This review replaces the v60 data dashboard with an authored monochrome depth
+field: price history forms a three-dimensional plane, measured market values
+form scanning bands, and the actual mixed audio supplies spectral detail. It is
+visible beside the desktop player and directly below the phone player. Quiet
+markets become sparse; paused transport freezes movement. Geometry in replay
+is anchored to the recorded position, so repeated seeks do not continue an old
+animation phase. Drawing is capped at 30 fps desktop / 24 fps phone, pauses when
+offscreen, and stops camera motion for the reduced-motion preference.
+
+The browser's actual Pd engine now runs five distinct voices: high ticks, longer
+sines, filtered noise bursts, mid pulses and a low sine cluster. Liquidity shapes
+pulse duration. Holder snapshots add harmonics to the separate drone. Its data
+still means wallet count, never watchers; absent/expired/replay holder data stays
+silent. A 2.5-second watchdog accommodates background-tab timer throttling while
+explicit pause, seek, end and bundle removal still close audio immediately.
+Generated orchestra manifest: v19. New source: av-data-low.pd.
+
+Piano retains the 5% selection and brief sampled attack, but sustains its natural
+body into an eight-second diffuse room with a stronger wet path. At extreme
+sample rates the impulse memory remains capped. The 50% volume control is
+unchanged. No loop or permanently running pad was introduced.
+
+All coin art is dithered without fade. Canvas-readable images use error diffusion
+and regenerate on resize. CORS-restricted images use a source-only SVG stochastic
+threshold, with no overlay image, external proxy, edge mask or grayscale fallback.
+
+Verification: actual libpd WASM renders exercised all five voices, quiet/stale
+silence, holder gating, pause/seek/end, watchdog recovery and repeatable seeded
+phrases; the full Envion check passed. Muted headless browser integration exercised
+the complete Pd/piano mix, live observations, replay, pause, desktop/phone layout,
+and dither loading. Chromium and WebKit dither renders preserved black corners
+and white margins. Offline piano renders at 48/96 kHz checked finite tails,
+repeatability, pause silence and overlapping-note headroom. A physical iPhone and
+provider uptime are not simulated by these checks.
+
+Run the ordinary regressions with `node checks/audio-unlock.mjs`,
+`node checks/music-context.mjs`, `node checks/math-transport.mjs`, and
+`node checks/data-sonification.mjs`. The isolated piano/visual browser checks need
+Playwright and its browsers; use `AV_PLAYWRIGHT_MODULE` for a bundled installation
+and `PLAYWRIGHT_BROWSERS_PATH` if its browsers are stored separately.
