@@ -5,8 +5,8 @@ const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 export function backgroundParameters(model,seed=0,position=0){
  const change=Number(model.change)||0,volume=unit(model.volume),activity=unit(model.activity);
  return {mode:(seed>>>0)%3,amplitude:2+unit(model.drive)*24,frequency:.025+activity*.16,
-  phase:position*.07+change*.12,spacing:7+Math.round((1-volume)*16),
-  compression:.8+unit(model.pressure)*.6,seed:(seed>>>0)%997,weight:.06+unit(model.drive)*.16};
+  phase:position*1.4+change*.25,spacing:7+Math.round((1-volume)*16),
+  compression:.8+unit(model.pressure)*.6,seed:(seed>>>0)%997,weight:.18+unit(model.drive)*.42};
 }
 export function marketBackground(model,{seed=0,position=0,dither=true,width=256,height=192}={}){
  const p=backgroundParameters(model,seed,position),out=new Uint8ClampedArray(width*height*4);

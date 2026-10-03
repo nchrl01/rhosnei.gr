@@ -1,4 +1,4 @@
-import {createMarketBackground} from './market-background.js?v=81';
+import {createMarketBackground} from './market-background.js?v=83';
 // Original market score: precise raster, binary registers and price topography.
 // Retain the last observation and blend updates. Geometry never feeds audio.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -29,6 +29,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const ink=()=>mobile.matches?'#fff':'#111';
  let w=0,h=0,last=0,tap=null,wave,spectrum,animation=0,closed=false,visible=true,dirty=true;
  let metrics={},options={},seed=1917,phase=0,activeBefore=false,energy=0,events=[],lastPulse=null,model=fieldState(),lastReplay=false;
+ let motionUntil=0,motionClock=0,motionWasActive=false;
  let field=null,observation=null,lastEvent=-Infinity,queued=false,lastUpdate=-Infinity;
  let baseScene=null,nextScene=null,blendScene=null,transitionAt=0,displayModel=null,displayDrive=0;
  const bands=new Float32Array(64),observer=new ResizeObserver(size);
@@ -40,13 +41,15 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  function size(){const b=canvas.getBoundingClientRect();w=b.width;h=b.height;const d=Math.min(globalThis.devicePixelRatio||1,w<600?1.25:1.5);canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);c.setTransform(d,0,0,d,0,0);if(w>0&&h>0&&baseScene&&displayModel){baseScene=renderField(displayModel);nextScene=null;blendScene=null;}dirty=true;}
  function text(label,x,y,color='#555',size=8){c.fillStyle=mobile.matches?'#fff':color;c.font=`${size}px NDS12, sans-serif`;c.fillText(label,x,y);}
  function running(){return Boolean(getState().playing&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');}
- function clearField(){field=null;lastPulse=null;energy=0;bands.fill(0);baseScene=null;nextScene=null;blendScene=null;displayModel=null;queued=false;displayDrive=0;dirty=true;}
+ function clearField(){motionUntil=0;motionClock=0;field=null;lastPulse=null;energy=0;bands.fill(0);baseScene=null;nextScene=null;blendScene=null;displayModel=null;queued=false;displayDrive=0;dirty=true;}
  function observe(strength=0){
   if(!running()||document.hidden||!visible)return;
   // Keep the composition, registration marks and point positions stable for
   // this coin. Market detail can change without re-randomizing the whole image.
   field={word:seed,strength:unit(strength)};
-  phase=hash(seed,31)*100;queued=true;dirty=true;
+  phase=hash(seed,31)*100+(Number(options.position)||0)*.6+(model.change||0)*.4;
+  if(strength>0&&!reduced.matches)motionUntil=performance.now()+900;
+  queued=true;dirty=true;
  }
  function layer(){const node=document.createElement('canvas');node.width=canvas.width;node.height=canvas.height;return node;}
  function renderField(snapshot){
@@ -55,8 +58,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const drive=unit(.22+model.drive*.45+(field?.strength||0)*.33),margin=w<450?12:20;
   const fieldY=0,fieldH=h,fieldW=w-margin*2;
   c.textBaseline='alphabetic';c.textAlign='left';
-  const screenSettings=getState();
-  background.paint(c,w,h,model,{seed,position:options.position??model.change??0,dither:screenSettings.dither!==false,nds:screenSettings.nds!==false,invert:mobile.matches});
   c.save();c.beginPath();c.rect(margin,fieldY,fieldW,fieldH);c.clip();
   score(margin,fieldY+1,fieldW-1,fieldH-2,drive);
   // The latest Pd voice becomes a small retained mark, not a blinking accent.
@@ -219,6 +220,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const dt=Math.min(.1,Math.max(.001,(now-last)/1000||.033));last=now;
   const active=running();
   if(!active){
+   motionUntil=0;
    if(nextScene){const frozen=layer();frozen.getContext('2d').drawImage(blended(now),0,0);baseScene=frozen;nextScene=null;dirty=true;}
    queued=false;
   }
@@ -230,11 +232,16 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    else{nextScene=fresh;transitionAt=now;}
    queued=false;lastUpdate=now;dirty=true;
   }
-  if(!dirty&&!nextScene&&active===activeBefore)return;
+  const moving=active&&!reduced.matches&&now<motionUntil;
+  if(moving)motionClock+=dt*(.6+model.drive*3);
+  if(moving!==motionWasActive)dirty=true;motionWasActive=moving;
+  if(!dirty&&!nextScene&&!moving&&active===activeBefore)return;
   activeBefore=active;dirty=false;
   c.clearRect(0,0,w,h);if(!mobile.matches){c.fillStyle='#fff';c.fillRect(0,0,w,h);}c.textBaseline='alphabetic';c.textAlign='left';
-  const scene=blended(now);if(scene)c.drawImage(scene,0,0,w,h);
-  canvas.dataset.overlay=String(mobile.matches);canvas.dataset.active=String(active);canvas.dataset.visible=String(Boolean(scene));canvas.dataset.transitioning=String(Boolean(nextScene));canvas.dataset.energy=energy.toFixed(3);canvas.dataset.density=displayDrive.toFixed(3);canvas.dataset.phase=phase.toFixed(3);
+  const scene=blended(now);
+  if(scene&&displayModel){const settings=getState();background.paint(c,w,h,displayModel,{seed,position:motionClock+(options.position??displayModel.change??0),dither:settings.dither!==false,nds:settings.nds!==false,invert:mobile.matches});}
+  if(scene)c.drawImage(scene,0,0,w,h);
+  canvas.dataset.overlay=String(mobile.matches);canvas.dataset.active=String(active);canvas.dataset.visible=String(Boolean(scene));canvas.dataset.transitioning=String(Boolean(nextScene));canvas.dataset.moving=String(moving);canvas.dataset.motion=motionClock.toFixed(3);canvas.dataset.energy=energy.toFixed(3);canvas.dataset.density=displayDrive.toFixed(3);canvas.dataset.phase=phase.toFixed(3);
  }
  function layout(){if(host){if(mobile.matches)document.body.append(host);else anchor.parentNode?.insertBefore(host,anchor);}size();}
  mobile.addEventListener('change',layout);layout();

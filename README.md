@@ -757,3 +757,18 @@ background tabs pause scheduled polling and refresh when visible again.
 
 An isolated headless check passed automatic reordering, replacement,
 unchanged playback selection, stale-data retention and retry recovery.
+
+
+## Visible event motion (v83)
+
+The prior background updated parameters but retained a fixed phase, making
+its already faint pattern appear inactive. Market observations now open a
+900 ms wave-motion window; repeated activity extends it, and the image
+settles when events stop. Wave motion is composited separately from the
+retained score. Movement/volume drive its speed and contrast. Score geometry
+also responds to price movement and replay position. Pause freezes the wave
+clock, and reduced motion continues to use static observation updates.
+
+Existing headless visual checks now explicitly verify event-driven pixel
+movement and advancing phase. They passed alongside pause/quiet retention,
+mobile transparency, replay registration and reduced motion, with no errors.
