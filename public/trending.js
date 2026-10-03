@@ -5,8 +5,8 @@ const money=value=>value!=null&&value!==''&&Number.isFinite(Number(value))&&Numb
 function node(tag,text,className){const el=document.createElement(tag);if(text!=null)el.textContent=text;if(className)el.className=className;return el;}
 function safeImage(url){try{const parsed=new URL(url);return parsed.protocol==='https:'?parsed.href:null;}catch{return null;}}
 export function startTrending(onPick,onLoading=()=>{}){
- const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),menu=document.querySelector('.trending-menu'),summary=menu.querySelector('summary'),periodLabel=document.getElementById('trending-period');
- const periodButtons=[...menu.querySelectorAll('button[data-period]')],availablePeriods=periodButtons.filter(button=>!button.disabled);
+ const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),cycleButton=document.getElementById('trending-cycle'),periodLabel=document.getElementById('trending-period');
+ const periods=['24h','1h','5m'],periodNames={'24h':'24 hours','1h':'1 hour','5m':'5 minutes'};
  let duration='24h';
  let generation=0,controller,timer,updated=null,offset=0,width=0,lastFrame=0,initialPick=true;
  let hovered=false,focused=false,dragging=false,pending=null,failures=0;
@@ -139,29 +139,16 @@ export function startTrending(onPick,onLoading=()=>{}){
   clearTimeout(timer);
   if(!document.hidden)refresh();
  });
- function closePeriods(restoreFocus=false){menu.open=false;summary.setAttribute('aria-expanded','false');if(restoreFocus)summary.focus({preventScroll:true});}
- menu.addEventListener('toggle',()=>summary.setAttribute('aria-expanded',String(menu.open)));
- for(const button of availablePeriods)button.addEventListener('click',()=>{
-  const next=button.dataset.period;
-  closePeriods(true);if(next===duration||!['24h','1h','5m'].includes(next))return;
-  // A newly selected period starts with an empty tape, never the old ranking.
+ cycleButton.addEventListener('click',()=>{
+  const next=periods[(periods.indexOf(duration)+1)%periods.length];
+  // Clear the old period's ranking before switching the header and request.
   if(pointer&&list.hasPointerCapture(pointer.id))list.releasePointerCapture(pointer.id);
   pointer=null;dragging=false;suppressClick=false;pending=null;manualUntil=0;list.classList.remove('is-dragging');
   items.clear();track.replaceChildren();offset=0;width=0;list.scrollLeft=0;track.style.transform='none';updated=null;failures=0;
   duration=next;periodLabel.textContent=duration.toUpperCase();
-  for(const option of availablePeriods)option.setAttribute('aria-pressed',String(option===button));
+  const following=periods[(periods.indexOf(duration)+1)%periods.length];
+  cycleButton.setAttribute('aria-label','Trending '+periodNames[duration]+'. Switch to '+periodNames[following]);
   refresh();
  });
- summary.addEventListener('keydown',event=>{
-  if(event.key!=='ArrowDown')return;event.preventDefault();menu.open=true;summary.setAttribute('aria-expanded','true');
-  (availablePeriods.find(button=>button.dataset.period===duration)||availablePeriods[0]).focus();
- });
- menu.addEventListener('keydown',event=>{
-  const current=availablePeriods.indexOf(event.target);if(current<0)return;
-  let next;if(event.key==='ArrowRight')next=(current+1)%availablePeriods.length;else if(event.key==='ArrowLeft')next=(current+availablePeriods.length-1)%availablePeriods.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=availablePeriods.length-1;else return;
-  event.preventDefault();availablePeriods[next].focus();
- });
- document.addEventListener('pointerdown',event=>{if(menu.open&&!menu.contains(event.target))closePeriods();});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu.open){event.preventDefault();closePeriods(true);}});
  refresh();
 }

@@ -989,8 +989,8 @@ Completions disappear after a brief acknowledgement. Counter displays the
 live/replay clock, with radix-six minute/second wheels and immediate updates on
 seeks or fast playback. Both controls honor reduced motion.
 
-The header reads $UPIC (BETA) / TRENDING 24H. Its period menu offers 24H, 1H
-and 5M. Trending refresh and error recovery remain automatic, without
+The header reads $UPIC (BETA) / TRENDING 24H. Each click cycles directly
+through 24H, 1H and 5M, with no menu. Trending refresh and error recovery remain automatic, without
 click-to-refresh prompts. Changing periods discards the previous ranking.
 
 These are small React islands loaded separately from the player. Native volume,
