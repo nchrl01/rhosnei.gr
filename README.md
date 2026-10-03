@@ -738,3 +738,22 @@ Offline checks passed for data response, deterministic pixels, all three
 distortion families and dither/grayscale output. Existing headless visual
 checks passed for persistent output, pause, quiet, mobile transparency,
 replay repeatability and reduced motion, with no page errors.
+
+
+## Live trending ladder (v82)
+
+The ticker refreshes the provider's leading 20 trending pools every 30 seconds
+through the shared request budget. Each successful snapshot atomically
+reorders, replaces and updates coins; tokens appearing in multiple pools
+are deduplicated. It no longer fetches ten pages and waits five minutes.
+The selected duration remains in effect, and provider caching/rate limits
+can delay a changed ranking beyond the client poll interval.
+
+Unchanged snapshots do not rebuild cards. Reordering retains the visible
+coin anchor and keyboard focus. An active pointer gesture finishes before
+a pending ranking is applied. Refreshing rankings does not switch the
+playing coin. Failures retain the last ranking with exponential retry;
+background tabs pause scheduled polling and refresh when visible again.
+
+An isolated headless check passed automatic reordering, replacement,
+unchanged playback selection, stale-data retention and retry recovery.
