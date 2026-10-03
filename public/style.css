@@ -302,3 +302,6 @@ body.nds-screen canvas{image-rendering:pixelated}
 .display-options{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #ddd;flex-wrap:wrap}
 .display-options button{height:32px;min-height:32px;font-size:12px;padding:0 8px}
 .display-options button[aria-pressed=true]{background:#111;color:#fff}
+
+/* The tutorial's binary field: white fragments on a continuous black surface. */
+@media(min-width:761px){.audio-visualizer{background:#000}}

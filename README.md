@@ -772,3 +772,40 @@ clock, and reduced motion continues to use static observation updates.
 Existing headless visual checks now explicitly verify event-driven pixel
 movement and advancing phase. They passed alongside pause/quiet retention,
 mobile transparency, replay registration and reduced motion, with no errors.
+
+## Horizontal binary visual reconstruction (v84)
+
+Replaces the browser wave/score composition with an independent reconstruction
+of the final horizontal field in paketa12's “Ryoji Ikeda in Touchdesigner”:
+https://www.youtube.com/watch?v=FYMp4dJwg0Y
+
+The renderer uses static seeded correlated noise, a vertical density ramp,
+a deterministic row permutation, repeat sampling with positive per-row speed,
+a soft Less threshold, full-width single-pixel rules and three analytical
+adjacent-frame trails. The default has 128 logical rows; the pure renderer
+also accepts 32/64/96/192 for reference comparison. The implementation follows
+the demonstrated TOP stages with original noise and browser rasterization;
+it is not the original TouchDesigner project or an identical random sequence.
+No shader source or video imagery is bundled.
+
+Live activity paces an integrated clock; volume, pressure and intensity influence
+occupancy; normalized capitalization and liquidity adjust density contrast.
+An observed live event opens a 1.4-second movement window. Idle/pause holds
+the last frame. Replay uses the chart's source time and speed, including
+movement within an active candle; OHLC volume remains an activity proxy,
+not a reconstructed historical trade stream. Equal seed, data and source
+time reproduce equal pixels. Reduced motion retains static observation frames.
+
+Desktop has white fragments on black. Mobile retains its transparent inverted
+overlay with fewer fragments. Dither is off by default to preserve the
+reference's gray threshold edges; the existing switch dithers delayed trails.
+The NDS treatment and audio settings remain available. The older unreferenced
+background module is retained for clients with cached v83 entry modules.
+
+Checks passed in headless Chromium and WebKit: actual pixel movement, quiet
+and pause freezes, duplicate-event suppression, repeatable seeks, within-candle
+replay, reduced motion and transparent mobile compositing. A muted headless
+run of the complete app also passed saved-score playback, pause, display
+controls and overflow checks at 1440/800/390px. Rendered frames were compared
+against the tutorial's 32- and 128-row examples. A local 640×640 renderer
+benchmark averaged about 3 ms/frame; this is not an iPhone performance claim.
