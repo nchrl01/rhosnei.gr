@@ -955,3 +955,22 @@ candles, both with light outlines. Magenta replay and red/green price direction
 remain readable. The Pd inspector's embedded patch surface is inverted as a
 unit, including its canvas plots. Layout, quiet visualization and audio are
 unchanged. Source/syntax reviewed; no browser preview or automated tests run.
+
+## Loading-first UX (v91)
+
+Coin-name search publishes each provider's results as soon as they arrive,
+so available DEX matches no longer wait for all exchange lookups. Selection,
+editing, Escape and explicit trending picks invalidate pending search results.
+Visible field-level feedback distinguishes searching, partial results and
+errors; background snapshot refreshes no longer overwrite it. Result focus is
+preserved across updates, with keyboard navigation and clear venue identity.
+
+History feedback sits below the chart instead of covering live candles.
+Listen shows its real loading label on mobile and desktop. Required initial
+Envion samples/IRs download in parallel, with bounded asset timeouts and
+retryable metadata initialization. No data-provider rate limits were changed.
+
+The black layout gains readable primary actions, larger mobile targets and
+wrapping status text. Replay enters/restarts history; the main Listen/Pause
+button owns transport. Inline speed options remain. Source and syntax were
+reviewed; no runtime, browser or audio testing was requested or performed.

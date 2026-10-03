@@ -16,15 +16,38 @@ export function rankCoinMatches(pairs,query,{orientPair,network}={}){
  const unique=new Set();return matches.filter(({pair})=>{const token=pair.baseToken.address,key=pair.chainId+':'+(/^0x/i.test(token)?token.toLowerCase():token);if(unique.has(key))return false;unique.add(key);return true;}).map(({pair})=>pair).slice(0,12);
 }
 export function showCoinMatches(container,pairs,onChoose){
- container.replaceChildren();container.hidden=false;
- const title=document.createElement('p');title.textContent='CHOOSE A MARKET';container.append(title);
+ const active=container.ownerDocument.activeElement,focusedKey=container.contains(active)?active.closest('.coin-search-result')?.dataset.marketKey:null;
+ const title=container.querySelector('.coin-search-summary')||document.createElement('p');
+ for(const child of [...container.childNodes])if(child!==title)child.remove();
+ container.hidden=false;
+ container.removeAttribute('aria-live');
+ const input=container.ownerDocument.getElementById('address'),buttons=[];
+ input?.setAttribute('aria-expanded','true');
+ title.className='coin-search-summary';title.setAttribute('role','status');title.setAttribute('aria-live','polite');title.setAttribute('aria-atomic','true');
+ if(title.parentNode!==container)container.append(title);
+ const summary='Choose a market · '+pairs.length+' '+(pairs.length===1?'match':'matches');if(title.textContent!==summary)title.textContent=summary;
  for(const pair of pairs){
   const button=document.createElement('button');button.type='button';button.className='coin-search-result';
+  button.dataset.marketKey=[pair.source||'dex',pair.exchangeId||pair.chainId,pair.pairAddress||pair.exchangeSymbol||pair.baseToken.address].join('|');
   const identity=document.createElement('span'),symbol=document.createElement('strong'),name=document.createElement('span');
   symbol.textContent=pair.baseToken.symbol;name.textContent=pair.baseToken.name||pair.baseToken.symbol;identity.append(symbol,name);
   const detail=document.createElement('small'),cap=pair.marketCap==null||pair.marketCap===''?null:Number(pair.marketCap);
-  detail.textContent=pair.source==='ccxt'?pair.exchangeName+' · SPOT · '+pair.exchangeSymbol:pair.chainId+' · '+(cap!=null&&Number.isFinite(cap)&&cap>=0?'MCAP $'+Math.round(cap).toLocaleString('en'):'MCAP unavailable');
+  const exchange=pair.source==='ccxt',venue=exchange?pair.exchangeName:[pair.chainId,pair.dexId].filter(Boolean).join(' · ');
+  detail.textContent=exchange?venue+' · SPOT · '+pair.exchangeSymbol:venue+' · '+(cap!=null&&Number.isFinite(cap)&&cap>=0?'MCAP $'+Math.round(cap).toLocaleString('en'):'MCAP unavailable');
   const address=document.createElement('small');address.textContent=pair.source==='ccxt'?'Public exchange trades · '+(pair.quoteApproximate?pair.quoteToken.symbol+' quote / USD proxy':'USD quote')+' · MCAP unavailable':pair.baseToken.address;address.className='coin-search-address';
-  button.append(identity,detail,address);button.onclick=()=>{container.hidden=true;container.replaceChildren();onChoose(pair);};container.append(button);
+  button.setAttribute('aria-label',[symbol.textContent,name.textContent===symbol.textContent?'':name.textContent,detail.textContent,exchange?address.textContent:'Contract address '+address.textContent].filter(Boolean).join('. '));
+  button.append(identity,detail,address);
+  button.onclick=()=>{container.hidden=true;container.replaceChildren();input?.setAttribute('aria-expanded','false');onChoose(pair);};
+  button.onkeydown=event=>{
+   if(event.altKey||event.ctrlKey||event.metaKey)return;
+   if(event.key==='Escape'){
+    event.preventDefault();event.stopPropagation();container.hidden=true;input?.setAttribute('aria-expanded','false');input?.focus();return;
+   }
+   const index=buttons.indexOf(button),target=event.key==='ArrowDown'?Math.min(buttons.length-1,index+1):event.key==='ArrowUp'?Math.max(0,index-1):event.key==='Home'?0:event.key==='End'?buttons.length-1:null;
+   if(target===null)return;
+   event.preventDefault();buttons[target]?.focus();
+  };
+  buttons.push(button);container.append(button);
  }
+ if(focusedKey)(buttons.find(button=>button.dataset.marketKey===focusedKey)||input)?.focus({preventScroll:true});
 }

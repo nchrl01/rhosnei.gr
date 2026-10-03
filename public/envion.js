@@ -8,6 +8,23 @@ const ROOT = 'orchestra/envion/';
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 const bytes = value => value instanceof Uint8Array ? value : new Uint8Array(value);
 
+// Keep the timeout active through body decoding as well as the response headers.
+// A stalled bundled asset should leave a retryable instrument, not a pending load.
+async function loadAsset(path, format = 'text', timeoutMs = 20000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=40', {signal:controller.signal});
+    if (!response.ok) throw Error('Cannot load Envion asset: '+path);
+    return await response[format]();
+  } catch (error) {
+    if (controller.signal.aborted) throw Error('Timed out loading Envion asset: '+path);
+    throw error;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // Pd's fudiformat escapes spaces inside symbols. The ASCII bridge preserves them.
 export function decodePdBytes(line, prefix) {
   const start = line.indexOf(prefix + ':');
@@ -77,25 +94,30 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
   let recordingOperation = Promise.resolve();
   const view = createEnvionView(container, {onControl:control, onFile:openFile, onCommand:command});
-  const ready = fetch(BASE+'model.json?v=40').then(async response => {
-    if (!response.ok) throw Error('Envion source layout unavailable');
-    model = await response.json();
-    const catalogResponse=await fetch(BASE+'performance-catalog.json?v=40');if(!catalogResponse.ok)throw Error('Envion sample catalog unavailable');
-    catalog=buildPerformanceCatalog(model,(await catalogResponse.json()).banks);performer=createEnvionPerformance(catalog,performanceSeed);
-    for (const canvas of Object.values(model.canvases)) for (const node of canvas.nodes) {
-      if (node.send) nodes.set(node.send,node);
-      if (node.fileRequest) dialogs.set(canvas.id+'-'+node.index,node);
-    }
-    for(const canvas of Object.values(model.canvases))for(const node of canvas.nodes){
-      const entry=canvas.id==='c0'&&ENVION_CONTROLS.find(([index])=>index===node.index);
-      const preset=canvas.id==='c0'&&catalog.presets.find(p=>p.index===node.index);
-      node.marketMapping=preset?preset.name+' ← market-weighted preset chance':CHANCE_LABELS[canvas.id+'-'+node.index]?CHANCE_LABELS[canvas.id+'-'+node.index]+' ← market-weighted phrase chance':entry?entry[1]+' ← '+entry[2]+' + phrase chance':node.fileRequest?'Automatic bundled sample / envelope source':'Original source control · controlled by presets and phrase chance';
-    }
-    view.load(model); view.setStatus('Envion 5.2 · original source · press Listen');
-    return model;
-  }).catch(error => {view.setStatus(error.message);throw error;});
+  let ready;
+  function loadModel() {
+    if (ready) return ready;
+    ready = loadAsset('model.json','json').then(async source => {
+      model = source;
+      const catalogSource=await loadAsset('performance-catalog.json','json');
+      catalog=buildPerformanceCatalog(model,catalogSource.banks);performer=createEnvionPerformance(catalog,performanceSeed);
+      nodes.clear();dialogs.clear();
+      for (const canvas of Object.values(model.canvases)) for (const node of canvas.nodes) {
+        if (node.send) nodes.set(node.send,node);
+        if (node.fileRequest) dialogs.set(canvas.id+'-'+node.index,node);
+      }
+      for(const canvas of Object.values(model.canvases))for(const node of canvas.nodes){
+        const entry=canvas.id==='c0'&&ENVION_CONTROLS.find(([index])=>index===node.index);
+        const preset=canvas.id==='c0'&&catalog.presets.find(p=>p.index===node.index);
+        node.marketMapping=preset?preset.name+' ← market-weighted preset chance':CHANCE_LABELS[canvas.id+'-'+node.index]?CHANCE_LABELS[canvas.id+'-'+node.index]+' ← market-weighted phrase chance':entry?entry[1]+' ← '+entry[2]+' + phrase chance':node.fileRequest?'Automatic bundled sample / envelope source':'Original source control · controlled by presets and phrase chance';
+      }
+      view.load(model); view.setStatus('Envion 5.2 · original source · press Listen');
+      return model;
+    }).catch(error => {ready=null;view.setStatus(error.message);throw error;});
+    return ready;
+  }
   // Avoid an unhandled rejection when the user has not started audio yet.
-  ready.catch(() => {});
+  loadModel().catch(() => {});
   const requirePd = () => {if (!pd || !initialized) throw Error('Press Listen to open the instrument first');};
   const report = error => view.setStatus(error.message || String(error));
   const absolute = path => '/patches/'+path;
@@ -106,9 +128,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     pd.sendFloat(namespace+'-met0',0);
   }
   async function fetchBytes(path) {
-    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=40');
-    if (!response.ok) throw Error('Cannot load Envion asset: '+path);
-    return new Uint8Array(await response.arrayBuffer());
+    return new Uint8Array(await loadAsset(path,'arrayBuffer',30000));
   }
   async function ensureAsset(path) {
     path = path.replace(/^\.\//,'');
@@ -369,17 +389,19 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     finally{if(operation===materialOperation&&target===pd&&epoch===generation){materialBusy=false;pd.sendFloat('av-envion-ready',1);applyCurrent();if(pendingMaterial&&running)void loadPerformanceMaterial();}}
   }
   return {
-    view, ready, printed,
+    view, get ready(){return loadModel();}, printed,
     setSeed(value){materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
     async files() {
-      await ready;
-      const response=await fetch(BASE+'manifest.json?v=40');if(!response.ok)throw Error('Envion source manifest unavailable');
-      const manifest=await response.json();
+      await loadModel();
+      const manifest=await loadAsset('manifest.json','json');
       const files=Object.fromEntries(await Promise.all(manifest.files.map(async path=>{
-        const r=await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=40');if(!r.ok)throw Error('Cannot load '+path);
-        return [ROOT+path,await r.text()];
+        return [ROOT+path,await loadAsset(path)];
       })));
-      for(const path of manifest.initialAssets)if(!(ROOT+path in files))files[ROOT+path]=await fetchBytes(path);
+      // Download the required sample and impulse responses together. Pd still
+      // receives the complete file set only after every required asset succeeds.
+      await Promise.all(manifest.initialAssets.filter(path=>!(ROOT+path in files)).map(async path=>{
+        files[ROOT+path]=await fetchBytes(path);
+      }));
       return files;
     },
     async attach(runtime,audioContext,files) {

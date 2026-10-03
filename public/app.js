@@ -1,13 +1,13 @@
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=87';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=87';
+import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
-import {createEnvion} from './envion.js?v=80';
+import {createEnvion} from './envion.js?v=91';
 import {createEngineView} from './engine-view.js?v=65';
 import {createCoinDither} from './coin-dither.js?v=90';
-import {createUpicBrand} from './upic-brand.js?v=79';
+import {createUpicBrand} from './upic-brand.js?v=91';
 import {createTransportIndicator} from './transport-indicator.js?v=87';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
 import {createAudioDots} from './audio-dots.js?v=89';
@@ -103,13 +103,13 @@ function bindSignalMap(){pd.subscribe?.('data-onset',message=>{dataVisual.pulse(
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
 const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/4294967296;};
-const status=s=>$('status').textContent=s;
+const status=s=>{if($('status').textContent!==s)$('status').textContent=s;};
 function audioStatus(){
  if(!playing)return;
  if(ctx&&ctx.state!=='running'){status('Audio interrupted · tap Resume');return;}
- const parts=[audioErrors.piano?'Piano unavailable: '+audioErrors.piano:!piano?'Loading piano…':replay.state.active?'Piano · selective candle score':'Piano · ≥'+PIANO_MOVE_PCT+'% moves / quiet single notes'];
+ const parts=[audioErrors.piano?'Piano unavailable: '+audioErrors.piano:!piano?'Loading piano…':replay.state.active?'Listening to history':'Listening to '+(market?.baseToken?.symbol||'market')];
  if(audioErrors.pd)parts.push('Pd unavailable: '+audioErrors.pd);
- else if(!pd)parts.push('Loading Pd…');
+ else if(!pd)parts.push('More instruments are loading…');
  if(audioErrors.envion)parts.push('Envion unavailable: '+audioErrors.envion);
  status(parts.join(' · '));
 }
@@ -158,7 +158,14 @@ function updateReplayUI(m){
  transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active;
  $('replay-play').disabled=!(chart.renderedBars?.length);
- $('replay-play').textContent=active&&playing?'Ⅱ Pause':replay.state.ended?'↻ Replay':'▶︎ Replay';
+ $('replay-play').textContent=active?'Restart':'Replay';
+ $('replay-play').setAttribute('aria-label',active?'Restart loaded history':'Play loaded history');
+ $('replay-live').textContent=active?'Back to live':'Live';
+ $('replay-live').setAttribute('aria-pressed',String(!active));
+ $('replay-play').setAttribute('aria-pressed',String(active));
+ const hint=$('replay-hint');
+ if(hint){const text=!(chart.renderedBars?.length)?'History is loading. You can listen live while it arrives.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the history strip to move through the recording. '+(replay.state.speed==='1'?'Real time: one recorded second per second.':replay.state.speed+'× playback.')):'Listen live, or choose a point on the history strip to replay.';if(hint.textContent!==text)hint.textContent=text;}
+
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
  $('replay-info').textContent=!active?'Piano plays a single note at ≥'+PIANO_MOVE_PCT+'% movement since its last note, or after 30 seconds without an observed trade.':'Selective candle score: ≥'+PIANO_MOVE_PCT+'% movement selects single piano notes. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
@@ -355,9 +362,14 @@ async function closeAudio(){
  if(runtime)await runtime.close();await context?.close();
 }
 function setPlayState(active){
- const button=$('play');button.dataset.playing=String(active);button.textContent=active?'Ⅱ Pause':'▶︎ Listen';
- button.setAttribute('aria-label',active?'Pause audio':'Listen to market');button.setAttribute('aria-pressed',String(active));
+ const button=$('play'),interrupted=active&&ctx?.state!=='running';
+ button.dataset.playing=String(active&&!interrupted);
+ button.textContent=starting?'Opening…':interrupted?'Resume':active?'Pause':'Listen';
+ button.setAttribute('aria-label',starting?'Opening instrument':interrupted?'Resume interrupted audio':active?'Pause audio':'Listen to market');
+ button.setAttribute('aria-pressed',String(active&&!interrupted));
+ button.setAttribute('aria-busy',String(starting));
 }
+function audioBusy(value){starting=value;$('play').disabled=value;setPlayState(playing);}
 setPlayState(false);
 $('play').onclick=async()=>{
  if(starting)return;
@@ -365,25 +377,25 @@ $('play').onclick=async()=>{
  let unlocked;
  if(!playing||ctx?.state!=='running'){try{unlocked=unlockPlayback(audioContext());}catch(error){status(error.message);return;}}
  if(wasInterrupted){
-  starting=true;$('play').disabled=true;
+  audioBusy(true);
   try{await unlocked;if(ctx.state!=='running')throw Error('Tap Resume again to enable audio');flushPianoTrade();setPlayState(true);audioStatus();}
   catch(error){status('Audio interrupted · '+error.message);}
-  finally{starting=false;$('play').disabled=false;}
+  finally{audioBusy(false);}
   return;
  }
  if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();mathPatterns.stop();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);coinVoice.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
- starting=true;$('play').disabled=true;status('Opening instrument…');
+ audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
  try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);coinVoice.setRunning(true);void coinVoice.prepare();void arpeggioAI.prepare();flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
- finally{starting=false;$('play').disabled=false;}
+ finally{audioBusy(false);}
 };
 $('native-option').disabled=true;
 $('native-option').textContent='Native Pd · full Envion browser bridge required';
 $('audio-output').onchange=async()=>{
- starting=true;$('play').disabled=true;$('audio-output').disabled=true;
+ audioBusy(true);$('audio-output').disabled=true;
  try{await closeAudio();resetEnsemble();status($('audio-output').value==='native'?'Open patches/orchestra/av-desktop.pd · then Listen':'Piano ready');}
  catch(e){status('Could not change audio output: '+e.message);}
- finally{starting=false;$('play').disabled=false;$('audio-output').disabled=false;}
+ finally{audioBusy(false);$('audio-output').disabled=false;}
 };
 for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);if(id==='master'){piano?.setMaster(Number($(id).value));coinVoice.setMaster(Number($(id).value));}session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const volumeButton=$('volume-button'),volumePanel=$('volume-panel');
@@ -450,7 +462,7 @@ function startHistory(pair){
 function setHistoryLoading(data={}){
  const host=$('history-loading'),has=data.candles?.length>0,busy=['loading','cached'].includes(data.state),failed=data.state==='unavailable';
  host.hidden=has&&!busy;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
- $('history-loading-label').textContent=failed?'History unavailable':has?'Refreshing history':busy?'Loading history':'No history returned';
+ $('history-loading-label').textContent=failed?'History delayed · retry available':has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
  $('history-retry').hidden=busy;
 }
 $('history-retry').onclick=()=>{$('chart-timeframe').value==='auto'?startHistory(market):loadChartTimeframe();};
@@ -472,7 +484,7 @@ async function fetchJSON(url){const abort=new AbortController(),timeout=setTimeo
 function applySnapshot(pair){
  market=isExchangeMarket(pair)?{...pair,exchangeBook:market?.pairAddress===pair.pairAddress?market.exchangeBook:null}:pair;lastSnapshot=Date.now();
  if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':'Observed market snapshots · 5-second polling; provider data may be cached';}
- display();$('lookup').textContent='Snapshot '+new Date().toLocaleTimeString()+' · '+pair.baseToken.name+' · '+pair.chainId+' · '+pair.dexId;
+ display();
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
@@ -488,69 +500,96 @@ function chooseMarket(pair,{shared=false}={}){
  if(shared)return;
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
  if(isExchangeMarket(pair)){
-  const refresh=async()=>{try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('lookup').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
+  const refresh=async()=>{try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('chart-source').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
   poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Listen');return;
  }
  const refresh=async()=>{
   try{const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address));if(gen!==generation)return;
    const raw=(data.pairs||[]).find(p=>p.chainId===chain&&p.pairAddress===address);const updated=raw&&orientPair(raw,token);if(!updated)throw Error('Selected pool snapshot unavailable');applySnapshot(updated);
-  }catch(e){if(gen===generation)$('lookup').textContent='Snapshot delayed: '+e.message;}
+  }catch(e){if(gen===generation)$('chart-source').textContent='Snapshot delayed: '+e.message;}
   if(gen===generation)poll=setTimeout(refresh,5000);
  };poll=setTimeout(refresh,5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Listen');
 }
 const addressField=$('address').closest('.address-field');
 const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
 function syncAddressLabel(){addressField.classList.toggle('has-value',!!$('address').value.trim());}
-$('address').addEventListener('input',()=>{$('coin-search-results').hidden=true;});
 $('address').addEventListener('input',syncAddressLabel);
 $('address').addEventListener('change',syncAddressLabel);
 syncAddressLabel();
 let searchRevision=0;
-$('address').addEventListener('input',()=>{searchRevision++;});
+function searchFeedback(message,state='ready'){
+ const node=$('lookup');node.hidden=!message;node.dataset.state=state;
+ node.classList.toggle('is-loading',state==='loading');
+ if(node.textContent!==message)node.textContent=message;
+}
+function searchBusy(value){
+ loading=value;$('load').disabled=value;$('load').textContent=value?'Searching…':'Search';
+ $('load').setAttribute('aria-busy',String(value));$('coin-form').setAttribute('aria-busy',String(value));
+}
+$('address').addEventListener('input',()=>{
+ searchRevision++;searchBusy(false);searchFeedback('');
+ $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
+});
+$('coin-search-results').addEventListener('keydown',event=>{if(event.key==='Escape'){searchRevision++;searchBusy(false);searchFeedback('');}},true);
+$('address').addEventListener('keydown',event=>{
+ const results=$('coin-search-results');
+ if(event.key==='ArrowDown'&&!results.hidden){const first=results.querySelector('button');if(first){event.preventDefault();first.focus();}}
+ if(event.key==='Escape'){searchRevision++;searchBusy(false);results.hidden=true;$('address').setAttribute('aria-expanded','false');searchFeedback('');}
+});
 async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}={}){
  try{
+  searchFeedback('Opening '+pair.baseToken.symbol+'…','loading');
   if(isExchangeMarket(pair)){status('Loading '+pair.exchangeName+' market…');pair=await prepareExchangeMarket(pair);}
   if(revision!==searchRevision)return;
   $('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];
-  $('coin-search-results').hidden=true;chooseMarket(pair);
+  $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');chooseMarket(pair);
+  searchFeedback(pair.baseToken.symbol+' loaded · '+(pair.exchangeName||pair.chainId));
   if(autoPlay&&!playing)await $('play').onclick();
- }catch(error){if(revision===searchRevision)status(error.message);}
+ }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
 }
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const wantedNetwork=requestedNetwork,autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
- const address=$('address').value.trim();if(address.length<1||address.length>250){status('Enter a coin name, symbol, contract address or exchange pair.');return;}
+ const address=$('address').value.trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
  const revision=++searchRevision,tokenAddress=isTokenIdentifier(address),exchangeOnly=isExchangeQuery(address);
- loading=true;$('load').disabled=true;status(tokenAddress?'Looking up indexed markets…':'Searching on-chain and exchange markets…');
- try{
-  const [dex,cex]=await Promise.allSettled([
-   exchangeOnly?Promise.resolve({pairs:[]}):fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address)),
-   tokenAddress||wantedNetwork?Promise.resolve({pairs:[],errors:[]}):searchExchangeMarkets(address),
-  ]);
-  if(revision!==searchRevision||$('address').value.trim()!==address)return;
-  const dexPairs=rankCoinMatches(dex.status==='fulfilled'?dex.value.pairs||[]:[],address,{orientPair,network:wantedNetwork});
-  const exchangePairs=cex.status==='fulfilled'?cex.value.pairs:[];
+ const current=()=>revision===searchRevision&&$('address').value.trim()===address;
+ searchBusy(true);$('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
+ searchFeedback(tokenAddress?'Finding this coin…':exchangeOnly?'Finding exchange markets…':'Finding markets…','loading');
+ let dexPairs=[],exchangePairs=[],errors=[],remaining=2;
+ function publish(){
+  if(!current()||tokenAddress||exchangeOnly)return;
   const pairs=[...exchangePairs,...dexPairs];
-  if(!pairs.length){
-   const errors=[dex.status==='rejected'?dex.reason.message:'',cex.status==='rejected'?cex.reason.message:'',...(cex.status==='fulfilled'?cex.value.errors:[])].filter(Boolean);
-   throw Error(errors.length?'No market returned. '+errors.join(' · '):'No matching market. Try a contract address or a pair such as BTC/USD.');
+  if(pairs.length){
+   showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});});
+   searchFeedback(remaining?'Choose a result now · checking more markets…':'Choose a market'+(errors.length?' · some sources are unavailable':''),remaining?'loading':'ready');
   }
+ }
+ try{
+  await Promise.allSettled([
+   (async()=>{try{
+    if(!exchangeOnly){const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address));dexPairs=rankCoinMatches(data.pairs||[],address,{orientPair,network:wantedNetwork});}
+   }catch(error){errors.push(error.message);}finally{remaining--;publish();}})(),
+   (async()=>{try{
+    if(!tokenAddress&&!wantedNetwork){const data=await searchExchangeMarkets(address);exchangePairs=data.pairs;errors.push(...data.errors);}
+   }catch(error){errors.push(error.message);}finally{remaining--;publish();}})(),
+  ]);
+  if(!current())return;
+  const pairs=[...exchangePairs,...dexPairs];
+  if(!pairs.length)throw Error(errors.length?'Market search is unavailable. Please try again.':'No matching market. Try its contract address or a pair such as BTC/USD.');
   if(tokenAddress){
    const selection=wantedNetwork?dexPairs.find(p=>p.chainId===wantedNetwork):dexPairs[0];
-   if(!selection)throw Error('No indexed market found on the selected network.');
+   if(!selection)throw Error('No indexed market found on this network.');
    await selectSearchMarket(selection,{autoPlay,revision});return;
   }
   if(exchangeOnly&&pairs.length===1){await selectSearchMarket(pairs[0],{autoPlay,revision});return;}
-  showCoinMatches($('coin-search-results'),pairs,pair=>{
-   const selectedRevision=++searchRevision;
-   void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});
-  });
-  const partial=(dex.status==='rejected'&&!exchangeOnly)||(cex.status==='rejected')||(cex.status==='fulfilled'&&cex.value.errors.length);
-  status('Choose a market'+(partial?' · some providers are unavailable':''));
- }catch(error){if(revision===searchRevision){status(error.message);$('lookup').textContent=error.message;}}
- finally{loading=false;$('load').disabled=false;}
+  if(exchangeOnly){
+   showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});});
+   searchFeedback('Choose an exchange market');
+  }
+ }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
+ finally{if(revision===searchRevision)searchBusy(false);}
 };
 function shareSnapshot(){
  if(!market)return null;
@@ -593,7 +632,8 @@ function restoreSharedScore(){
 }
 display();
 if(!restoreSharedScore())startTrending((item,options={})=>{
- if(loading)return;
+ if(options.initial&&(loading||searchRevision>0||market))return;
+ searchRevision++;searchBusy(false);searchFeedback('');
  // Resume in the coin click itself: market discovery completes asynchronously.
  // The unlocked context stays silent until Listen opens the selected coin engine.
  if(!playing)primeAudio();
@@ -610,7 +650,7 @@ function audioContext(){
   context.onstatechange=()=>{
    if(context!==ctx||!playing)return;
    if(context.state==='running'){replay.state.clock=performance.now();flushPianoTrade();setPlayState(true);}
-   else{mathPatterns.stop();$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('play').textContent='▶︎ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
+   else{mathPatterns.stop();$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('play').textContent='Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
    audioStatus();
   };
  }
@@ -631,7 +671,6 @@ function seekHistory(bar,dragging=false){
 chart.onHistorySeek=seekHistory;
 chart.onHistorySeekEnd=()=>replay.release();
 $('replay-play').onclick=()=>{
- if(replay.state.active&&!replay.state.ended){$('play').onclick();return;}
  seekHistory((replay.state.frozen?.bars||chart.renderedBars)[0]);
 };
 $('replay-live').onclick=()=>{

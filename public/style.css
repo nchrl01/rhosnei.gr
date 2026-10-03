@@ -160,12 +160,10 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:12px;line-hei
  .replay-actions>button{min-height:32px;height:32px;font-size:12px;padding:6px}.chart-menu>summary{width:32px;height:32px}
  #market-chart{height:86px}.chart-ticks{margin-top:8px}#tick-position{font-size:9px}#tick-reading{font-size:10px}
  #chart-tick-row{height:44px;margin-top:4px}.chart-status{margin-top:6px;gap:8px;line-height:14px}.chart-status>span{font-size:10px}
- .transport{order:3;display:grid;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);align-items:center;gap:12px}
- .transport #play{grid-column:2;width:76px;min-width:76px;height:76px;min-height:76px;border-radius:0;padding:0;font-size:0;gap:0;background:#f2f2f2;color:#000;border-color:#f2f2f2}
- .transport #play::before{content:'▶︎';font-family:NDS12,sans-serif;font-size:25px;line-height:1;transform:translateX(2px)}
- .transport #play[data-playing=true]::before{content:'Ⅱ';transform:none;font-size:29px}
+ .transport{order:3;display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);align-items:stretch;gap:12px}
+ .transport #play{grid-column:1;width:100%;min-width:0;height:auto;min-height:56px;border-radius:0;padding:12px;font-size:18px;background:#f2f2f2;color:#000;border-color:#f2f2f2}
  .transport #play:hover:not(:disabled){background:#ccc}
- .transport #share{grid-column:3;justify-self:end;width:92px;min-width:0;height:44px;min-height:44px;border-radius:0;font-size:12px;font-weight:400;padding:8px}
+ .transport #share{grid-column:2;justify-self:stretch;width:100%;min-width:0;height:auto;min-height:56px;border-radius:0;font-size:14px;font-weight:400;padding:12px}
  .transport #downloads{grid-column:1/-1;max-width:100%;text-align:center}
  .readings{max-width:440px;margin:0 auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px;padding:16px 0;border-color:#333}
  .readings small{font-size:9px}.readings strong{font-size:17px;margin-top:5px}
@@ -293,3 +291,94 @@ body.inspecting .audio-visualizer{display:none}
 .coin-dither{filter:invert(1)}
 ::selection{color:#000;background:#fff}
 input{caret-color:#fff}
+
+
+/* Clear actions and readable feedback, within the existing compact player. */
+#coin-form{margin-bottom:16px}
+#load{width:auto;flex:0 0 104px;aspect-ratio:auto;padding:0 12px;font-size:14px;font-weight:700;line-height:1.2}
+#load:disabled{opacity:.65}
+#address-help,#lookup{font-size:12px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
+#address-help{margin-top:8px}
+#lookup{margin-top:6px;color:#e2e2e2}
+#lookup:empty{display:none}
+#coin-form[aria-busy=true] .address-field{border-color:#888}
+#coin-search-results{margin:0 0 16px;padding:0 0 10px}
+#coin-search-results>p,.coin-search-result small{font-size:12px;line-height:1.4}
+.coin-search-result{padding:12px 8px;gap:6px 10px}
+.coin-search-result>span{align-items:center}
+.coin-search-result:focus-visible{outline-offset:-2px}
+.transport #play{background:#f2f2f2;color:#000;border-color:#f2f2f2;font-weight:700}
+.transport #play:hover:not(:disabled){background:#d5d5d5}
+.transport #play[aria-busy=true]{background:#ccc;color:#333;cursor:progress}
+.transport button{white-space:normal;overflow-wrap:anywhere;line-height:1.25;height:auto;min-height:40px}
+.compact-chart-toolbar{flex-wrap:wrap;gap:6px 10px;align-items:center}
+.transport-readout{min-width:max-content;overflow:visible;flex:1 0 auto}
+.transport-readout .transport-indicator,.transport-readout .transport-indicator__label{overflow:visible}
+.replay-actions{margin-left:auto;gap:4px}
+.replay-actions>button{border:1px solid #333}
+.replay-actions>button[aria-pressed=true]{border-color:#f2f2f2;background:#171717}
+.playback-speed{display:grid;grid-template-columns:1.65fr repeat(3,1fr);gap:4px;margin:6px 0 10px}
+.playback-speed button{width:100%;padding:4px 6px;min-height:32px;height:auto;border-color:#333;font-size:12px;line-height:1.2}
+.playback-speed button[aria-pressed=true]{background:#f2f2f2;color:#000;border-color:#f2f2f2}
+#replay-hint{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--muted)}
+.tick-heading{align-items:baseline;flex-wrap:wrap;gap:3px 8px}
+#tick-reading{flex:1 1 140px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.chart-status{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"status status" "feed feed" "event tempo";align-items:start;gap:4px 10px;padding-top:10px;margin-top:10px;border-top:1px solid #333;white-space:normal;line-height:1.4}
+.chart-status>span{overflow:visible;text-overflow:clip;overflow-wrap:anywhere;font-size:12px;line-height:1.4}
+.chart-status #status{grid-area:status;color:#f2f2f2}
+.chart-status #feed{grid-area:feed}
+.chart-status #last-event{grid-area:event}
+.chart-status #tempo{grid-area:tempo;text-align:right;max-width:130px}
+.history-loading{font-size:12px;line-height:1.4;flex-wrap:wrap}
+.history-loading[data-partial=true]{font-size:11px}
+#share-dialog::backdrop{background:#000b}
+@media(min-width:1050px){
+ .instrument-top{grid-template-columns:190px minmax(0,1fr) 76px;gap:12px;align-items:start}
+ .coin-title{align-items:flex-start}
+ .transport{padding-top:0}
+ .transport button{width:76px;min-height:40px;height:auto;padding:9px 6px;font-size:12px}
+ .replay-actions>button{min-height:30px;height:auto;font-size:12px;padding:6px}
+ #market-chart{height:106px}
+}
+@media(min-width:761px){
+ .address-field{height:40px}
+ .address-field:focus-within #address-label,.address-field.has-value #address-label,.address-field:has(input:not(:placeholder-shown)) #address-label{transform:translateY(-50%) translateY(-20px) scale(.9)}
+ #address{font-size:14px}
+ .audio-visualizer{margin-top:12px}
+ .readings{margin-top:14px;padding-block:10px;gap:12px}
+ .readings strong{font-size:15px;line-height:1.35}
+}
+@media(max-width:760px){
+ .market-header{min-height:52px}
+ .upic-brand,.trending-menu>summary,.trending-pick,#volume-button,#trending-list,.trending-empty{min-height:44px;height:44px}
+ .trending-controls button,.trending-controls select,.display-options button{min-height:44px;height:auto}
+ .trending-controls select{font-size:16px}
+ #volume-panel input[type=range]{min-height:44px}
+ #load{flex-basis:104px;min-height:44px;font-size:14px}
+ #address{font-size:16px}
+ #address-help{max-width:38ch}
+ .instrument-top{gap:20px}
+ .replay-actions>button{min-height:44px;height:auto;padding:10px 12px;font-size:13px}
+ .playback-speed button{min-height:44px;font-size:14px}
+ .transport button{font-size:14px}
+ .history-loading button,#share-dialog button{min-height:44px;height:auto;padding:10px 12px;font-size:13px}
+ .chart-status{margin-top:12px;padding-top:12px;gap:6px 12px}
+ .chart-status #tempo{max-width:145px}
+}
+@media(prefers-reduced-motion:reduce){#coin-name{transition:none}}
+
+/* Loading remains visible in place while the current player stays available. */
+#lookup[data-state=loading]{color:#f2f2f2}
+#lookup[data-state=ready]{color:var(--muted)}
+#lookup[data-state=error]{color:#f2f2f2;padding-left:8px;border-left:2px solid #f2f2f2}
+#coin-form[aria-busy=true] .address-field::after{content:'';position:absolute;left:0;bottom:0;width:100%;height:2px;background:linear-gradient(90deg,transparent 0 30%,#f2f2f2 30% 55%,transparent 55%);background-size:300% 100%;pointer-events:none;animation:request-field-progress 1.6s linear infinite}
+#load[aria-busy=true]{background:#171717;cursor:progress}
+.transport #play[aria-busy=true]{position:relative;overflow:hidden}
+.transport #play[aria-busy=true]::after{content:'';position:absolute;left:0;bottom:0;width:38%;height:2px;background:#333;pointer-events:none;animation:request-progress 1.6s linear infinite}
+@keyframes request-field-progress{from{background-position:100% 0}to{background-position:0 0}}
+@keyframes request-progress{from{transform:translateX(-105%)}to{transform:translateX(270%)}}
+@media(prefers-reduced-motion:reduce){#coin-form[aria-busy=true] .address-field::after{animation:none;background-position:50% 0}.transport #play[aria-busy=true]::after{animation:none;left:31%}}
+
+/* Historical downloads never cover incoming live candles or block gestures. */
+.history-loading,.history-loading[data-partial=true]{position:relative;inset:auto;min-height:30px;justify-content:flex-start;background:transparent;padding:7px 0;color:var(--muted);font-size:12px}
+.history-loading button{margin-left:auto}
