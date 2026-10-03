@@ -8,17 +8,18 @@ export class MarketChart{
   this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
-   autoSize:true,layout:{background:{color:'#ffffff'},textColor:'#666666',fontSize:12,fontFamily:'NDS12, sans-serif',attributionLogo:true},
-   grid:{vertLines:{visible:false},horzLines:{color:'#eeeeee'}},
-   rightPriceScale:{borderColor:'#dddddd',scaleMargins:{top:.1,bottom:.25}},
-   timeScale:{borderColor:'#dddddd',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
+   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'NDS12, sans-serif',attributionLogo:true},
+   grid:{vertLines:{visible:false},horzLines:{color:'#222222'}},
+   rightPriceScale:{borderColor:'#3a3a3a',scaleMargins:{top:.1,bottom:.25}},
+   timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
+   crosshair:{vertLine:{color:'#888888',labelBackgroundColor:'#333333'},horzLine:{color:'#888888',labelBackgroundColor:'#333333'}},
    localization:{timeFormatter:time=>new Date(time*1000).toLocaleString(undefined,{timeZoneName:'short'}),priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9})},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
   const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9}),minMove:1e-12};
-  this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#ffffff',downColor:'#111111',wickUpColor:'#111111',wickDownColor:'#111111',borderVisible:true,borderUpColor:'#111111',borderDownColor:'#111111',priceFormat});
-  this.line=this.chart.addSeries(LineSeries,{color:'#111111',lineWidth:2,visible:false,priceFormat});
+  this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#000000',downColor:'#f2f2f2',wickUpColor:'#f2f2f2',wickDownColor:'#f2f2f2',borderVisible:true,borderUpColor:'#f2f2f2',borderDownColor:'#f2f2f2',priceLineColor:'#b5b5b5',priceFormat});
+  this.line=this.chart.addSeries(LineSeries,{color:'#f2f2f2',lineWidth:2,visible:false,priceFormat});
   this.volume=this.chart.addSeries(HistogramSeries,{priceScaleId:'volume',priceFormat:{type:'volume'},lastValueVisible:false,priceLineVisible:false});
   this.volume.priceScale().applyOptions({scaleMargins:{top:.8,bottom:0},visible:false});
   this.chart.subscribeCrosshairMove(param=>{

@@ -56,7 +56,7 @@ export function createCoinDither(img,fallback){
  }
  // Retain the original SVG dithering for restricted hosts, without its fade mask.
  function original(url,token){
-  img.removeAttribute('crossorigin');img.onload=()=>{if(token!==serial)return;img.hidden=false;fallback.hidden=true;host.dataset.dither='mask';img.style.filter=`url(#${filterId})`;};img.onerror=()=>{if(token!==serial)return;img.hidden=true;fallback.hidden=false;};img.src=url;
+  img.removeAttribute('crossorigin');img.onload=()=>{if(token!==serial)return;img.hidden=false;fallback.hidden=true;host.dataset.dither='mask';img.style.filter=`url(#${filterId}) invert(1)`;};img.onerror=()=>{if(token!==serial)return;img.hidden=true;fallback.hidden=false;};img.src=url;
  }
  return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;canvas.remove();defs.remove();}};
 }

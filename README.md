@@ -945,3 +945,13 @@ hiding the canvas. Quiet motion is aesthetic, not represented as trade activity.
 Reduced motion disables drifting; hidden tabs and offscreen panels suspend
 drawing. Mobile retains its own panel. Audio and market controls are unchanged.
 No browser or audio audition was performed.
+
+## Black UI palette (v90)
+
+The player, trending bar, inputs, menus, credits, function plots and chart now
+use a black surface with white foreground and contrasting grey secondary text.
+Dithered assets use white ink. The chart has hollow up candles and filled down
+candles, both with light outlines. Magenta replay and red/green price direction
+remain readable. The Pd inspector's embedded patch surface is inverted as a
+unit, including its canvas plots. Layout, quiet visualization and audio are
+unchanged. Source/syntax reviewed; no browser preview or automated tests run.
