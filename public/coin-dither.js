@@ -1,4 +1,5 @@
 // Fine serpentine error diffusion preserves image detail at device resolution.
+// Clear near-white paper and near-black ink before diffusing the midtones.
 // Composite onto white and keep every pixel opaque: no edge fade or reveal.
 export function ditherPixels(source,width,height){
  const out=new Uint8ClampedArray(width*height*4);
@@ -8,7 +9,8 @@ export function ditherPixels(source,width,height){
   for(let step=0;step<width;step++){
    const x=start+step*direction,i=(y*width+x)*4,alpha=source[i+3]/255;
    const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha);
-   const gray=Math.max(0,Math.min(255,luminance+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
+   const tone=Math.max(0,Math.min(255,(luminance-24)*255/207));
+   const gray=Math.max(0,Math.min(255,tone+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
    row[x+direction+1]+=error*7/16;
    next[x-direction+1]+=error*3/16;next[x+1]+=error*5/16;next[x+direction+1]+=error/16;
    out[i]=out[i+1]=out[i+2]=ink;out[i+3]=255;
@@ -30,13 +32,16 @@ function opaqueDitherFilter(){
   svg.innerHTML=`<defs><filter id="${id}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
    <feFlood flood-color="white" result="paper"/>
    <feComposite in="SourceGraphic" in2="paper" operator="over" result="opaque"/>
-   <feColorMatrix in="opaque" type="saturate" values="0" result="gray"/>
+   <feColorMatrix in="opaque" type="saturate" values="0" result="luminance"/>
+   <feComponentTransfer in="luminance" result="gray">
+    <feFuncR type="linear" slope="1.232" intercept="-.116"/><feFuncG type="linear" slope="1.232" intercept="-.116"/><feFuncB type="linear" slope="1.232" intercept="-.116"/>
+   </feComponentTransfer>
    <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="1" seed="1917" stitchTiles="stitch" result="noise"/>
    <feColorMatrix in="noise" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="mono-noise"/>
    <feComponentTransfer in="mono-noise" result="grain">
     <feFuncR type="linear" slope="3" intercept="-1"/><feFuncG type="linear" slope="3" intercept="-1"/><feFuncB type="linear" slope="3" intercept="-1"/>
    </feComponentTransfer>
-   <feComposite in="gray" in2="grain" operator="arithmetic" k2="1" k3=".9" k4="-.45" result="threshold"/>
+   <feComposite in="gray" in2="grain" operator="arithmetic" k2="1" k3=".24" k4="-.12" result="threshold"/>
    <feComponentTransfer in="threshold">
     <feFuncR type="discrete" tableValues="0 1"/><feFuncG type="discrete" tableValues="0 1"/><feFuncB type="discrete" tableValues="0 1"/><feFuncA type="linear" slope="0" intercept="1"/>
    </feComponentTransfer>

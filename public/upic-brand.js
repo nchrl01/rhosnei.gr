@@ -1,5 +1,5 @@
 // The supplied mark and favicon use the same fine error-diffusion dither as coins.
-import {createCoinDither,ditherPixels} from './coin-dither.js?v=66';
+import {createCoinDither,ditherPixels} from './coin-dither.js?v=67';
 export function createUpicBrand(img,fallback){
  createCoinDither(img,fallback).set('upic-mark.png?v=61');
  const source=new Image();source.onload=()=>{
