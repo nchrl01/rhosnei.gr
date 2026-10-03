@@ -404,3 +404,6 @@ input{caret-color:#fff}
  .volume-widget{padding-inline:4px}
  #volume-button{font-size:10px;padding-inline:5px;gap:4px}
 }
+
+/* Shared market clock drives both the horizontal score and PixelBlast field. */
+.audio-visualizer .pixel-blast-layer{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;z-index:1}

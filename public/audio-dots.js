@@ -1,4 +1,5 @@
 import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=89';
+import {createPixelBlastField} from './pixel-blast-field.js?v=96';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 const logarithmic=(value,decades)=>value==null?.5:unit(Math.log10(Math.max(1,value))/decades);
@@ -24,6 +25,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  if(!c)return {frame(){},event(){},pulse(){},refresh(){},reset(){},close(){}};
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
+ const blast=host?createPixelBlastField(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
  const surface=document.createElement('canvas'),paint=surface.getContext('2d');
  const buffers=new WeakMap();
@@ -40,6 +42,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  function hide(){
   audible=false;level=0;previousLevel=0;lastSound=-Infinity;
   c.clearRect(0,0,canvas.width,canvas.height);
+  blast?.clear();
   if(host){host.dataset.audible='false';host.dataset.visible='false';}
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
@@ -48,6 +51,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
+  blast?.reset(seed);
  }
  function fitHeight(){
   if(!host||mobile.matches)return;
@@ -101,10 +105,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // Separate L/R power measurements cannot cancel opposite stereo phases.
   return count?Math.sqrt(power/count):0;
  }
- function excite(strength=.65){
+ function excite(strength=.65,key=null){
   if(!running())return;
   const now=performance.now(),remaining=pulseStrength*Math.exp(-(now-pulseAt)/280);
   pulseStrength=Math.max(remaining,unit(strength));pulseAt=now;dirty=true;
+  if(key!==null)blast?.pulse({key,time:replaying?(sourceClock??clock):now/1000,strength,balance:latest.balance});
  }
  function draw(now){
   if(closed)return;frameID=requestAnimationFrame(draw);
@@ -145,38 +150,39 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(surface.width!==rw)surface.width=rw;if(surface.height!==rh)surface.height=rh;
   paint.putImageData(new ImageData(result.pixels,rw,rh),0,0);
   c.fillStyle='#000';c.fillRect(0,0,canvas.width,canvas.height);
-  c.imageSmoothingEnabled=false;c.globalAlpha=birth*(.35+.65*formation);c.drawImage(surface,0,0,canvas.width,canvas.height);c.globalAlpha=1;
-  Object.assign(canvas.dataset,{composition:'binary-horizontal-rows',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
+  c.imageSmoothingEnabled=false;c.globalAlpha=birth*(.35+.65*formation)*(host?.dataset.pixelBlast==='ready'?.8:1);c.drawImage(surface,0,0,canvas.width,canvas.height);c.globalAlpha=1;
+  blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,level,formation,birth,active,mobile:mobile.matches,reducedMotion:reduced.matches,drive:smoothed.drive,pressure:smoothed.pressure,activity:smoothed.activity,tempo:latest.tempo,dither:getState().dither===true});
+  Object.assign(canvas.dataset,{composition:host?.dataset.pixelBlast==='ready'?'binary-rows-pixel-blast':'binary-horizontal-rows',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
  return {
   frame(next={},settings={}){
    const nextSeed=settings.seed==null?seed:Number(settings.seed)>>>0,nextReplay=!!next.replay;
-   if(nextSeed!==seed||nextReplay!==replaying){clear(nextSeed!==seed);seed=nextSeed;replaying=nextReplay;}
+   if(nextSeed!==seed||nextReplay!==replaying){clear(nextSeed!==seed);seed=nextSeed;replaying=nextReplay;blast?.reset(seed);}
    options=settings;latest=fieldState(next);dirty=true;
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
-   if(incoming!==null&&incoming!==sourceClock){sourceClock=incoming;sourceAt=performance.now();}
+   if(incoming!==null&&incoming!==sourceClock){if(sourceClock!==null&&incoming<sourceClock)blast?.reset(seed);sourceClock=incoming;sourceAt=performance.now();}
    const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running())return;
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
    if(replaying){
-    if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive);
+    if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive,changed||current.volume!==old?.volume?'replay:'+current.price+':'+current.volume:null);
    }else if(!next.decoded&&performance.now()-lastEvent>1000&&old){
-    if(changed||(current.volume!=null&&old.volume!=null&&current.volume>old.volume)||(current.trades!=null&&old.trades!=null&&current.trades>old.trades))excite(.35+.65*latest.drive);
+    if(changed||(current.volume!=null&&old.volume!=null&&current.volume>old.volume)||(current.trades!=null&&old.trades!=null&&current.trades>old.trades))excite(.35+.65*latest.drive,'market:'+current.price+':'+current.volume+':'+current.trades);
    }
   },
   event(trade={}){
    if(trade.removed||replaying||!['swap','pool-transaction','market-price'].includes(trade.kind))return;
    const id=trade.id||trade.signature;if(id&&seen.has(id))return;
    if(id){seen.add(id);if(seen.size>256)seen.delete(seen.values().next().value);}
-   lastEvent=performance.now();excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)));
+   lastEvent=performance.now();excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
   },
-  pulse(){excite(.7);},
+  pulse(strength=.7){const at=replaying?(sourceClock??clock):performance.now()/1000;excite(unit(strength)||.7,'onset:'+Math.floor(at*latest.tempo/60*4));},
   refresh(){dirty=true;},
   reset(){clear();},
   close(){
-   closed=true;cancelAnimationFrame(frameID);hide();resize.disconnect();visibility?.disconnect();
+   closed=true;cancelAnimationFrame(frameID);hide();blast?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
    window.removeEventListener('resize',layoutChanged);
    document.removeEventListener('visibilitychange',layoutChanged);

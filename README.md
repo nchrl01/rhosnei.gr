@@ -1013,3 +1013,26 @@ scroll events no longer trigger resizing or reframe the generated pattern.
 Real layout/viewport resizing still updates the panel. Mobile keeps its
 separate panel with a stable viewport height, avoiding browser-toolbar resize
 jitter. Audio-driven motion and the existing renderer are preserved.
+
+## Mixed market/audio field (v96)
+
+The horizontal binary score is mixed with React Bits' PixelBlast noise/Bayer
+shader in a transparent, white-on-black WebGL2 layer. Both use the existing
+frame schedule and coin seed. Post-master audio RMS controls field density;
+market intensity/pressure shape the field; received trades and Pd audio onsets
+create bounded, short-lived ripples. Tempo controls propagation speed. Replay
+uses source timestamps, resets on backward seeks, and has no random phase.
+Pause/mute disables ripples and settles toward the sparse quiet formation.
+
+Desktop stickiness and the separate mobile panel are retained. The new layer
+caps resolution at 640px (384px on mobile), suspends with the existing offscreen
+and hidden-tab gates, and falls back to the horizontal score if WebGL2 fails.
+No autonomous time loop, pointer ripples, liquid postprocessing or sound was
+added. The shader is adapted from React Bits' official PixelBlast registry;
+its MIT + Commons Clause notice is linked from Credits.
+
+Verification used an isolated, offline headless browser with synthetic audio
+levels. Checks passed for WebGL2 shader compilation, repeated seeded frames,
+seed variation, trade ripples, quiet density, mute/pause gates, stable sticky
+canvas dimensions on scroll, bounded mobile rendering and cleanup. No live
+market session or audio audition was performed.

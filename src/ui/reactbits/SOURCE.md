@@ -11,3 +11,7 @@ announcements also react to changes in its label. Other integration is in
 ../interface.jsx and ../MarketClock.jsx.
 
 CometDial scales its drag threshold for the compact header size (4px minimum).
+
+PixelBlast-JS-CSS.json supplies the shader in public/pixel-blast-field.js.
+Adapted for direct WebGL2, deterministic seed, shared frame scheduling, market
+event timestamps/strengths, audio density, bounded resolution and fallback.
