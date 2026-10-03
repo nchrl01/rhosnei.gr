@@ -9,7 +9,8 @@ export function ditherPixels(source,width,height){
   for(let step=0;step<width;step++){
    const x=start+step*direction,i=(y*width+x)*4,alpha=source[i+3]/255;
    const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha);
-   const tone=Math.max(0,Math.min(255,(luminance-24)*255/207));
+   const base=Math.max(0,Math.min(1,(luminance-16)/223));
+   const tone=255*Math.pow(base,.55);
    const gray=Math.max(0,Math.min(255,tone+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
    row[x+direction+1]+=error*7/16;
    next[x-direction+1]+=error*3/16;next[x+1]+=error*5/16;next[x+direction+1]+=error/16;
@@ -34,7 +35,7 @@ function opaqueDitherFilter(){
    <feComposite in="SourceGraphic" in2="paper" operator="over" result="opaque"/>
    <feColorMatrix in="opaque" type="saturate" values="0" result="luminance"/>
    <feComponentTransfer in="luminance" result="gray">
-    <feFuncR type="linear" slope="1.232" intercept="-.116"/><feFuncG type="linear" slope="1.232" intercept="-.116"/><feFuncB type="linear" slope="1.232" intercept="-.116"/>
+    <feFuncR type="gamma" amplitude="1" exponent=".55" offset="0"/><feFuncG type="gamma" amplitude="1" exponent=".55" offset="0"/><feFuncB type="gamma" amplitude="1" exponent=".55" offset="0"/>
    </feComponentTransfer>
    <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="1" seed="1917" stitchTiles="stitch" result="noise"/>
    <feColorMatrix in="noise" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="mono-noise"/>
