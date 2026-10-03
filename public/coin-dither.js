@@ -10,7 +10,7 @@ export function ditherPixels(source,width,height){
    const x=start+step*direction,i=(y*width+x)*4,alpha=source[i+3]/255;
    const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha);
    const base=Math.max(0,Math.min(1,(luminance-16)/223));
-   const tone=255*Math.pow(base,.55);
+   const tone=255*(.32+.68*Math.pow(base,.55));
    const gray=Math.max(0,Math.min(255,tone+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
    row[x+direction+1]+=error*7/16;
    next[x-direction+1]+=error*3/16;next[x+1]+=error*5/16;next[x+direction+1]+=error/16;
@@ -43,9 +43,15 @@ function opaqueDitherFilter(){
     <feFuncR type="linear" slope="3" intercept="-1"/><feFuncG type="linear" slope="3" intercept="-1"/><feFuncB type="linear" slope="3" intercept="-1"/>
    </feComponentTransfer>
    <feComposite in="gray" in2="grain" operator="arithmetic" k2="1" k3=".24" k4="-.12" result="threshold"/>
-   <feComponentTransfer in="threshold">
+   <feComponentTransfer in="threshold" result="binary">
     <feFuncR type="discrete" tableValues="0 1"/><feFuncG type="discrete" tableValues="0 1"/><feFuncB type="discrete" tableValues="0 1"/><feFuncA type="linear" slope="0" intercept="1"/>
    </feComponentTransfer>
+   <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="1" seed="2303" result="paper-grain"/>
+   <feColorMatrix in="paper-grain" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="paper-mono"/>
+   <feComponentTransfer in="paper-mono" result="paper-holes">
+    <feFuncR type="discrete" tableValues="0 0 0 0 0 1 1 1 1 1"/><feFuncG type="discrete" tableValues="0 0 0 0 0 1 1 1 1 1"/><feFuncB type="discrete" tableValues="0 0 0 0 0 1 1 1 1 1"/><feFuncA type="linear" slope="0" intercept="1"/>
+   </feComponentTransfer>
+   <feComposite in="binary" in2="paper-holes" operator="arithmetic" k2="1" k3="1"/>
   </filter></defs>`;
   document.body.append(svg);
  }
