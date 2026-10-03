@@ -125,11 +125,11 @@ export function startTrending(onPick,onLoading=()=>{}){
    }
    updated=Date.now();failures=0;applyRanking(next);loading(next.size?'done':'error','Loading trending');
    status.textContent=duration.toUpperCase()+' · '+next.size+' coins · top '+data.data.length+' trending pools · checked '+new Date(updated).toLocaleTimeString()+' · auto refresh 30s · provider-cached ranking';
-   if(!next.size)placeholder('No trending coins · checking automatically');
+   if(!next.size)placeholder('Loading trending');
   }catch(error){
    if(gen!==generation)return;failures++;
-   status.textContent=(items.size?items.size+' coins · retained '+(updated?new Date(updated).toLocaleTimeString():'earlier')+' data · ':'')+(error.name==='AbortError'?'Trending request timed out':error.message)+' · retrying automatically';
-   placeholder('Trending unavailable · retrying automatically');loading('error','Loading trending');
+   status.textContent='Loading trending';
+   placeholder('Loading trending');loading('working','Loading trending');
   }finally{
    clearTimeout(timeout);
    if(gen===generation){list.setAttribute('aria-busy','false');empty.classList.remove('is-loading');if(!document.hidden)timer=setTimeout(refresh,failures?Math.min(300000,30000*2**failures):REFRESH_MS);}
