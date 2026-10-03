@@ -382,3 +382,31 @@ input{caret-color:#fff}
 /* Historical downloads never cover incoming live candles or block gestures. */
 .history-loading,.history-loading[data-partial=true]{position:relative;inset:auto;min-height:30px;justify-content:flex-start;background:transparent;padding:7px 0;color:var(--muted);font-size:12px}
 .history-loading button{margin-left:auto}
+
+/* The selected ranking period belongs to the header; the feed refreshes itself. */
+.upic-brand .brand-name{display:inline-flex;align-items:baseline;gap:4px}
+.upic-brand .brand-beta{font-size:.85em;font-weight:400;letter-spacing:0;color:var(--muted)}
+.trending-menu>summary{gap:6px}
+#trending-period{font-weight:400;color:var(--muted)}
+.trending-periods{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.trending-periods button{width:100%;min-height:36px;padding:7px 8px;border-color:#444;font-size:13px}
+.trending-periods button[aria-pressed=true]{background:#f2f2f2;color:#000;border-color:#f2f2f2}
+.trending-periods button:disabled{opacity:.45}
+#trending-week-note{margin:10px 0 0;font-size:11px;line-height:1.4;color:var(--muted)}
+.trending-empty{display:flex;align-items:center;cursor:default;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media(max-width:760px){
+ .trending-menu{position:static}
+ .trending-menu-panel{left:12px;right:12px;top:calc(100% + 1px);width:auto}
+ .trending-periods button{min-height:44px}
+ .upic-brand .brand-name{display:inline-flex;gap:3px}
+ .trending-heading{padding-inline:6px}
+}
+@media(max-width:380px){
+ .upic-brand{padding-left:3px;gap:3px}
+ .upic-brand .brand-icon{flex-basis:24px;width:24px;height:24px}
+ .upic-brand .brand-name{display:inline-flex;font-size:9px;gap:2px}
+ .trending-heading{padding-inline:5px}
+ .trending-menu>summary{font-size:9px;gap:4px;letter-spacing:0}
+ .volume-widget{padding-inline:4px}
+ #volume-button{font-size:10px;padding-inline:5px;gap:4px}
+}

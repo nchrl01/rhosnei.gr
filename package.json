@@ -4,9 +4,16 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
-    "build:ccxt": "node scripts/build-ccxt.mjs"
+    "build:ccxt": "node scripts/build-ccxt.mjs",
+    "build:ui": "node scripts/build-ui.mjs"
   },
   "dependencies": {
-    "ccxt": "4.5.85"
+    "ccxt": "4.5.85",
+    "motion": "12.23.12",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
   }
 }

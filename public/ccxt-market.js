@@ -47,7 +47,7 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
  const frame=String(aggregate)+({minute:'m',hour:'h',day:'d'}[timeframe]);
  const key='upic-ccxt-history-v1:'+id+':'+symbol+':'+frame;
  let bars=[],before=Date.now(),lastOldest=Infinity;
- function report(state,message){if(!closed)onUpdate({candles:bars,interval,timeframe,state,message,created:null});}
+ function report(state,message,detail={}){if(!closed)onUpdate({candles:bars,interval,timeframe,state,message,created:null,error:null,retrying:false,...detail});}
  try{
   const cached=JSON.parse(localStorage.getItem(key));
   if(cached?.saved>Date.now()-86400000&&Array.isArray(cached.bars)){
@@ -86,7 +86,7 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
     const keys=Object.keys(localStorage).filter(k=>k.startsWith('upic-ccxt-history-v1:'));
     while(keys.length>12){const old=keys.shift();if(old!==key)localStorage.removeItem(old);}
    }catch{}
-  }catch(error){report(bars.length?'partial':'unavailable','Exchange history: '+error.message);}
+  }catch(error){report(bars.length?'partial':'unavailable','Exchange history: '+error.message,{error:error.message||'Exchange history refresh failed'});}
  }
  void load();return()=>{closed=true;};
 }

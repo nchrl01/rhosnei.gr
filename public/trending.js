@@ -4,8 +4,10 @@ const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom
 const money=value=>value!=null&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(Number(value)):null;
 function node(tag,text,className){const el=document.createElement(tag);if(text!=null)el.textContent=text;if(className)el.className=className;return el;}
 function safeImage(url){try{const parsed=new URL(url);return parsed.protocol==='https:'?parsed.href:null;}catch{return null;}}
-export function startTrending(onPick){
- const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),duration=document.getElementById('trending-duration');
+export function startTrending(onPick,onLoading=()=>{}){
+ const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),menu=document.querySelector('.trending-menu'),summary=menu.querySelector('summary'),periodLabel=document.getElementById('trending-period');
+ const periodButtons=[...menu.querySelectorAll('button[data-period]')],availablePeriods=periodButtons.filter(button=>!button.disabled);
+ let duration='24h';
  let generation=0,controller,timer,updated=null,offset=0,width=0,lastFrame=0,initialPick=true;
  let hovered=false,focused=false,dragging=false,pending=null,failures=0;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -23,9 +25,10 @@ export function startTrending(onPick){
   if(duplicate){article.setAttribute('aria-hidden','true');pick.tabIndex=-1;}
   return article;
  }
- const track=node('div',null,'ticker-track'),empty=node('button',null,'trending-empty');empty.type='button';empty.setAttribute('aria-live','polite');list.replaceChildren(track,empty);
- function placeholder(message,busy=false){empty.hidden=items.size>0;empty.textContent=message;empty.disabled=busy;list.setAttribute('aria-busy',String(busy));empty.classList.toggle('is-loading',busy);}
- empty.onclick=()=>refresh();
+ const track=node('div',null,'ticker-track'),empty=node('span',null,'trending-empty');empty.setAttribute('role','status');empty.setAttribute('aria-live','polite');list.replaceChildren(track,empty);
+ const loader=node('span',null,'component-loader trending-component-loader');loader.id='trending-loader';loader.hidden=true;list.append(loader);
+ function loading(status,label){onLoading({status:items.size?null:status,label,host:loader,operation:generation});}
+ function placeholder(message,busy=false){empty.hidden=items.size>0;empty.textContent=message;list.setAttribute('aria-busy',String(busy));empty.classList.toggle('is-loading',busy);}
  const resize=new ResizeObserver(()=>{width=track.firstElementChild?.getBoundingClientRect().width||0;offset=width?offset%width:0;});resize.observe(list);
  function anchor(){
   const group=track.firstElementChild;if(!group)return null;const left=group.getBoundingClientRect().left;
@@ -97,19 +100,19 @@ export function startTrending(onPick){
   const changed=JSON.stringify([...items.values()])!==JSON.stringify([...next.values()]);
   items.clear();for(const [id,item] of next)items.set(id,item);
   if(changed)render();
-  placeholder(next.size?'':'No trending coins · click this bar to refresh',false);
+  placeholder(next.size?'':'No trending coins · checking automatically',false);
   if(initialPick&&items.size){initialPick=false;onPick([...items.values()][0],{initial:true,autoplay:false});}
  }
  async function refresh(){
   const gen=++generation;controller?.abort();clearTimeout(timer);pending=null;
   const request=new AbortController();controller=request;const signal=request.signal;
   const timeout=setTimeout(()=>request.abort(),35000);
-  status.textContent=items.size?'Updating trending order…':'Loading trending markets…';
-  placeholder('Loading trending coins',true);
+  status.textContent=items.size?'Updating '+duration.toUpperCase()+' trending order…':'Loading '+duration.toUpperCase()+' trending markets…';
+  placeholder('Loading trending coins',true);loading('working','Loading trending');
   try{
    // Refresh the leading page as one ranking snapshot. Deep pagination used
    // to occupy the shared free-provider budget and delay the next ranking.
-   const response=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,network&duration='+encodeURIComponent(duration.value)+'&page=1',{signal,priority:30});
+   const response=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,network&duration='+encodeURIComponent(duration)+'&page=1',{signal,priority:30});
    if(!response.ok)throw Error('Trending provider HTTP '+response.status);
    const data=await response.json();if(gen!==generation||signal.aborted)return;
    if(!Array.isArray(data.data))throw Error('Unexpected trending response');
@@ -120,23 +123,45 @@ export function startTrending(onPick){
     const item={rank,chain:aliases[networkID]||networkID,network:network?.name||networkID,address:token.address,symbol:token.symbol||token.name||'TOKEN',name:token.name||token.symbol||'Token',image:token.image_url,marketCap:pool.attributes?.market_cap_usd,fdv:pool.attributes?.fdv_usd};
     if(!next.has(key(item)))next.set(key(item),item);
    }
-   updated=Date.now();failures=0;applyRanking(next);
-   status.textContent=next.size+' coins · top '+data.data.length+' trending pools · checked '+new Date(updated).toLocaleTimeString()+' · auto refresh 30s · provider-cached ranking';
-   if(!next.size)placeholder('No trending coins · click this bar to refresh');
+   updated=Date.now();failures=0;applyRanking(next);loading(next.size?'done':'error','Loading trending');
+   status.textContent=duration.toUpperCase()+' · '+next.size+' coins · top '+data.data.length+' trending pools · checked '+new Date(updated).toLocaleTimeString()+' · auto refresh 30s · provider-cached ranking';
+   if(!next.size)placeholder('No trending coins · checking automatically');
   }catch(error){
    if(gen!==generation)return;failures++;
    status.textContent=(items.size?items.size+' coins · retained '+(updated?new Date(updated).toLocaleTimeString():'earlier')+' data · ':'')+(error.name==='AbortError'?'Trending request timed out':error.message)+' · retrying automatically';
-   placeholder('Trending unavailable · click this bar to refresh');
+   placeholder('Trending unavailable · retrying automatically');loading('error','Loading trending');
   }finally{
    clearTimeout(timeout);
-   if(gen===generation){list.setAttribute('aria-busy','false');empty.disabled=false;empty.classList.remove('is-loading');if(!document.hidden)timer=setTimeout(refresh,failures?Math.min(300000,30000*2**failures):REFRESH_MS);}
+   if(gen===generation){list.setAttribute('aria-busy','false');empty.classList.remove('is-loading');if(!document.hidden)timer=setTimeout(refresh,failures?Math.min(300000,30000*2**failures):REFRESH_MS);}
   }
  }
  document.addEventListener('visibilitychange',()=>{
   clearTimeout(timer);
   if(!document.hidden)refresh();
  });
- document.getElementById('trending-refresh').onclick=refresh;
- duration.onchange=refresh;
+ function closePeriods(restoreFocus=false){menu.open=false;summary.setAttribute('aria-expanded','false');if(restoreFocus)summary.focus({preventScroll:true});}
+ menu.addEventListener('toggle',()=>summary.setAttribute('aria-expanded',String(menu.open)));
+ for(const button of availablePeriods)button.addEventListener('click',()=>{
+  const next=button.dataset.period;
+  closePeriods(true);if(next===duration||!['24h','1h','5m'].includes(next))return;
+  // A newly selected period starts with an empty tape, never the old ranking.
+  if(pointer&&list.hasPointerCapture(pointer.id))list.releasePointerCapture(pointer.id);
+  pointer=null;dragging=false;suppressClick=false;pending=null;manualUntil=0;list.classList.remove('is-dragging');
+  items.clear();track.replaceChildren();offset=0;width=0;list.scrollLeft=0;track.style.transform='none';updated=null;failures=0;
+  duration=next;periodLabel.textContent=duration.toUpperCase();
+  for(const option of availablePeriods)option.setAttribute('aria-pressed',String(option===button));
+  refresh();
+ });
+ summary.addEventListener('keydown',event=>{
+  if(event.key!=='ArrowDown')return;event.preventDefault();menu.open=true;summary.setAttribute('aria-expanded','true');
+  (availablePeriods.find(button=>button.dataset.period===duration)||availablePeriods[0]).focus();
+ });
+ menu.addEventListener('keydown',event=>{
+  const current=availablePeriods.indexOf(event.target);if(current<0)return;
+  let next;if(event.key==='ArrowRight')next=(current+1)%availablePeriods.length;else if(event.key==='ArrowLeft')next=(current+availablePeriods.length-1)%availablePeriods.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=availablePeriods.length-1;else return;
+  event.preventDefault();availablePeriods[next].focus();
+ });
+ document.addEventListener('pointerdown',event=>{if(menu.open&&!menu.contains(event.target))closePeriods();});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&menu.open){event.preventDefault();closePeriods(true);}});
  refresh();
 }

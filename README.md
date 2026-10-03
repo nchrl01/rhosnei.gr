@@ -974,3 +974,33 @@ The black layout gains readable primary actions, larger mobile targets and
 wrapping status text. Replay enters/restarts history; the main Listen/Pause
 button owns transport. Inline speed options remain. Source and syntax were
 reviewed; no runtime, browser or audio testing was requested or performed.
+
+## React Bits controls (v92)
+
+CometDial now controls the existing master volume, preserving its current value
+and every audio engine's existing gain path. The supplied white dial settings
+are retained, with Volume / % labels. Pointer, touch and keyboard input share
+the same native input events; closing the panel unmounts the animated dial.
+
+LatticeLoader's orbit dots show actual search, history, trending and instrument
+loading. Timers measure each request and freeze at completion/failure. History
+errors retain saved candles and expose retry instead of claiming success.
+Completions disappear after a brief acknowledgement. Counter displays the
+live/replay clock, with radix-six minute/second wheels and immediate updates on
+seeks or fast playback. Both controls honor reduced motion.
+
+The header reads $UPIC (BETA) / TRENDING 24H. Its period menu offers 24H, 1H
+and 5M; 1W is visibly unavailable because the current feed does not supply a
+weekly ranking. Trending refresh and error recovery remain automatic, without
+click-to-refresh prompts. Changing periods discards the previous ranking.
+
+These are small React islands loaded separately from the player. Native volume,
+plain clock text and loading feedback remain fallbacks if the component bundle
+fails. Existing visuals and sound generation are unchanged. PixelBlast was
+assessed as a possible future market/audio-driven field; it is not installed.
+
+Run npm ci --ignore-scripts and npm run build:ui to build the committed static
+assets in public/vendor/ui. Upstream React Bits source, provenance and its full
+MIT + Commons Clause notice are retained in src/ui/reactbits; public credits
+link the deployed notice and dependency licenses. Source was reviewed and the
+production bundle built. No browser, runtime or audio checks were performed.

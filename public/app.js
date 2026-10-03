@@ -1,4 +1,5 @@
-import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=87';
+import {createUIControls} from './ui-controls.js?v=92';
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=92';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
@@ -29,11 +30,12 @@ import {subscribeEvm} from './evm.js?v=39';
 import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=39';
-import {startTrending} from './trending.js?v=82';
+import {startTrending} from './trending.js?v=92';
 import {MarketChart} from './chart.js?v=90';
-import {loadHistory} from './history.js?v=87';
+import {loadHistory} from './history.js?v=92';
 import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
+const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let pd,ctx,gain,outputTap,outputMeters,instrumentTap,instrumentSamples,playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let requestedNetwork=null,requestedAutoplay=false;
@@ -48,6 +50,7 @@ let mathMarket=null,mathSeed=seed,replayPianoPrimed=false,replayPhrase=null;
 let receivedTradeCount=0;
 let stopMusicHistory,musicHistoryTimer,musicalCandles=[],musicalInterval=300000;
 let stopHistory,stopChartHistory,historyContext=null,originDate=null,contextCandles=[],contextInterval=60000,chartRequest=0;
+let historyLoadSequence=0,contextHistoryState=null,contextHistoryOperation=null,contextHistoryKey='';
 const chart=new MarketChart($('market-chart'));
 const replay=createMarketReplay();
 createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
@@ -369,7 +372,12 @@ function setPlayState(active){
  button.setAttribute('aria-pressed',String(active&&!interrupted));
  button.setAttribute('aria-busy',String(starting));
 }
-function audioBusy(value){starting=value;$('play').disabled=value;setPlayState(playing);}
+let audioLoadFailed=false;
+function audioBusy(value){
+ starting=value;$('play').disabled=value;setPlayState(playing);
+ if(value){audioLoadFailed=false;ui.loading('audio','working','Opening instrument',{restart:true});}
+ else ui.loading('audio',audioLoadFailed?'error':'done','Opening instrument');
+}
 setPlayState(false);
 $('play').onclick=async()=>{
  if(starting)return;
@@ -379,14 +387,14 @@ $('play').onclick=async()=>{
  if(wasInterrupted){
   audioBusy(true);
   try{await unlocked;if(ctx.state!=='running')throw Error('Tap Resume again to enable audio');flushPianoTrade();setPlayState(true);audioStatus();}
-  catch(error){status('Audio interrupted · '+error.message);}
+  catch(error){audioLoadFailed=true;status('Audio interrupted · '+error.message);}
   finally{audioBusy(false);}
   return;
  }
  if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();mathPatterns.stop();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);coinVoice.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
  try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);coinVoice.setRunning(true);void coinVoice.prepare();void arpeggioAI.prepare();flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
- catch(e){playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
+ catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
 $('native-option').disabled=true;
@@ -394,13 +402,13 @@ $('native-option').textContent='Native Pd · full Envion browser bridge required
 $('audio-output').onchange=async()=>{
  audioBusy(true);$('audio-output').disabled=true;
  try{await closeAudio();resetEnsemble();status($('audio-output').value==='native'?'Open patches/orchestra/av-desktop.pd · then Listen':'Piano ready');}
- catch(e){status('Could not change audio output: '+e.message);}
+ catch(e){audioLoadFailed=true;status('Could not change audio output: '+e.message);}
  finally{audioBusy(false);$('audio-output').disabled=false;}
 };
 for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);if(id==='master'){piano?.setMaster(Number($(id).value));coinVoice.setMaster(Number($(id).value));}session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const volumeButton=$('volume-button'),volumePanel=$('volume-panel');
-const closeVolume=()=>{volumePanel.hidden=true;volumeButton.setAttribute('aria-expanded','false');};
-volumeButton.onclick=()=>{volumePanel.hidden=!volumePanel.hidden;volumeButton.setAttribute('aria-expanded',String(!volumePanel.hidden));if(!volumePanel.hidden)$('master').focus();};
+const closeVolume=()=>{volumePanel.hidden=true;volumeButton.setAttribute('aria-expanded','false');ui.volumeOpen(false);};
+volumeButton.onclick=()=>{volumePanel.hidden=!volumePanel.hidden;volumeButton.setAttribute('aria-expanded',String(!volumePanel.hidden));ui.volumeOpen(!volumePanel.hidden);};
 $('master').addEventListener('input',()=>{$('master-value').textContent=Math.round(Number($('master').value)*100)+'%';});
 document.addEventListener('pointerdown',e=>{if(!e.target.closest('.volume-widget'))closeVolume();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!volumePanel.hidden){closeVolume();volumeButton.focus();}});
@@ -442,41 +450,59 @@ function updateContext(){
  $('origin-multiple').textContent=current>0&&first?.open>0?(current/first.open).toFixed(2)+'×':'—';
  $('peak-drawdown').textContent=current>0&&peak>0?((current/peak-1)*100).toFixed(1)+'%':'—';
 }
+function beginHistoryLoad(){return {id:'history-'+(++historyLoadSequence),startedAt:performance.now(),endedAt:null};}
+function historyLoadState(data,operation){
+ const busy=['loading','cached'].includes(data.state)&&!data.error;
+ operation.endedAt=busy?null:operation.endedAt??performance.now();
+ return {...data,operation:operation.id,startedAt:operation.startedAt,endedAt:operation.endedAt};
+}
 function startHistory(pair){
- const gen=generation;stopHistory?.();stopMusicHistory?.();clearTimeout(musicHistoryTimer);historyContext=null;contextCandles=[];musicalCandles=[];
+ if(!pair)return;
+ const gen=generation,key=pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address;
+ stopHistory?.();stopMusicHistory?.();clearTimeout(musicHistoryTimer);
+ if(contextHistoryKey!==key){historyContext=null;contextCandles=[];musicalCandles=[];}
+ contextHistoryKey=key;const operation=beginHistoryLoad();contextHistoryOperation=operation;
+ contextHistoryState=historyLoadState({candles:contextCandles,interval:contextInterval,state:'loading',error:null},operation);
  function refreshMusicHistory(){if(gen!==generation)return;stopMusicHistory?.();stopMusicHistory=loadHistory(pair,data=>{if(gen!==generation)return;musicalCandles=data.candles;musicalInterval=data.interval;},{timeframe:'minute',aggregate:5,maxPages:1,cacheAge:60000,priority:60});musicHistoryTimer=setTimeout(refreshMusicHistory,300000);}
- if($('chart-timeframe').value!=='auto')loadChartTimeframe();
+ if($('chart-timeframe').value!=='auto')loadChartTimeframe();else setHistoryLoading(contextHistoryState);
  refreshMusicHistory();
  const dates=discovered.filter(p=>p.chainId===pair.chainId).map(p=>Number(p.pairCreatedAt)).filter(n=>n>0);
  originDate=dates.length?Math.min(...dates):Number(pair.pairCreatedAt)||null;updateContext();
  stopHistory=loadHistory(pair,data=>{
-  if(gen!==generation)return;
+  if(gen!==generation||contextHistoryOperation!==operation)return;
+  // A failed refresh keeps the already displayed provider candles available.
+  if(!data.candles.length&&contextCandles.length&&data.interval===contextInterval&&(data.error||['loading','cached'].includes(data.state)))data={...data,candles:contextCandles};
+  contextHistoryState=historyLoadState(data,operation);
   const first=data.candles[0];historyContext=first?{first,peak:Math.max(...data.candles.map(b=>b.high)),state:data.state,interval:data.interval}:null;
   contextCandles=data.candles;contextInterval=data.interval;
-  if($('chart-timeframe').value==='auto'){setHistoryLoading(data);chart.setHistory(data.candles,data.interval,originDate);$('chart-resolution').textContent='Auto context · '+data.timeframe+' candles';}
+  if($('chart-timeframe').value==='auto'){setHistoryLoading(contextHistoryState);chart.setHistory(data.candles,data.interval,originDate);$('chart-resolution').textContent='Auto context · '+data.timeframe+' candles';}
   const gap=first&&originDate&&first.time>originDate+data.interval?' · gap between first known market and available history':'';
   $('history-status').textContent=data.message+' · '+data.timeframe+' candles'+gap;
   updateContext();session?.controls.push({at:Date.now(),name:'history-context',first:first?.time,firstOpen:first?.open,state:data.state,originDate});
  });
 }
 function setHistoryLoading(data={}){
- const host=$('history-loading'),has=data.candles?.length>0,busy=['loading','cached'].includes(data.state),failed=data.state==='unavailable';
- host.hidden=has&&!busy;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
- $('history-loading-label').textContent=failed?'History delayed · retry available':has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
+ const host=$('history-loading'),has=data.candles?.length>0,failed=Boolean(data.error)||data.state==='unavailable',busy=!failed&&['loading','cached'].includes(data.state);
+ host.hidden=has&&!busy&&!failed;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
+ $('history-loading-label').textContent=failed?(has?'History refresh delayed · showing loaded candles':'History delayed')+(data.retrying?' · retrying automatically':' · retry available'):has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
  $('history-retry').hidden=busy;
+ ui.loading('history',busy?'working':failed||!has?'error':'done',data.retrying&&busy?'Retrying history':has?'Updating history':'Loading history',{operation:data.operation??null,startedAt:data.startedAt,endedAt:data.endedAt});
 }
 $('history-retry').onclick=()=>{$('chart-timeframe').value==='auto'?startHistory(market):loadChartTimeframe();};
 const chartFrames={'1m':{timeframe:'minute',aggregate:1},'5m':{timeframe:'minute',aggregate:5},'15m':{timeframe:'minute',aggregate:15},'1h':{timeframe:'hour',aggregate:1},'4h':{timeframe:'hour',aggregate:4},'1d':{timeframe:'day',aggregate:1}};
 function loadChartTimeframe(){
  stopChartHistory?.();const request=++chartRequest,gen=generation,selection=$('chart-timeframe').value;
- if(selection==='auto'){setHistoryLoading({candles:contextCandles,state:historyContext?.state||'loading'});chart.setHistory(contextCandles,contextInterval,originDate);$('chart-resolution').textContent='Auto context · '+contextInterval/60000+' minute candles';return;}
- setHistoryLoading({candles:[],state:'loading'});
+ if(selection==='auto'){
+  if(!contextHistoryState){if(market)startHistory(market);return;}
+  setHistoryLoading(contextHistoryState);chart.setHistory(contextCandles,contextInterval,originDate);$('chart-resolution').textContent='Auto context · '+contextInterval/60000+' minute candles';return;
+ }
+ const operation=beginHistoryLoad();setHistoryLoading(historyLoadState({candles:[],state:'loading'},operation));
  const frame=chartFrames[selection],interval={minute:60000,hour:3600000,day:86400000}[frame.timeframe]*frame.aggregate;
  chart.setInterval(interval);$('chart-resolution').textContent=selection+' · '+(market?'Loading provider candles…':'Awaiting trending market');
  if(!market)return;
  stopChartHistory=loadHistory(market,data=>{
   if(gen!==generation||request!==chartRequest)return;
-  setHistoryLoading(data);chart.setHistory(data.candles,data.interval,originDate);
+  setHistoryLoading(historyLoadState(data,operation));chart.setHistory(data.candles,data.interval,originDate);
   $('chart-resolution').textContent=selection+' · '+data.candles.length+' provider candles · '+data.message;
  },{...frame,maxPages:3,priority:100});
 }
@@ -494,6 +520,7 @@ function chooseMarket(pair,{shared=false}={}){
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
+ contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
  resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);coinVoice.setCoin(pair.baseToken.name||pair.baseToken.symbol,seed);if(playing)void coinVoice.prepare();applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
@@ -521,6 +548,7 @@ function searchFeedback(message,state='ready'){
  const node=$('lookup');node.hidden=!message;node.dataset.state=state;
  node.classList.toggle('is-loading',state==='loading');
  if(node.textContent!==message)node.textContent=message;
+ ui.loading('search',!message?null:state==='loading'?'working':state==='error'?'error':'done',message,{operation:searchRevision});
 }
 function searchBusy(value){
  loading=value;$('load').disabled=value;$('load').textContent=value?'Searching…':'Search';
@@ -600,7 +628,7 @@ function shareSnapshot(){
  return {version:1,engine:76,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
-const rollDate=rollingText($('coin-date')),rollTime=rollingText($('coin-time')),rollCap=rollingText($('coin-cap'));
+const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));
 let titleMovement={key:null,price:null,at:0,until:0,direction:''};
 function updateCoinReadout(m){
  const title=$('coin-name'),key=(market?.baseToken?.address||'')+':'+replay.state.active;
@@ -615,7 +643,7 @@ function updateCoinReadout(m){
 
  const at=replay.state.active?replay.state.cursor:Date.now(),date=new Date(at),cap=m.context?.latestCap;
  rollDate(date.toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'numeric'}),at);
- rollTime(date.toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}),at);
+ ui.clock({timestamp:at,rate:replay.state.active?Number(replay.state.speed)||1:1,replay:replay.state.active,seeking:replay.state.dragging,label:replay.state.active?'Playback time':'Local time'});
  rollCap(cap>0?'$'+Math.round(cap).toLocaleString('en'):'—',cap||0);
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
  $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
@@ -640,7 +668,7 @@ if(!restoreSharedScore())startTrending((item,options={})=>{
  requestedNetwork=item.chain;requestedAutoplay=options.autoplay??true;
  if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);
  $('address').value=item.address;syncAddressLabel();$('coin-form').requestSubmit();
-});
+},state=>ui.loading('trending',state.status,state.label,{host:state.host,operation:state.operation}));
 setInterval(()=>{if(!playing)syncLevels(metrics());},250);
 const chartStatus=document.querySelector('.chart-status');
 new MutationObserver(()=>{for(const item of chartStatus.children)item.title=item.textContent;}).observe(chartStatus,{childList:true,characterData:true,subtree:true});
