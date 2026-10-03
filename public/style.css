@@ -185,11 +185,9 @@ button,summary,a{font-variant-emoji:text}
 .coin-avatar{position:relative;border:0;background:transparent;overflow:hidden}
 .coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:pixelated}
 .coin-avatar #coin-image-fallback{grid-area:1/1}
-/* A full data field beside the compact player, also available below it on phones. */
-.audio-visualizer{display:block;position:relative;width:100%;height:380px;margin:28px auto 0;max-width:600px;background:#fff;contain:layout paint;pointer-events:none}
-#audio-dots{display:block;width:100%;height:calc(100% - 30px)}
-.visualizer-caption{position:absolute;bottom:0;left:12px;right:12px;height:30px;display:flex;justify-content:space-between;gap:16px;align-items:center;font-size:8px;color:#555;border-top:1px solid #ddd;overflow:hidden;white-space:nowrap}
-#visualizer-coin{font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis}#visualizer-state{font-weight:400;font-size:8px;flex-shrink:0}
+/* Wide screens place the data field beside the player; smaller windows stack it. */
+.audio-visualizer{display:block;position:relative;width:100%;height:clamp(160px,24vw,240px);margin:16px 0 0;max-width:none;background:#fff;contain:layout paint;pointer-events:none}
+#audio-dots{display:block;width:100%;height:100%}
 body.inspecting .audio-visualizer{display:none}
 @media(min-width:1050px){
  .audio-visualizer{position:fixed;left:648px;right:16px;top:76px;bottom:16px;width:auto;height:auto;max-width:none;margin:0;z-index:0}
@@ -197,8 +195,25 @@ body.inspecting .audio-visualizer{display:none}
 }
 @media(max-width:760px){
  .audio-visualizer{position:fixed;inset:0;width:100%;height:100%;max-width:none;margin:0;background:transparent;z-index:1000;mix-blend-mode:difference;pointer-events:none;contain:none}
- #audio-dots{height:100%;pointer-events:none}
- .visualizer-caption{display:none}
+ #audio-dots{pointer-events:none}
+}
+/* Use the whole window before there is room for a separate right-hand field. */
+@media(min-width:761px) and (max-width:1049px){
+ #coin-form,#coin-search-results,.instrument-top,.readings,#math-functions{max-width:none}
+ .instrument-top{grid-template-columns:minmax(210px,.72fr) minmax(320px,1fr) 76px;gap:12px;margin:14px 0 12px}
+ .coin-title{align-items:flex-start}
+ .coin-context{gap:8px}.coin-context .eyebrow{font-size:9px}
+ .transport button{width:76px;height:32px;min-height:32px;font-size:11px}
+ .compact-chart-toolbar{min-height:28px;gap:10px;margin-bottom:5px}
+ .transport-readout .transport-indicator{font-size:10px;line-height:14px}
+ #replay-state{font-size:9px;line-height:14px}
+ .replay-actions>button{height:28px;min-height:28px;font-size:10px;padding:5px}
+ .chart-menu>summary{width:28px;height:28px}
+ #market-chart{height:110px}
+ .tick-heading{gap:8px}#tick-position{font-size:8px;line-height:12px}#tick-reading{font-size:9px;line-height:12px}
+ #chart-tick-row{height:18px;margin-top:4px}
+ .chart-status{gap:8px;margin-top:5px;line-height:13px}.chart-status>span{font-size:9px}
+ .readings{padding:9px 0;gap:12px}.readings small{font-size:8px;line-height:11px}.readings strong{font-size:13px;line-height:16px}
 }
 .trending-empty{border:0;height:32px;min-height:32px;max-width:100%;font-size:11px;padding:0 12px;background:transparent;color:#666;text-align:left;justify-content:flex-start}
 .trending-empty:disabled{opacity:1}

@@ -9,7 +9,7 @@ import {createCoinDither} from './coin-dither.js?v=75';
 import {createUpicBrand} from './upic-brand.js?v=75';
 import {createTransportIndicator} from './transport-indicator.js?v=61';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=77';
+import {createAudioDots} from './audio-dots.js?v=78';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=76';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -343,7 +343,6 @@ async function closeAudio(){
 }
 function setPlayState(active){
  const button=$('play');button.dataset.playing=String(active);button.textContent=active?'Ⅱ Pause':'▶︎ Listen';
- $('visualizer-state').textContent=active?'LISTENING':'PRESS LISTEN';
  button.setAttribute('aria-label',active?'Pause audio':'Listen to market');button.setAttribute('aria-pressed',String(active));
 }
 setPlayState(false);
@@ -394,7 +393,6 @@ function display(){
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
  $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):!market?'LOADING TRENDING MARKET':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
  $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'Loading trending market';
- $('visualizer-coin').textContent=market?.baseToken.name||market?.baseToken.symbol||'$UPIC';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
  const bar=replay.state.bar,change=historical?(recorded?historical.observation?.change:bar?.open>0?(bar.close/bar.open-1)*100:null):market?.priceChange?.m5;
@@ -553,7 +551,7 @@ function audioContext(){
   context.onstatechange=()=>{
    if(context!==ctx||!playing)return;
    if(context.state==='running'){replay.state.clock=performance.now();flushPianoTrade();setPlayState(true);}
-   else{mathPatterns.stop();$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('visualizer-state').textContent='AUDIO PAUSED';$('play').textContent='▶︎ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
+   else{mathPatterns.stop();$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('play').textContent='▶︎ Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
    audioStatus();
   };
  }

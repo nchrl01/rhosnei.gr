@@ -3,7 +3,6 @@
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 const hash=(seed,index)=>{let n=Math.imul((seed>>>0)^index,1597334677);n=Math.imul(n^(n>>>16),2246822507);return ((n^(n>>>13))>>>0)/4294967296;};
-const compact=n=>n==null?'—':Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(1)+'K':n.toFixed(n<1?4:0);
 export function fieldState(m={}){
  const raw=m.raw||m,context=m.context||{},fresh=unit(m.fresh);
  // Valuation and holder count shape space; neither creates motion on its own.
@@ -51,7 +50,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const node=layer(),paint=node.getContext('2d'),screen=c,latest=model;
   c=paint;model=snapshot;c.setTransform(canvas.width/w,0,0,canvas.height/h,0,0);
   const drive=unit(.22+model.drive*.45+(field?.strength||0)*.33),margin=w<450?12:20;
-  const fieldY=mobile.matches?0:47,fieldH=mobile.matches?h:Math.max(20,h-105),fieldW=w-margin*2;
+  const fieldY=0,fieldH=h,fieldW=w-margin*2;
   c.textBaseline='alphabetic';c.textAlign='left';
   c.save();c.beginPath();c.rect(margin,fieldY,fieldW,fieldH);c.clip();
   score(margin,fieldY+1,fieldW-1,fieldH-2,drive);
@@ -228,21 +227,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   }
   if(!dirty&&!nextScene&&active===activeBefore)return;
   activeBefore=active;dirty=false;
-  const margin=w<450?12:20,info=displayModel||model;
   c.clearRect(0,0,w,h);if(!mobile.matches){c.fillStyle='#fff';c.fillRect(0,0,w,h);}c.textBaseline='alphabetic';c.textAlign='left';
   const scene=blended(now);if(scene)c.drawImage(scene,0,0,w,h);
-  if(!mobile.matches){
-   text('U P I C  /  D A T A   S C O R E',margin,22,'#111',8);
-   c.textAlign='right';text(!active?'PAUSED':metrics.replay?'REPLAY':model.fresh<=0?'STALE':'LIVE',w-margin,22,'#555',8);c.textAlign='left';
-   c.strokeStyle='#ddd';c.beginPath();c.moveTo(margin,33.5);c.lineTo(w-margin,33.5);c.stroke();
-   const y=h-44;
-   text('Δ '+(info.change==null?'—':(info.change>=0?'+':'')+info.change.toFixed(2)+'%')+'    VOL '+compact(info.values[2]),margin,y);
-   c.textAlign='right';text('CAP '+compact(info.values[5]),w-margin,y);c.textAlign='left';
-   const age=finite(metrics.audience?.age),ageText=age==null?'AGE UNKNOWN':age<3600000?Math.floor(age/60000)+'M AGO':Math.floor(age/3600000)+'H AGO';
-   const holderLabel=info.holder==null?'HOLDERS —':'HOLDERS '+compact(info.holder)+' / '+(model.holderWeight<=0?'STALE':ageText);
-   text(metrics.replay?'CANDLE SCORE / NO HISTORICAL HOLDERS':holderLabel,margin,y+15,'#666',7);
-   c.textAlign='right';text(metrics.replay?'REPLAY':model.fresh<=0?'STALE':metrics.decoded?'OBSERVED SWAPS':'SNAPSHOTS',w-margin,y+15,'#666',7);c.textAlign='left';
-  }
   canvas.dataset.overlay=String(mobile.matches);canvas.dataset.active=String(active);canvas.dataset.visible=String(Boolean(scene));canvas.dataset.transitioning=String(Boolean(nextScene));canvas.dataset.energy=energy.toFixed(3);canvas.dataset.density=displayDrive.toFixed(3);canvas.dataset.phase=phase.toFixed(3);
  }
  function layout(){if(host){if(mobile.matches)document.body.append(host);else anchor.parentNode?.insertBefore(host,anchor);}size();}

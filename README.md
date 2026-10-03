@@ -670,3 +670,19 @@ open component needs reloading. No desktop control was used for this update.
 This revision received source review and JavaScript syntax checks. Existing
 visual-check expectations were adjusted for the new behavior; runtime and
 rendering tests were not run for this revision.
+
+
+## Unlabelled visual field and responsive player (v78)
+
+The browser visual field now contains only its graphical marks. Removed the
+score heading, state labels, repeated market statistics and bottom caption,
+along with their reserved canvas space. Accessible canvas labels remain.
+
+At window widths from 761 to 1049 pixels, the player, search, readings and
+market phrases use the available width. The chart has more room, and the
+visual field aligns beneath the player at a shorter adaptive height. Wider
+desktop windows retain the side-by-side layout; mobile keeps its transparent
+overlay. Audio, coin-image treatment and continuous visual updates are unchanged.
+
+This revision received source review and JavaScript syntax checks. Existing
+visual-check fixtures were updated; runtime and rendering tests were not run.
