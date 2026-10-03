@@ -1,33 +1,34 @@
-// Fine serpentine error diffusion preserves image detail at device resolution.
-// Preprocess grain and gamma before quantization, as separate tonal controls.
-// Composite onto white and keep every pixel opaque: no edge fade or reveal.
+// Sparse dotted contours on white paper. Keep compact dark details, such as
+// pupils, while clearing broad flat fills. Alpha stays opaque at every edge.
 export function ditherPixels(source,width,height){
- const out=new Uint8ClampedArray(width*height*4);
- let row=new Float32Array(width+2),next=new Float32Array(width+2);
- for(let y=0;y<height;y++){
-  const direction=y%2?-1:1,start=direction===1?0:width-1;
-  for(let step=0;step<width;step++){
-   const x=start+step*direction,i=(y*width+x)*4,alpha=source[i+3]/255;
-   const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha);
-   // Fixed grain avoids flicker when the image is resized or loaded again.
-   let hash=Math.imul(x+1,374761393)^Math.imul(y+1,668265263);
-   hash=Math.imul(hash^(hash>>>13),1274126177);
-   const noise=(((hash^(hash>>>16))>>>0)/4294967296-.5)*120;
-   const base=luminance>=245?1:Math.max(0,Math.min(1,(luminance+48+noise)/255));
-   const tone=255*Math.pow(base,.55);
-   const gray=Math.max(0,Math.min(255,tone+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
-   row[x+direction+1]+=error*7/16;
-   next[x-direction+1]+=error*3/16;next[x+1]+=error*5/16;next[x+direction+1]+=error/16;
-   out[i]=out[i+1]=out[i+2]=ink;out[i+3]=255;
+ const count=width*height,gray=new Float32Array(count),strength=new Float32Array(count),angle=new Uint8Array(count),details=new Uint8Array(count),seen=new Uint8Array(count),out=new Uint8ClampedArray(count*4);
+ for(let n=0;n<count;n++){const i=n*4,a=source[i+3]/255;gray[n]=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*a+255*(1-a);}
+ // Preserve only small isolated black features, never a whole silhouette.
+ const queue=new Int32Array(count),limit=Math.max(5,count*.018);
+ for(let n=0;n<count;n++)if(!seen[n]&&gray[n]<58){
+  let head=0,tail=1;queue[0]=n;seen[n]=1;
+  while(head<tail){const at=queue[head++],x=at%width,y=Math.floor(at/width);
+   for(const next of [x?at-1:-1,x+1<width?at+1:-1,y?at-width:-1,y+1<height?at+width:-1])if(next>=0&&!seen[next]&&gray[next]<58){seen[next]=1;queue[tail++]=next;}
   }
-  const previous=row;row=next;next=previous;next.fill(0);
+  if(tail<=limit)for(let j=0;j<tail;j++)details[queue[j]]=1;
+ }
+ for(let y=1;y<height-1;y++)for(let x=1;x<width-1;x++){
+  const n=y*width+x,gx=-gray[n-width-1]+gray[n-width+1]-2*gray[n-1]+2*gray[n+1]-gray[n+width-1]+gray[n+width+1],gy=-gray[n-width-1]-2*gray[n-width]-gray[n-width+1]+gray[n+width-1]+2*gray[n+width]+gray[n+width+1];
+  strength[n]=Math.hypot(gx,gy);const a=(Math.atan2(gy,gx)*180/Math.PI+180)%180;
+  angle[n]=a<22.5||a>=157.5?0:a<67.5?1:a<112.5?2:3;
+ }
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  const n=y*width+x,i=n*4;let edge=false;
+  if(x>0&&x<width-1&&y>0&&y<height-1){const step=[1,width+1,width,width-1][angle[n]];edge=strength[n]>65&&strength[n]>=strength[n-step]&&strength[n]>=strength[n+step];}
+  let h=Math.imul(x+1,374761393)^Math.imul(y+1,668265263);h=Math.imul(h^(h>>>13),1274126177);const grain=((h^(h>>>16))>>>0)/4294967296;
+  const ink=(edge&&grain>.14)||(details[n]&&grain>.08);out[i]=out[i+1]=out[i+2]=ink?0:255;out[i+3]=255;
  }
  return out;
 }
 
 // A CSS filter can process a cross-origin image that canvas may not read.
 // Keep the source inside the filter: there is no feImage request, repeated tile,
-// or exposed threshold overlay. White stays white and black stays black.
+// or exposed threshold overlay. Flat fills become white contour interiors.
 function opaqueDitherFilter(){
  const id='upic-opaque-image-dither';
  if(!document.getElementById(id)){
@@ -38,24 +39,10 @@ function opaqueDitherFilter(){
    <feFlood flood-color="white" result="paper"/>
    <feComposite in="SourceGraphic" in2="paper" operator="over" result="opaque"/>
    <feColorMatrix in="opaque" type="saturate" values="0" result="luminance"/>
-   <feComponentTransfer in="luminance" result="gray">
-    <feFuncR type="gamma" amplitude="1" exponent=".55" offset="0"/><feFuncG type="gamma" amplitude="1" exponent=".55" offset="0"/><feFuncB type="gamma" amplitude="1" exponent=".55" offset="0"/>
+   <feConvolveMatrix in="luminance" order="3" kernelMatrix="-1 -1 -1 -1 8 -1 -1 -1 -1" divisor="1" preserveAlpha="true" edgeMode="duplicate" result="edges"/>
+   <feComponentTransfer in="edges">
+    <feFuncR type="discrete" tableValues="1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/><feFuncG type="discrete" tableValues="1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/><feFuncB type="discrete" tableValues="1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0"/><feFuncA type="linear" slope="0" intercept="1"/>
    </feComponentTransfer>
-   <feTurbulence type="fractalNoise" baseFrequency=".72" numOctaves="1" seed="1917" stitchTiles="stitch" result="noise"/>
-   <feColorMatrix in="noise" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="mono-noise"/>
-   <feComponentTransfer in="mono-noise" result="grain">
-    <feFuncR type="linear" slope="3" intercept="-1"/><feFuncG type="linear" slope="3" intercept="-1"/><feFuncB type="linear" slope="3" intercept="-1"/>
-   </feComponentTransfer>
-   <feComposite in="gray" in2="grain" operator="arithmetic" k2="1" k3=".24" k4="-.12" result="threshold"/>
-   <feComponentTransfer in="threshold" result="binary">
-    <feFuncR type="discrete" tableValues="0 1"/><feFuncG type="discrete" tableValues="0 1"/><feFuncB type="discrete" tableValues="0 1"/><feFuncA type="linear" slope="0" intercept="1"/>
-   </feComponentTransfer>
-   <feTurbulence type="fractalNoise" baseFrequency="1.35" numOctaves="1" seed="2303" result="paper-grain"/>
-   <feColorMatrix in="paper-grain" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 0 1" result="paper-mono"/>
-   <feComponentTransfer in="paper-mono" result="paper-holes">
-    <feFuncR type="discrete" tableValues="0 0 0 0 0 1 1 1 1 1"/><feFuncG type="discrete" tableValues="0 0 0 0 0 1 1 1 1 1"/><feFuncB type="discrete" tableValues="0 0 0 0 0 1 1 1 1 1"/><feFuncA type="linear" slope="0" intercept="1"/>
-   </feComponentTransfer>
-   <feComposite in="binary" in2="paper-holes" operator="arithmetic" k2="1" k3="1"/>
   </filter></defs>`;
   document.body.append(svg);
  }
