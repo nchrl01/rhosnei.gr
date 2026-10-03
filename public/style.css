@@ -181,9 +181,9 @@ details{border-top:1px solid #ddd;padding:12px 0}summary{font-size:12px;line-hei
 
 button,summary,a{font-variant-emoji:text}
 
-/* Fine image dithering, with the entire coin image retained. */
+/* Original first-release image treatment with no edge mask or reveal. */
 .coin-avatar{position:relative;border:0;background:transparent;overflow:hidden}
-.coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:auto}
+.coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:pixelated}
 .coin-avatar #coin-image-fallback{grid-area:1/1}
 /* A full data field beside the compact player, also available below it on phones. */
 .audio-visualizer{display:block;position:relative;width:100%;height:380px;margin:28px auto 0;max-width:600px;background:#fff;contain:layout paint;pointer-events:none}

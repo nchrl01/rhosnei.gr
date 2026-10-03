@@ -579,3 +579,18 @@ coin listing, rather than reprocessing an already stylized screenshot. Isolated
 WebKit renders from hosts with and without CORS matched pixel for pixel. The
 original image was reviewed at 512px and 160px display sizes; white interiors,
 original single strokes and dark pupils were preserved.
+
+
+## Restore first-release dithering without fading (v75)
+
+Restores the actual first dithering implementation from fed3241, including both
+its Bayer canvas processing and its original 64px threshold-image SVG for hosts
+that block pixel reads. Later turbulence, brightness changes and contour effects
+are removed. Only edge alpha fading, the CSS fade mask and reveal transitions
+are removed. Separate SVG IDs let the existing UPIC mark share the original
+implementation safely. Original gamma, Bayer ordering, charcoal level, sizing
+and pixelated display remain intact.
+
+A pixel comparison against fed3241 confirmed identical RGB output at every
+sampled pixel, with source alpha retained across the entire image. WebKit renders
+checked both original image paths using the original coloured coin artwork.
