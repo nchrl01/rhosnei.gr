@@ -30,7 +30,7 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
 }
 export function createCoinVoice({onStatus=()=>{}}={}){
  let ctx,destination,master,input,space,speechGate,clearTimer,volume=.5,enabled=true,running=false,name='',seed=0,epoch=0,buffer=null,loading=null,source=null,tailActive=false,lastClock=null,musicSince=null,elapsed=0,next=4,cache=new Map(),retryAt=0;
- const runner=backgroundModel('./voice-ai-worker.js?v=64',onStatus,240000);
+ const runner=backgroundModel('./voice-ai-worker.js?v=65',onStatus,240000);
  // A silent frame must not rebuild a long stereo convolution every 150 ms.
  // Clear only once after actual speech or its tail has entered this room.
  function hold(param,time){if(param.cancelAndHoldAtTime)param.cancelAndHoldAtTime(time);else{const value=param.value;param.cancelScheduledValues(time);param.setValueAtTime(value,time);}}

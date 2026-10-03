@@ -18,7 +18,7 @@ disconnected feeds cannot establish silence and do not enable this fallback.
 Generic pool events and snapshots never masquerade as piano trade triggers.
 
 Market cap controls resonance on a logarithmic scale: $10k or less = 0%,
-$1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.5 to 2.5
+$1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.55 to 1.95
 and the eight-second room return from 1.0 to 1.45, with a complementary dry level
 from 0.34 to 0.26. The room is audible from startup,
 including when market cap is unknown; cap adds resonance and a longer-feeling wash.
@@ -282,8 +282,8 @@ provider latency. No Python chart server has been added.
 
 Focused check: `node checks/music-context.mjs`. A headless Web Audio check also
 verified live and replay piano output, exact-audio downloads, replay-link restore,
-390px mobile overflow and square controls. The legacy `checks/integration.mjs`
-currently imports the previously removed `signal-map.js` and cannot run as-is.
+390px mobile overflow and square controls. At v52, `checks/integration.mjs` still imported the removed `signal-map.js`;
+the active integration checks were restored in v65.
 
 ## Search, harmony and gain (v53)
 
@@ -531,3 +531,35 @@ phrases retry after four seconds; only completed names enter the 90–139 second
 cooldown. Switching coin during model generation schedules the new name when
 the obsolete job finishes. Whisper loudness is bounded by both RMS and peak.
 Kokoro still requires its first model download; no device speech fallback is used.
+
+
+## Review and transport consistency (v65)
+
+The visible replay chart now uses the same frozen candles as audio. Incoming
+trades and historical backfills continue updating the live store without
+rewriting the replay score; returning live rebuilds the current chart. Scrubbing
+also fades the shared output to silence, including Envion, so the displayed
+transport state agrees with every audible instrument.
+
+The inspector now requests current patch and manifest URLs. Coin search no
+longer labels fully diluted valuation as market cap when market cap is missing.
+The local server provides image/font MIME types and returns 404 for missing
+assets. Integration and orchestra checks now target the active engine rather
+than deleted instruments. Old generation scripts are archival and are not
+loaded by the browser's orchestra manifest.
+
+Verification: current integration, audio-unlock, music-context, math-transport,
+coin-voice, Envion preset/performance, orchestra and real libpd data-voice checks
+passed. Chromium exercised the full app with fixture trades, audible piano/Pd,
+replay, pause, silent scrubbing and a 390px layout. WebKit verified the transparent
+mobile overlay, expiring bursts and transport behavior. Offline piano renders
+at 48/96 kHz checked repeatability, bounded peaks and pause silence. The real
+Kokoro af_nicole model downloaded and generated non-silent 24 kHz speech in
+isolated Chromium. All 43 first-party browser modules passed syntax and literal
+relative-import checks.
+
+These checks do not establish physical-iPhone playback or provider uptime.
+Cold voice startup still needs a model download. Shared scores preserve candles
+and arpeggio phrases, but cross-version synthesis and granular textures are not
+bit-identical; downloaded audio is the exact take. External history cache and
+rate limits still bound loading speed.

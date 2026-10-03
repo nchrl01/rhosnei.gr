@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {MarketChart} from '../public/chart.js';
-import {signalFreshness,mixTargets} from '../public/market-controls.js';
+import {signalFreshness} from '../public/market-controls.js';
+import {createOrchestraConductor} from '../public/orchestra.js';
 import {createNativePd} from '../public/native-pd.js';
-import {createFeedbackMonitor} from '../public/signal-map.js';
 
 function chartWith(history){
  const chart=Object.create(MarketChart.prototype);
@@ -31,18 +31,23 @@ test('retimed observations move out of live candles into protected provider cove
  const chart=chartWith([complete]);chart.add({at:125000,price:120,volume:7,id:'timed'});chart.draw();
  chart.retime('timed',100000);chart.draw();assert.equal(chart.buckets.has(120000),false);assert.equal(chart.buckets.get(60000).close,110);
 });
-test('snapshot failure preserves active decoded music; stale fallback and quiet trades fade',()=>{
- const m={motion:.2,activity:.5,texture:.7,volume:.4,...signalFreshness(true,1000,62000)};
- assert.equal(m.snapshotFresh,0);assert.equal(m.fresh,1);assert.ok(mixTargets(m,true).melody>0);assert.ok(mixTargets(m,true).pad>0);
- const fallback={...m,...signalFreshness(false,1000,62000)};assert.deepEqual(mixTargets(fallback,false),{melody:0,pad:0,space:0});
- const quiet=mixTargets({...m,activity:0,volume:0},true);assert.equal(quiet.melody,0);assert.equal(quiet.pad,0);
+test('snapshot freshness and current Envion bundle follow the same state',()=>{
+ const live={music:{intensity:.6},activity:.5,...signalFreshness(true,1000,62000)};
+ assert.equal(live.snapshotFresh,0);assert.equal(live.fresh,1);
+ const conductor=createOrchestraConductor();assert.ok(conductor.update(live,true,0).levels.melody>0);
+ conductor.reset();const stale={...live,...signalFreshness(false,1000,62000)};
+ assert.equal(conductor.update(stale,false,0).levels.melody,0);
+ conductor.setBundle('envion',false);assert.equal(conductor.update(live,true,1000).levels.melody,0);
  assert.equal(signalFreshness(false,1000,21000).fresh,1);assert.equal(signalFreshness(false,1000,41000).fresh,.5);
 });
-test('feedback expires when clock stops despite repeated cached native state, then recovers',()=>{
- let now=0;const f=createFeedbackMonitor(()=>now);assert.equal(f.status(),'AWAITING FEEDBACK');
- f.observe('generation',12);assert.equal(f.status(),'ENGINE FEEDBACK');now=1600;f.observe('generation',12);f.observe('note',60);assert.equal(f.status(),'STALE FEEDBACK');
- f.observe('generation',13);assert.equal(f.status(),'ENGINE FEEDBACK');f.setTransport({connected:false});assert.equal(f.status(),'DISCONNECTED');
- f.setTransport({connected:true,running:false});assert.equal(f.status(),'ENGINE STOPPED');f.reset();assert.equal(f.status(),'AWAITING FEEDBACK');
+test('replay chart stays frozen while live observations continue, then catches up',()=>{
+ const chart=chartWith([complete]),frozen={bars:structuredClone([complete]),interval:60000};
+ const state={active:true,frozen};chart.readReplay=()=>state;chart.followReplay=()=>{};
+ chart.add({at:125000,price:140,volume:4,id:'new'});chart.draw();
+ assert.equal(chart.renderedBars.length,1);assert.equal(chart.renderedBars[0].close,110);
+ chart.setHistory([{...complete,close:111}],60000,null);chart.draw();
+ assert.equal(chart.renderedBars[0].close,110,'Backfill cannot alter the score being heard');
+ state.active=false;chart.draw();assert.equal(chart.renderedBars.length,2);assert.equal(chart.renderedBars.at(-1).close,140);
 });
 function nativeMocks(t,post){
  t.mock.method(globalThis,'setInterval',()=>1);t.mock.method(globalThis,'clearInterval',()=>{});

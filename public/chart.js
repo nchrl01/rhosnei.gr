@@ -112,7 +112,22 @@ export class MarketChart{
  draw(){
   this.revision=(this.revision||0)+1;
   const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
+  const frozen=this.readReplay?.().active?this.readReplay().frozen:null;
+  if(this.replayDataset&&!frozen){this.replayDataset=null;this.rebuild=true;}
   if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
+  if(frozen){
+   // Incoming observations keep updating the live store, but the chart and
+   // audio both read the exact frozen score until the listener returns live.
+   this.renderedBars=frozen.bars;
+   if(this.replayDataset!==frozen){
+    const bars=frozen.bars,gap=this.origin&&this.origin<bars[0]?.time?[{time:Math.floor(this.origin/1000)}]:[];
+    this.candles.setData([...gap,...bars.map(b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close}))]);
+    this.line.setData([...gap,...bars.map(b=>({time:b.time/1000,value:b.close}))]);
+    this.volume.setData([...gap,...bars.map(b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#cccccc':'#555555'}:{time:b.time/1000})]);
+    this.replayDataset=frozen;
+   }
+   this.rebuild=false;this.dirty.clear();this.followReplay();this.tickView?.update(frozen.bars);return;
+  }
   const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);this.renderedBars=bars;
   if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.tickView?.update([]);this.rebuild=false;return;}
   const candle=b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close});
