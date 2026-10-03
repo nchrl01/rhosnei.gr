@@ -699,3 +699,21 @@ levels. Cross-origin images that prohibit pixel reads retain the SVG fallback.
 
 JavaScript syntax checks and offline checks of all four playback rates,
 tonal endpoints, flat/transparent input passed. No desktop control was used.
+
+
+## NDS12 and aligned desktop layout (v80)
+
+NDS12 by Caveras / Cliff Modes is applied to interface text, chart labels,
+canvas lettering and instrument panels. Its complete supplied archive and
+CC BY-NC-SA 3.0 license are in public/fonts/NDS12; attribution is in Credits.
+
+Desktop now places the visual field beside the player, with its top aligned
+exactly to the address input. The submit button has the same top and height
+as the input. At narrow desktop widths, identity/transport share one row and
+the chart occupies the next; market cards use one column. Wider desktop
+retains the compact player. Mobile retains the music-player arrangement.
+
+Isolated headless geometry checks at 800, 1440 and 390 pixels passed for
+input/button alignment, desktop visual alignment, font loading and absence
+of horizontal overflow. Fixture renders were inspected; JavaScript syntax
+checks passed. These checks did not control desktop applications.

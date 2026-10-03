@@ -3,13 +3,13 @@ import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.j
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
-import {createEnvion} from './envion.js?v=53';
+import {createEnvion} from './envion.js?v=80';
 import {createEngineView} from './engine-view.js?v=65';
 import {createCoinDither} from './coin-dither.js?v=79';
 import {createUpicBrand} from './upic-brand.js?v=79';
 import {createTransportIndicator} from './transport-indicator.js?v=61';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=78';
+import {createAudioDots} from './audio-dots.js?v=80';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=76';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -29,7 +29,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=69';
-import {MarketChart} from './chart.js?v=79';
+import {MarketChart} from './chart.js?v=80';
 import {loadHistory} from './history.js?v=39';
 import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
@@ -596,6 +596,6 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },500);
 const playerScreen=window.matchMedia('(max-width:760px)');
-function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'Arial, sans-serif',fontSize:playerScreen.matches?11:9}});}
+function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'NDS12, sans-serif',fontSize:12}});}
 playerScreen.addEventListener('change',syncChartTypography);
 document.fonts.ready.then(syncChartTypography);

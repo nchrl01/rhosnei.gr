@@ -1,4 +1,4 @@
-.transport-indicator{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;min-height:16px;white-space:nowrap;font:400 10px/16px Arial,sans-serif;color:#111}
+.transport-indicator{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;min-height:16px;white-space:nowrap;font:400 10px/16px NDS12,sans-serif;color:#111}
 .transport-indicator__dot{display:block;flex:0 0 auto;width:6px;height:6px;border:1px solid #777;border-radius:50%!important;background:transparent;opacity:1}
 .transport-indicator[data-state="live"] .transport-indicator__dot{border-color:#e81717;background:#e81717}
 .transport-indicator[data-state="replay"] .transport-indicator__dot{border-color:#e000cc;background:#e000cc}

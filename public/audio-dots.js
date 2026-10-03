@@ -31,11 +31,12 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let baseScene=null,nextScene=null,blendScene=null,transitionAt=0,displayModel=null,displayDrive=0;
  const bands=new Float32Array(64),observer=new ResizeObserver(size);
  observer.observe(canvas);
+ document.fonts?.ready.then(()=>{if(!closed)size();});
  const visibility=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
   visible=entries[0]?.isIntersecting??true;dirty=true;
  }):null;visibility?.observe(canvas);
  function size(){const b=canvas.getBoundingClientRect();w=b.width;h=b.height;const d=Math.min(globalThis.devicePixelRatio||1,w<600?1.25:1.5);canvas.width=Math.round(w*d);canvas.height=Math.round(h*d);c.setTransform(d,0,0,d,0,0);if(w>0&&h>0&&baseScene&&displayModel){baseScene=renderField(displayModel);nextScene=null;blendScene=null;}dirty=true;}
- function text(label,x,y,color='#555',size=8){c.fillStyle=mobile.matches?'#fff':color;c.font=`${size}px Arial, sans-serif`;c.fillText(label,x,y);}
+ function text(label,x,y,color='#555',size=8){c.fillStyle=mobile.matches?'#fff':color;c.font=`${size}px NDS12, sans-serif`;c.fillText(label,x,y);}
  function running(){return Boolean(getState().playing&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');}
  function clearField(){field=null;lastPulse=null;energy=0;bands.fill(0);baseScene=null;nextScene=null;blendScene=null;displayModel=null;queued=false;displayDrive=0;dirty=true;}
  function observe(strength=0){
