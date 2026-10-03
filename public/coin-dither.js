@@ -1,11 +1,25 @@
-// Original first-release Bayer treatment, restored with only fading removed.
+// Bayer grain with image-specific black and white points, without edge fading.
 // Keep the original <img> available when a remote host disallows pixel reads.
 export const BAYER=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
+export function imageLevels(source){
+ const histogram=new Float64Array(256);let weight=0;
+ for(let i=0;i<source.length;i+=4){
+  const alpha=source[i+3]/255;if(alpha<=0)continue;
+  const luminance=Math.round(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722);
+  histogram[luminance]+=alpha;weight+=alpha;
+ }
+ if(!weight)return {black:0,white:255};
+ const percentile=fraction=>{let cumulative=0;for(let n=0;n<256;n++){cumulative+=histogram[n];if(cumulative>=weight*fraction)return n;}return 255;};
+ const black=percentile(.005),white=percentile(.995);
+ // Flat artwork has no useful tonal range to stretch.
+ return white-black>=16?{black,white}:{black:0,white:255};
+}
 export function ditherPixels(source,width,height){
  const out=new Uint8ClampedArray(width*height*4);
+ const {black,white}=imageLevels(source),range=white-black;
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   const i=(y*width+x)*4,threshold=(BAYER[(y%8)*8+x%8]+.5)/64;
-  const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)/255;
+  const luminance=Math.max(0,Math.min(1,(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722-black)/range));
   const ink=Math.pow(luminance,.88)>threshold?255:17;
   out[i]=out[i+1]=out[i+2]=ink;
   out[i+3]=source[i+3];

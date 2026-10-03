@@ -1,5 +1,5 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
-import {candleEnd} from './market-replay.js?v=52';
+import {candleEnd} from './market-replay.js?v=79';
 import {createChartTicks} from './chart-ticks.js?v=52';
 
 // One series per view, with provider candles and explicitly partial live observations.
@@ -111,7 +111,7 @@ export class MarketChart{
  }
  draw(){
   this.revision=(this.revision||0)+1;
-  const scale=this.chart.timeScale(),visible=scale.getVisibleRange(),following=scale.scrollPosition()<=5;
+  const scale=this.chart.timeScale(),visible=scale.getVisibleRange();
   const frozen=this.readReplay?.().active?this.readReplay().frozen:null;
   if(this.replayDataset&&!frozen){this.replayDataset=null;this.rebuild=true;}
   if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
@@ -142,7 +142,7 @@ export class MarketChart{
   this.rebuild=false;this.dirty.clear();
   if(this.readReplay?.().active){this.followReplay();}
   else if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}
-  else if(!this.manual&&this.range==='live'&&following)scale.scrollToRealTime();
+  else if(this.range==='live')scale.scrollToRealTime();
   this.tickView?.update(bars);
  }
 }

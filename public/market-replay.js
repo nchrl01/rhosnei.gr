@@ -5,7 +5,7 @@ export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,bar.observedTh
 // Keep the controls actually observed during this visit, separate from OHLC history.
 export function createMarketReplay(){
  const recordings=new Map();let key='demo';
- const state={active:false,cursor:null,dragging:false,clock:null,speed:'candle',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null};
+ const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null};
  function frames(){return recordings.get(key)||[];}
  return {
   state,

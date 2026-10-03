@@ -686,3 +686,16 @@ overlay. Audio, coin-image treatment and continuous visual updates are unchanged
 
 This revision received source review and JavaScript syntax checks. Existing
 visual-check fixtures were updated; runtime and rendering tests were not run.
+
+
+## Playback and image levels (v79)
+
+Playback starts at real-time 1× speed. The compact transport indicator now
+has 1×, 2×, 10× and 100× choices. The expanded chart/AI detail panel is hidden.
+Live charts follow the newest observation even after earlier browsing.
+Coin images and the UPIC mark use alpha-weighted black/white percentiles
+before the existing Bayer grain; nearly flat images retain their original
+levels. Cross-origin images that prohibit pixel reads retain the SVG fallback.
+
+JavaScript syntax checks and offline checks of all four playback rates,
+tonal endpoints, flat/transparent input passed. No desktop control was used.

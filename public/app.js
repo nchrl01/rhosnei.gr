@@ -5,8 +5,8 @@ import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=53';
 import {createEngineView} from './engine-view.js?v=65';
-import {createCoinDither} from './coin-dither.js?v=75';
-import {createUpicBrand} from './upic-brand.js?v=75';
+import {createCoinDither} from './coin-dither.js?v=79';
+import {createUpicBrand} from './upic-brand.js?v=79';
 import {createTransportIndicator} from './transport-indicator.js?v=61';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
 import {createAudioDots} from './audio-dots.js?v=78';
@@ -18,7 +18,7 @@ import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-pian
 import {createMathPatterns,mathIdentity,MATH_SLOT_COUNT} from './math-patterns.js?v=53';
 import {createMathPatternView} from './math-pattern-view.js?v=53';
 import {contextualizeMarket} from './market-state.js?v=53';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=53';
+import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=79';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=53';
 import {createNativePd} from './native-pd.js?v=18';
@@ -29,7 +29,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=69';
-import {MarketChart} from './chart.js?v=65';
+import {MarketChart} from './chart.js?v=79';
 import {loadHistory} from './history.js?v=39';
 import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
@@ -528,7 +528,7 @@ function restoreSharedScore(){
  try{
   const score=decodeScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.speed=['candle','1','60'].includes(String(score.speed))?String(score.speed):'candle';$('replay-speed').value=replay.state.speed;
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.speed=['1','2','10','100'].includes(String(score.speed))?String(score.speed):'1';$('replay-speed').value=replay.state.speed;
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
@@ -581,7 +581,7 @@ $('replay-live').onclick=()=>{
  if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
  status(playing?'Piano ready · waiting for trades':'Live market · press Listen');
 };
-$('replay-speed').onchange=()=>{replay.state.speed=$('replay-speed').value;replay.release();session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});};
+$('replay-speed').onchange=()=>{replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');replay.state.speed=$('replay-speed').value;replay.release();session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});};
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
 $('chart-timeframe').onchange=()=>{if(replay.state.active)$('replay-live').onclick();loadChartTimeframe();};
