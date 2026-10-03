@@ -933,3 +933,13 @@ the comparison. Math voices now use sample-rate-aware PolyBLEP sawtooth
 oscillators, including auxiliary voices, with the existing filter, level
 ramps, watchdog and phrase/cap gates. Function formulas stay unchanged.
 No browser or audio audition was run.
+
+## Layered graphic score (v88)
+
+The audible visual field now combines subdued binary rows, a bending perspective
+dot sheet, broad analytic contour trails and angular attack lines. Geometry is
+seeded and follows market drive, balance, source phase and measured output level.
+Magenta traces decay over roughly three seconds after significant observed moves;
+there is no full-screen color flash. Reduced motion suppresses accents and phase
+animation. Existing post-master silence, pause, seek and mute gates still clear
+the entire surface. Mobile retains its separate panel. No audio changes.

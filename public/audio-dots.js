@@ -1,3 +1,4 @@
+import {drawGraphicDepth} from './graphic-depth.js?v=88';
 import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=86';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
@@ -30,6 +31,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const buffers=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
+ let accentAt=-Infinity,accentStrength=0;
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
@@ -45,7 +47,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  }
  function clear(){
   previous=null;smoothed=null;seen.clear();clock=0;sourceClock=null;sourceAt=0;
-  lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;hide();
+  lastEvent=-Infinity;accentAt=-Infinity;accentStrength=0;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;hide();
  }
  function fitHeight(){
   if(!host||mobile.matches)return;
@@ -131,8 +133,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(surface.width!==rw)surface.width=rw;if(surface.height!==rh)surface.height=rh;
   paint.putImageData(new ImageData(result.pixels,rw,rh),0,0);
   c.fillStyle='#000';c.fillRect(0,0,canvas.width,canvas.height);
-  c.imageSmoothingEnabled=false;c.drawImage(surface,0,0,canvas.width,canvas.height);
-  Object.assign(canvas.dataset,{composition:'binary-horizontal-rows',active:'true',visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:'false'});
+  c.imageSmoothingEnabled=false;c.globalAlpha=.18+.14*level;c.drawImage(surface,0,0,canvas.width,canvas.height);c.globalAlpha=1;
+  // Significant observed moves create a local magenta trace, never a full-screen flash.
+  const accent=reduced.matches?0:accentStrength*Math.exp(-Math.max(0,now-accentAt)/1000);
+  drawGraphicDepth(c,{width:canvas.width,height:canvas.height,time:clock,seed,level,drive:smoothed.drive,balance:smoothed.balance,transient:reduced.matches?0:transient,accent,reducedMotion:reduced.matches});
+  Object.assign(canvas.dataset,{composition:'layered-graphic-score',active:'true',visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:'false'});
  }
  frameID=requestAnimationFrame(draw);
  return {
@@ -146,6 +151,10 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running()){hide();return;}
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
+   const relativeMove=changed?Math.abs(current.price/old.price-1):0;
+   const sourceChanged=replaying?current.at!==old?.at:changed;
+   if(old&&sourceChanged&&(relativeMove>=.05||(Math.abs(latest.change||0)>=5&&latest.drive>.55))){accentAt=performance.now();accentStrength=unit(.4+relativeMove*4+latest.drive*.3);}
+
    if(replaying){
     if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive);
    }else if(!next.decoded&&performance.now()-lastEvent>1000&&old){
