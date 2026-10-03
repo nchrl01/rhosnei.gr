@@ -1,9 +1,7 @@
 import {createMarketAnnouncement} from './market-announcement.js?v=98';
-import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=89';
 import {createPixelBlastField} from './pixel-blast-field.js?v=96';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
-const logarithmic=(value,decades)=>value==null?.5:unit(Math.log10(Math.max(1,value))/decades);
 export function fieldState(m={}){
  const raw=m.raw||m,context=m.context||{},fresh=unit(m.fresh);
  // Valuation shapes space; only current observations or replay create motion.
@@ -29,7 +27,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const blast=host?createPixelBlastField(host):null;
  const announcement=host?createMarketAnnouncement(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
- const surface=document.createElement('canvas'),paint=surface.getContext('2d');
  const buffers=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
@@ -145,19 +142,13 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // retains the seeded phase rather than accumulating a new local history.
   if(!reduced.matches){
    if(active&&replaying&&sourceClock!==null)clock=sourceClock+Math.min(.25,Math.max(0,(now-sourceAt)/1000))*(Number(options.rate)||1);
-   else clock+=dt*(.06+formation*binaryRowParameters({...smoothed,level,transient}).motionRate);
+   else clock+=dt*(.06+formation*(.15+.8*level+.5*smoothed.drive));
    dirty=true;
   }
   if(!dirty)return;dirty=false;
-  const limit=mobile.matches?512:896,scale=Math.min(1,limit/Math.max(width,height));
-  const rw=Math.max(64,Math.round(width*scale)),rh=Math.max(64,Math.round(height*scale));
-  const result=renderBinaryRows({width:rw,height:rh,seed,time:clock,presence:formation,activity:smoothed.activity,volume:smoothed.volume,drive:smoothed.drive,pressure:smoothed.pressure,balance:smoothed.balance,change:latest.change,marketCap:logarithmic(latest.values[5],10),liquidity:logarithmic(latest.liquidity,8),level,transient:reduced.matches?0:transient,mobile:mobile.matches,reducedMotion:reduced.matches,dither:getState().dither===true});
-  if(surface.width!==rw)surface.width=rw;if(surface.height!==rh)surface.height=rh;
-  paint.putImageData(new ImageData(result.pixels,rw,rh),0,0);
-  c.fillStyle='#000';c.fillRect(0,0,canvas.width,canvas.height);
-  c.imageSmoothingEnabled=false;c.globalAlpha=birth*(.35+.65*formation)*(host?.dataset.pixelBlast==='ready'?.8:1);c.drawImage(surface,0,0,canvas.width,canvas.height);c.globalAlpha=1;
+  c.clearRect(0,0,canvas.width,canvas.height);
   blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,level,formation,birth,active,mobile:mobile.matches,reducedMotion:reduced.matches,drive:smoothed.drive,pressure:smoothed.pressure,activity:smoothed.activity,tempo:latest.tempo,dither:getState().dither===true});
-  Object.assign(canvas.dataset,{composition:host?.dataset.pixelBlast==='ready'?'binary-rows-pixel-blast':'binary-horizontal-rows',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:result.coverage.toFixed(4),rows:String(result.rows),transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
+  Object.assign(canvas.dataset,{composition:host?.dataset.pixelBlast==='ready'?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
  return {
