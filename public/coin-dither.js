@@ -1,21 +1,15 @@
-// Error diffusion keeps the full image, including its edges. No alpha fade.
+// Restore the original ordered dither: fine charcoal dots, with light tones
+// lifted slightly so the source remains recognisable. Keep every edge opaque.
+export const BAYER=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
 export function ditherPixels(source,width,height){
  const out=new Uint8ClampedArray(width*height*4);
- let row=new Float32Array(width+2),next=new Float32Array(width+2);
- for(let y=0;y<height;y++){
-  const direction=y%2?-1:1,start=direction===1?0:width-1;
-  for(let step=0;step<width;step++){
-   const x=start+step*direction,i=(y*width+x)*4;
-   // Composite transparent pixels onto the light page before quantization.
-   const alpha=source[i+3]/255;
-   const luminance=(source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha);
-   const gray=Math.max(0,Math.min(255,luminance+row[x+1])),ink=gray>=128?255:0,error=gray-ink;
-   row[x+direction+1]+=error*7/16;
-   next[x-direction+1]+=error*3/16;next[x+1]+=error*5/16;next[x+direction+1]+=error/16;
-   out[i]=out[i+1]=out[i+2]=ink;
-   out[i+3]=255;
-  }
-  const previous=row;row=next;next=previous;next.fill(0);
+ for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  const i=(y*width+x)*4,threshold=(BAYER[(y%8)*8+x%8]+.5)/64;
+  const alpha=source[i+3]/255;
+  const luminance=((source[i]*.2126+source[i+1]*.7152+source[i+2]*.0722)*alpha+255*(1-alpha))/255;
+  const ink=Math.pow(luminance,.88)>threshold?255:17;
+  out[i]=out[i+1]=out[i+2]=ink;
+  out[i+3]=255;
  }
  return out;
 }
@@ -56,7 +50,9 @@ export function createCoinDither(img,fallback){
  let serial=0,current='',decodedImage=null,size=0,resizeFrame=0;
  function paint(decoded,force=false){
   if(!context)return false;
-  const nextSize=Math.max(32,Math.min(640,Math.round((host.clientWidth||96)*Math.min(2,globalThis.devicePixelRatio||1))));
+  // Match the original CSS-pixel dot spacing instead of making the pattern
+  // progressively finer on Retina displays. The small logo retains 64px detail.
+  const nextSize=Math.max(64,Math.min(256,Math.round(host.clientWidth||96)));
   if(!force&&nextSize===size)return true;
   const scratch=document.createElement('canvas');scratch.width=scratch.height=nextSize;const c=scratch.getContext('2d',{willReadFrequently:true});
   if(!c)throw new Error('Image pixels unavailable');

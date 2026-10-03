@@ -19,7 +19,8 @@ Generic pool events and snapshots never masquerade as piano trade triggers.
 
 Market cap controls resonance on a logarithmic scale: $10k or less = 0%,
 $1m = 50%, $100m or more = 100%. This changes the low-pass Q from 0.5 to 2.5
-and room-reverb gain from 0.2 to 0.42. The room is audible from startup,
+and the eight-second room return from 1.0 to 1.45, with a complementary dry level
+from 0.34 to 0.26. The room is audible from startup,
 including when market cap is unknown; cap adds resonance and a longer-feeling wash.
 These are sound-design mappings, not physical measurements of resonance.
 
@@ -482,3 +483,33 @@ Run the ordinary regressions with `node checks/audio-unlock.mjs`,
 `node checks/data-sonification.mjs`. The isolated piano/visual browser checks need
 Playwright and its browsers; use `AV_PLAYWRIGHT_MODULE` for a bundled installation
 and `PLAYWRIGHT_BROWSERS_PATH` if its browsers are stored separately.
+
+## Observation bursts and original dithering (v63)
+
+Restores the original 8×8 ordered Bayer dither, gamma 0.88 and charcoal #111,
+from the artwork treatment before the iPhone screenshot report. Coins, the
+supplied $UPIC mark and its generated favicon share this implementation. There
+is no edge fade. The corrected source-only SVG fallback remains for images
+whose servers prevent canvas reads; that fallback uses stochastic thresholds.
+
+The visual field now has white paper and black dots, brackets and data symbols.
+Received swaps, pool transactions and changed pool-state prices can produce a
+180 ms mark while playback runs. Snapshot-only feeds use changed price or rising
+observed volume/transaction totals; unchanged values and rolling totals that
+fall do not create events. Replay advances produce one mark per changed candle
+with positive volume or a changed close, labelled as candle observations rather
+than invented trades. Load, pause, seeks, coin changes and inactive transport
+clear/reset the field. There is no continuing camera drift or animation driven
+by old activity levels, the clock or a piano reverb tail. Pd onsets only annotate
+an existing market burst. Rapid arrivals coalesce without extending a mark or
+queuing later flashes; separate bursts are at least 360 ms apart. Reduced-motion
+mode suppresses spectral animation; its marks still expire. Hidden/offscreen
+observations do not queue visual playback.
+
+The holder drone and its patch/control routing are removed. Holder metadata
+remains descriptive information in the visual and inspector, never a watcher
+count. The five finite data voices remain; generated orchestra manifest is v20.
+Piano tuning, the diffuse piano room and the master volume are unchanged.
+
+Review for this update: static source/routing review and syntax validation.
+No audio renders, browser playback checks or physical-iPhone checks were run.

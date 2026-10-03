@@ -1,4 +1,4 @@
-// Original Pd control score: real observations -> microtones/noise + holder drone.
+// Original Pd control score: real observations -> finite microtones and noise.
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
 export function createDataSonification({send=()=>{},event=()=>{}}={}){
  let enabled=true,seed=1917,lastTradeAt=-Infinity,signals={};
@@ -14,15 +14,9 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
   const level=active?.095*Math.sqrt(excitation):0;
   const noise=unit(.08+.46*motion+.24*pressure);
   const pitch=69+(seed%7)+Math.round(14*intensity+3*motion);
-  const holder=m.replay?null:m.audience;
-  const count=holder?.holders,valid=count!=null&&Number.isFinite(count)&&count>=0;
-  const fullness=valid?unit(Math.log10(1+count)/7):0;
-  const holderLevel=active&&valid?.048*Math.sqrt(fullness)*unit(holder.weight):0;
-  const holderPitch=36+(seed%5); // Same seed key as the sampled piano, one octave lower.
-  const holderBeat=valid?.04+.8*(holder.concentration??.25)+.35*fullness:0;
-  const params={'data-enabled':active?1:0,'data-density':density,'data-level':level,'data-noise':noise,'data-pitch':pitch,'data-root':36+seed%5,'data-duration':.7+.8*liquidity,'data-drive':1+2.5*intensity,'data-filter':1200+6500*Math.max(motion,volume),'data-pan-left':Math.sqrt(1-balance),'data-pan-right':Math.sqrt(balance),'holder-level':holderLevel,'holder-pitch':holderPitch,'holder-beat':holderBeat,'holder-brightness':180+900*fullness,'holder-fullness':fullness};
+  const params={'data-enabled':active?1:0,'data-density':density,'data-level':level,'data-noise':noise,'data-pitch':pitch,'data-root':36+seed%5,'data-duration':.7+.8*liquidity,'data-drive':1+2.5*intensity,'data-filter':1200+6500*Math.max(motion,volume),'data-pan-left':Math.sqrt(1-balance),'data-pan-right':Math.sqrt(balance)};
   for(const [name,value] of Object.entries(params))send(name,value);
-  signals={density,drive:params['data-drive'],pitch,noise,level,liquidity,duration:params['data-duration'],holderLevel,holderPitch,holderBeat,enabled,active,clock};
+  signals={density,drive:params['data-drive'],pitch,noise,level,liquidity,duration:params['data-duration'],enabled,active,clock};
   return signals;
  }
  return {
@@ -32,8 +26,8 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
    if(!enabled||!playing||replay||trade.kind!=='swap'||clock-lastTradeAt<.125)return false;
    lastTradeAt=clock;event('data-trade');return true;
   },
-  setEnabled(value){enabled=Boolean(value);if(!enabled){send('data-enabled',0);send('data-level',0);send('holder-level',0);}},
-  reset(value=seed){seed=Number(value)>>>0;lastTradeAt=-Infinity;send('data-enabled',0);send('data-level',0);send('holder-level',0);},
+  setEnabled(value){enabled=Boolean(value);if(!enabled){send('data-enabled',0);send('data-level',0);}},
+  reset(value=seed){seed=Number(value)>>>0;lastTradeAt=-Infinity;send('data-enabled',0);send('data-level',0);},
   snapshot(){return signals;},
  };
 }

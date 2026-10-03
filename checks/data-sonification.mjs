@@ -42,12 +42,10 @@ try {
   await render(busy,.4,options);assert.ok((await render(busy,.3,options)).peak<1e-8,name+' must silence data pulses and their tails');
   assert.ok((await render(busy,1)).rms>1e-5,'Resuming after '+name+' must recover output');
  }
- await render(holders,4);assert.ok((await render(holders,1)).rms>.01,'A real, fresh holder snapshot must produce an audible drone');
- for(const unavailable of [{...holders,audience:null},{...holders,audience:{...holders.audience,weight:0}},{...holders,replay:{source:'candles'}}]){
-  await render(unavailable,.25);assert.ok((await render(unavailable,.25)).peak<1e-8,'Missing, expired, and historical holder data must be silent');
- }
- await render(holders,3);
- for(let i=0;i<4;i++){score.frame(holders,{playing:true,clock});const background=await h.render(1);clock++;assert.ok(background.rms>.01,'A throttled one-second background timer must not gate the holder drone');}
+ // Holder metadata may still inform visuals, but never opens a sustained voice.
+ await render(holders,.4);
+ assert.ok((await render(holders,2)).peak<1e-8,'Holder metadata alone must remain silent after drone removal');
+ for(let i=0;i<4;i++){score.frame(busy,{playing:true,clock});const background=await h.render(1);clock++;assert.ok(background.rms>1e-5,'A throttled one-second background timer must preserve finite data pulses');}
  await h.render(2.8);assert.ok((await h.render(.25)).peak<1e-8,'Stopped browser control updates must close the Pd watchdog');
  assert.ok((await render(busy,2)).rms>1e-5,'The Pd watchdog must recover when control updates resume');
  score.setEnabled(false);await render(busy,.25);assert.equal((await render(busy,.25)).peak,0,'Removing the bundle must silence it');score.setEnabled(true);
@@ -61,5 +59,5 @@ try {
  assert.equal(score.event({kind:'swap'},{playing:true,clock}),true);
  assert.equal(score.event({kind:'swap'},{playing:true,clock:clock+.01}),false);
  await h.assertClean();
- console.log(JSON.stringify({pass:true,normal:{rms:normal.rms,peak:normal.peak,onsets:normal.onsets.length},active:{rms:active.rms,peak:active.peak,onsets:active.onsets.length,voices:[...new Set(active.onsets)]},checks:['real WASM DSP','five distinct voices','activity-scaled energy','pause/seek/end','holder snapshot gating','background timer cadence','watchdog recovery','bundle removal','stale silence','repeatable seeded phrase','bounded live-swap triggers']},null,2));
+ console.log(JSON.stringify({pass:true,normal:{rms:normal.rms,peak:normal.peak,onsets:normal.onsets.length},active:{rms:active.rms,peak:active.peak,onsets:active.onsets.length,voices:[...new Set(active.onsets)]},checks:['real WASM DSP','five distinct voices','activity-scaled energy','pause/seek/end','no holder drone','background timer cadence','watchdog recovery','bundle removal','stale silence','repeatable seeded phrase','bounded live-swap triggers']},null,2));
 } finally {await h.close();}

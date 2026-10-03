@@ -11,7 +11,7 @@ pd_patch.ROOT=ROOT
 Patch=pd_patch.Patch
 
 # Browser host patches; the Envion source and math abstractions are separate.
-active={'av-random.pd','av-conductor.pd','av-envion.pd','av-math.pd','av-math-voice.pd','av-data.pd','av-data-pulse.pd','av-data-low.pd','av-holder-drone.pd','market.pd'}
+active={'av-random.pd','av-conductor.pd','av-envion.pd','av-math.pd','av-math-voice.pd','av-data.pd','av-data-pulse.pd','av-data-low.pd','market.pd'}
 for path in ROOT.glob('*.pd'):
     if path.name not in active: path.unlink()
 
@@ -117,28 +117,6 @@ seed=p.obj('r seed');p.chain(seed,off);bang=p.obj('t b');delay=p.obj('delay 20')
 for osc in oscillators:p.link(phase,osc,inp=1)
 p.write('av-data-low')
 
-p=Patch('Holder drone / delayed wallet-count snapshot, not watchers / unavailable in history',width=1500,height=1000)
-pitch=p.obj('r holder-pitch');frequency=p.obj('mtof');smooth=p.obj('pack f 3000');hz=p.obj('line~');p.chain(pitch,frequency,smooth,hz)
-fundamental=p.obj('osc~');p.link(hz,fundamental)
-octave=p.obj('*~ 2');overtone=p.obj('osc~');trim=p.obj('*~');p.chain(hz,octave,overtone,trim)
-# A counted audience makes the harmonic body fuller, audible above the bass
-# fundamental on small speakers without increasing the listening volume.
-fullness=p.obj('r holder-fullness');overtone_amount=p.obj('expr 0.12+0.2*$f1');overtone_pack=p.obj('pack f 3000');overtone_gain=p.obj('line~');p.chain(fullness,overtone_amount,overtone_pack,overtone_gain);p.link(overtone_gain,trim,inp=1)
-third_hz=p.obj('*~ 3');third=p.obj('osc~');third_trim=p.obj('*~ 0.12');p.chain(hz,third_hz,third,third_trim)
-overtones=p.obj('+~');p.link(trim,overtones);p.link(third_trim,overtones,inp=1)
-detune=p.signal('holder-beat',4000);right_hz=p.obj('+~');p.link(hz,right_hz);p.link(detune,right_hz,inp=1);right=p.obj('osc~');p.chain(right_hz,right)
-bright=p.obj('r holder-brightness');cut=p.obj('pack f 3000');filter_cut=p.obj('line');p.chain(bright,cut,filter_cut)
-level_receive=p.obj('r holder-level');distinct=p.obj('change');zero=p.obj('sel 0');silence=p.msg('0 40');swell=p.obj('pack f 1800');level=p.obj('line~')
-p.chain(level_receive,distinct,zero);p.chain(zero,silence,level);p.link(zero,swell,out=1);p.chain(swell,level)
-for source in [fundamental,right]:
- mixed=p.obj('+~');p.link(source,mixed);p.link(overtones,mixed,inp=1)
- low=p.obj('lop~ 500');high=p.obj('hip~ 25');scaled=p.obj('*~');p.chain(mixed,low,high,scaled);p.link(filter_cut,low,inp=1);p.link(level,scaled,inp=1);p.chain(scaled,p.obj('outlet~'))
-seed=p.obj('r seed');p.chain(seed,silence);phase_bang=p.obj('t b');phase_delay=p.obj('delay 60');reset=p.msg('0');p.chain(seed,phase_bang,phase_delay,reset)
-# Explicitly clear the de-duplication memory when a new coin starts.
-set_zero=p.msg('set 0');p.chain(seed,set_zero,distinct)
-for source in [fundamental,overtone,third,right]:p.link(reset,source,inp=1)
-p.write('av-holder-drone')
-
 p=Patch('Original market data set / Ikeda and Sound Simulator principles / seeded microtones, sine clusters, noise',width=1800,height=1100)
 tick=p.obj('r av-tick');probability=p.obj('av-random 10000');threshold=p.obj('<');density=p.obj('r data-density');percent=p.obj('* 10000');hit=p.obj('sel 1');gate=p.obj('spigot 0');enabled=p.obj('r data-enabled')
 p.chain(tick,probability,threshold,hit,gate);p.chain(density,percent);p.link(percent,threshold,inp=1);p.link(enabled,gate,inp=1)
@@ -147,7 +125,6 @@ choice=p.obj('av-random 5');reported=p.obj('t f f');routes=p.obj('sel 0 1 2 3 4'
 voices=[p.obj('av-data-pulse 4 12 0.05 0.8'),p.obj('av-data-pulse 0.5 170 0.05 0.7'),p.obj('av-data-pulse 2 26 2.5 0.05'),p.obj('av-data-pulse 1 70 0.08 0.8'),p.obj('av-data-low')]
 for i,voice in enumerate(voices):p.link(routes,voice,out=i)
 seed=p.obj('r seed');seed_msg=p.msg(r'seed \$1');p.chain(seed,seed_msg);p.link(seed_msg,probability);p.link(seed_msg,choice)
-drone=p.obj('av-holder-drone')
 # Tolerate the ordinary one-second timer cadence in background browser tabs.
 # Explicit pause/seek/removal still closes immediately; a stalled controller
 # cannot leave this set running indefinitely.
@@ -157,8 +134,7 @@ for channel in range(2):
  mixed=voices[0];source_out=channel
  for voice in voices[1:]:
   addition=p.obj('+~');p.link(mixed,addition,out=source_out);p.link(voice,addition,out=channel,inp=1);mixed=addition;source_out=0
- mix=p.obj('+~');p.link(mixed,mix);p.link(drone,mix,out=channel,inp=1)
- output=p.obj('*~');p.link(mix,output);p.link(safety,output,inp=1);p.chain(output,p.obj('outlet~'))
+ output=p.obj('*~');p.link(mixed,output,out=source_out);p.link(safety,output,inp=1);p.chain(output,p.obj('outlet~'))
 p.write('av-data')
 
 p=Patch('AV / Envion + seeded math + market data set / stereo master')
@@ -177,5 +153,5 @@ for channel,side in enumerate(['left','right']):
     p.chain(limit,p.obj('env~ 4096'),p.obj('- 100'),p.obj('s av-output-'+side))
 p.write('market')
 files=sorted(active)
-(ROOT/'manifest.json').write_text(json.dumps({'version':19,'entry':'market.pd','files':files,'layers':['melody','math-0','math-1','math-2','math-3','math-4','data','holders']},indent=2)+'\n')
+(ROOT/'manifest.json').write_text(json.dumps({'version':20,'entry':'market.pd','files':files,'layers':['melody','math-0','math-1','math-2','math-3','math-4','data']},indent=2)+'\n')
 print('Built market instrument:',len(files),'host Pd files')

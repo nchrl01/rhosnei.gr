@@ -1,5 +1,5 @@
 {
-  "version": 19,
+  "version": 20,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
@@ -7,7 +7,6 @@
     "av-data-pulse.pd",
     "av-data.pd",
     "av-envion.pd",
-    "av-holder-drone.pd",
     "av-math-voice.pd",
     "av-math.pd",
     "av-random.pd",
@@ -20,7 +19,6 @@
     "math-2",
     "math-3",
     "math-4",
-    "data",
-    "holders"
+    "data"
   ]
 }
