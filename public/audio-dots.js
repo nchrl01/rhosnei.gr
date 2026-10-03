@@ -1,5 +1,5 @@
 import {createMarketAnnouncement} from './market-announcement.js?v=98';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=101';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=102';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -91,11 +91,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(host){if(mobile.matches&&readings)readings.after(host);else anchor.parentNode?.insertBefore(host,anchor);}
   size();
  }
- const layoutChanged=()=>{layoutPending=true;};
+ const layoutChanged=()=>{layoutPending=true;dirty=true;};
  const motionChanged=()=>{dirty=true;};
  mobile.addEventListener('change',arrange);reduced.addEventListener('change',motionChanged);
  window.addEventListener('resize',layoutChanged);
- document.addEventListener('visibilitychange',layoutChanged);arrange();
+ document.addEventListener('visibilitychange',layoutChanged);window.addEventListener('pageshow',layoutChanged);arrange();
  function measure(){
   const source=getAudio(),channels=source?.channels||[source];
   let power=0,count=0;
@@ -159,7 +159,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
   blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,...visualInputs,birth,mobile:mobile.matches,dither:getState().dither===true});
-  Object.assign(canvas.dataset,{composition:host?.dataset.pixelBlast==='ready'?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
+  Object.assign(canvas.dataset,{composition:['ready','canvas'].includes(host?.dataset.pixelBlast)?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
  return {
@@ -195,7 +195,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    closed=true;cancelAnimationFrame(frameID);hide();blast?.close();announcement?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
    window.removeEventListener('resize',layoutChanged);
-   document.removeEventListener('visibilitychange',layoutChanged);
+   document.removeEventListener('visibilitychange',layoutChanged);window.removeEventListener('pageshow',layoutChanged);
    if(host)anchor.parentNode?.insertBefore(host,anchor);anchor.remove();
   },
  };

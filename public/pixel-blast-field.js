@@ -1,3 +1,4 @@
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=102';
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
 // One shared frame clock; no autonomous animation or pointer-triggered effects.
@@ -203,8 +204,10 @@ function hash(key,seed){
 }
 export function createPixelBlastField(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer';canvas.setAttribute('aria-hidden','true');host.append(canvas);
- let gl;
- try{gl=canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
+ let gl,software=null;
+ const useSoftware=matchMedia('(max-width:760px), (pointer:coarse)').matches;
+ function fallback(){software??=createPixelBlastCanvas(host);canvas.hidden=true;host.dataset.pixelBlast='canvas';}
+ try{gl=useSoftware?null:canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
  let program=null,locations={},closed=false,lost=false,seed=0,ripples=[],lastPulse=-Infinity;
  function release(){if(program)gl?.deleteProgram(program);program=null;}
  function initialize(){
@@ -220,14 +223,14 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uTime','uEventTime','uSeed','uOpacity','uPixelSize','uScale','uDensity','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uEdgeFade','uShapeType','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
-   canvas.hidden=false;host.dataset.pixelBlast='ready';
-  }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;canvas.hidden=true;host.dataset.pixelBlast='fallback';console.warn('Pixel field unavailable:',error.message);}
+   canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
+  }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
   finally{for(const shader of shaders)gl.deleteShader(shader);}
  }
- function contextLost(event){event.preventDefault();lost=true;program=null;canvas.hidden=true;host.dataset.pixelBlast='fallback';}
+ function contextLost(event){event.preventDefault();lost=true;program=null;fallback();}
  function contextRestored(){if(closed)return;lost=false;initialize();}
  canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('webglcontextrestored',contextRestored);
- initialize();if(!gl){canvas.hidden=true;host.dataset.pixelBlast='fallback';}
+ initialize();if(!gl)fallback();
  return {
   reset(nextSeed=seed){seed=Number(nextSeed)>>>0;ripples=[];lastPulse=-Infinity;},
   pulse({key,time,strength=.5,balance=.5}={}){
@@ -236,13 +239,14 @@ export function createPixelBlastField(host){
    ripples.push({key,time,strength:unit(strength),x:unit(.75*x+.25*unit(balance)),y});ripples=ripples.slice(-6);lastPulse=time;
   },
   render({width,height,time,eventTime,level,formation,birth=1,active,mobile,reducedMotion,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,dither}={}){
-   if(closed||lost||!program)return;
+   if(closed)return;
    const limit=mobile?384:640,scale=Math.min(1,limit/Math.max(width,height));
    const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
    const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,active,reducedMotion});
+   if(lost||!program){fallback();software.render({width,height,time,eventTime,seed,params,birth:unit(birth),dither,ripples});return;}
    const positions=new Float32Array(12).fill(-1),times=new Float32Array(6),strengths=new Float32Array(6);
    ripples.forEach((p,i)=>{positions[i*2]=p.x*w;positions[i*2+1]=p.y*h;times[i]=p.time;strengths[i]=p.strength;});
    gl.viewport(0,0,w,h);gl.useProgram(program);
@@ -256,7 +260,7 @@ export function createPixelBlastField(host){
    canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);
    Object.assign(canvas.dataset,{pixelSize:params.pixelSize.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),rippleEnabled:String(params.ripples)});
   },
-  clear(){if(gl&&!lost){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ripples=[];},
-  close(){closed=true;release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);canvas.remove();},
+  clear(){software?.clear();if(gl&&!lost){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ripples=[];},
+  close(){closed=true;software?.close();release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);canvas.remove();},
  };
 }
