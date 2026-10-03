@@ -9,14 +9,14 @@ import {createCoinDither} from './coin-dither.js?v=79';
 import {createUpicBrand} from './upic-brand.js?v=79';
 import {createTransportIndicator} from './transport-indicator.js?v=61';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=84';
+import {createAudioDots} from './audio-dots.js?v=85';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=76';
 import {createDataSonification} from './data-sonification.js?v=65';
 import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=65';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=76';
-import {createMathPatterns,mathIdentity,MATH_SLOT_COUNT} from './math-patterns.js?v=53';
-import {createMathPatternView} from './math-pattern-view.js?v=53';
+import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=85';
+import {createMathPatternView} from './math-pattern-view.js?v=85';
 import {contextualizeMarket} from './market-state.js?v=53';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=79';
 import {signalFreshness} from './market-controls.js?v=18';
@@ -54,10 +54,9 @@ const transportIndicator=createTransportIndicator($('transport-status'));
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>piano?.setArpeggioPattern(pattern)});
 const coinVoice=createCoinVoice({onStatus:text=>$('voice-ai-status').textContent=text});
-const displaySettings={dither:false,nds:true};
+const displaySettings={dither:false};
 const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputTap,getState:()=>({playing,...displaySettings})});
-for(const name of ['dither','nds'])$('display-'+name).onclick=()=>{displaySettings[name]=!displaySettings[name];$('display-'+name).setAttribute('aria-pressed',String(displaySettings[name]));$('display-'+name).textContent=(name==='nds'?'NDS screen':'Dither')+(displaySettings[name]?' on':' off');document.body.classList.toggle('nds-screen',displaySettings.nds);dataVisual.refresh();};
-document.body.classList.add('nds-screen');$('display-dither').setAttribute('aria-pressed','false');$('display-dither').textContent='Dither off';
+$('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
 const dataSonification=createDataSonification({send,event});
 const touchDesigner=createTouchDesignerBridge();
 const holderMetadata=createHolderMetadata({onInfo:(info,pair)=>{
@@ -88,7 +87,7 @@ function displayCoinImage(){
  coinDither.set(url);
 }
 const conductor=createOrchestraConductor();
-const mathView=createMathPatternView($('math-functions'),{onToggle:(slot,enabled)=>{mathPatterns.setSlot(slot,enabled);session?.controls.push({at:Date.now(),name:'math-slot',slot,enabled});}});
+const mathView=createMathPatternView($('math-functions'));
 const mathPatterns=createMathPatterns({send,onView:view=>mathView.update(view)});
 mathPatterns.setSeed(mathSeed);
 const levels=Object.fromEntries(ORCHESTRA_LAYERS.map(name=>[name,0]));
@@ -316,9 +315,9 @@ async function initialize(){
   audioErrors.pd='';audioErrors.envion='';
   pdLoading=(async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{
-    const response=await fetch('patches/orchestra/manifest.json?v=65');if(!response.ok)throw Error('Cannot load orchestra manifest');
+    const response=await fetch('patches/orchestra/manifest.json?v=85');if(!response.ok)throw Error('Cannot load orchestra manifest');
     const manifest=await response.json();
-    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=65');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=85');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
     return {manifest,files};
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');

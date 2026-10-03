@@ -1,32 +1,46 @@
-// Bounded adaptations of the supplied function reel. The plotted value is the
-// same normalized pitch-control value sent to Pd, not a measured waveform.
+// Both source reels share one data-gated, finite-phrase Pure Data transport.
+import {REFERENCE_FUNCTIONS} from './math-reference-functions.js?v=85';
+import {REEL_FUNCTIONS} from './math-reel-functions.js?v=85';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,Number(n)||0));
-const fract=n=>n-Math.floor(n);
 const hash=n=>{n=Math.imul((n>>>0)^0x9e3779b9,0x85ebca6b);n^=n>>>13;return Math.imul(n,0xc2b2ae35)>>>0;};
-const notes=[0,0,3,-2];
-const normalize=y=>clamp((y+2.5)/5.5);
-export const MATH_FAMILIES=[
- {id:'funk',name:'3 + 3 + 2',formula:'y = 4.2e⁻¹⁶ᵈ − 1.7 + m/12',base:32,shape:.6,drive:1.5,sample:p=>{const b=p*8,d=b-(b>=6?6:b>=3?3:0);return [4.2*Math.exp(-16*d)-1.7+notes[Math.floor(b/2)%4]/12,Math.exp(-5*d)];}},
- {id:'fourier',name:'Fourier series',formula:'y = 1 + (4/π) Σ sin((2k+1)x)/(2k+1)',base:43,shape:.2,drive:1,sample:p=>{const n=2**Math.floor(p*4),x=p*Math.PI*8;let y=0;for(let k=0;k<n;k++)y+=Math.sin((2*k+1)*x)/(2*k+1);return [1+4/Math.PI*y,.5*Math.sin(Math.PI*p)];}},
- {id:'phonk',name:'Drift envelope',formula:'y = −1.6 + m/12 + 3.6e⁻¹⁴ʳ',base:34,shape:.85,drive:1.8,sample:p=>{const b=p*8,r=b%2;return [-1.6+notes[Math.floor(b/2)%4]/12+3.6*Math.exp(-14*r),Math.exp(-5*r)];}},
- {id:'tangent',name:'Tangent',formula:'y = ½tan(πx) + step(x); muted near asymptotes',base:41,shape:.3,drive:1,sample:p=>{const x=p*8,c=Math.cos(Math.PI*x);return [.5*clamp(Math.tan(Math.PI*x),-4,4)+.75+.25*(Math.floor(x/4)%2),Math.abs(c)>.24?.4:0];}},
- {id:'kick',name:'Reverse kick',formula:'y = 5e⁻¹⁴ʳ − 1 − r/2; reverse curve after r = .55',base:27,shape:.9,drive:2.2,sample:p=>{const r=fract(p*8),w=(r-.55)/.45;return [r<.55?5*Math.exp(-14*r)-1-r/2:-1.19+1.6*w*w,r<.55?Math.exp(-8*r):.2*w*w];}},
- {id:'bounce',name:'Bouncing ball',formula:'y = 3.6r²ⁿ · 4v(1−v) − .8; r = .65',base:38,shape:.15,drive:1,sample:p=>{const r=.65,s=(p*8)%4,n=Math.floor(Math.log(Math.max(.00001,1-s/4))/Math.log(r)),v=clamp((s-4*(1-r**n))/(4*(1-r)*r**n));const h=3.6*r**(2*n)*4*v*(1-v);return [h-.8,clamp(h/2.5)];}},
- {id:'wobble',name:'Wobble',formula:'y = −1.2 + 1.3sin(2πrₖ frac(x))',base:32,shape:.7,drive:1.4,sample:p=>{const b=p*8,r=[1,2,1,3,1,2,3,3][Math.min(7,Math.floor(b))];return [-1.2+1.3*Math.sin(2*Math.PI*r*fract(b)),.42];}},
- {id:'heart',name:'Heart function',formula:'y = 1.25(|u|²ᐟ³ + .9√(3.3−u²)sin(17.6πu)) − .6',base:41,shape:.1,drive:1,sample:p=>{const u=(p*2-1)*1.8;return [1.25*(Math.abs(u)**(2/3)+.9*Math.sqrt(Math.max(0,3.3-u*u))*Math.sin(17.6*Math.PI*u))-.6,.38*Math.sin(Math.PI*p)];}},
- {id:'build',name:'Chirp build',formula:'y = p − 1.2 + (.4 + .64p)sin(32πp²)',base:40,shape:.35,drive:1,sample:p=>[p-1.2+(.4+.64*p)*Math.sin(32*Math.PI*p*p),.15+.4*p]},
- {id:'drop',name:'Drop envelope',formula:'y = 4.7e⁻¹²ʳ − 1.9 + m/12',base:31,shape:.75,drive:1.7,sample:p=>{const b=p*8,r=fract(b);return [4.7*Math.exp(-12*r)-1.9+[0,0,-4,-2][Math.floor(b/2)%4]/12,Math.exp(-5*r)];}},
-];
+export const MATH_FAMILIES=[...REEL_FUNCTIONS,...REFERENCE_FUNCTIONS];
 export const MATH_THRESHOLDS=[100000,500000,1000000,2000000,5000000];
 export const MATH_SLOT_COUNT=MATH_THRESHOLDS.length;
-const rhythm=[0,2,4,5,9],tonal=[1,3,6,7,8];
+const GRAPH_SAMPLES=1200;
+function graphCache(pattern,seed){
+ const [xMin,xMax]=pattern.graphSpan,[yMin,yMax]=pattern.graphRange;
+ const points=[],auxiliary=[];
+ let previous;
+ for(let i=0;i<=GRAPH_SAMPLES;i++){
+  const x=xMin+(xMax-xMin)*Math.min(i/GRAPH_SAMPLES,1-1e-9),y=pattern.graph(x);
+  const broken=previous==null||!Number.isFinite(y)||(pattern.breakBetween?.(previous,x)??pattern.breakAt?.(x,previous)??false);
+  points.push({x,y,breakBefore:broken});
+  if(pattern.aux){const [ay,gate]=pattern.aux(x,seed);auxiliary.push({x,y:gate>.002?ay:NaN,breakBefore:i===0||Math.floor(x*4)!==Math.floor(previous*4)});}
+  previous=x;
+ }
+ return {points,auxiliary,domain:{xMin,xMax,yMin,yMax}};
+}
 export function mathIdentity(seed){
- const r=hash(seed)%rhythm.length,t=hash(seed^0xa53c)%tonal.length;
- const r2=(r+1+hash(seed^0x1717)%4)%5,t2=(t+1+hash(seed^0xbebe)%4)%5;
- const r3=rhythm.find((_,i)=>i!==r&&i!==r2);
- const chosen=[rhythm[r],tonal[t],rhythm[r2],tonal[t2],r3];
- return chosen.map((index,slot)=>({...MATH_FAMILIES[index],slot,threshold:MATH_THRESHOLDS[slot],
-  curve:Array.from({length:161},(_,i)=>normalize(MATH_FAMILIES[index].sample(Math.min(.99999,i/160))[0]))}));
+ // Both reels occur in every coin's score. Five distinct functions remain fixed
+ // for the coin; market cap unlocks them without making every function play.
+ const order=pool=>pool.map(p=>({p,rank:hash(seed^hash(MATH_FAMILIES.indexOf(p)+1))})).sort((a,b)=>a.rank-b.rank).map(x=>x.p);
+ const first=order(REFERENCE_FUNCTIONS),second=order(REEL_FUNCTIONS);
+ const chosen=[first[0],second[0],first[1],second[1]];
+ chosen.push(order(MATH_FAMILIES.filter(p=>!chosen.includes(p)))[0]);
+ return chosen.map((pattern,slot)=>({...pattern,slot,threshold:MATH_THRESHOLDS[slot],graphCache:graphCache(pattern,seed)}));
+}
+function graphSnapshot(pattern,phase,seed){
+ const {points,auxiliary,domain}=pattern.graphCache;
+ const progress=clamp(phase),count=Math.floor(progress*GRAPH_SAMPLES)+1;
+ const graphPoints=points.slice(0,count);
+ const x=domain.xMin+(domain.xMax-domain.xMin)*Math.min(progress,1-1e-9);
+ const previous=graphPoints.at(-1)?.x;
+ const auxPoints=auxiliary.slice(0,count);
+ if(previous!=null&&x>previous){
+  graphPoints.push({x,y:pattern.graph(x),breakBefore:pattern.breakBetween?.(previous,x)??pattern.breakAt?.(x,previous)??false});
+  if(pattern.aux){const [y,gate]=pattern.aux(x,seed);auxPoints.push({x,y:gate>.002?y:NaN,breakBefore:Math.floor(x*4)!==Math.floor(previous*4)});}
+ }
+ return {graphPoints,graphDomain:domain,graphOverlays:auxiliary.length?[{points:auxPoints}]:[]};
 }
 const UNLOCK_KEY='av.math-unlocks.v2';
 function readUnlocks(){
@@ -37,7 +51,7 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
  let seed=0,profile=mathIdentity(seed),enabled=true,beat=0,last=null,lastPosition=null,wasRunning=false;
  let slots=profile.map(()=>slotState(true));
  const preferences=new Map(),unlocks=readUnlocks();
- function silence(){for(let i=0;i<MATH_SLOT_COUNT;i++){slots[i].level=0;send(`math-${i}-gate`,0);send(`math-${i}-level`,0);}}
+ function silence(){for(let i=0;i<MATH_SLOT_COUNT;i++){slots[i].level=0;send(`math-${i}-gate`,0);send(`math-${i}-aux-gate`,0);send(`math-${i}-level`,0);}}
  function cancel(){for(const slot of slots){slot.start=null;slot.queued=null;}silence();}
  function observeCap(cap){
   const tier=MATH_THRESHOLDS.filter(value=>cap>=value).at(-1)||0;
@@ -49,7 +63,7 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
   setSeed(value){preferences.set(seed,slots.map(s=>s.enabled));if(preferences.size>64)preferences.delete(preferences.keys().next().value);seed=Number(value)>>>0;profile=mathIdentity(seed);slots=profile.map((_,i)=>slotState(preferences.get(seed)?.[i]??true));this.reset();},
   reset(){beat=0;last=null;lastPosition=null;wasRunning=false;slots=slots.map(s=>slotState(s.enabled));silence();},
   setEnabled(value){enabled=Boolean(value);if(!enabled)cancel();},
-  setSlot(index,value){const slot=slots[index];if(!slot)return;slot.enabled=Boolean(value);if(!value){slot.start=null;slot.queued=null;slot.level=0;send(`math-${index}-gate`,0);send(`math-${index}-level`,0);}},
+  setSlot(index,value){const slot=slots[index];if(!slot)return;slot.enabled=Boolean(value);if(!value){slot.start=null;slot.queued=null;slot.level=0;send(`math-${index}-gate`,0);send(`math-${index}-aux-gate`,0);send(`math-${index}-level`,0);}},
   frame(m={},options={}){
    const clock=Number(options.clock)||0,transport=Boolean(options.playing)&&!options.ended&&!options.seeking;
    const running=transport&&options.ready!==false,elapsed=last===null?0:Math.max(0,clock-last),dt=Math.min(.1,elapsed);last=clock;
@@ -62,7 +76,7 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
    lastPosition=position;if(running&&fresh>0)beat+=Math.min(.25,delta)*tempo/60;
    if(!running&&wasRunning)cancel();wasRunning=running;
    const event=options.event??null;
-   let queuedUntil=Math.max(beat,...slots.map(s=>s.start===null?s.queued===null?beat:s.queued+8:s.start+8));
+   let queuedUntil=Math.max(beat,...slots.map(s=>s.start===null?s.queued===null?beat:s.queued+10:s.start+10));
    // At most one eight-beat phrase at a time; subsequent functions wait two beats.
    for(let i=0;i<slots.length;i++){
     const s=slots[i],allowed=enabled&&s.enabled&&running&&fresh>0&&unlocked[i]&&intensity>.015;
@@ -77,14 +91,20 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
    const views=profile.map((pattern,i)=>{
     const s=slots[i],entered=unlocked[i],performing=running&&s.start!==null;
     const phase=performing?clamp((beat-s.start)/8,0,.99999):s.phase;s.phase=phase;
-    const [raw,gate]=pattern.sample(phase),value=normalize(raw);
+    const [raw,gate]=pattern.sample(phase),[yMin,yMax]=pattern.graphRange,value=clamp((raw-yMin)/(yMax-yMin));
+    const sourceX=pattern.graphSpan[0]+phase*(pattern.graphSpan[1]-pattern.graphSpan[0]);
+    const [auxRaw,auxEnvelope]=pattern.aux?.(sourceX,seed)||[0,0];
     const target=performing ? .28*intensity*fresh:0;
     s.level+=(target-s.level)*(1-Math.exp(-dt/.08));if(!performing)s.level=0;
-    const audibleGate=performing?clamp(gate):0,pitch=clamp(pattern.base+(seed%5)+value*19,24,78);
+    const audibleGate=performing?clamp(gate):0,auxGate=performing?clamp(auxEnvelope):0;
+    // y is an octave-like pitch coordinate; wide graphs are compressed into a
+    // bounded range. The visual still shows the literal, unclipped equation.
+    const pitch=clamp(54+(seed%5)+raw*12*Math.min(1,5.5/(yMax-yMin)),24,84);
     send(`math-${i}-pitch`,pitch);send(`math-${i}-cutoff`,350+value*2200);send(`math-${i}-shape`,pattern.shape);
     send(`math-${i}-drive`,pattern.drive);send(`math-${i}-level`,s.level);send(`math-${i}-gate`,audibleGate);
+    send(`math-${i}-aux-pitch`,clamp(54+(seed%5)+auxRaw*12,24,96));send(`math-${i}-aux-gate`,auxGate);
     const status=!enabled||!s.enabled?'Muted':!transport?'Paused':!running?(options.error?'Audio unavailable':'Loading audio'):!entered?'Waiting for market cap':!fresh?'Waiting for fresh data':performing?'Playing':s.queued!==null?'Queued':intensity<=.015?'Quiet market':'Rest · awaiting new activity';
-    return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,unlocked:entered,enabled:enabled&&s.enabled,level:s.level,active:performing&&audibleGate>0&&s.level>.0001,performing,phase,value,curve:pattern.curve,pitch,gate:audibleGate,status,beats:performing?(beat-s.start):0};
+    return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,unlocked:entered,enabled:enabled&&s.enabled,level:s.level,active:performing&&(audibleGate>0||auxGate>0)&&s.level>.0001,performing,phase,value,...graphSnapshot(pattern,s.played?phase:.5,seed),pitch,gate:audibleGate,auxGate,status,beats:performing?(beat-s.start):0};
    });
    const view={playing:transport,seed,cap,tempo,globalEnabled:enabled,slots:views};onView(view);return view;
   },

@@ -1,56 +1,34 @@
-.math-pattern-view{width:100%;max-width:600px;margin:18px 0 0;padding:10px 0 0;border-top:1px solid #ddd;color:#111;font:11px/1.4 NDS12,sans-serif}
-.math-pattern-header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;min-width:0}
-.math-pattern-header h3{flex:none;margin:0;font:700 10px/1.4 NDS12,sans-serif}
-.math-pattern-seed{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#666;font-size:9px;font-variant-numeric:tabular-nums;text-align:right}
-.math-pattern-waiting{margin:0;padding:10px 0;color:#666;font-size:10px}
-.math-pattern-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
-.math-pattern-card{min-width:0}
-.math-pattern-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
-.math-pattern-identity{min-width:0}
-.math-pattern-identity h4{margin:0;font:700 11px/1.35 NDS12,sans-serif;overflow-wrap:anywhere}
-.math-pattern-threshold{display:block;margin-top:2px;color:#666;font-size:9px;font-variant-numeric:tabular-nums}
-.math-pattern-toggle{flex:none;min-height:30px;padding:6px 7px;border:1px solid #111;background:#fff;color:#111;font:400 9px/1.2 NDS12,sans-serif}
-.math-pattern-toggle[aria-pressed=true]{background:#111;color:#fff}
-.math-pattern-toggle[aria-pressed=true]:hover:not(:disabled){background:#333}
-.math-pattern-toggle:focus-visible,.math-pattern-details>summary:focus-visible{outline:2px solid #111;outline-offset:3px}
-.math-pattern-plot{height:78px;margin:8px 0 4px}
+.math-pattern-view{
+ width:100%;max-width:600px;margin:22px 0 0;color:#111;
+ font:12px/1.4 NDS12,sans-serif;container-type:inline-size;
+}
+.math-pattern-view[hidden],.math-pattern-view [hidden]{display:none!important}
+.math-pattern-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 20px;align-items:start}
+.math-pattern-card{min-width:0;background:transparent}
+.math-pattern-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-height:20px}
+.math-pattern-name{min-width:0;margin:0;font:400 12px/1.4 NDS12,sans-serif;overflow-wrap:anywhere}
+.math-pattern-threshold{flex:none;color:#777;font:400 10px/1.4 NDS12,sans-serif;font-variant-numeric:tabular-nums;white-space:nowrap}
+.math-pattern-plot{width:100%;aspect-ratio:360/190;margin:5px 0 0}
 .math-pattern-plot svg{display:block;width:100%;height:100%;overflow:visible}
-.math-pattern-baseline{stroke:#ddd;stroke-width:1;fill:none;vector-effect:non-scaling-stroke}
-.math-pattern-curve{stroke:#111;stroke-width:1.2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
-.math-pattern-marker{fill:#ff00ff}
-.math-pattern-card[data-enabled=false] .math-pattern-curve{stroke:#999}
-.math-pattern-card[data-enabled=false] .math-pattern-marker{fill:#999}
-.math-pattern-caption{display:flex;justify-content:space-between;align-items:baseline;gap:8px;color:#666;font-size:9px;line-height:1.4}
-.math-pattern-caption>span:last-child{flex:none;font-size:8px}
-.math-pattern-state{overflow-wrap:anywhere}
-.math-pattern-card[data-active=true] .math-pattern-state{color:#111}
-.math-pattern-details{margin-top:8px;padding:7px 0 0;border-top:1px solid #eee}
-.math-pattern-details>summary{width:max-content;max-width:100%;font:400 9px/1.5 NDS12,sans-serif;color:#666;cursor:pointer}
-.math-pattern-formula{margin-top:10px;font-size:10px;overflow-wrap:anywhere;white-space:pre-wrap}
-.math-pattern-details dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 8px;margin:10px 0;font-size:9px;font-variant-numeric:tabular-nums}
-.math-pattern-details dt{color:#666}
-.math-pattern-details dd{margin:0;text-align:right;overflow-wrap:anywhere}
-.math-pattern-details p{margin:8px 0 0;color:#666;font-size:9px;line-height:1.5}
-@media(max-width:760px){
- .math-pattern-view{max-width:440px;margin:24px auto 0;padding-top:14px}
- .math-pattern-header{margin-bottom:14px}
- .math-pattern-header h3{font-size:12px}
- .math-pattern-seed{font-size:10px}
- .math-pattern-cards{gap:16px}
- .math-pattern-heading{align-items:flex-start;flex-direction:column;gap:10px}
- .math-pattern-identity h4{font-size:12px}
- .math-pattern-threshold{font-size:10px}
- .math-pattern-toggle{min-height:44px;min-width:74px;padding:10px;font-size:11px}
- .math-pattern-plot{height:90px;margin-top:12px}
- .math-pattern-caption{display:block;font-size:10px}
- .math-pattern-caption>span:last-child{display:block;margin-top:3px;font-size:9px}
- .math-pattern-details{padding-top:0}
- .math-pattern-details>summary{display:flex;align-items:center;min-height:44px;font-size:10px}
- .math-pattern-formula{margin-top:4px;font-size:11px}
- .math-pattern-details dl,.math-pattern-details p{font-size:10px}
+.math-pattern-axis{stroke:#111;stroke-width:1;vector-effect:non-scaling-stroke}
+.math-pattern-arrow{fill:#111}
+.math-pattern-axis-label{fill:#111;font:italic 14px Georgia,'Times New Roman',serif}
+.math-pattern-curve{stroke:#111;stroke-width:1.3;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.math-pattern-overlay{stroke-width:1}
+.math-pattern-marker{fill:#111}
+.math-pattern-formula{
+ margin:4px 0 0;text-align:center;color:#111;
+ font:italic 13px/1.55 Cambria,'Times New Roman',serif;
+ white-space:pre-wrap;overflow-wrap:anywhere;font-variant-numeric:lining-nums;
 }
-@media(prefers-reduced-motion:reduce){
- .math-pattern-view *{animation:none!important;transition:none!important}
+@container(max-width:480px){
+ .math-pattern-cards{grid-template-columns:minmax(0,1fr);gap:30px}
+ .math-pattern-formula{font-size:14px}
 }
-
-.math-phrase-progress{height:2px;background:#ddd;margin:4px 0 8px;overflow:hidden}.math-phrase-progress span{display:block;height:100%;width:0;background:#ff00ff}.math-pattern-card:last-child:nth-child(odd){grid-column:1/-1}.math-pattern-card:last-child:nth-child(odd) .math-pattern-plot{height:62px}.math-pattern-card[data-active=true] .math-pattern-heading{border-left:2px solid #ff00ff;padding-left:6px}.math-pattern-header h3{text-transform:uppercase;letter-spacing:.02em}
+@media(max-width:600px){
+ .math-pattern-view{max-width:440px;margin:26px auto 0}
+ .math-pattern-cards{grid-template-columns:minmax(0,1fr);gap:30px}
+ .math-pattern-name{font-size:13px}
+ .math-pattern-threshold{font-size:11px}
+ .math-pattern-formula{font-size:14px}
+}

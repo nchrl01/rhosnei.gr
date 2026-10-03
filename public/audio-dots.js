@@ -55,7 +55,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!mobile.matches){c.fillStyle='#000';c.fillRect(0,0,canvas.width,canvas.height);}
   let coverage=0,rows=0;
   if(shown){
-   const settings=getState(),limit=settings.nds===false?768:640;
+   const settings=getState(),limit=768;
    const scale=Math.min(1,limit/Math.max(width,height));
    const rw=Math.max(128,Math.round(width*scale)),rh=Math.max(128,Math.round(height*scale));
    const result=renderBinaryRows({width:rw,height:rh,seed,time:clock,activity:shown.activity,volume:shown.volume,drive:shown.drive,pressure:shown.pressure,balance:shown.balance,change:shown.change,marketCap:logarithmic(shown.values[5],10),liquidity:logarithmic(shown.liquidity,8),mobile:mobile.matches,reducedMotion:reduced.matches,dither:settings.dither===true});

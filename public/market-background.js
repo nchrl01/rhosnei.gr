@@ -29,6 +29,6 @@ export function createMarketBackground(){
  return {paint(target,width,height,model,settings){
   const pixels=marketBackground(model,settings);context.putImageData(new ImageData(pixels,256,192),0,0);
   if(settings.invert){context.globalCompositeOperation='source-in';context.fillStyle='#fff';context.fillRect(0,0,256,192);context.globalCompositeOperation='source-over';}
-  target.save();target.imageSmoothingEnabled=!settings.nds;target.drawImage(source,0,0,width,height);target.restore();
+  target.save();target.imageSmoothingEnabled=true;target.drawImage(source,0,0,width,height);target.restore();
  }};
 }

@@ -809,3 +809,44 @@ run of the complete app also passed saved-score playback, pause, display
 controls and overflow checks at 1440/800/390px. Rendered frames were compared
 against the tutorial's 32- and 128-row examples. A local 640×640 renderer
 benchmark averaged about 3 ms/frame; this is not an iPhone performance claim.
+
+## Two-reel function catalogue and uncluttered plots (v85)
+
+The catalogue now has 23 mathematical functions: 13 transcribed equations from
+@indent126's user-supplied video, plus all ten source headings from @the.lab67:
+BRAZILIAN FUNK, FOURIER SERIES, DRIFT PHONK, THE TANGENT, HARDSTYLE KICK,
+BOUNCING BALL, DUBSTEP WOBBLE, THE HEART FUNCTION, THE BUILD-UP and THE DROP.
+The first video has no headings; its function names are descriptive. Literal
+source equations, raw evaluators, source spans and discontinuity handling are
+kept in two separate catalogue modules.
+
+Five unique functions are fixed by the coin seed, including both reels.
+Existing $100K / $500K / $1M / $2M / $5M thresholds remain. Live observed
+milestones stay unlocked; replay evaluates its historical cap. Playback,
+freshness and market intensity gate every phrase. Eight-beat phrases rest
+between triggers and require another event before repeating; pause, seek,
+end, bundle removal and the Pd watchdog close both main and auxiliary gates.
+Reservations include the two-beat separation when a new tier joins the queue.
+
+The UI follows the first video's fixed Cartesian axes, thin black trace,
+progressive left-to-right drawing, black endpoint and equation beneath.
+The exact phase feeding synthesis also sets the revealed curve. Source names
+and small thresholds remain; per-function Sound on/off, Function details,
+meters, progress bars, status captions and seed/BPM chrome are removed.
+Individual controls remain internal; the complete bundle can be removed in
+pdata. Mobile uses one column so equations and graphs remain readable.
+
+The octave-like pitch coordinate is bounded for playback, with wide function
+ranges compressed; the graph shows the unclipped source equation. Existing
+Pd harmonic synthesis is retained. Drift Phonk and The Drop now have their
+second cowbell curve and a quiet paired-oscillator voice sharing the main
+phrase level/run gate/reset/watchdog. The videos do not define c_s numerically,
+so that 32-step sequence is an explicitly authored, repeatable seed mapping.
+Graph ranges are inferred from axes without numeric ticks. This is equation
+sonification, not a claim of identical source-video audio.
+
+Deleted the NDS/LCD page mask, global pixelation rule, toggle and associated
+settings/branches. The NDS12 font remains. Source review covered equations,
+selection, threshold gates, phase alignment and Pd wiring. Static desktop and
+mobile panel renders were compared with the reference. No automated test
+suite or audio audition was run for this revision.
