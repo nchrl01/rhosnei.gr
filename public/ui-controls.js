@@ -3,7 +3,7 @@
 export function createUIControls(){
  const $=id=>document.getElementById(id),states=new Map(),loaders=new Map(),timers=new Map();
  const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
- let components,volume,clock,lastClock=null,volumeOpen=false,sequence=0;
+ let components,volume,clock,lastClock=null,sequence=0;
  const dial=document.createElement('div');dial.id='volume-dial';dial.hidden=true;input.before(dial);
  const clockFallback=document.createElement('span'),clockHost=document.createElement('span');
  clockFallback.className='clock-fallback';clockHost.className='clock-island';time.replaceChildren(clockFallback,clockHost);
@@ -30,12 +30,12 @@ export function createUIControls(){
   // Completion is acknowledged briefly; errors remain beside the retry action.
   if(status==='done')timers.set(name,setTimeout(()=>{if(states.get(name)===state){states.set(name,null);loaders.get(name)?.update(null);}},1800));
  }
- import('./vendor/ui/upic-ui.js?v=92').then(module=>{
+ import('./vendor/ui/upic-ui.js?v=95').then(module=>{
   components=module;
   try{
    volume=components.mountVolume(dial,input);panel.dataset.volumeUi='true';
    dial.addEventListener('ui-component-error',()=>{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;});
-   volume.setOpen(volumeOpen);
+   volume.setOpen(true);
   }catch{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;}
   try{
    clock=components.mountClock(clockHost);time.dataset.clockUi='true';
@@ -46,7 +46,6 @@ export function createUIControls(){
  }).catch(()=>{ /* Native controls and status text remain the working fallback. */ });
  return {
   loading,
-  volumeOpen(open){volumeOpen=open;volume?.setOpen(open);if(open&&!volume)input.focus();},
   clock(props){
    clockFallback.textContent=new Date(props.timestamp).toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
    // The app updates several times a second; the clock needs only changed seconds.

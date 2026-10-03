@@ -51,17 +51,25 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  }
  function fitHeight(){
   if(!host||mobile.matches)return;
-  const top=Math.max(0,Math.round(host.getBoundingClientRect().top));
+  // Measure the normal grid row, not the sticky panel's viewport position.
+  // Its inset and canvas size must stay constant when the document scrolls.
+  const form=document.getElementById('coin-form');if(!form)return;
+  const formMargin=parseFloat(getComputedStyle(form).marginTop)||0;
+  const visualMargin=parseFloat(getComputedStyle(host).marginTop)||0;
+  const top=Math.max(0,Math.round(form.getBoundingClientRect().top+window.scrollY-formMargin+visualMargin));
   const value=top+'px';if(host.style.getPropertyValue('--visual-top')!==value)host.style.setProperty('--visual-top',value);
  }
  function size(){
   fitHeight();
-  const box=canvas.getBoundingClientRect();width=Math.round(box.width);height=Math.round(box.height);
-  const d=Math.min(devicePixelRatio||1,1.5),w=Math.max(1,Math.round(width*d)),h=Math.max(1,Math.round(height*d));
+  const box=canvas.getBoundingClientRect(),nextWidth=Math.round(box.width),nextHeight=Math.round(box.height);
+  const d=Math.min(devicePixelRatio||1,1.5),w=Math.max(1,Math.round(nextWidth*d)),h=Math.max(1,Math.round(nextHeight*d));
+  if(width===nextWidth&&height===nextHeight&&canvas.width===w&&canvas.height===h)return;
+  width=nextWidth;height=nextHeight;
   if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;
   dirty=true;
  }
  const resize=new ResizeObserver(size);resize.observe(canvas);
+ const header=document.querySelector('.market-header');if(header)resize.observe(header);
  const visibility=typeof IntersectionObserver==='function'?new IntersectionObserver(rows=>{
   visible=rows[0]?.isIntersecting??true;lastPaint=0;
   if(!visible)hide();else dirty=true;
@@ -76,7 +84,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const layoutChanged=()=>{layoutPending=true;};
  const motionChanged=()=>{dirty=true;};
  mobile.addEventListener('change',arrange);reduced.addEventListener('change',motionChanged);
- window.addEventListener('resize',layoutChanged);window.addEventListener('scroll',layoutChanged,{passive:true});
+ window.addEventListener('resize',layoutChanged);
  document.addEventListener('visibilitychange',layoutChanged);arrange();
  function measure(){
   const source=getAudio(),channels=source?.channels||[source];
@@ -170,7 +178,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   close(){
    closed=true;cancelAnimationFrame(frameID);hide();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
-   window.removeEventListener('resize',layoutChanged);window.removeEventListener('scroll',layoutChanged);
+   window.removeEventListener('resize',layoutChanged);
    document.removeEventListener('visibilitychange',layoutChanged);
    if(host)anchor.parentNode?.insertBefore(host,anchor);anchor.remove();
   },

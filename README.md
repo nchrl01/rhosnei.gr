@@ -979,8 +979,10 @@ reviewed; no runtime, browser or audio testing was requested or performed.
 
 CometDial now controls the existing master volume, preserving its current value
 and every audio engine's existing gain path. The supplied white dial settings
-are retained, with Volume / % labels. Pointer, touch and keyboard input share
-the same native input events; closing the panel unmounts the animated dial.
+are retained, with Volume / % labels and a compact 64px header size. The dial
+is directly on the header, without a popover or surrounding box. Pointer,
+touch and keyboard input share the same native input events. The existing
+dither switch moves into the pdata inspector.
 
 LatticeLoader's orbit dots show actual search, history, trending and instrument
 loading. Timers measure each request and freeze at completion/failure. History
@@ -1003,3 +1005,11 @@ assets in public/vendor/ui. Upstream React Bits source, provenance and its full
 MIT + Commons Clause notice are retained in src/ui/reactbits; public credits
 link the deployed notice and dependency licenses. Source was reviewed and the
 production bundle built. No browser, runtime or audio checks were performed.
+
+### Stable visual panel (v95)
+
+Desktop visuals keep a stable sticky inset and canvas size during scrolling;
+scroll events no longer trigger resizing or reframe the generated pattern.
+Real layout/viewport resizing still updates the panel. Mobile keeps its
+separate panel with a stable viewport height, avoiding browser-toolbar resize
+jitter. Audio-driven motion and the existing renderer are preserved.

@@ -202,7 +202,8 @@ export default function CometDial({
     const g = grip.current;
     if (!g || g.id !== e.pointerId) return;
     if (!g.moved) {
-      if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < DRAG_PX) return;
+      // Keep small header dials responsive without turning incidental taps into drags.
+      if (Math.hypot(e.clientX - g.x0, e.clientY - g.y0) < clamp(DRAG_PX * size / 250, 4, DRAG_PX)) return;
       g.moved = true;
       reading.stop();
     }

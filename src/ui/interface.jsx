@@ -83,7 +83,6 @@ function VolumeIsland({ host, input }) {
     input.addEventListener('input', sync);
     input.addEventListener('change', sync);
     sync();
-    focusDial(host);
     return () => {
       input.removeEventListener('input', sync);
       input.removeEventListener('change', sync);
@@ -117,7 +116,7 @@ function VolumeIsland({ host, input }) {
       label="Volume"
       accent="#f5f5f5"
       ink="#fdfdfd"
-      size={250}
+      size={64}
       sweep={320}
       thickness={5}
       speed={25}

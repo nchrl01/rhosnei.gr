@@ -258,7 +258,7 @@ body.inspecting .audio-visualizer{display:none}
  #coin-search-results{grid-column:1;width:100%;max-width:none}
  .instrument{grid-column:1;width:100%;min-width:0;margin-top:0}
  .instrument-top,.readings,#math-functions{width:100%;max-width:none}
- .audio-visualizer{grid-column:2;grid-row:2/span 3;position:sticky;top:0;align-self:start;width:calc(100% + 16px);height:calc(100dvh - var(--visual-top,61px));min-height:0;aspect-ratio:auto;margin:12px 0 0;z-index:0}
+ .audio-visualizer{grid-column:2;grid-row:2/span 3;position:sticky;top:var(--visual-top,80px);align-self:start;width:calc(100% + 16px);height:calc(100vh - var(--visual-top,80px));height:calc(100svh - var(--visual-top,80px));min-height:0;aspect-ratio:auto;margin:12px 0 0;z-index:0}
  #load{width:32px;flex-basis:32px;font-size:20px}
  .transport{align-self:start;padding-top:28px}
  .transport button{height:32px;min-height:32px}
@@ -276,7 +276,7 @@ body.inspecting .audio-visualizer{display:none}
 }
 @media(max-width:760px){
  #load{width:44px;flex-basis:44px;font-size:22px}
- .audio-visualizer{position:relative;inset:auto;width:calc(100% + 40px);height:56dvh;aspect-ratio:auto;margin:22px -20px;z-index:auto}
+ .audio-visualizer{position:relative;inset:auto;width:calc(100% + 40px);height:56vh;height:56svh;aspect-ratio:auto;margin:22px -20px;z-index:auto}
 }
 
 /* Pixel lettering stays readable at small interface sizes. */

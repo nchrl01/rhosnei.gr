@@ -9,3 +9,5 @@ Used as part of the $UPIC application. Counter adds radix/wheel targets and
 reduced motion for accurate clock rollover and replay seeking. LatticeLoader
 announcements also react to changes in its label. Other integration is in
 ../interface.jsx and ../MarketClock.jsx.
+
+CometDial scales its drag threshold for the compact header size (4px minimum).

@@ -1,4 +1,4 @@
-import {createUIControls} from './ui-controls.js?v=92';
+import {createUIControls} from './ui-controls.js?v=95';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=92';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
@@ -11,7 +11,7 @@ import {createCoinDither} from './coin-dither.js?v=90';
 import {createUpicBrand} from './upic-brand.js?v=91';
 import {createTransportIndicator} from './transport-indicator.js?v=87';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=89';
+import {createAudioDots} from './audio-dots.js?v=95';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=76';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -406,12 +406,7 @@ $('audio-output').onchange=async()=>{
  finally{audioBusy(false);$('audio-output').disabled=false;}
 };
 for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);if(id==='master'){piano?.setMaster(Number($(id).value));coinVoice.setMaster(Number($(id).value));}session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
-const volumeButton=$('volume-button'),volumePanel=$('volume-panel');
-const closeVolume=()=>{volumePanel.hidden=true;volumeButton.setAttribute('aria-expanded','false');ui.volumeOpen(false);};
-volumeButton.onclick=()=>{volumePanel.hidden=!volumePanel.hidden;volumeButton.setAttribute('aria-expanded',String(!volumePanel.hidden));ui.volumeOpen(!volumePanel.hidden);};
 $('master').addEventListener('input',()=>{$('master-value').textContent=Math.round(Number($('master').value)*100)+'%';});
-document.addEventListener('pointerdown',e=>{if(!e.target.closest('.volume-widget'))closeVolume();});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!volumePanel.hidden){closeVolume();volumeButton.focus();}});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
 function orientPair(pair,token){
@@ -577,7 +572,7 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
 }
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
- if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
+ if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.querySelector('.inspector-display').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const wantedNetwork=requestedNetwork,autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
  const address=$('address').value.trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
