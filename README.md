@@ -601,9 +601,8 @@ checked both original image paths using the original coloured coin artwork.
 The web visual now composes dense raster registers, split barcodes and price
 topography. Actual historical prices, volume, available market measurements,
 audio spectrum and the five finite Pd voices determine the marks. A received
-observation can show a field for 180 ms, with at least 360 ms between starts.
-There is no moving idle pattern or full-screen inversion. Pause, scrubbing,
-hidden tabs and expired observations clear the field. Desktop remains white
+observation originally showed a 180 ms field in v76. The v77 update below
+replaces that behavior with persistent images and smooth transitions. Desktop remains white
 with black marks; mobile keeps its transparent inverted overlay without labels.
 The v75 coin and UPIC dithering is unchanged.
 
@@ -615,8 +614,8 @@ Pause and seeking clear the room. Listening volume remains at 50% by default.
 ### Local TouchDesigner scene
 
 `touchdesigner/UPIC-data-score.tox` is a saved, self-contained component built
-in TouchDesigner 2025.33230. It is also loaded at `/project1/upic_data_score`
-in the currently open project. To use it in another project, drag the `.tox`
+in TouchDesigner 2025.33230. The component was initially loaded at `/project1/upic_data_score`
+in the desktop project. Reload the saved component to receive later updates. To use it in another project, drag the `.tox`
 into a network. It contains an OSC receiver, measurement/history tables,
 the GLSL image, shader diagnostics and an `OUT` viewer. The source builder and
 shader are alongside it; the builder's ROOT path must match the source folder
@@ -624,7 +623,8 @@ when rebuilding on another computer.
 
 1. Run `npm start` from this repository.
 2. Open `http://127.0.0.1:4173/?touchdesigner=1` and press Listen.
-3. View `OUT` inside the TouchDesigner component. White means no current event.
+3. View `OUT` inside the TouchDesigner component. White means no observation
+   has arrived yet; paused and quiet markets retain their last image.
 
 The local preview forwards the selected coin's observations to OSC
 `/upic/frame` on loopback UDP port 7000. The route accepts only same-origin
@@ -634,14 +634,14 @@ not run inside GitHub Pages.
 
 The scene uses price, market cap, liquidity, observed trade frequency, volume,
 motion, buy/sell balance, contextual pressure, volume surge, turnover and
-sampled price history. Pd voice IDs annotate existing market bursts. Missing
+sampled price history. Pd voice IDs annotate the retained market field. Missing
 measurements stay labelled unavailable. Replay is explicitly a historical
 candle proxy, including estimated historical capitalization, rather than an
 exact historical trade tape. No watcher counts are invented and no holder
-drone is enabled. The output clears if incoming packets stop for 1.5 seconds.
+drone is enabled. The output retains its last observation if incoming packets stop.
 
-Verification: the actual TouchDesigner shader rendered successfully; baseline,
-pause and packet loss cleared its output. `touchdesigner/preview.png` is a
+v76 verification: the actual TouchDesigner shader rendered successfully; its
+former baseline, pause and packet-loss behavior cleared the output. `touchdesigner/preview.png` is a
 controlled fixture render, not live market data. Local OSC forwarding accepted
 valid frames and rejected foreign origins and invalid values. Existing Pd checks
 passed for all five voices and idle/transport silence. Offline piano checks at
@@ -649,3 +649,24 @@ passed for all five voices and idle/transport silence. Offline piano checks at
 The full browser mix remained below clipping (measured peak below 0.253 in both runs), and browser
 checks covered replay, pause, silent scrubbing and a 390px mobile layout.
 These checks do not establish playback on a physical iPhone.
+
+
+## Continuous visuals (v77)
+
+Removed the timed visibility cutoff and per-event composition reshuffle. Each
+coin now keeps its layout while the last observed image remains visible. New
+market detail crossfades over 420 ms on transparent layers; unchanged marks
+keep their opacity throughout the blend. Updates coalesce during busy trading.
+Quiet markets and paused playback retain the last frame. Same-coin Listen
+resumes without clearing it. Mobile still inverts the marks over the page;
+reduced-motion mode uses direct static updates. Audio behavior is unchanged.
+
+The TouchDesigner shader, callback, source builder and saved `.tox` have the
+same persistent-image policy and stable per-coin seed. Visual values use a
+420 ms response while the raw observation table remains exact. The saved
+component was rebuilt with TouchDesigner's offline archive tools. An already
+open component needs reloading. No desktop control was used for this update.
+
+This revision received source review and JavaScript syntax checks. Existing
+visual-check expectations were adjusted for the new behavior; runtime and
+rendering tests were not run for this revision.

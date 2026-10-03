@@ -1,5 +1,5 @@
-// Original UPIC market score. Every dense field has an observed-event lifetime.
-uniform vec4 uControl; // running, event age, intensity, event seed
+// Original UPIC market score. Retain the latest observed field without flashing.
+uniform vec4 uControl; // has observation, reserved, smoothed intensity, stable coin seed
 uniform vec4 uMarket;  // volume, motion, balance, pressure
 uniform vec4 uContext; // turnover, volume ratio, finite Pd voice, receive age
 uniform vec4 uMeasured; // price, market cap, liquidity, observed trade rate
@@ -11,7 +11,7 @@ float observed(int i){return i<4?uHistoryA[i]:uHistoryB[i-4];}
 float flow(int i){return i<4?uFlowA[i]:uFlowB[i-4];}
 void main(){
  vec2 uv=vUV.st,px=uv*uTDOutputInfo.res.zw;
- float gate= step(.5,uControl.x)*(1.-step(.18,uControl.y))*(1.-step(1.5,uContext.w));
+ float gate=step(.5,uControl.x);
  float ink=0.;
  if(gate>.5){
   float surge=clamp(log(max(1.,uContext.y))/log(10.),0.,1.);
@@ -33,7 +33,7 @@ void main(){
   // Registration crosshairs are small local marks, never a full-field inversion.
   vec2 c=abs(uv-vec2(.2+.6*uMarket.z,.28+.4*uMarket.w));
   ink=max(ink,max(step(c.x,.001)*step(c.y,.025),step(c.y,.0015)*step(c.x,.02)));
-  // A Pd onset annotates an existing market burst; it cannot create one.
+  // The last Pd voice annotates the retained market field.
   if(uContext.z>=0.){float lane=(mod(uContext.z,5.)+.5)/5.;ink=max(ink,step(abs(uv.x-lane),.007)*step(abs(uv.y-.92),.002));}
   ink*=step(.025,uv.x)*step(uv.x,.975)*step(.04,uv.y)*step(uv.y,.96);
  }

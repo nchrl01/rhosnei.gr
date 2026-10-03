@@ -13,15 +13,6 @@ def onReceiveOSC(dat, rowIndex, message, bytes, timeStamp, address, args, peer):
         now = absTime.seconds
         before = root.fetch('frame', {})
         active = frame.get('running', 0) == 1
-        # Baseline, pause, seek and coin changes never create a queued burst.
-        if (active and before.get('running') == 1 and
-                before.get('seed') == frame.get('seed') and
-                before.get('replay') == frame.get('replay') and
-                before.get('sequence') != frame.get('sequence') and
-                now-root.fetch('burst', -1000) >= .36):
-            root.store('burst', now)
-        if not active or before.get('seed') != frame.get('seed') or before.get('replay') != frame.get('replay'):
-            root.store('burst', -1000)
         root.store('frame', frame)
         root.store('received', now)
         trace = frame.get('trace', [])
@@ -35,8 +26,29 @@ def onReceiveOSC(dat, rowIndex, message, bytes, timeStamp, address, args, peer):
             price, volume = row
             profile.append(((math.log(price)-low)/(high-low) if high>low else .5) if price is not None and price>0 else -1)
             flow.append((math.log1p(volume)/math.log1p(peak) if peak>0 else 0) if volume is not None and volume>=0 else -1)
-        root.store('profile', profile)
-        root.store('flow', flow)
+        # Keep one composition per coin and retain its last image on pause or
+        # stale data. Public observations below remain exact; only the visual
+        # values use a 420 ms response to avoid abrupt density/position changes.
+        visual = root.fetch('visual', {})
+        if active:
+            same_coin = visual and visual.get('seed') == frame.get('seed')
+            elapsed = min(.25, max(0, now-root.fetch('visual_updated', now)))
+            if before.get('running') != 1:
+                elapsed = min(elapsed, .08)
+            alpha = 1-math.exp(-elapsed/.42) if same_coin else 1
+            target = dict(frame)
+            for key in ['intensity', 'volume', 'motion', 'balance', 'pressure',
+                        'turnover', 'volumeRatio', 'price', 'marketCap',
+                        'liquidity', 'tradeRate']:
+                old, value = visual.get(key), frame.get(key)
+                if isinstance(old, (int, float)) and isinstance(value, (int, float)):
+                    target[key] = old+(value-old)*alpha
+            for key, values in [('profile', profile), ('flow', flow)]:
+                previous = visual.get(key, [-1]*8)
+                target[key] = [old+(value-old)*alpha if old>=0 and value>=0 else value
+                               for old, value in zip(previous, values)]
+            root.store('visual', target)
+            root.store('visual_updated', now)
         table = root.op('observations')
         table.clear()
         table.appendRow(['measurement', 'value'])

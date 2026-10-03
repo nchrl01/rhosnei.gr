@@ -5,10 +5,9 @@ base = op('/project1/upic_data_score')
 if base is None:
     base = op('/project1').create(baseCOMP, 'upic_data_score')
 base.store('frame', {})
-base.store('burst', -1000)
+base.store('visual', {})
+base.store('visual_updated', -1000)
 base.store('received', -1000)
-base.store('profile', [-1]*8)
-base.store('flow', [-1]*8)
 def node(kind, name):
     return base.op(name) or base.create(kind, name)
 shader = node(textDAT, 'fragment')
@@ -32,13 +31,13 @@ g.par.resolutionw = 1024
 g.par.resolutionh = 576
 g.seq.vec.numBlocks = 8
 vectors = {
- 'uControl': ["parent().fetch('frame', {}).get('running', 0)", "absTime.seconds-parent().fetch('burst', -1000)", "parent().fetch('frame', {}).get('intensity', 0)", "float(parent().fetch('frame', {}).get('word', 0) % 65521)"],
- 'uMarket': ["parent().fetch('frame', {}).get('%s', 0)" % key for key in ['volume','motion','balance','pressure']],
- 'uContext': ["parent().fetch('frame', {}).get('%s', 0) or 0" % key for key in ['turnover','volumeRatio','voice']] + ["absTime.seconds-parent().fetch('received', -1000)"],
- 'uMeasured': ["parent().fetch('frame', {}).get('%s', 0) or 0" % key for key in ['price','marketCap','liquidity','tradeRate']],
+ 'uControl': ["int(bool(parent().fetch('visual', {})))", "0", "parent().fetch('visual', {}).get('intensity', 0)", "float(parent().fetch('visual', {}).get('seed', 0) % 65521)"],
+ 'uMarket': ["parent().fetch('visual', {}).get('%s', 0)" % key for key in ['volume','motion','balance','pressure']],
+ 'uContext': ["parent().fetch('visual', {}).get('%s', 0) or 0" % key for key in ['turnover','volumeRatio','voice']] + ["absTime.seconds-parent().fetch('received', -1000)"],
+ 'uMeasured': ["parent().fetch('visual', {}).get('%s', 0) or 0" % key for key in ['price','marketCap','liquidity','tradeRate']],
 }
 for name, key, offset in [('uHistoryA','profile',0),('uHistoryB','profile',4),('uFlowA','flow',0),('uFlowB','flow',4)]:
-    vectors[name] = ["parent().fetch('%s', [-1]*8)[%d]" % (key, offset+i) for i in range(4)]
+    vectors[name] = ["parent().fetch('visual', {}).get('%s', [-1]*8)[%d]" % (key, offset+i) for i in range(4)]
 for i, (name, expressions) in enumerate(vectors.items()):
     getattr(g.par, 'vec%dname' % i).val = name
     for suffix, expression in zip('xyzw', expressions):
@@ -48,7 +47,7 @@ out.inputConnectors[0].connect(g)
 out.viewer = True
 info = node(infoDAT, 'shader_status'); info.par.op = g.name
 readme = node(textDAT, 'READ_ME')
-readme.text = 'UPIC / local market data score\nStart npm start in the UPIC folder, then visit http://127.0.0.1:4173/?touchdesigner=1 and press Listen.\nOSC /upic/frame on UDP7000. White output means no current observation.\nThe five finite Pd data voices run in the web instrument. This component renders the matching market measurements.\nPause, seek, idle and missing packets clear the output. 180ms marks; at least360ms between bursts.\nObservations contains actual values; unavailable data is labelled. No watcher estimates.\n'
+readme.text = 'UPIC / local market data score\nStart npm start in the UPIC folder, then visit http://127.0.0.1:4173/?touchdesigner=1 and press Listen.\nOSC /upic/frame on UDP7000. White output means no observation has arrived yet.\nThe five finite Pd data voices run in the web instrument. This component renders the matching market measurements.\nA stable composition is chosen per coin. Visual measurements respond over 420 ms; observations remain exact in the table.\nPause, seek, idle and missing packets retain the last image; there are no timed flashes or blank gaps.\nObservations contains actual values; unavailable data is labelled. No watcher estimates.\n'
 for i, op_ in enumerate([receiver,callbacks,observations,history,shader,g,out,info,readme]):
     op_.nodeX = (i % 3)*240
     op_.nodeY = -(i // 3)*160
