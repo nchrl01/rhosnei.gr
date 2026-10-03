@@ -26,7 +26,7 @@ export class MarketChart{
    const data=param.seriesData.get(series),bar=typeof param.time==='number'?this.buckets.get(param.time*1000):null;
    if(!data||!bar){target.textContent='Drag to pan · scroll or pinch to zoom · hover to inspect';return;}
    const price=n=>'$'+Number(n).toLocaleString('en',{maximumSignificantDigits:7});
-   target.textContent=new Date(bar.time).toLocaleString()+' · O '+price(bar.open)+'  H '+price(bar.high)+'  L '+price(bar.low)+'  C '+price(bar.close)+(bar.volume!=null?' · USD volume '+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
+   target.textContent=new Date(bar.time).toLocaleString()+' · O '+price(bar.open)+'  H '+price(bar.high)+'  L '+price(bar.low)+'  C '+price(bar.close)+(bar.volume!=null?(bar.volumeEstimated?' · Estimated quote volume ':' · USD volume ')+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
   });
   const interaction=()=>{this.manual=true;this.needsFit=false;};
   document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';

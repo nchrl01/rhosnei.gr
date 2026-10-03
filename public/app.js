@@ -1,5 +1,6 @@
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=87';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=65';
+import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=87';
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
@@ -7,7 +8,7 @@ import {createEnvion} from './envion.js?v=80';
 import {createEngineView} from './engine-view.js?v=65';
 import {createCoinDither} from './coin-dither.js?v=79';
 import {createUpicBrand} from './upic-brand.js?v=79';
-import {createTransportIndicator} from './transport-indicator.js?v=61';
+import {createTransportIndicator} from './transport-indicator.js?v=87';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
 import {createAudioDots} from './audio-dots.js?v=86';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
@@ -29,8 +30,8 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=1';
 import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=82';
-import {MarketChart} from './chart.js?v=80';
-import {loadHistory} from './history.js?v=39';
+import {MarketChart} from './chart.js?v=87';
+import {loadHistory} from './history.js?v=87';
 import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -67,6 +68,7 @@ chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
 const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
 async function loadCoinImage(pair){
+ if(isExchangeMarket(pair))return;
  const key=imageKey(pair);if(imageToken===key)return;imageToken=key;imageController?.abort();
  if(tokenImages.has(key)||pair.historyTokenSide!=='quote'&&pair.info?.imageUrl)return;
  const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
@@ -96,7 +98,7 @@ let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 const engineView=createEngineView($('engine-view'),{onBundle:(name,enabled)=>{if(name==='data'){dataSonification.setEnabled(enabled);}else if(name==='math'){mathPatterns.setEnabled(enabled);}else if(name==='piano'){pianoEnabled=enabled;piano?.setEnabled(enabled);}else if(name==='voice'){coinVoice.setEnabled(enabled);}else conductor.setBundle(name,enabled);if(market)syncLevels(metrics());}});
 const envion=createEnvion($('envion'),{onTransport:command=>{if((command==='start'&&!playing)||(command==='stop'&&playing))$('play').click();}});
 function resetEnsemble({preserveVisual=false}={}){touchDesigner.reset();if(!preserveVisual)dataVisual.reset();coinVoice.reset();dataSonification.reset(seed);replayPianoPrimed=false;replayPhrase=null;conductor.reset();mathPatterns.reset();piano?.reset(seed);pianoReplayCursor=replay.state.active?replay.state.cursor:null;for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
-function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),pianoChordCount,resonance:marketResonance(m.context?.latestCap),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:market?streamKind:'loading',liquidity:m.replay?m.observation?.liquidity:market?.liquidity?.usd});}
+function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),pianoChordCount,resonance:marketResonance(m.context?.latestCap),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:market?streamKind:'loading',liquidity:m.observation?.liquidity});}
 function bindSignalMap(){pd.subscribe?.('data-onset',message=>{dataVisual.pulse(Number(message.values?.[0]),ctx?.currentTime??0);touchDesigner.pulse(Number(message.values?.[0]));engineView.receive('data-onset',Number(message.values?.[0])||0);});for(const name of ['generation','av-envion-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);engineView.receive(name,value);});for(let slot=0;slot<MATH_SLOT_COUNT;slot++)pd.subscribe?.(`math-${slot}-meter`,message=>mathView.receive(slot,Number(message.values[0])));}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
@@ -118,7 +120,7 @@ function flushPianoTrade(){
  // Do not replay a stale backlog or turn snapshots into invented trades.
  if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000)piano?.trade(trade,liveMetrics().context?.latestCap,trade.music);
 }
-function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
+function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
 function marketRoot(m){
  const historical=m?.replay;
  const current=historical?historical.price:currentPrice();
@@ -132,17 +134,19 @@ function liveMetrics(){
  const tx=market.txns?.m5||{};const total=(tx.buys||0)+(tx.sells||0);
  tradeEvents=tradeEvents.filter(e=>Date.now()-e.receivedAt<30000);
  poolEvents=poolEvents.filter(e=>Date.now()-e.receivedAt<10000);
- const decoded=streamConnected&&['swap','trade-poll','rpc-poll'].includes(streamKind);
+ const decoded=streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind);
  const first=tradeEvents[0],last=tradeEvents.at(-1),movement=first&&last?Math.abs((last.priceQuote/first.priceQuote-1)*100):0;
- const buys=tradeEvents.filter(e=>e.side==='buy').length;
+ const buys=tradeEvents.filter(e=>e.side==='buy').length,knownSides=tradeEvents.filter(e=>['buy','sell'].includes(e.side)).length;
+ const book=isExchangeMarket(market)&&Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook:null;
+ const liquidity=isExchangeMarket(market)?book?.depth:market.liquidity?.usd;
  const observedVolume=tradeEvents.reduce((sum,e)=>sum+(e.usdVolume||0),0);
  const rate=decoded?tradeEvents.length/30:streamConnected&&streamKind==='pool'?poolEvents.length/10:total/300;
  const volumeRate=decoded?observedVolume/30:(Number(market.volume?.m5)||0)/300;
- const raw={tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:decoded?(tradeEvents.length?buys/tradeEvents.length:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,market.liquidity?.usd||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
- return {...contextualizeMarket(raw,{price:currentPrice(),marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(market.liquidity?.usd),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:decoded?tradeEvents.length>0:total>0,liquidity:market.liquidity?.usd!=null&&Number.isFinite(Number(market.liquidity.usd)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
+ const raw={tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:book?.balance!=null?book.balance:decoded?(knownSides?buys/knownSides:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,liquidity||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
+ return {...contextualizeMarket(raw,{price:currentPrice(),marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(liquidity),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:book?.balance!=null||(decoded?knownSides>0:total>0),liquidity:liquidity!=null&&Number.isFinite(Number(liquidity)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
 }
 function metrics(){
- const live=liveMetrics();live.observation={liquidity:market?.liquidity?.usd,trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
+ const live=liveMetrics();live.observation={liquidity:isExchangeMarket(market)?(Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null):market?.liquidity?.usd,trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
  if(market)replay.record(live,currentPrice());
  const ended=replay.advance(chart.renderedBars||[],chart.interval,playing&&ctx?.state==='running');
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
@@ -158,6 +162,7 @@ function updateReplayUI(m){
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
  $('replay-info').textContent=!active?'Piano plays a single note at ≥'+PIANO_MOVE_PCT+'% movement since its last note, or after 30 seconds without an observed trade.':'Selective candle score: ≥'+PIANO_MOVE_PCT+'% movement selects single piano notes. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
+ if(isExchangeMarket(market))$('replay-info').textContent+=' Exchange history volume is estimated from base volume × close. Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
 }
@@ -178,8 +183,8 @@ function syncLevels(m){
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
  $('volume').textContent=m.replay?cash(m.replay.volume):market?cash(m.decoded?m.observedVolume:market.volume?.m5):'—';
  $('volume-window').textContent=m.replay?'REPLAY USD VOLUME':m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
- $('signal-source').textContent=m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Loading the highest-ranked trending market';
- if(market&&m.snapshotAge>20000)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity held at last value'+(m.decoded&&['swap','rpc-poll'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
+ $('signal-source').textContent=isExchangeMarket(market)?'Public exchange trades / observed 30 sec; depth is top 25 book levels within 1% of midpoint, not pool liquidity. Market cap is unavailable.'+(market.dexId==='coinbaseexchange'?' Coinbase depth uses public 5-second snapshots.':'')+(market.quoteApproximate?' '+market.quoteToken.symbol+' is used as a USD proxy.':''):m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll','exchange'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Loading the highest-ranked trending market';
+ if(market&&m.snapshotAge>20000)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity held at last value'+(m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
  const c=m.context;
  $('market-pressure').textContent=Math.round(m.pressure*100)+'%';
  $('market-baseline').textContent=c.ratio?c.ratio.toFixed(2)+'× typical loaded price':'History context pending';
@@ -194,9 +199,9 @@ function setupStream(){
  stopStream?.();streamPool=key;streamConnected=false;poolEvents=[];
  const gen=generation;
  let stopNative,stopFallback,nativeState={connected:false,kind:'snapshot',message:''},fallbackState={connected:false,kind:'snapshot',message:''};
- const signatures={rpc:new Set(),gecko:new Set()},tradeIds=new Set();
+ const signatures={rpc:new Set(),gecko:new Set(),ccxt:new Set()},tradeIds=new Set();
  const publish=()=>{
-  const chosen=nativeState.connected&&['swap','rpc-poll'].includes(nativeState.kind)?nativeState:fallbackState.connected&&fallbackState.kind==='trade-poll'?fallbackState:nativeState.connected&&nativeState.kind==='pool'?nativeState:fallbackState.message?fallbackState:nativeState;
+  const chosen=nativeState.connected&&['swap','rpc-poll','exchange'].includes(nativeState.kind)?nativeState:fallbackState.connected&&fallbackState.kind==='trade-poll'?fallbackState:nativeState.connected&&nativeState.kind==='pool'?nativeState:fallbackState.message?fallbackState:nativeState;
   streamConnected=chosen.connected;streamKind=chosen.kind;$('feed').textContent=chosen.message+(chosen!==nativeState&&nativeState.message?' · direct route: '+nativeState.message:'');display();
  };
  const startFallback=()=>{if(stopFallback)return;stopFallback=pollPoolTrades(market,receive,s=>{if(gen!==generation)return;fallbackState=s;publish();});};
@@ -224,19 +229,21 @@ function setupStream(){
     else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=e;
    }
    if(e.priceUsd)chart.add({at:Number.isFinite(e.occurredAt)?e.occurredAt:e.receivedAt,price:e.priceUsd,volume:e.usdVolume,id:e.id,source:'swap'});
-   $('chart-source').textContent=source==='rpc'?(e.protocol==='orca'?'Orca post-swap spot prices · confirmed WebSocket events · USD uses snapshot SOL/quote conversion':e.protocol==='v4'?'Direct Uniswap v4 post-swap prices · RPC polling ≥2s · USD quote conversion uses snapshots':'Streamed swap execution prices · USD estimated using latest quote conversion'):'Observed trade prices · GeckoTerminal / ≥8s polling · upstream cached · provider USD values';
-   $('last-event').textContent=e.side.toUpperCase()+' · block '+e.block;display();
+   $('chart-source').textContent=source==='ccxt'?market.exchangeName+' · public WebSocket trades · '+(market.quoteApproximate?market.quoteToken.symbol+' prices used as a USD proxy':'USD trade prices')+' · history volume estimated from base volume':source==='rpc'?(e.protocol==='orca'?'Orca post-swap spot prices · confirmed WebSocket events · USD uses snapshot SOL/quote conversion':e.protocol==='v4'?'Direct Uniswap v4 post-swap prices · RPC polling ≥2s · USD quote conversion uses snapshots':'Streamed swap execution prices · USD estimated using latest quote conversion'):'Observed trade prices · GeckoTerminal / ≥8s polling · upstream cached · provider USD values';
+   $('last-event').textContent=e.side.toUpperCase()+(source==='ccxt'?' · '+market.exchangeName:' · block '+e.block);display();
   }else{poolEvents.push(e);if(!replay.state.active){dataVisual.event(e);touchDesigner.event(e);}if(streamKind==='pool')$('last-event').textContent='Pool event · slot '+e.slot;}
   session?.events?.push(e);
   if(playing&&performance.now()-lastExcitation>=40){lastExcitation=performance.now();tick();}
  };
- if(market.chainId==='solana'){
+ if(isExchangeMarket(market)){
+  stopNative=subscribeExchangeMarket(market,receive,s=>{if(gen!==generation)return;nativeState=s;publish();},book=>{if(gen!==generation)return;market.exchangeBook=book;display();});
+ }else if(market.chainId==='solana'){
   if(market.dexId==='orca'){
    stopNative=subscribeOrca(market,receive,s=>{if(gen!==generation)return;nativeState=s;if(s.connected&&s.kind==='swap'){stopFallback?.();stopFallback=null;fallbackState={connected:false,kind:'snapshot',message:''};}else startFallback();publish();});
   }else{stopNative=subscribePool(market.pairAddress,receive,message=>{if(gen!==generation)return;nativeState={connected:message.startsWith('Connected'),kind:message.startsWith('Connected')?'pool':'snapshot',message};publish();});startFallback();}
  }else{
   const subscribe=market.chainId==='robinhood'&&/^0x[0-9a-f]{64}$/i.test(market.pairAddress)?subscribeRobinhoodV4:subscribeEvm;
-  stopNative=subscribe(market,receive,s=>{if(gen!==generation)return;nativeState=s;if(s.connected&&['swap','rpc-poll'].includes(s.kind)){stopFallback?.();stopFallback=null;fallbackState={connected:false,kind:'snapshot',message:''};}else startFallback();publish();});
+  stopNative=subscribe(market,receive,s=>{if(gen!==generation)return;nativeState=s;if(s.connected&&['swap','rpc-poll','exchange'].includes(s.kind)){stopFallback?.();stopFallback=null;fallbackState={connected:false,kind:'snapshot',message:''};}else startFallback();publish();});
  }
  stopStream=()=>{stopNative?.();stopFallback?.();};
 }
@@ -273,7 +280,7 @@ function tick(){
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
  if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
  const historical=replay.state.active,bar=replay.state.bar;
- piano?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:m.decoded&&['swap','rpc-poll'].includes(streamKind)&&m.fresh>0,quiet:historical?bar?.volume===0:true});
+ piano?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)&&m.fresh>0,quiet:historical?bar?.volume===0:true});
  send('tempo',bpm);send('activity',music.activity);send('motion',music.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
 }
@@ -319,9 +326,9 @@ async function initialize(){
   audioErrors.pd='';audioErrors.envion='';
   pdLoading=(async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{
-    const response=await fetch('patches/orchestra/manifest.json?v=85');if(!response.ok)throw Error('Cannot load orchestra manifest');
+    const response=await fetch('patches/orchestra/manifest.json?v=87');if(!response.ok)throw Error('Cannot load orchestra manifest');
     const manifest=await response.json();
-    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=85');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=87');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
     return {manifest,files};
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');
@@ -397,17 +404,20 @@ function orientPair(pair,token){
 function display(){
  displayCoinImage();
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
- $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):!market?'LOADING TRENDING MARKET':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
+ $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):!market?'LOADING TRENDING MARKET':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
  $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'Loading trending market';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
- const bar=replay.state.bar,change=historical?(recorded?historical.observation?.change:bar?.open>0?(bar.close/bar.open-1)*100:null):market?.priceChange?.m5;
+ const exchangeMarket=isExchangeMarket(market),firstTrade=tradeEvents[0];
+ const exchangeChange=firstTrade?.priceUsd>0?(currentPrice()/firstTrade.priceUsd-1)*100:null;
+ const bar=replay.state.bar,change=historical?(recorded?historical.observation?.change:bar?.open>0?(bar.close/bar.open-1)*100:null):exchangeMarket?exchangeChange:market?.priceChange?.m5;
  $('change').textContent=change!=null?Number(change).toFixed(2)+'%':'—';
- $('change-window').textContent=historical&&!recorded?'CANDLE CHANGE':'CHANGE · 5 MIN';
+ $('change-window').textContent=historical&&!recorded?'CANDLE CHANGE':exchangeMarket?'CHANGE · OBSERVED 30 SEC':'CHANGE · 5 MIN';
  const tx=historical?recorded?historical.observation?.trades:null:market?.txns?.m5;
- $('trades').textContent=tx?(tx.buys||0)+(tx.sells||0):'—';
- $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':'TRADES · 5 MIN';
- const liquidity=historical?historical.observation?.liquidity:market?.liquidity?.usd;
+ $('trades').textContent=!historical&&exchangeMarket?tradeEvents.length:tx?(tx.buys||0)+(tx.sells||0):'—';
+ $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':exchangeMarket?'TRADES · OBSERVED 30 SEC':'TRADES · 5 MIN';
+ const liquidity=historical?historical.observation?.liquidity:exchangeMarket?(Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null):market?.liquidity?.usd;
+ $('liquidity-label').textContent=exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY';
  $('liquidity').textContent=liquidity!=null?cash(liquidity):'—';
  updateContext();
 }
@@ -460,8 +470,8 @@ function loadChartTimeframe(){
 }
 async function fetchJSON(url){const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),12000);try{const r=await fetch(url,{signal:abort.signal});if(!r.ok)throw Error('Market provider returned '+r.status);return await r.json();}finally{clearTimeout(timeout);}}
 function applySnapshot(pair){
- market=pair;lastSnapshot=Date.now();
- if(!(streamConnected&&['swap','trade-poll','rpc-poll'].includes(streamKind))){chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent='Observed market snapshots · 5-second polling; provider data may be cached';}
+ market=isExchangeMarket(pair)?{...pair,exchangeBook:market?.pairAddress===pair.pairAddress?market.exchangeBook:null}:pair;lastSnapshot=Date.now();
+ if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':'Observed market snapshots · 5-second polling; provider data may be cached';}
  display();$('lookup').textContent='Snapshot '+new Date().toLocaleTimeString()+' · '+pair.baseToken.name+' · '+pair.chainId+' · '+pair.dexId;
  session?.snapshots.push({at:Date.now(),market:pair});
 }
@@ -472,11 +482,15 @@ function chooseMarket(pair,{shared=false}={}){
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;clearTimeout(poll);stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
- resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared?null:pair);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);coinVoice.setCoin(pair.baseToken.name||pair.baseToken.symbol,seed);if(playing)void coinVoice.prepare();applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
- $('last-event').textContent='Waiting for pool events';
+ resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);coinVoice.setCoin(pair.baseToken.name||pair.baseToken.symbol,seed);if(playing)void coinVoice.prepare();applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
+ $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  if(shared)return;
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
+ if(isExchangeMarket(pair)){
+  const refresh=async()=>{try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('lookup').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
+  poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Listen');return;
+ }
  const refresh=async()=>{
   try{const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address));if(gen!==generation)return;
    const raw=(data.pairs||[]).find(p=>p.chainId===chain&&p.pairAddress===address);const updated=raw&&orientPair(raw,token);if(!updated)throw Error('Selected pool snapshot unavailable');applySnapshot(updated);
@@ -491,23 +505,51 @@ $('address').addEventListener('input',()=>{$('coin-search-results').hidden=true;
 $('address').addEventListener('input',syncAddressLabel);
 $('address').addEventListener('change',syncAddressLabel);
 syncAddressLabel();
+let searchRevision=0;
+$('address').addEventListener('input',()=>{searchRevision++;});
+async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}={}){
+ try{
+  if(isExchangeMarket(pair)){status('Loading '+pair.exchangeName+' market…');pair=await prepareExchangeMarket(pair);}
+  if(revision!==searchRevision)return;
+  $('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];
+  $('coin-search-results').hidden=true;chooseMarket(pair);
+  if(autoPlay&&!playing)await $('play').onclick();
+ }catch(error){if(revision===searchRevision)status(error.message);}
+}
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const wantedNetwork=requestedNetwork,autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
- const address=$('address').value.trim();if(address.length<1||address.length>250){status('Enter a coin name, symbol or contract address.');return;}
- loading=true;$('load').disabled=true;status('Looking up indexed markets…');
+ const address=$('address').value.trim();if(address.length<1||address.length>250){status('Enter a coin name, symbol, contract address or exchange pair.');return;}
+ const revision=++searchRevision,tokenAddress=isTokenIdentifier(address),exchangeOnly=isExchangeQuery(address);
+ loading=true;$('load').disabled=true;status(tokenAddress?'Looking up indexed markets…':'Searching on-chain and exchange markets…');
  try{
-  const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address));
-  if($('address').value.trim()!==address)return;
-  const pairs=rankCoinMatches(data.pairs||[],address,{orientPair,network:wantedNetwork});
-  if(!pairs.length)throw Error('No indexed coin matched this name or address.');
-  if(!isTokenIdentifier(address)&&!pairs.some(pair=>sameToken(pair.baseToken.address,address))){showCoinMatches($('coin-search-results'),pairs,pair=>{$('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];chooseMarket(pair);if(autoPlay&&!playing)void $('play').onclick();});status('Choose a coin from the search results');return;}
-  $('coin-search-results').hidden=true;
-  const selection=wantedNetwork?pairs.find(p=>p.chainId===wantedNetwork):pairs[0];if(!selection)throw Error('No DEX Screener market found on the trending coin’s network.');
-  discovered=[selection];chooseMarket(selection);if(autoPlay&&!playing)await $('play').onclick();
- }catch(e){status(e.message);$('lookup').textContent=e.message;}
+  const [dex,cex]=await Promise.allSettled([
+   exchangeOnly?Promise.resolve({pairs:[]}):fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address)),
+   tokenAddress||wantedNetwork?Promise.resolve({pairs:[],errors:[]}):searchExchangeMarkets(address),
+  ]);
+  if(revision!==searchRevision||$('address').value.trim()!==address)return;
+  const dexPairs=rankCoinMatches(dex.status==='fulfilled'?dex.value.pairs||[]:[],address,{orientPair,network:wantedNetwork});
+  const exchangePairs=cex.status==='fulfilled'?cex.value.pairs:[];
+  const pairs=[...exchangePairs,...dexPairs];
+  if(!pairs.length){
+   const errors=[dex.status==='rejected'?dex.reason.message:'',cex.status==='rejected'?cex.reason.message:'',...(cex.status==='fulfilled'?cex.value.errors:[])].filter(Boolean);
+   throw Error(errors.length?'No market returned. '+errors.join(' · '):'No matching market. Try a contract address or a pair such as BTC/USD.');
+  }
+  if(tokenAddress){
+   const selection=wantedNetwork?dexPairs.find(p=>p.chainId===wantedNetwork):dexPairs[0];
+   if(!selection)throw Error('No indexed market found on the selected network.');
+   await selectSearchMarket(selection,{autoPlay,revision});return;
+  }
+  if(exchangeOnly&&pairs.length===1){await selectSearchMarket(pairs[0],{autoPlay,revision});return;}
+  showCoinMatches($('coin-search-results'),pairs,pair=>{
+   const selectedRevision=++searchRevision;
+   void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});
+  });
+  const partial=(dex.status==='rejected'&&!exchangeOnly)||(cex.status==='rejected')||(cex.status==='fulfilled'&&cex.value.errors.length);
+  status('Choose a market'+(partial?' · some providers are unavailable':''));
+ }catch(error){if(revision===searchRevision){status(error.message);$('lookup').textContent=error.message;}}
  finally{loading=false;$('load').disabled=false;}
 };
 function shareSnapshot(){
@@ -516,11 +558,22 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:76,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:76,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollTime=rollingText($('coin-time')),rollCap=rollingText($('coin-cap'));
+let titleMovement={key:null,price:null,at:0,until:0,direction:''};
 function updateCoinReadout(m){
+ const title=$('coin-name'),key=(market?.baseToken?.address||'')+':'+replay.state.active;
+ const price=Number(replay.state.active?m.replay?.price:currentPrice());
+ const position=replay.state.active?replay.state.cursor:Date.now(),now=performance.now();
+ if(key!==titleMovement.key||position<titleMovement.at){titleMovement={key,price:null,at:position,until:0,direction:''};}
+ if(price>0&&Number.isFinite(price)){
+  if(titleMovement.price>0&&price!==titleMovement.price){titleMovement.direction=price>titleMovement.price?'up':'down';titleMovement.until=now+1200;}
+  titleMovement.price=price;
+ }
+ titleMovement.at=position;title.dataset.direction=now<titleMovement.until?titleMovement.direction:'';
+
  const at=replay.state.active?replay.state.cursor:Date.now(),date=new Date(at),cap=m.context?.latestCap;
  rollDate(date.toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'numeric'}),at);
  rollTime(date.toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}),at);
@@ -533,8 +586,8 @@ function updateCoinReadout(m){
 function restoreSharedScore(){
  try{
   const score=decodeScore(location.hash);if(!score)return false;
-  chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.speed=['1','2','10','100'].includes(String(score.speed))?String(score.speed):'1';$('replay-speed').value=replay.state.speed;
+  chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.speed=['1','2','10','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
@@ -587,7 +640,15 @@ $('replay-live').onclick=()=>{
  if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
  status(playing?'Piano ready · waiting for trades':'Live market · press Listen');
 };
-$('replay-speed').onchange=()=>{replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');replay.state.speed=$('replay-speed').value;replay.release();session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});};
+function updateSpeedButtons(){
+ for(const button of $('replay-speed').querySelectorAll('[data-rate]'))button.setAttribute('aria-pressed',String(button.dataset.rate===replay.state.speed));
+}
+$('replay-speed').onclick=event=>{
+ const button=event.target.closest('button[data-rate]');if(!button)return;
+ replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');
+ replay.state.speed=button.dataset.rate;replay.release();updateSpeedButtons();
+ session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});
+};
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
 $('chart-timeframe').onchange=()=>{if(replay.state.active)$('replay-live').onclick();loadChartTimeframe();};

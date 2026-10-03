@@ -1,0 +1,7 @@
+CCXT 4.5.85
+https://github.com/ccxt/ccxt
+Unmodified official browser build from the pinned npm package.
+MIT license; see LICENSE.txt and ccxt.browser.min.js.LICENSE.txt.
+UPIC enables Kraken, Coinbase Exchange and Binance spot public feeds.
+Loaded on demand in a Web Worker. No credentials or order methods are used.
+Reproduce: npm ci --ignore-scripts && node scripts/build-ccxt.mjs

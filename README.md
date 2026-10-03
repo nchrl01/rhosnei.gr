@@ -881,3 +881,55 @@ overlay. Silence clears both marks and black backdrop without moving controls.
 Source review covered the stereo sidechain, gating, replay clock, rendering
 inputs, layout sizing and responsive placement. No automated test suite or
 audio audition was run for this revision.
+
+
+## CCXT public exchange integration (v87)
+
+CCXT 4.5.85 is pinned in package.json/package-lock.json. Its unmodified official
+browser build and MIT/dependency notices are vendored under public/vendor/ccxt.
+Run npm ci --ignore-scripts then npm run build:ccxt to reproduce those assets.
+The build is loaded only when an exchange/name search needs it, in a module
+worker, so the existing contract-address route does not download or initialize
+CCXT. GitHub Pages can serve it directly; no external relay, account, key,
+trading permission or private API call is used. Only Kraken, Coinbase Exchange
+and Binance spot adapters are enabled by this integration.
+
+Search BTC/USD, kraken:BTC/USD, coinbase:ETH/USD or binance:SOL/USDT in the same
+input. Coin/symbol searches combine explicitly labelled exchange choices with
+DEX results; a contract address never silently becomes an exchange symbol.
+Exchange market selection fetches an initial public ticker, then watchTrades
+provides live chart points, piano/trade events, Pd triggers and visual pulses
+through the same receive path. watchOrderBook supplies bounded 1%-midpoint
+book depth/imbalance on Kraken/Binance. Coinbase's CCXT level2 method needs
+authentication, so its depth uses public fetchOrderBook snapshots every five
+seconds instead; the interface labels it separately from pool liquidity.
+Actual timestamp/ID deduplication and a freshness boundary discard subscription
+snapshots and recovery backlogs. Reconnection uses bounded backoff. Stopping or
+changing a market closes that exchange's sockets; rest/search instances remain
+shared for rate limiting. Public ticker refresh is 30 seconds.
+
+History uses fetchOHLCV with up to three 300-row pages, exchange-supported
+intervals and local aggregation when necessary. Kraken's available window
+is retained without pretending pagination can retrieve its earlier candles.
+Quote volume is estimated as base volume times close; metadata and chart text
+identify this. Saved history appears immediately and gets refreshed. All
+providers' availability/region/CORS/rate-limit failures remain visible.
+Missing market cap stays unknown, so cap-dependent phrase thresholds do not
+unlock on exchange-only feeds. USDT/USDC quotes are labelled USD proxies; they
+do not provide an independent dollar exchange rate. Coin images/holders are
+not fetched using synthetic exchange identifiers. Shared scores keep the venue.
+
+Source and JavaScript syntax reviewed. No automated tests, browser control,
+live-feed audition or trading/account operations were run for this revision.
+
+### Inline transport and saw voices (v87)
+
+Replay speeds are inline buttons: Real time, 2×, 10× and 100×. Real time
+retains the elapsed-time clock (one source second per listening second);
+OHLC candles remain discrete observations, not fabricated intra-candle trades.
+Token titles briefly turn green/red on observed price increases/decreases,
+using the replay price during replay. New markets and backward seeks reset
+the comparison. Math voices now use sample-rate-aware PolyBLEP sawtooth
+oscillators, including auxiliary voices, with the existing filter, level
+ramps, watchdog and phrase/cap gates. Function formulas stay unchanged.
+No browser or audio audition was run.

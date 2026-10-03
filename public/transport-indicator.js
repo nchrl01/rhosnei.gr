@@ -39,11 +39,11 @@ export function createTransportIndicator(host) {
     } else if (!running) {
       text = playing ? 'AUDIO PAUSED' : hasPlayed ? 'PAUSED' : 'READY';
       detail = playing ? 'Audio is interrupted. Tap Listen to resume.' : hasPlayed ? 'Playback is paused. Tap Listen to resume the selected market.' : 'Tap Listen to hear the selected market.';
-    } else if (streamConnected && (streamKind === 'swap' || streamKind === 'rpc-poll')) {
+    } else if (streamConnected && (streamKind === 'swap' || streamKind === 'rpc-poll' || streamKind === 'exchange')) {
       text = 'LIVE NOW';
       kind = 'live';
       pulse = true;
-      detail = streamKind === 'rpc-poll' ? 'Listening to directly observed chain activity with a polling delay; price conversion and liquidity use snapshots.' : 'Listening to the connected swap stream; price conversion and liquidity use snapshots.';
+      detail = streamKind === 'exchange' ? 'Receiving public exchange trades over WebSocket.' : streamKind === 'rpc-poll' ? 'Listening to directly observed chain activity with a polling delay; price conversion and liquidity use snapshots.' : 'Listening to the connected swap stream; price conversion and liquidity use snapshots.';
     } else if (streamConnected && streamKind === 'pool') {
       text = 'ACTIVITY NOW';
       kind = 'live';

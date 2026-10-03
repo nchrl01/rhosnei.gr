@@ -1,6 +1,8 @@
+import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=87';
 import {fetchGecko} from './gecko.js?v=39';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
 export function loadHistory(market,onUpdate,options={}){
+ if(isExchangeMarket(market))return loadExchangeHistory(market,onUpdate,options);
  let closed=false,timer,controller;const rows=new Map();
  const created=Number(market.pairCreatedAt)||null,age=created?Date.now()-created:Infinity;
  const timeframe=options.timeframe||(age<86400000?'minute':age<30*86400000?'hour':'day');

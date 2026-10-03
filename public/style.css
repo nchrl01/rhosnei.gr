@@ -239,9 +239,15 @@ body.inspecting .audio-visualizer{display:none}
 #trending-list img{-webkit-user-drag:none}
 
 /* Playback rate lives alongside the transport indicator. */
-.playback-speed{flex:0 0 auto;width:auto;min-width:40px;height:22px;min-height:22px;padding:0 3px;border:0;background:transparent;color:#666;font:inherit;font-size:9px;line-height:1;text-align:center;cursor:pointer}
-.playback-speed:focus-visible{outline:1px solid #111;outline-offset:1px}
-@media(max-width:760px){.playback-speed{height:28px;min-height:28px;font-size:11px}}
+/* Inline speed choices never open a native picker. */
+.playback-speed{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 6px;padding:0;min-width:0}
+.playback-speed button{height:26px;min-height:26px;padding:2px 7px;border:1px solid transparent;background:transparent;color:#555;font:inherit;line-height:1;white-space:nowrap}
+.playback-speed button[aria-pressed="true"]{border-color:#111;color:#111}
+.playback-speed button:focus-visible{outline:2px solid #111;outline-offset:2px}
+#coin-name{transition:color .18s ease}
+#coin-name[data-direction="up"]{color:#16803a}
+#coin-name[data-direction="down"]{color:#c52b36}
+
 
 /* Address, transport and score share straight edges and aligned rows. */
 .address-row{align-items:stretch}

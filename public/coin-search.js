@@ -17,14 +17,14 @@ export function rankCoinMatches(pairs,query,{orientPair,network}={}){
 }
 export function showCoinMatches(container,pairs,onChoose){
  container.replaceChildren();container.hidden=false;
- const title=document.createElement('p');title.textContent='CHOOSE A COIN';container.append(title);
+ const title=document.createElement('p');title.textContent='CHOOSE A MARKET';container.append(title);
  for(const pair of pairs){
   const button=document.createElement('button');button.type='button';button.className='coin-search-result';
   const identity=document.createElement('span'),symbol=document.createElement('strong'),name=document.createElement('span');
   symbol.textContent=pair.baseToken.symbol;name.textContent=pair.baseToken.name||pair.baseToken.symbol;identity.append(symbol,name);
   const detail=document.createElement('small'),cap=pair.marketCap==null||pair.marketCap===''?null:Number(pair.marketCap);
-  detail.textContent=pair.chainId+' · '+(cap!=null&&Number.isFinite(cap)&&cap>=0?'MCAP $'+Math.round(cap).toLocaleString('en'):'MCAP unavailable');
-  const address=document.createElement('small');address.textContent=pair.baseToken.address;address.className='coin-search-address';
+  detail.textContent=pair.source==='ccxt'?pair.exchangeName+' · SPOT · '+pair.exchangeSymbol:pair.chainId+' · '+(cap!=null&&Number.isFinite(cap)&&cap>=0?'MCAP $'+Math.round(cap).toLocaleString('en'):'MCAP unavailable');
+  const address=document.createElement('small');address.textContent=pair.source==='ccxt'?'Public exchange trades · '+(pair.quoteApproximate?pair.quoteToken.symbol+' quote / USD proxy':'USD quote')+' · MCAP unavailable':pair.baseToken.address;address.className='coin-search-address';
   button.append(identity,detail,address);button.onclick=()=>{container.hidden=true;container.replaceChildren();onChoose(pair);};container.append(button);
  }
 }

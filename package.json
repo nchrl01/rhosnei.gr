@@ -1,1 +1,12 @@
-{"name":"av-market-instrument","private":true,"type":"module","scripts":{"start":"node server.mjs"}}
+{
+  "name": "av-market-instrument",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "build:ccxt": "node scripts/build-ccxt.mjs"
+  },
+  "dependencies": {
+    "ccxt": "4.5.85"
+  }
+}

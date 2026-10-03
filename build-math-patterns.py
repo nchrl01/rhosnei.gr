@@ -24,7 +24,7 @@ def control(patch, name, low, high, ms, x, y):
     return signal, ramp
 
 
-p = pd_patch.Patch('Math voice / market envelope -> vanilla Pd synthesis', 1760, 970)
+p = pd_patch.Patch('Math voice / market envelope -> vanilla Pd synthesis', 2300, 970)
 p.text('Creation argument = voice index. The browser supplies the audible envelope and phrase rests.', 25, 40)
 pitch = p.obj(r'r math-\$1-pitch', 25, 90)
 pitch_clip = p.obj('clip 24 84', 25, 125)
@@ -33,34 +33,28 @@ pitch_ramp = p.obj('pack f 25', 25, 195)
 frequency = p.obj('line~', 25, 230)
 p.chain(pitch, pitch_clip, mtof, pitch_ramp, frequency)
 
-# Finite harmonic bank keeps high notes free of a naive saw's aliased edges.
-# Its absolute sum is bounded by one before the drive stage.
-fundamental = p.obj('osc~', 25, 285)
-p.link(frequency, fundamental)
-partials = []
-for harmonic, weight, x in [(2, 0.4, 160), (3, 0.2, 295), (4, 0.1, 430)]:
-    multiply = p.obj(f'*~ {harmonic}', x, 285)
-    oscillator = p.obj('osc~', x, 320)
-    gain = p.obj(f'*~ {weight}', x, 355)
-    p.chain(frequency, multiply, oscillator, gain)
-    partials.append(gain)
-sum_a = p.obj('+~', 160, 405)
-sum_b = p.obj('+~', 295, 440)
-sum_c = p.obj('+~', 430, 475)
-p.link(fundamental, sum_a)
-p.link(partials[0], sum_a, inp=1)
-p.link(sum_a, sum_b)
-p.link(partials[1], sum_b, inp=1)
-p.link(sum_b, sum_c)
-p.link(partials[2], sum_c, inp=1)
-normalize = p.obj('*~ 0.588235', 430, 510)
-p.chain(sum_c, normalize)
+# PolyBLEP saws round each phase discontinuity over one sample on either side.
+# The sample rate is read from Pd; the positive default protects startup division.
+sample_load = p.obj('loadbang', 300, 90)
+sample_rate = p.obj('samplerate~', 300, 125)
+sample_signal = p.obj('sig~ 44100', 300, 160)
+p.chain(sample_load, sample_rate, sample_signal)
 
-shape, _ = control(p, 'shape', 0, 1, 40, 575, 90)
-blend = p.obj('expr~ $v1*(1-$v3)+$v2*$v3', 25, 550)
-p.link(fundamental, blend)
-p.link(normalize, blend, inp=1)
-p.link(shape, blend, inp=2)
+
+def saw(patch, hz, x, y):
+    phase = patch.obj('phasor~', x, y)
+    step = patch.obj('/~', x + 135, y)
+    safe_step = patch.obj('clip~ 0.000001 0.49', x + 135, y + 35)
+    wave = patch.obj(r'expr~ 2*$v1-1-if($v1<$v2 \, 2*($v1/$v2)-pow($v1/$v2 \, 2)-1 \, if($v1>1-$v2 \, pow(($v1-1)/$v2 \, 2)+2*(($v1-1)/$v2)+1 \, 0))', x, y + 75)
+    patch.link(hz, phase)
+    patch.chain(hz, step, safe_step)
+    patch.link(sample_signal, step, inp=1)
+    patch.link(phase, wave)
+    patch.link(safe_step, wave, inp=1)
+    return wave
+
+
+blend = saw(p, frequency, 25, 285)
 drive, _ = control(p, 'drive', 1, 3, 40, 740, 90)
 saturate = p.obj('expr~ tanh($v1*$v2)/(tanh($v2)+0.000001)', 25, 590)
 p.link(blend, saturate)
@@ -128,13 +122,13 @@ aux_mtof = p.obj('mtof', 1280, 160)
 aux_ramp = p.obj('pack f 12', 1280, 195)
 aux_frequency = p.obj('line~', 1280, 230)
 p.chain(aux_pitch, aux_clip, aux_mtof, aux_ramp, aux_frequency)
-aux_a = p.obj('osc~', 1280, 285)
-aux_ratio = p.obj('*~ 1.48', 1410, 285)
-aux_b = p.obj('osc~', 1410, 320)
-aux_sum = p.obj('+~', 1280, 355)
-aux_trim = p.obj('*~ 0.11', 1280, 390)
-p.chain(aux_frequency, aux_a, aux_sum, aux_trim)
-p.chain(aux_frequency, aux_ratio, aux_b)
+aux_a = saw(p, aux_frequency, 1280, 285)
+aux_ratio = p.obj('*~ 1.48', 1410, 240)
+p.link(aux_frequency, aux_ratio)
+aux_b = saw(p, aux_ratio, 1800, 285)
+aux_sum = p.obj('+~', 1280, 390)
+aux_trim = p.obj('*~ 0.11', 1410, 390)
+p.chain(aux_a, aux_sum, aux_trim)
 p.link(aux_b, aux_sum, inp=1)
 aux_gate, aux_gate_ramp = control(p, 'aux-gate', 0, 1, 8, 1520, 90)
 aux_envelope = p.obj('*~', 1280, 435)
