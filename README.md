@@ -370,3 +370,41 @@ Image reveal animates opacity instead of recalculating dithering on every frame.
 
 Source review and syntax checks completed. The reported iPhone crackling and new
 image appearance have not been verified on the physical phone.
+
+## Data score, ambient piano and holder snapshots (v60)
+
+The original canvas signal field replaces the soft audio dot lens. Binary raster
+lanes, complementary bars, scanning, log-spectrum and event/history tape use the
+same contextual metrics as the new vanilla Pd set. Desktop drawing is bounded
+to 24 fps and 1.5 DPR; mobile skips it, and reduced-motion stops scanning.
+References: https://www.ryojiikeda.com/project/datamatics/ and Sound Simulator’s
+https://www.youtube.com/watch?v=CLddxGIlVPU . The original tutorial patch was
+examined as reference; this project ships newly authored market patches.
+
+`public/data-sonification.js` maps raw activity, volume, movement, freshness and
+balance to three short sine/noise voices in `av-data-pulse.pd`. Their probability
+and noise sources are seeded. Envelopes and audio-clock ordering mean the score
+is repeatable, not a promise of byte-identical regeneration. A watchdog closes
+the set after 800 ms without fresh controls. Pause, seek and ended transport
+close it. Enter pdata to inspect or remove the entire data bundle. Rebuild with
+`python3 build-orchestra.py`; orchestra manifest is version 18.
+
+`public/holder-metadata.js` fetches actual GeckoTerminal token-info holder count,
+top-ten supply concentration and provider update time, independently of token
+images. It shares the existing free queue and polls every 120 seconds. Holder
+updates are irregular and chain/token coverage is incomplete. Counts are wallets,
+not current viewers or unique humans. The low sine drone uses count for fullness
+and brightness and concentration for slow stereo beating. Unknown timestamps
+produce zero influence; valid snapshots remain full for 1 hour then fade to off by
+6 hours. This is the app’s freshness policy, not a provider SLA. Current viewers
+remain unavailable; no presence service is installed. Historical candle replay
+never uses current holders as a substitute for historical holders.
+
+Piano now has a fixed, memory-capped 4.8-second diffusion room, softer hammer
+attacks and longer releases. The wet gain is 55–68%, dry 40–32% according to cap.
+The 20%/quiet policy, six-voice limit, lightweight sample pack and listening
+volume are unchanged. Full-image dithering has no edge mask or reveal fade;
+CORS-blocked art has a complete grayscale fallback.
+
+Changed JavaScript was syntax checked and routing/source reviewed. No browser,
+listening or physical-iPhone runtime checks were run for this update.
