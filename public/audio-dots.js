@@ -1,3 +1,4 @@
+import {createMarketBackground} from './market-background.js?v=81';
 // Original market score: precise raster, binary registers and price topography.
 // Retain the last observation and blend updates. Geometry never feeds audio.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -22,6 +23,7 @@ const TRANSITION_MS=420;
 export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={}){
  let c=canvas?.getContext('2d',{alpha:true});if(!c)return {frame(){},event(){},pulse(){},reset(){},close(){}};
  const reduced=matchMedia('(prefers-reduced-motion: reduce)'),mobile=matchMedia('(max-width:760px)');
+ const background=createMarketBackground();
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('market visual home');
  if(host)host.after(anchor);
  const ink=()=>mobile.matches?'#fff':'#111';
@@ -53,6 +55,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const drive=unit(.22+model.drive*.45+(field?.strength||0)*.33),margin=w<450?12:20;
   const fieldY=0,fieldH=h,fieldW=w-margin*2;
   c.textBaseline='alphabetic';c.textAlign='left';
+  const screenSettings=getState();
+  background.paint(c,w,h,model,{seed,position:options.position??model.change??0,dither:screenSettings.dither!==false,nds:screenSettings.nds!==false,invert:mobile.matches});
   c.save();c.beginPath();c.rect(margin,fieldY,fieldW,fieldH);c.clip();
   score(margin,fieldY+1,fieldW-1,fieldH-2,drive);
   // The latest Pd voice becomes a small retained mark, not a blinking accent.
@@ -236,6 +240,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  mobile.addEventListener('change',layout);layout();
  animation=requestAnimationFrame(draw);
  return {
+  refresh(){if(displayModel&&baseScene){baseScene=renderField(displayModel);nextScene=null;blendScene=null;dirty=true;}},
   frame(next={},settings={}){
    metrics=next;options=settings;model=fieldState(next);dirty=true;
    const nextSeed=settings.seed==null?seed:Number(settings.seed)>>>0,replay=Boolean(next.replay);

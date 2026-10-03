@@ -295,3 +295,10 @@ body.inspecting .audio-visualizer{display:none}
 #math-functions .math-pattern-plot{margin-top:12px}
 @media(min-width:761px) and (max-width:1049px){#math-functions .math-pattern-cards{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:760px){#math-functions .math-pattern-toggle{height:44px;min-height:44px}}
+
+/* Stationary LCD pixel mask: no blinking and no interference with controls. */
+body.nds-screen::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1100;background:repeating-linear-gradient(0deg,transparent 0 2px,#000 2px 3px),repeating-linear-gradient(90deg,transparent 0 2px,#000 2px 3px);opacity:.035;mix-blend-mode:multiply}
+body.nds-screen canvas{image-rendering:pixelated}
+.display-options{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #ddd;flex-wrap:wrap}
+.display-options button{height:32px;min-height:32px;font-size:12px;padding:0 8px}
+.display-options button[aria-pressed=true]{background:#111;color:#fff}

@@ -717,3 +717,24 @@ Isolated headless geometry checks at 800, 1440 and 390 pixels passed for
 input/button alignment, desktop visual alignment, font loading and absence
 of horizontal overflow. Fixture renders were inspected; JavaScript syntax
 checks passed. These checks did not control desktop applications.
+
+
+## Market distortion and NDS screen treatment (v81)
+
+Two original market-generated layers use the horizontal, interlaced and
+vertical wave-distortion methods documented by Earthbound-Battle-Backgrounds-JS.
+Movement, volume, activity and contextual pressure set amplitude, spacing,
+frequency and compression; the coin seed selects the distortion family.
+Replay position and market movement determine phase. No game ROM images are
+bundled. The reference project is attributed in Credits with its MIT license.
+
+The fixed 256×192 pattern surface supports monochrome Bayer dithering or
+continuous grayscale. A stationary LCD pixel mask gives the website an
+NDS-inspired screen treatment. The Volume panel has separate Dither and NDS
+buttons. Pattern updates follow observed data through the existing blend;
+quiet markets, pause, reduced motion and deterministic replay are preserved.
+
+Offline checks passed for data response, deterministic pixels, all three
+distortion families and dither/grayscale output. Existing headless visual
+checks passed for persistent output, pause, quiet, mobile transparency,
+replay repeatability and reduced motion, with no page errors.
