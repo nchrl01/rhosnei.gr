@@ -222,3 +222,8 @@ body.inspecting .audio-visualizer{display:none}
 .transport-readout #replay-state,.replay-actions{flex:0 0 auto}
 @media(max-width:760px){.upic-brand{padding-left:4px;gap:2px}.upic-brand .brand-name{font-size:10px}.trending-heading{padding-inline:8px}}
 @media(max-width:380px){.upic-brand .brand-name,.transport-readout #replay-state{display:none}}
+
+/* Manual ticker navigation preserves vertical page gestures. */
+#trending-list{touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none}
+#trending-list.is-dragging,#trending-list.is-dragging .trending-pick{cursor:grabbing}
+#trending-list img{-webkit-user-drag:none}
