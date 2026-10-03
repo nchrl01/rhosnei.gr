@@ -1,3 +1,4 @@
+import {createMarketAnnouncement} from './market-announcement.js?v=97';
 import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=89';
 import {createPixelBlastField} from './pixel-blast-field.js?v=96';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -26,6 +27,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
  const blast=host?createPixelBlastField(host):null;
+ const announcement=host?createMarketAnnouncement(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
  const surface=document.createElement('canvas'),paint=surface.getContext('2d');
  const buffers=new WeakMap();
@@ -34,7 +36,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
- let formation=0,birth=0;
+ let formation=0,birth=0,layoutKey=null;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -42,7 +44,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  function hide(){
   audible=false;level=0;previousLevel=0;lastSound=-Infinity;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.clear();
+  blast?.clear();announcement?.clear();
   if(host){host.dataset.audible='false';host.dataset.visible='false';}
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
@@ -51,17 +53,19 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
-  blast?.reset(seed);
+  blast?.reset(seed);announcement?.clear();
  }
  function fitHeight(){
-  if(!host||mobile.matches)return;
-  // Measure the normal grid row, not the sticky panel's viewport position.
-  // Its inset and canvas size must stay constant when the document scrolls.
-  const form=document.getElementById('coin-form');if(!form)return;
-  const formMargin=parseFloat(getComputedStyle(form).marginTop)||0;
-  const visualMargin=parseFloat(getComputedStyle(host).marginTop)||0;
-  const top=Math.max(0,Math.round(form.getBoundingClientRect().top+window.scrollY-formMargin+visualMargin));
-  const value=top+'px';if(host.style.getPropertyValue('--visual-top')!==value)host.style.setProperty('--visual-top',value);
+  if(!host)return;
+  // Freeze height across browser toolbar changes. Width/orientation changes
+  // rebuild the layout; desktop window resizing also updates its height.
+  const touch=mobile.matches||matchMedia('(pointer:coarse)').matches;
+  const key=[innerWidth,mobile.matches,screen.orientation?.angle??0,touch?0:innerHeight].join(':');
+  if(key===layoutKey)return;layoutKey=key;
+  const form=document.getElementById('coin-form');
+  const top=mobile.matches?0:Math.max(0,Math.round((form?.getBoundingClientRect().top??0)+scrollY-(parseFloat(getComputedStyle(form||host).marginTop)||0)+(parseFloat(getComputedStyle(host).marginTop)||0)));
+  host.style.setProperty('--visual-top',top+'px');
+  host.style.setProperty('--visual-height',Math.max(180,Math.round(mobile.matches?innerHeight*.56:innerHeight-top))+'px');
  }
  function size(){
   fitHeight();
@@ -118,7 +122,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(now-lastPaint<(audible?(mobile.matches?1000/24:1000/30):1000/15))return;
   const dt=lastPaint?Math.min(.1,(now-lastPaint)/1000):1/30;lastPaint=now;
   const active=running()&&hasMarket;
-  if(!active){pulseStrength=0;pulseAt=-Infinity;}
+  if(!active){pulseStrength=0;pulseAt=-Infinity;announcement?.clear();}
+  announcement?.render(now,{width,height,reducedMotion:reduced.matches});
   const rms=active?measure():0;
   if(rms>(audible?.0002:.0005))lastSound=now;
   audible=active&&(rms>.0005||now-lastSound<100);
@@ -162,11 +167,13 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    options=settings;latest=fieldState(next);dirty=true;
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
    if(incoming!==null&&incoming!==sourceClock){if(sourceClock!==null&&incoming<sourceClock)blast?.reset(seed);sourceClock=incoming;sourceAt=performance.now();}
-   const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
+   const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),cap:finite(next.context?.latestCap),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running())return;
+   if(old?.cap>0&&current.cap>old.cap){const reached=[100000,500000,1000000,2000000,5000000].filter(n=>old.cap<n&&current.cap>=n).at(-1);if(reached)announcement?.show('MARKET CAP',new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',notation:'compact',maximumFractionDigits:1}).format(reached));}
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
    if(replaying){
+    if(changed&&current.at!==old?.at){const pct=(current.price/old.price-1)*100;if(Math.abs(pct)>=.05)announcement?.show(pct>0?'PRICE UP':'PRICE DOWN',(pct>0?'+':'')+pct.toFixed(2)+'%');}
     if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive,changed||current.volume!==old?.volume?'replay:'+current.price+':'+current.volume:null);
    }else if(!next.decoded&&performance.now()-lastEvent>1000&&old){
     if(changed||(current.volume!=null&&old.volume!=null&&current.volume>old.volume)||(current.trades!=null&&old.trades!=null&&current.trades>old.trades))excite(.35+.65*latest.drive,'market:'+current.price+':'+current.volume+':'+current.trades);
@@ -176,13 +183,14 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(trade.removed||replaying||!['swap','pool-transaction','market-price'].includes(trade.kind))return;
    const id=trade.id||trade.signature;if(id&&seen.has(id))return;
    if(id){seen.add(id);if(seen.size>256)seen.delete(seen.values().next().value);}
+   if(running())announcement?.show(trade.side?.toLowerCase()==='buy'?'BUY':trade.side?.toLowerCase()==='sell'?'SELL':'MARKET UPDATE',Number(trade.usdVolume)>0?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(trade.usdVolume):'');
    lastEvent=performance.now();excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
   },
   pulse(strength=.7){const at=replaying?(sourceClock??clock):performance.now()/1000;excite(unit(strength)||.7,'onset:'+Math.floor(at*latest.tempo/60*4));},
   refresh(){dirty=true;},
   reset(){clear();},
   close(){
-   closed=true;cancelAnimationFrame(frameID);hide();blast?.close();resize.disconnect();visibility?.disconnect();
+   closed=true;cancelAnimationFrame(frameID);hide();blast?.close();announcement?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
    window.removeEventListener('resize',layoutChanged);
    document.removeEventListener('visibilitychange',layoutChanged);

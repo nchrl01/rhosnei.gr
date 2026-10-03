@@ -30,7 +30,7 @@ export function createUIControls(){
   // Completion is acknowledged briefly; errors remain beside the retry action.
   if(status==='done')timers.set(name,setTimeout(()=>{if(states.get(name)===state){states.set(name,null);loaders.get(name)?.update(null);}},1800));
  }
- import('./vendor/ui/upic-ui.js?v=95').then(module=>{
+ import('./vendor/ui/upic-ui.js?v=97').then(module=>{
   components=module;
   try{
    volume=components.mountVolume(dial,input);panel.dataset.volumeUi='true';

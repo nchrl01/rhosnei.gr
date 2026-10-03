@@ -4,7 +4,7 @@ const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 const hash=text=>{let n=2166136261;for(const c of text)n=Math.imul(n^c.charCodeAt(0),16777619);return n>>>0;};
 const value=x=>x==null||x===''?null:Number.isFinite(Number(x))?Number(x):null;
 export function createTouchDesignerBridge(){
- const enabled=['127.0.0.1','localhost'].includes(location.hostname)&&new URLSearchParams(location.search).get('touchdesigner')==='1';
+ const enabled=false; // TouchDesigner view is hidden until explicitly re-enabled.
  let sequence=0,voice=-1,lastSend=-Infinity,inflight=false,pending=null,previous=null,activeBefore=false;
  function event(e){if(enabled&&!e?.removed&&['swap','pool-transaction','pool-state'].includes(e?.kind))sequence++;}
  async function flush(){

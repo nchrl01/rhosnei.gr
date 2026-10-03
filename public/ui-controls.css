@@ -42,3 +42,7 @@
  .component-loader .lattice-loader__run .lattice-loader__cell{animation:none!important;opacity:.55}
  .component-loader .lattice-loader *{transition:none!important}
 }
+
+#volume-dial{width:44px;flex:0 0 44px}
+#volume-dial .comet-dial{--cd-figure:11px!important}
+#volume-panel #master{width:44px}

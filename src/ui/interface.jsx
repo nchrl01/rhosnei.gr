@@ -116,7 +116,7 @@ function VolumeIsland({ host, input }) {
       label="Volume"
       accent="#f5f5f5"
       ink="#fdfdfd"
-      size={64}
+      size={44}
       sweep={320}
       thickness={5}
       speed={25}

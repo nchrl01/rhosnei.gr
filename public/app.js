@@ -1,4 +1,4 @@
-import {createUIControls} from './ui-controls.js?v=95';
+import {createUIControls} from './ui-controls.js?v=97';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=92';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
@@ -11,9 +11,9 @@ import {createCoinDither} from './coin-dither.js?v=90';
 import {createUpicBrand} from './upic-brand.js?v=91';
 import {createTransportIndicator} from './transport-indicator.js?v=87';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=96';
+import {createAudioDots} from './audio-dots.js?v=97';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
-import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=76';
+import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
 import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=65';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=76';
@@ -367,7 +367,8 @@ async function closeAudio(){
 function setPlayState(active){
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
- button.textContent=starting?'Opening…':interrupted?'Resume':active?'Pause':'Listen';
+ button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
+ button.title=starting?'Opening instrument':interrupted?'Resume':active?'Pause':'Listen';
  button.setAttribute('aria-label',starting?'Opening instrument':interrupted?'Resume interrupted audio':active?'Pause audio':'Listen to market');
  button.setAttribute('aria-pressed',String(active&&!interrupted));
  button.setAttribute('aria-busy',String(starting));
@@ -566,7 +567,7 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
   if(revision!==searchRevision)return;
   $('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];
   $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');chooseMarket(pair);
-  searchFeedback(pair.baseToken.symbol+' loaded · '+(pair.exchangeName||pair.chainId));
+  searchFeedback('');
   if(autoPlay&&!playing)await $('play').onclick();
  }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
 }

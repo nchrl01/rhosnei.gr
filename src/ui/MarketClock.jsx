@@ -12,16 +12,13 @@ const counterProps = {
   gap: 0,
   borderRadius: 0,
   horizontalPadding: 0,
-  gradientHeight: 3,
+  gradientHeight: 0,
   gradientFrom: '#000',
   gradientTo: 'transparent',
   textColor: 'inherit',
   containerStyle: { display: 'inline-flex' },
-  // Upstream's top gradient is an inline span; position it inside the mask.
-  topGradientStyle: {
-    position: 'absolute', top: 0, left: 0, width: '100%', height: 3,
-    background: 'linear-gradient(to bottom, #000, transparent)'
-  }
+  topGradientStyle: { display: 'none' },
+  bottomGradientStyle: { display: 'none' }
 };
 
 /** The source clock is owned by the market/replay transport, never by this UI. */
