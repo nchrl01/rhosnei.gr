@@ -41,7 +41,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const holderWeight=audience.state==='expired'?unit(audience.weight):audience.weight==null?1:unit(audience.weight);
   const holderDisplay=holders==null?'UNAVAILABLE':number(holders,0)+' · '+ageLabel(holderAge)+(holderState&&holderState!=='AGE-UNKNOWN'?' · '+holderState:'');
   return [
-   {name:'PRICE / Δ 5M',value:change,display:change==null?'UNAVAILABLE':(change>=0?'+':'')+change.toFixed(3)+'%',level:unit(Math.abs(change||0)/20)},
+   {name:'PRICE / CONTEXT Δ',value:change,display:change==null?'UNAVAILABLE':(change>=0?'+':'')+change.toFixed(3)+'%',level:unit(Math.abs(change||0)/20)},
    {name:'OBSERVED TRADES / S',value:m.decoded?rate:null,display:m.decoded?number(rate,3):m.replay?'OHLC · NO TRADE COUNTS':'SNAPSHOT · NO LIVE COUNT',level:m.decoded?unit(Math.log1p(rate||0)/Math.log(21)):unit(m.activity)},
    {name:m.replay?'CANDLE VOLUME / USD':m.decoded?'OBSERVED VOLUME / USD':'5 MIN SNAPSHOT VOLUME / USD',value:volume,display:number(volume),level:unit(m.volume)},
    {name:'BUY / SELL BALANCE',value:balance,display:balance==null?'UNAVAILABLE':Math.round(balance*100)+' / '+Math.round((1-balance)*100),level:balance==null?0:unit(Math.abs(balance-.5)*2)},
