@@ -1,4 +1,4 @@
-import {createMarketAnnouncement} from './market-announcement.js?v=97';
+import {createMarketAnnouncement} from './market-announcement.js?v=98';
 import {renderBinaryRows,binaryRowParameters} from './binary-row-field.js?v=89';
 import {createPixelBlastField} from './pixel-blast-field.js?v=96';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));

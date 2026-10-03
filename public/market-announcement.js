@@ -2,17 +2,17 @@
 // pretending to be a market event. Two slow pulses; reduced motion is static.
 export function createMarketAnnouncement(host){
  const panel=document.createElement('div');panel.className='market-announcement';panel.hidden=true;panel.setAttribute('aria-hidden','true');
- const canvas=document.createElement('canvas'),title=document.createElement('strong'),detail=document.createElement('span');
- panel.append(canvas,title,detail);host.append(panel);
+ const canvas=document.createElement('canvas');
+ panel.append(canvas);host.append(panel);
  const context=canvas.getContext('2d');let started=-Infinity,lastStart=-Infinity;
  const matrix=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
  function clear(){panel.hidden=true;started=-Infinity;host.dataset.announcement='false';}
  return {
-  show(headline,value=''){
+  show(){
    const now=performance.now();
    if(panel.hidden&&now-lastStart<1800)return;
    if(panel.hidden){started=now;lastStart=now;}
-   title.textContent=String(headline);detail.textContent=String(value);panel.hidden=false;host.dataset.announcement='true';
+   panel.hidden=false;host.dataset.announcement='true';
   },
   render(now,{width,height,reducedMotion=false}){
    if(panel.hidden)return;const age=now-started;if(age>=900){clear();return;}
