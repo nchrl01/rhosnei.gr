@@ -19,14 +19,14 @@ export function createPixelBlastCanvas(host){
  const ctx=canvas.getContext('2d',{alpha:true});let image=null;
  return {
   canvas,
-  render({width,height,time=0,eventTime=0,seed=0,params,formation=1,birth=1,dither=false,ripples=[]}){
+  render({width,height,time=0,eventTime=0,seed=0,params,dither=false,ripples=[]}){
    if(!ctx)return;
    const scale=Math.min(1,320/Math.max(1,width,height));
    const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;image=null;}
    image??=ctx.createImageData(w,h);const pixels=image.data;pixels.fill(0);
    const cell=8*params.pixelSize,offset=(seed%65521)/65521*173.6,cache=new Map();
-   const opacity=params.opacity*birth;
+   const ink=Math.round(255*clamp(params.dotStrength));
    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const fx=x+.5-w/2,fy=h-y-.5-h/2,cx=Math.floor(fx/cell),cy=Math.floor(fy/cell),key=cx+':'+cy;
     let feed=cache.get(key);
@@ -42,17 +42,14 @@ export function createPixelBlastCanvas(host){
      cache.set(key,feed);
     }
     const px=fx/params.pixelSize,py=fy/params.pixelSize;
-    if(formation<=0||hash(Math.floor(px)*12.9898+Math.floor(py)*78.233+offset)+.00001>formation)continue;
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(Math.floor(px)*127.1+Math.floor(py)*311.7)-.5)*params.jitter;
-    const radius=Math.sqrt(Math.max(0,jitter))*.43;
-    const shape=1;
-    const edge=Math.min(x/w,y/h,1-x/w,1-y/h),t=clamp(edge/Math.max(.0001,params.edgeFade));
-    const alpha=Math.round(255*clamp(shape*opacity*t*t*(3-2*t)));
-    const at=(y*w+x)*4;pixels[at]=pixels[at+1]=pixels[at+2]=255;pixels[at+3]=alpha;
+    const dotSize=Math.min(params.pixelSize,Math.max(1,Math.round(params.pixelSize*params.dotScale*jitter)));
+    if(Math.max(Math.abs(fract(px)-.5),Math.abs(fract(py)-.5))*params.pixelSize>dotSize*.5)continue;
+    const at=(y*w+x)*4;pixels[at]=pixels[at+1]=pixels[at+2]=ink;pixels[at+3]=255;
    }
    ctx.putImageData(image,0,0);canvas.hidden=false;
-   Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),ripples:String(params.ripples?ripples.length:0)});
+   Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),dotSize:Math.max(1,params.pixelSize*params.dotScale).toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:'0',ripples:String(params.ripples?ripples.length:0)});
   },
   clear(){ctx?.clearRect(0,0,canvas.width,canvas.height);},
   close(){canvas.remove();}

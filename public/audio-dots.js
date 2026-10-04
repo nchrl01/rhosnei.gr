@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=112';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=112';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=115';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -22,8 +22,8 @@ export function fieldState(m={}){
  return {drive,fresh,trace,values,activity,volume,motion:unit(raw.motion),capital,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
-// Market data shapes the field. Sound develops its density; silence retains
-// a sparse, slowly forming structure. Quiet motion is visual, not a trade signal.
+// Market data shapes the field. Quiet activity leaves smaller, weaker dots;
+// the individual squares change without fading or hiding the whole layer.
 export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={}){
  const c=canvas?.getContext('2d',{alpha:true});
  if(!c)return {frame(){},event(){},pulse(){},piano(){},refresh(){},reset(){},close(){}};
@@ -39,7 +39,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
- let formation=0,birth=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
+ let formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -55,7 +55,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;pianoPulses=[];pianoEnergy=0;seen.clear();sourceClock=null;sourceAt=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
-  if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
+  if(newCoin){clock=0;level=0;previousLevel=0;formation=0;}
   blast?.reset(seed);
  }
  function fitHeight(){
@@ -142,9 +142,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const shapeTarget=presence<.002?0:presence*unit(.6+.4*level);
   formation+=(shapeTarget-formation)*(1-Math.exp(-dt/(shapeTarget>formation?.35:1.2)));
   if(shapeTarget===0&&formation<.002)formation=0;
-  birth=Math.min(1,birth+dt/2);
   // Keep settling after pause/mute even when no market frames are arriving.
-  if(Math.abs(shapeTarget-formation)>.0001||birth<1||Math.abs(target-level)>.0001)dirty=true;
+  if(Math.abs(shapeTarget-formation)>.0001||Math.abs(target-level)>.0001)dirty=true;
   const envelopeRise=unit((level-previousLevel)*9);previousLevel=level;
   const transient=active?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
   if(!smoothed)smoothed={...latest};
@@ -166,7 +165,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   }
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,...visualInputs,birth,mobile:mobile.matches,dither:getState().dither===true});
+  blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,...visualInputs,mobile:mobile.matches,dither:getState().dither===true});
   Object.assign(canvas.dataset,{composition:['ready','canvas'].includes(host?.dataset.pixelBlast)?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
