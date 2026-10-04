@@ -22,7 +22,8 @@ export function interlockingPiano(seed,cap,intensity,harmony){
  const amount=pianoArticulation(cap);
  if(amount<=0||intensity<.04||!harmony?.notes?.length)return [];
  const cycles=4+Math.floor(amount*2),parts=amount>=.7?3:amount>=.3?2:1;
- const motif=[0,1,2,4,5,7],rotation=(seed>>>0)%8,events=[];
+ const motifs=[[0,1,2,4,5,7],[0,2,3,4,6,7],[0,1,3,4,5,6]];
+ const motif=motifs[((seed>>>0)>>>8)%motifs.length],rotation=(seed>>>0)%8,events=[];
  for(let cycle=0;cycle<cycles;cycle++){
   for(let part=0;part<parts;part++){
    const available=part===0?motif.length:Math.min(motif.length,Math.max(0,(cycle-part+1)*2));
