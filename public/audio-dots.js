@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=132';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=131';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=136';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -35,6 +35,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const fullscreen=host?createVisualFullscreen(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
  const buffers=new WeakMap();
+ const waveform=new Float32Array(64);
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0,liquidClock=0,audioEvent=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
  let displayClock=0,displayCursor=null,displayAt=0,displayRunning=false;
@@ -103,6 +104,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  window.addEventListener('resize',layoutChanged);
  document.addEventListener('visibilitychange',layoutChanged);window.addEventListener('pageshow',layoutChanged);arrange();
  function measure(){
+  waveform.fill(0);
   const source=getAudio(),channels=source?.channels||[source];
   let power=0,count=0;
   for(const channel of channels){
@@ -110,6 +112,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    let samples=buffers.get(channel);
    if(!samples||samples.length!==channel.fftSize){samples=new Float32Array(channel.fftSize);buffers.set(channel,samples);}
    channel.getFloatTimeDomainData(samples);
+   for(let i=0;i<samples.length;i++){const bin=Math.min(63,Math.floor(i*64/samples.length)),value=samples[i];if(Number.isFinite(value)&&Math.abs(value)>Math.abs(waveform[bin]))waveform[bin]=value;}
    let sum=0,squares=0;for(const sample of samples){sum+=sample;squares+=sample*sample;}
    const mean=sum/samples.length;
    power+=Math.max(0,squares/samples.length-mean*mean);count++;
@@ -176,7 +179,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
-  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
+  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,waveform,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Integrate speed rather than multiplying a large clock by changing speed:
   // a new observation then changes motion smoothly, without jumping patterns.

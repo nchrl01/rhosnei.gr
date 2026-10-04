@@ -5,6 +5,7 @@ import {createPianoPolicy} from './piano-policy.js?v=61';
 import {earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=126';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
+const sampleAssets=new Map();
 async function loadSampleAsset(path,format){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  try{
@@ -19,10 +20,12 @@ export function preloadPianoSamples(){
  if(!sampleDownload)sampleDownload=(async()=>{
   const manifest=await loadSampleAsset('manifest.json','json');
   const results=await Promise.allSettled(manifest.files.map(async item=>{
-   return {...item,bytes:await loadSampleAsset(item.file,'arrayBuffer')};
+   if(!sampleAssets.has(item.file))sampleAssets.set(item.file,loadSampleAsset(item.file,'arrayBuffer').catch(error=>{sampleAssets.delete(item.file);throw error;}));
+   return {...item,bytes:await sampleAssets.get(item.file)};
   }));
   const samples=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
   if(!samples.length)throw Error('Piano samples unavailable');
+  if(samples.length<manifest.files.length)sampleDownload=null;
   return samples;
  })().catch(error=>{sampleDownload=null;throw error;});
  return sampleDownload;

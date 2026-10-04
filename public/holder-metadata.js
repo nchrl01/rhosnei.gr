@@ -21,6 +21,7 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   const url='https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/tokens/'+encodeURIComponent(address)+'/info';
   async function refresh(){
    if(version!==epoch)return;
+   if(typeof document!=='undefined'&&document.hidden){timer=setTimeout(refresh,30000);return;}
    controller=new AbortController();const abort=controller,timeout=setTimeout(()=>abort.abort(),45000);
    try{
     const response=await fetchGecko(url,{signal:abort.signal,priority:0});

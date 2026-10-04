@@ -75,7 +75,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Size variation',pretty(v.pixelSizeJitter)+' · movement + attacks'],
    ['Edge taper',pretty(v.edgeFade)+' · liquidity + activity'],
    ['Local populations',pretty(v.ecosystem)+' · distributed across the field'],
-   ['Ripples',v.enableRipples?'Active · market / sound events':'Rest'],
+   ['Audio waveform',v.waveformEnabled?'Active · actual output samples':'Rest'],
    ['Ripple intensity',pretty(v.rippleIntensityScale)+' · surge + notes'],
    ['Ripple speed',pretty(v.rippleSpeed)+' · movement + tempo'],
    ['Ripple width',pretty(v.rippleThickness)+' · flow + sound'],
@@ -89,7 +89,8 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
   table('[data-controls]',controls.size?[...controls].map(([name,value])=>[name,pretty(value)]):[['Engine','No controls sent yet']]);
   table('[data-events]',events.size?[...events].map(([name,value])=>[name,pretty(value)]):[['Engine','No feedback received yet']]);
  }
- const timer=setInterval(()=>paint(),500);preview();
+ let previewStarted=false;
+ const timer=setInterval(()=>{if(document.hidden||container.hidden)return;if(!previewStarted&&!loaded){previewStarted=true;void preview();}paint();},500);
  return {
   update(next){const changed=view.native!==next.native;view=next;if(changed&&manifest){get('[data-source]').textContent=`${next.native?'Published source preview (native)':loaded?'Loaded browser sources':'Published source preview'} · orchestra v${manifest.version} · ${manifest.files.length} files`;draw(selected);}paint();},
   sent(name,value){controls.set(name,value);},

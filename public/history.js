@@ -1,4 +1,4 @@
-import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=92';
+import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=136';
 import {fetchGecko} from './gecko.js?v=39';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
 export function loadHistory(market,onUpdate,options={}){
@@ -19,14 +19,14 @@ export function loadHistory(market,onUpdate,options={}){
  try{
   const cached=JSON.parse(localStorage.getItem(key));
   if(cached&&cached.timeframe===timeframe&&Date.now()-cached.saved<86400000&&Array.isArray(cached.candles)){
-   for(const bar of cached.candles)if(Number.isFinite(bar.time)&&bar.open>0&&bar.close>0)rows.set(bar.time,bar);
+   for(const bar of cached.candles.slice(-20000))if([bar.time,bar.open,bar.high,bar.low,bar.close].every(Number.isFinite)&&bar.open>0&&bar.close>0&&bar.low>0&&bar.high>=Math.max(bar.open,bar.close)&&bar.low<=Math.min(bar.open,bar.close)&&(bar.volume==null||Number.isFinite(bar.volume)&&bar.volume>=0))rows.set(bar.time,bar);
    pendingGap=cached.gap&&Number.isFinite(cached.gap.through)?cached.gap:null;
    cacheGap=!!pendingGap;cachedComplete=cached.complete===true&&!cacheGap;cachedLatest=rows.size?Math.max(...rows.keys()):null;
    report('cached','Saved '+cached.timeframe+' history · refreshing latest candles…');
   }
  }catch{}
  async function page(){
-  if(closed)return;controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=0;const requestedAt=Date.now();
+  if(closed)return;if(options.shouldFetch?.()===false){timer=setTimeout(page,1000);return;}controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=0;const requestedAt=Date.now();
   if(failures)report('loading','Retrying market history…',{retrying:true});
   try{
    const query=new URLSearchParams({aggregate:String(aggregate),limit:'1000',currency:'usd',token:market.baseToken.address,before_timestamp:String(before),include_empty_intervals:'false'});

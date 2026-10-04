@@ -40,7 +40,6 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const ecosystem=mix(.18,.36,unit(.45*liquidity+.35*flow+.2*movement));
  const pixelSizeJitter=.24*unit(.5*movement+.25*flow+.15*notes+.1*attack)*response;
  const rippleIntensityScale=(.35+1.1*eventEnergy+.3*sound)*response;
- const enableRipples=animated&&engagement>.08&&((current>.05&&(movement>.3||unit(surge)>.45))||notes>.2||attack>.2);
  const liquidStrength=.08*unit(.4*movement+.2*flow+.2*sound+.12*notes+.08*attack)*response;
  const noiseAmount=.2*unit(.35*flow+.25*movement+.2*sound+.12*notes+.08*attack)*response;
 
@@ -57,7 +56,7 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
   dotStrength:(mobile?.28:.2)+(mobile?.72:.8)*strength,
   // Retain the former image uniforms' API without forming a central image.
   identity:0,identityMotion:0,ecosystem,
-  enableRipples,ripples:enableRipples,
+  enableRipples:false,ripples:false,waveformEnabled:active&&engagement>.002,
   rippleSpeed:.12+.45*unit(.55*movement+.2*pace*response+.15*notes+.1*attack),
   rippleThickness:.02+.055*unit(.55*flow+.2*sound+.15*notes+.1*attack),
   rippleIntensityScale,rippleIntensity:rippleIntensityScale,

@@ -47,7 +47,7 @@ export function createPixelBlastCanvas(host){
  return {
   canvas,
   setImage(mask){identityMask=mask;},
-  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[]}){
+  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],waveform}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
@@ -105,14 +105,14 @@ export function createPixelBlastCanvas(host){
      const phase=waveU*5.5+bend-waveT*.45;
      const fold=(Math.sin(phase)+.32*Math.sin(phase*2+1.3))*(.6+.4*noise(waveU*.55+3,waveV*.45,waveT*.04));
      feed+=(fold*.14)*(.25+.75*params.dotStrength);
-     if(params.ripples)for(const p of ripples){
-      const age=Math.max(0,eventTime-p.time),r=Math.hypot(u-(((p.x*w-originX)/ratio-cell/2)/cssHeight),v-(((p.y*h-originY)/ratio-cell/2)/cssHeight));
-      const ring=Math.exp(-(((r-params.rippleSpeed*age)/params.rippleThickness)**2))*Math.exp(-age-10*r)*params.rippleIntensity*p.strength;
-      feed=Math.max(feed,ring);
-     }
      sample={feed,warpX,warpY};cache.set(key,sample);
     }
     let feed=sample.feed;
+    if(params.waveformEnabled&&waveform){
+     const x=Math.max(0,Math.min(1,fx/cssWidth+.5))*63,a=Math.floor(x),b=Math.min(63,a+1);
+     const amplitude=Math.max(-1,Math.min(1,(waveform[a]*(1-(x-a))+waveform[b]*(x-a))*2.8));
+     for(let row=0;row<3;row++){const y=(row-1)*.28+amplitude*(.13+.025*row),distance=(fy/cssHeight-y)/Math.max(.005,params.rippleThickness*.35),band=Math.exp(-(distance**2));feed=Math.max(feed,band*(.55+.4*params.dotStrength)*params.rippleIntensity);}
+    }
     let maskInk=0;
     if(identity>0){
      maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,cssWidth,cssHeight,time,offset,params);

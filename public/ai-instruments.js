@@ -4,11 +4,11 @@ export function validArp(pattern){return Array.isArray(pattern)&&pattern.length>
 export function seededArp(seed){const notes=seed%2?[60,67,63,72,67,63,60,67]:[60,64,67,72,67,64,60,67];return notes.map((n,i)=>[i,n]);}
 function backgroundModel(path,onStatus,timeout){
  let worker,id=0,job,timer;
- function stop(){worker?.terminate();worker=null;clearTimeout(timer);const pending=job;job=null;pending?.reject(Error('Model cancelled'));}
+ function stop(reason){worker?.terminate();worker=null;clearTimeout(timer);const pending=job;job=null;pending?.reject(reason||new DOMException('Model cancelled','AbortError'));}
  return {request(payload){
   if(job)return Promise.reject(Error('Model busy'));
-  if(!worker){worker=new Worker(new URL(path,import.meta.url),{type:'module'});worker.onmessage=({data})=>{if(data.status)onStatus(data.status);if(!job||data.id!==job.id)return;const pending=job;job=null;clearTimeout(timer);if(data.error){worker.terminate();worker=null;pending.reject(Error(data.error));}else pending.resolve(data);};worker.onerror=e=>{onStatus('Model unavailable · click Retry');stop();};}
-  return new Promise((resolve,reject)=>{job={id:++id,resolve,reject};worker.postMessage({...payload,id});timer=setTimeout(()=>{onStatus('Model download timed out · click Retry');stop();},timeout);});
+  if(!worker){worker=new Worker(new URL(path,import.meta.url),{type:'module'});worker.onmessage=({data})=>{if(data.status)onStatus(data.status);if(!job||data.id!==job.id)return;const pending=job;job=null;clearTimeout(timer);if(data.error){worker.terminate();worker=null;pending.reject(Error(data.error));}else pending.resolve(data);};worker.onerror=e=>{onStatus('Model unavailable · click Retry');stop(Error('Model unavailable'));};}
+  return new Promise((resolve,reject)=>{job={id:++id,resolve,reject};try{worker.postMessage({...payload,id});}catch(error){stop(error);return;}timer=setTimeout(()=>{onStatus('Model download timed out · click Retry');stop(Error('Model timed out'));},timeout);});
  },stop};
 }
 export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
@@ -20,11 +20,12 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
   setSeed(value,frozen){epoch++;retryAt=0;seed=value>>>0;pattern=validArp(frozen)?frozen:cache.get(seed)||seededArp(seed);source=validArp(frozen)?'frozen':cache.has(seed)?'ai':'seeded';publish();onStatus(source==='seeded'?'Seeded arpeggios · AI loads with Listen':source==='frozen'?'Frozen arpeggio score':'AI arpeggios ready');},
   async prepare(){if(source!=='seeded'||loading||Date.now()<retryAt)return;loading=true;const token=epoch,current=seed;
    try{const result=await runner.request({seed:current});if(!validArp(result.pattern))throw Error('Invalid musical phrase');cache.delete(current);cache.set(current,result.pattern);if(cache.size>64)cache.delete(cache.keys().next().value);try{localStorage.setItem(KEY,JSON.stringify([...cache]));}catch{}if(token===epoch){pattern=result.pattern;source='ai';publish();}}
-   catch{retryAt=Date.now()+60000;if(token===epoch)onStatus('AI unavailable · seeded arpeggios active · Retry');}
+   catch(error){if(error.name!=='AbortError'){retryAt=Date.now()+60000;if(token===epoch)onStatus('AI unavailable · seeded arpeggios active · Retry');}}
    finally{loading=false;}
   },
   retry(){retryAt=0;void this.prepare();},
   snapshot(){return pattern.map(row=>[...row]);},
+  suspend(){runner.stop();},
   close(){runner.stop();loading=false;},
  };
 }
@@ -47,7 +48,7 @@ export function createCoinVoice({onStatus=()=>{}}={}){
   setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=4+seed%5;musicSince=null;onStatus('Coin whisper · loads with Listen');},
   setMaster(value){volume=Math.max(0,Math.min(1,Number(value)||0));update();},
   setEnabled(value){enabled=Boolean(value);update();if(!enabled)hush();else if(running)void this.prepare();},
-  setRunning(value){running=Boolean(value);lastClock=null;musicSince=null;update();if(!running)hush();},
+  setRunning(value){running=Boolean(value);lastClock=null;musicSince=null;update();if(!running){hush();runner.stop();}},
   reset(){hush();elapsed=0;lastClock=null;next=4+seed%5;musicSince=null;},
   async prepare(){if(!ctx||!name||!enabled||loading||buffer||Date.now()<retryAt)return;
    const request={epoch,name,context:ctx};loading=request;
@@ -60,18 +61,17 @@ export function createCoinVoice({onStatus=()=>{}}={}){
     // Loudness-normalize the whisper without turning sharp consonants into peaks.
     const rms=Math.sqrt(power/samples.length),trim=Math.min(6,.28/peak,.045/Math.max(rms,1e-6));
     buffer=ctx.createBuffer(1,samples.length,result.rate);buffer.copyToChannel(Float32Array.from(samples,n=>Number.isFinite(n)?n*trim:0),0);onStatus('Coin whisper ready · waiting for accompanying music');
-   }catch(error){if(request.epoch===epoch){retryAt=Date.now()+60000;onStatus('Coin voice unavailable · '+error.message+' · Retry');}}
+   }catch(error){if(request.epoch===epoch&&error.name!=='AbortError'){retryAt=Date.now()+60000;onStatus('Coin voice unavailable · '+error.message+' · Retry');}}
    finally{if(loading===request){loading=null;if(request.epoch!==epoch&&ctx&&enabled&&running)void this.prepare();}}
   },
   retry(){retryAt=0;void this.prepare();},
   frame(m,{playing=false,seeking=false,ended=false,audible=false}={}){
    if(!ctx)return;const active=running&&enabled&&playing&&!seeking&&!ended&&ctx.state==='running';const clock=ctx.currentTime,dt=lastClock===null?0:Math.max(0,clock-lastClock);lastClock=clock;
    if(!active){musicSince=null;hush();return;}elapsed+=Math.min(dt,1);
-   // Prepare independently of the speech gate, including after switching coins
-   // while the previous name is still being generated.
-   if(!buffer)void this.prepare();
    const raw=m.raw||m;
    const moving=(m.fresh||0)>0&&((raw.activity||0)>.005||(m.tradeRate||0)>0||Math.abs(m.music?.changePct||0)>.3||Number(m.replay?.volume)>0);
+   // Avoid model downloads/inference for a silent or inactive market.
+   if(!buffer&&moving&&audible&&volume>0)void this.prepare();
    // A finite phrase needs actual accompanying music; its own reverb is excluded.
    if(!audible||volume===0){musicSince=null;hush();return;}
    musicSince??=clock;

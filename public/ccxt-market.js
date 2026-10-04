@@ -14,6 +14,7 @@ function runtime(){
   for(const item of pending.values()){clearTimeout(item.timer);item.reject(error);}pending.clear();
   for(const callback of streams.values())callback('status',{connected:false,kind:'exchange',message:error.message});
   worker?.terminate();worker=null;
+  for(const callback of streams.values())callback('worker-error');
  };
  return worker;
 }
@@ -21,7 +22,7 @@ function request(method,...args){
  return new Promise((resolve,reject)=>{
   const target=runtime(),id=++serial;
   const timer=setTimeout(()=>{pending.delete(id);reject(Error('Exchange request timed out. The venue may be unavailable in this browser or region.'));},45000);
-  pending.set(id,{resolve,reject,timer});target.postMessage({id,method,args});
+  pending.set(id,{resolve,reject,timer});try{target.postMessage({id,method,args});}catch(error){clearTimeout(timer);pending.delete(id);reject(error);}
  });
 }
 export const isExchangeMarket=pair=>pair?.source==='ccxt'||pair?.chainId==='exchange';
@@ -29,10 +30,12 @@ export const isExchangeQuery=text=>/^(?:cex:)?(?:kraken|coinbase|coinbaseexchang
 export const searchExchangeMarkets=query=>request('search',query);
 export const prepareExchangeMarket=pair=>request('snapshot',pair.exchangeId||pair.dexId,pair.exchangeSymbol||pair.pairAddress.split(':').slice(1).join(':'));
 export function subscribeExchangeMarket(pair,onTrade,onStatus,onBook){
- const id='market-'+(++serial);let closed=false;
- streams.set(id,(type,value)=>{if(closed)return;if(type==='trades')for(const trade of value)onTrade(trade);else if(type==='status')onStatus(value);else if(type==='book')onBook?.(value);});
- request('subscribe',pair.exchangeId,pair.exchangeSymbol,id).catch(error=>{if(!closed)onStatus({connected:false,kind:'exchange',message:error.message});});
- return()=>{closed=true;streams.delete(id);if(worker)void request('stop',id).catch(()=>{});};
+ const id='market-'+(++serial);let closed=false,retry,failures=0;
+ function reconnect(){if(closed)return;request('subscribe',pair.exchangeId,pair.exchangeSymbol,id).then(()=>{failures=0;}).catch(error=>{if(!closed){onStatus({connected:false,kind:'exchange',message:error.message});schedule();}});}
+ function schedule(){clearTimeout(retry);if(!closed)retry=setTimeout(reconnect,Math.min(60000,2000*2**Math.min(failures++,5)));}
+ streams.set(id,(type,value)=>{if(closed)return;if(type==='worker-error'){schedule();return;}if(type==='trades')for(const trade of value)onTrade(trade);else if(type==='status')onStatus(value);else if(type==='book')onBook?.(value);});
+ reconnect();
+ return()=>{closed=true;clearTimeout(retry);streams.delete(id);if(worker)void request('stop',id).catch(()=>{});};
 }
 const historyPending=new Map();
 function historyPage(args){
@@ -61,6 +64,8 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
   let obtained=false;
   try{
    for(let page=0;page<limit&&!closed;page++){
+    while(!closed&&options.shouldFetch?.()===false)await new Promise(resolve=>setTimeout(resolve,1000));
+    if(closed)return;
     const data=await historyPage({id,symbol,timeframe:frame,until:before,limit:300});if(closed)return;
     const valid=data.rows.filter(row=>row.length>=6&&row.every(Number.isFinite)&&row[0]<before&&row[1]>0&&row[3]>0&&row[4]>0&&row[2]>=Math.max(row[1],row[4])&&row[3]<=Math.min(row[1],row[4])&&row[5]>=0);
     if(!valid.length)break;

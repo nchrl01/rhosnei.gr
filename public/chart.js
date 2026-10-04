@@ -32,7 +32,7 @@ export class MarketChart{
   const interaction=()=>{this.manual=true;this.needsFit=false;};
   document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';
   container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
-  setInterval(()=>{const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},500);
+  setInterval(()=>{if(document.hidden||!document.body.classList.contains('inspecting'))return;const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},1000);
   this.tickView=createChartTicks(this);
   this.chart.subscribeClick(param=>{if(typeof param.time==='number'){const bar=this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
  }
