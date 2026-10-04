@@ -19,7 +19,7 @@ export function createPixelBlastCanvas(host){
  const ctx=canvas.getContext('2d',{alpha:true});let image=null;
  return {
   canvas,
-  render({width,height,time=0,eventTime=0,seed=0,params,birth=1,dither=false,ripples=[]}){
+  render({width,height,time=0,eventTime=0,seed=0,params,formation=1,birth=1,dither=false,ripples=[]}){
    if(!ctx)return;
    const scale=Math.min(1,320/Math.max(1,width,height));
    const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
@@ -42,6 +42,7 @@ export function createPixelBlastCanvas(host){
      cache.set(key,feed);
     }
     const px=fx/params.pixelSize,py=fy/params.pixelSize;
+    if(formation<=0||hash(Math.floor(px)*12.9898+Math.floor(py)*78.233+offset)+.00001>formation)continue;
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(Math.floor(px)*127.1+Math.floor(py)*311.7)-.5)*params.jitter;
     const radius=Math.sqrt(Math.max(0,jitter))*.25;

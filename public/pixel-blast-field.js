@@ -1,4 +1,4 @@
-import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=103';
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=105';
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
 // One shared frame clock; no autonomous animation or pointer-triggered effects.
@@ -14,6 +14,7 @@ uniform float uTime;
 uniform float uEventTime;
 uniform float uSeed;
 uniform float uOpacity;
+uniform float uReveal;
 uniform float uPixelSize;
 uniform float uScale;
 uniform float uDensity;
@@ -149,7 +150,8 @@ void main(){
 
   float h = fract(sin(dot(floor(fragCoord / uPixelSize), vec2(127.1, 311.7))) * 43758.5453);
   float jitterScale = 1.0 + (h - 0.5) * uPixelJitter;
-  float coverage = bw * jitterScale;
+  float revealHash = fract(sin(dot(pixelId, vec2(12.9898,78.233)) + uSeed)*43758.5453);
+  float coverage = bw * jitterScale * step(revealHash + 0.00001, uReveal);
   float M;
   if      (uShapeType == SHAPE_CIRCLE)   M = maskCircle (pixelUV, coverage);
   else if (uShapeType == SHAPE_TRIANGLE) M = maskTriangle(pixelUV, pixelId, coverage);
@@ -221,7 +223,7 @@ export function createPixelBlastField(host){
    candidate=gl.createProgram();for(const shader of shaders)gl.attachShader(candidate,shader);gl.linkProgram(candidate);
    if(!gl.getProgramParameter(candidate,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(candidate));
    program=candidate;
-   const names=['uColor','uResolution','uTime','uEventTime','uSeed','uOpacity','uPixelSize','uScale','uDensity','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uEdgeFade','uShapeType','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]'];
+   const names=['uColor','uResolution','uTime','uEventTime','uSeed','uOpacity','uReveal','uPixelSize','uScale','uDensity','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uEdgeFade','uShapeType','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
   }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
@@ -246,13 +248,13 @@ export function createPixelBlastField(host){
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
    const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,active,reducedMotion,mobile:mobile||useSoftware});
-   if(lost||!program){fallback();software.render({width,height,time,eventTime,seed,params,birth:unit(birth),dither,ripples});return;}
+   if(lost||!program){fallback();software.render({width,height,time,eventTime,seed,params,formation:unit(formation),birth:unit(birth),dither,ripples});return;}
    const positions=new Float32Array(12).fill(-1),times=new Float32Array(6),strengths=new Float32Array(6);
    ripples.forEach((p,i)=>{positions[i*2]=p.x*w;positions[i*2+1]=p.y*h;times[i]=p.time;strengths[i]=p.strength;});
    gl.viewport(0,0,w,h);gl.useProgram(program);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);
-   f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uOpacity',params.opacity*unit(birth));
+   f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uOpacity',params.opacity*unit(birth));f('uReveal',unit(formation));
    f('uPixelSize',params.pixelSize);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
    i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);f('uEdgeFade',params.edgeFade);i('uShapeType',dither?0:1);
    gl.uniform2fv(locations['uClickPos[0]'],positions);gl.uniform1fv(locations['uClickTimes[0]'],times);gl.uniform1fv(locations['uClickStrengths[0]'],strengths);

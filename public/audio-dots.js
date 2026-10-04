@@ -1,4 +1,4 @@
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=104';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=105';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -36,7 +36,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
- let formation=0,birth=0,layoutKey=null,visualCursor=null;
+ let formation=0,birth=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -49,7 +49,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
  function clear(newCoin=false){
-  previous=null;smoothed=null;visualCursor=null;seen.clear();sourceClock=null;sourceAt=0;
+  previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;seen.clear();sourceClock=null;sourceAt=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
@@ -129,8 +129,10 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(host){host.dataset.audible=String(audible);host.dataset.visible='true';}
   const target=audible?unit((20*Math.log10(Math.max(1e-8,rms))+70)/52):0;
   level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:1.4)));
-  const shapeTarget=.035+.965*unit(level*1.6);
-  formation+=(shapeTarget-formation)*(1-Math.exp(-dt/(shapeTarget>formation?.85:2.8)));
+  const eventHeat=active?Math.exp(-Math.max(0,now-marketPulse)/3500):0;
+  const shapeTarget=eventHeat<.002?0:eventHeat*unit(.6+.4*level);
+  formation+=(shapeTarget-formation)*(1-Math.exp(-dt/(shapeTarget>formation?.35:1.2)));
+  if(shapeTarget===0&&formation<.002)formation=0;
   birth=Math.min(1,birth+dt/2);
   // Keep settling after pause/mute even when no market frames are arriving.
   if(Math.abs(shapeTarget-formation)>.0001||birth<1||Math.abs(target-level)>.0001)dirty=true;
@@ -150,7 +152,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
     if(visualCursor===null||options.seeking||delta<0||delta>Math.max(2,(Number(options.rate)||1)*2))clock=cursor*.75;
     else if(active)clock+=delta*visualParams.speed;
     visualCursor=cursor;
-   }else{visualCursor=null;clock+=dt*visualParams.speed;}
+   }else{visualCursor=null;clock+=dt*visualParams.speed*formation;}
    dirty=true;
   }
   if(!dirty)return;dirty=false;
@@ -169,18 +171,20 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),cap:finite(next.context?.latestCap),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running())return;
+   if(!old&&(latest.activity>0||latest.volume>0)&&latest.fresh>0)marketPulse=performance.now();
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
    if(replaying){
+    if(current.at!==old?.at&&(current.volume>0||changed))marketPulse=performance.now();
     if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive,changed||current.volume!==old?.volume?'replay:'+current.price+':'+current.volume:null);
    }else if(!next.decoded&&performance.now()-lastEvent>1000&&old){
-    if(changed||(current.volume!=null&&old.volume!=null&&current.volume>old.volume)||(current.trades!=null&&old.trades!=null&&current.trades>old.trades))excite(.35+.65*latest.drive,'market:'+current.price+':'+current.volume+':'+current.trades);
+    if(changed||(current.volume!=null&&old.volume!=null&&current.volume>old.volume)||(current.trades!=null&&old.trades!=null&&current.trades>old.trades)){marketPulse=performance.now();excite(.35+.65*latest.drive,'market:'+current.price+':'+current.volume+':'+current.trades);}
    }
   },
   event(trade={}){
    if(trade.removed||replaying||!['swap','pool-transaction','market-price'].includes(trade.kind))return;
    const id=trade.id||trade.signature;if(id&&seen.has(id))return;
    if(id){seen.add(id);if(seen.size>256)seen.delete(seen.values().next().value);}
-   lastEvent=performance.now();excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
+   lastEvent=performance.now();marketPulse=lastEvent;excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
   },
   pulse(strength=.7){excite(unit(strength)||.7);},
   refresh(){dirty=true;},
