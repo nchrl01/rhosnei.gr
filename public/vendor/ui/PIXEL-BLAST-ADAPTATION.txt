@@ -1,0 +1,45 @@
+UPIC Pixel Blast adaptation — 2026-10-04
+
+Official component:
+https://github.com/DavidHDev/react-bits/blob/main/src/content/Backgrounds/PixelBlast/PixelBlast.jsx
+Official showcase:
+https://github.com/DavidHDev/react-bits/blob/main/src/demo/Backgrounds/PixelBlastDemo.jsx
+Code-panel source:
+https://github.com/DavidHDev/react-bits/blob/main/src/constants/code/Backgrounds/pixelBlastCode.js
+
+The showcase imports the same component displayed in the code panel. Its
+continuous movement comes from five-octave time-varying noise. Expanding rings
+come from click events; pointer-liquid distortion is a separate optional effect.
+The user's URL enables the default click ripples and leaves liquid disabled.
+
+Reference parameters:
+patternScale 0.25 / speed 1.35 / edgeFade 0.5 / density 1.65 / pixelSize 2.
+License: see REACT-BITS-LICENSE.md in this directory.
+
+UPIC retains noise/Bayer construction and ripple math with a shared market clock.
+It is an adaptation, not an identical standalone demo. All pixels are squares.
+The base square is 2 CSS pixels. A fixed 4 CSS-pixel lattice reserves room for
+growth to 3.8 pixels without moving pixel centres or zooming the scene.
+Physical cell boundaries and dot bounds are integer-aligned in both renderers.
+Rendering is bounded to 1.2 million pixels; very large surfaces can use a lower
+pixel ratio. Canvas visits cells rather than every image pixel.
+
+Mappings:
+- Market cap grows dot size and gradually reveals the coin image. Procedural
+  noise remains present at high caps so the image cannot completely stop flow.
+- Liquidity adjusts coverage around the 1.65 density baseline. A missing value
+  is neutral; a known zero is sparse, not treated as missing.
+- Fresh contextual movement, activity and volume shape speed around 1.35.
+- Measured sound, instrument notes and Pd onsets add brief square-size accents.
+- Significant market events trigger seeded ripples using the original ring math.
+- Quiet playback retains small, weaker squares and settles movement to rest.
+- EdgeFade 0.5 tapers square size spatially toward the perimeter. It does not
+  fade the whole canvas or soften square edges.
+- Spatial scale remains 0.25. No signal changes the camera or grid spacing.
+
+Replay uses one relative presentation clock for noise and ripple age. Pausing
+preserves phase, explicit seeks reset it, and candle-speed playback passes the
+actual chart rate. Reduced-motion preference freezes flow and suppresses pulses.
+
+Read source and reviewed changes statically. No browser or device audition was
+performed for this revision.

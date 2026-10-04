@@ -42,60 +42,69 @@ function identityInk(mask,fx,fy,w,h,time,offset,params){
  return mask.data[Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width)]/255;
 }
 export function createPixelBlastCanvas(host){
- const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');host.append(canvas);
- const ctx=canvas.getContext('2d',{alpha:true});let image=null,identityMask=null;
+ const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
+ const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null;
  return {
   canvas,
   setImage(mask){identityMask=mask;},
   render({width,height,time=0,eventTime=0,seed=0,params,dither=false,ripples=[]}){
    if(!ctx)return;
-   const scale=Math.min(1,320/Math.max(1,width,height));
-   const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
-   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;image=null;}
-   image??=ctx.createImageData(w,h);const pixels=image.data;pixels.fill(0);
+   const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
+   const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
+   const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
+   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+   ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
+   const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
+   const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const cell=8*params.pixelSize,offset=(seed%65521)/65521*173.6,cache=new Map();
    const identity=identityMask?params.identity:0;
-   const columns=Math.ceil(w/params.pixelSize)+2,rows=Math.ceil(h/params.pixelSize)+2;
-   const firstX=Math.floor(-w/2/params.pixelSize),firstY=Math.floor(-h/2/params.pixelSize);
-   const dots=identity>0?new Float32Array(columns*rows).fill(-1):null;
-   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    const fx=x+.5-w/2,fy=h-y-.5-h/2,cx=Math.floor(fx/cell),cy=Math.floor(fy/cell),key=cx+':'+cy;
+   const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
+   const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
+   let previousInk=-1;
+   // Share the shader's integer lattice and bottom-up origin. Cell ownership
+   // and square bounds agree even when either canvas dimension is odd.
+   for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
+    const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
+    const centerX=originX+(px+.5)*grid,centerY=originY+(py+.5)*grid;
+    const edge=Math.min(centerX/w,1-centerX/w,centerY/h,1-centerY/h);
+    const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
+    const taper=edgeT*edgeT*(3-2*edgeT);
+    if(edge<=0||taper<=.015)continue;
+    const cx=Math.floor(fx/cell),cy=Math.floor(fy/cell),key=cx+':'+cy;
     let feed=cache.get(key);
     if(feed===undefined){
-     const u=cx*cell/h,v=cy*cell/h;let sum=1,freq=1;
+     const u=cx*cell/cssHeight,v=cy*cell/cssHeight;let sum=1,freq=1;
      for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
      feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      if(params.ripples)for(const p of ripples){
-      const age=Math.max(0,eventTime-p.time),r=Math.hypot(u-((p.x*w-w/2-cell/2)/h),v-((p.y*h-h/2-cell/2)/h));
+      const age=Math.max(0,eventTime-p.time),r=Math.hypot(u-(((p.x*w-originX)/ratio-cell/2)/cssHeight),v-(((p.y*h-originY)/ratio-cell/2)/cssHeight));
       const ring=Math.exp(-(((r-params.rippleSpeed*age)/params.rippleThickness)**2))*Math.exp(-age-10*r)*params.rippleIntensity*p.strength;
       feed=Math.max(feed,ring);
      }
      cache.set(key,feed);
     }
-    const px=fx/params.pixelSize,py=fy/params.pixelSize;
     let maskInk=0;
     if(identity>0){
-     const dotKey=(Math.floor(py)-firstY)*columns+Math.floor(px)-firstX;
-     maskInk=dots[dotKey];
-     if(maskInk<0){
-      maskInk=identityInk(identityMask,(Math.floor(px)+.5)*params.pixelSize,(Math.floor(py)+.5)*params.pixelSize,w,h,time,offset,params);
-      dots[dotKey]=maskInk;
-     }
+     maskInk=identityInk(identityMask,fx,fy,cssWidth,cssHeight,time,offset,params);
      const imageFeed=mix(feed-.25,.68+.16*Math.min(3,params.density)+.13*feed,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
     if(feed+b8(px,py)-.5<.5)continue;
-    const jitter=1+(hash(Math.floor(px)*127.1+Math.floor(py)*311.7)-.5)*params.jitter;
+    const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const dotSize=Math.min(params.pixelSize,Math.max(1,Math.round(params.pixelSize*params.dotScale*jitter*backgroundScale)));
-    if(Math.max(Math.abs(fract(px)-.5),Math.abs(fract(py)-.5))*params.pixelSize>dotSize*.5)continue;
+    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale)*taper;
+    const diameter=Math.min(grid,Math.max(1,Math.round(dotSize*ratio)));
+    const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
+    const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
+    if(x1<=x0||y1<=y0)continue;
     const ink=Math.round(255*clamp(params.dotStrength)*mix(1,.45+.55*maskInk,identity));
-    const at=(y*w+x)*4;pixels[at]=pixels[at+1]=pixels[at+2]=ink;pixels[at+3]=255;
+    if(ink!==previousInk){ctx.fillStyle=`rgb(${ink},${ink},${ink})`;previousInk=ink;}
+    ctx.fillRect(x0,y0,x1-x0,y1-y0);
    }
-   ctx.putImageData(image,0,0);canvas.hidden=false;
-   Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),dotSize:Math.max(1,params.pixelSize*params.dotScale).toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:'0',ripples:String(params.ripples?ripples.length:0),identity:identity.toFixed(3),identityImage:String(!!identityMask)});
+   canvas.hidden=false;
+   Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),basePixelSize:params.pixelSize.toFixed(3),cellSize:cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),ripples:String(params.ripples?ripples.length:0),identity:identity.toFixed(3),identityImage:String(!!identityMask)});
   },
   clear(){ctx?.clearRect(0,0,canvas.width,canvas.height);},
-  close(){identityMask=null;image=null;canvas.remove();}
+  close(){identityMask=null;canvas.remove();}
  };
 }

@@ -1,16 +1,15 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=121';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=127';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=128';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
  const raw=m.raw||m,context=m.context||{},fresh=unit(m.fresh);
  // Valuation shapes space; only current observations or replay create motion.
- const activity=unit(raw.activity),volume=unit(raw.volume),move=unit(m.music?.intensity);
- const drive=fresh*unit(.5*move+.3*Math.sqrt(activity*volume)+.2*Math.sqrt(unit(m.dataSignals?.density)));
- const path=(context.path||[]).filter(p=>Number(p.close)>0).slice(-180);
- const prices=path.map(p=>Math.log(Number(p.close))),lo=prices.length?Math.min(...prices):0,hi=prices.length?Math.max(...prices):0;
- const range=hi-lo;
- const trace=path.map((p,i)=>({height:range>0?(prices[i]-lo)/range:.5,move:i?Math.tanh((prices[i]-prices[i-1])*12):0,volume:unit(Math.log1p(Math.max(0,Number(p.volume)||0))/Math.log(1e7))}));
+ const activity=unit(raw.activity),volume=unit(raw.volume);
+ // Music intensity already includes freshness. Recover its raw contextual
+ // strength here; the renderer applies freshness once to the market response.
+ const move=fresh>0?unit(unit(m.music?.intensity)/fresh):0;
+ const drive=unit(.5*move+.3*Math.sqrt(activity*volume)+.2*unit(context.pressure));
  const holder=m.replay?null:finite(m.audience?.holders);
  const liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const values=[finite(m.music?.changePct),m.decoded?finite(m.tradeRate):null,finite(m.replay?.volume??(m.decoded?m.observedVolume:m.observation?.volume)),m.availability?.balance===false?null:finite(m.balance),liquidity,finite(context.latestCap),holder];
@@ -19,10 +18,10 @@ export function fieldState(m={}){
  // A known cap gradually pulls the flow into the artwork: $100K → $5M.
  const imageGrowth=values[5]>0?unit((Math.log10(values[5])-5)/Math.log10(50)):0;
  const identity=imageGrowth*imageGrowth*(3-2*imageGrowth);
- const depth=liquidity>0?unit((Math.log10(liquidity)-3)/4):.5;
+ const depth=liquidity===null?.5:liquidity>0?unit((Math.log10(liquidity)-3)/4):0;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
- return {drive,fresh,trace,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Quiet activity leaves smaller, weaker dots;
@@ -38,6 +37,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const buffers=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
+ let displayClock=0,displayCursor=null,displayAt=0,displayRunning=false;
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
@@ -56,6 +56,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  }
  function clear(newCoin=false){
   previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;pianoPulses=[];pianoEnergy=0;seen.clear();sourceClock=null;sourceAt=0;
+  displayClock=0;displayCursor=null;displayAt=0;displayRunning=false;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;}
@@ -115,19 +116,35 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // Separate L/R power measurements cannot cancel opposite stereo phases.
   return count?Math.sqrt(power/count):0;
  }
+ function presentationTime(now,active=running()&&hasMarket){
+  if(!replaying||sourceClock===null)return now/1000;
+  const rate=Math.max(0,Number(options.rate)||1);
+  const cursor=sourceClock+(active?Math.min(.25,Math.max(0,(now-sourceAt)/1000))*rate:0);
+  if(active&&displayRunning&&displayCursor!==null){
+   const elapsed=Math.min(.25,Math.max(0,(now-displayAt)/1000));
+   displayClock+=Math.min(Math.max(0,cursor-displayCursor),elapsed*rate);
+  }
+  // A stopped or slightly late source cannot rewind the displayed pattern.
+  // Keep event ages relative so long history ranges retain shader precision.
+  displayCursor=displayCursor===null?cursor:Math.max(displayCursor,cursor);
+  displayAt=now;displayRunning=active;
+  return displayClock;
+ }
  function excite(strength=.65,key=null){
   if(!running())return;
   const now=performance.now(),remaining=pulseStrength*Math.exp(-(now-pulseAt)/280);
   pulseStrength=Math.max(remaining,unit(strength));pulseAt=now;dirty=true;
-  if(key!==null)blast?.pulse({key,time:replaying?(sourceClock??clock):now/1000,strength,balance:latest.balance});
+  if(key!==null)blast?.pulse({key,time:presentationTime(now),strength,balance:latest.balance});
  }
  function draw(now){
   if(closed)return;frameID=requestAnimationFrame(draw);
   if(layoutPending){layoutPending=false;size();}
   if(document.hidden||!visible||width<1||height<1){lastPaint=0;return;}
   if(now-lastPaint<(audible?(mobile.matches?1000/24:1000/30):1000/15))return;
+  const resumedPaint=lastPaint===0;
   const dt=lastPaint?Math.min(.1,(now-lastPaint)/1000):1/30;lastPaint=now;
   const active=running()&&hasMarket;
+  const eventTime=presentationTime(now,active);
   if(!active){pulseStrength=0;pulseAt=-Infinity;}
   const rms=active?measure():0;
   if(rms>(audible?.0002:.0005))lastSound=now;
@@ -137,8 +154,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:1.4)));
   const audioTime=getAudio()?.context?.currentTime??0;
   if(!active)pianoPulses=[];
-  pianoPulses=pianoPulses.filter(p=>audioTime-p.at<9);
-  const pianoTarget=active?pianoPulses.reduce((peak,p)=>{const age=audioTime-p.at;return age<0?peak:Math.max(peak,p.strength*Math.min(1,age/.08)*Math.exp(-age/2.8));},0):0;
+  pianoPulses=pianoPulses.filter(p=>audioTime-p.at<3);
+  const pianoTarget=active?pianoPulses.reduce((peak,p)=>{const age=audioTime-p.at;return age<0?peak:Math.max(peak,p.strength*Math.min(1,age/.08)*Math.exp(-age/.65));},0):0;
   pianoEnergy+=(pianoTarget-pianoEnergy)*(1-Math.exp(-dt/.12));
   const eventHeat=active?Math.exp(-Math.max(0,now-marketPulse)/3500):0;
   const presence=Math.max(eventHeat,active?pianoEnergy:0);
@@ -148,27 +165,24 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // Keep settling after pause/mute even when no market frames are arriving.
   if(Math.abs(shapeTarget-formation)>.0001||Math.abs(target-level)>.0001)dirty=true;
   const envelopeRise=unit((level-previousLevel)*9);previousLevel=level;
-  const transient=active?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
+  const transient=active&&!reduced.matches?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
-  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,active,reducedMotion:reduced.matches};
+  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Integrate speed rather than multiplying a large clock by changing speed:
   // a new observation then changes motion smoothly, without jumping patterns.
   if(!reduced.matches){
    if(replaying&&sourceClock!==null){
-    const cursor=sourceClock+(active?Math.min(.25,Math.max(0,(now-sourceAt)/1000))*(Number(options.rate)||1):0);
-    const delta=visualCursor===null?0:cursor-visualCursor;
-    if(visualCursor===null||options.seeking||delta<0||delta>Math.max(2,(Number(options.rate)||1)*2))clock=cursor*.75;
-    else if(active)clock+=delta*visualParams.speed;
-    visualCursor=cursor;
-   }else{visualCursor=null;clock+=dt*visualParams.speed*formation;}
+    if(active&&!resumedPaint&&visualCursor!==null)clock+=Math.max(0,eventTime-visualCursor)*visualParams.speed;
+   }else clock+=dt*visualParams.speed;
    dirty=true;
   }
+  visualCursor=replaying?eventTime:null;
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.render({width,height,time:clock,eventTime:replaying?(sourceClock??clock):now/1000,...visualInputs,mobile:mobile.matches,dither:getState().dither===true});
+  blast?.render({width,height,time:clock,eventTime,...visualInputs,mobile:mobile.matches,dither:getState().dither===true});
   Object.assign(canvas.dataset,{composition:['ready','canvas'].includes(host?.dataset.pixelBlast)?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
@@ -176,9 +190,15 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   frame(next={},settings={}){
    const nextSeed=settings.seed==null?seed:Number(settings.seed)>>>0,nextReplay=!!next.replay;
    if(nextSeed!==seed||nextReplay!==replaying){clear(nextSeed!==seed);seed=nextSeed;replaying=nextReplay;blast?.reset(seed);}
-   options=settings;latest=fieldState(next);dirty=true;
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
-   if(incoming!==null&&incoming!==sourceClock){if(sourceClock!==null&&incoming<sourceClock)blast?.reset(seed);sourceClock=incoming;sourceAt=performance.now();}
+   const seeking=Boolean(settings.seeking)&&(!options.seeking||incoming!==sourceClock);
+   const backwards=incoming!==null&&sourceClock!==null&&incoming<sourceClock;
+   if(replaying&&(seeking||backwards)){
+    clock=0;displayClock=0;displayCursor=null;displayAt=0;displayRunning=false;visualCursor=null;
+    blast?.reset(seed);
+   }
+   options=settings;latest=fieldState(next);dirty=true;
+   if(incoming!==null&&incoming!==sourceClock){sourceClock=incoming;sourceAt=performance.now();}
    const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),cap:finite(next.context?.latestCap),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running())return;
