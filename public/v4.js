@@ -1,6 +1,7 @@
 // Robinhood's public HTTP RPC: direct block observations, not a WebSocket feed.
 // Deployments: https://developers.uniswap.org/docs/protocols/v4/deployments
 const RPC='https://rpc.mainnet.chain.robinhood.com';
+import {budgetedRPC} from './rpc-budget.js?v=135';
 const MANAGER='0x8366a39cc670b4001a1121b8f6a443a643e40951',STATE='0xf3334192d15450cdd385c8b70e03f9a6bd9e673b';
 const INITIALIZE='0xdd466e674ea557f56295e2d0218a125ea4b4f0f6f3307b95f85e6110838d6438';
 const SWAP='0x40e9cecb9f5f1f1c5b9c97dec2917b7ee92e57ba5563708daca94dd84ad7112f';
@@ -23,12 +24,12 @@ export function subscribeRobinhoodV4(market,onEvent,onState){
  const pool=market.pairAddress.toLowerCase();
  function state(connected,message){if(!closed)onState({connected,kind:connected?'rpc-poll':'snapshot',message});}
  async function rpc(method,params){
-  const controller=new AbortController();controllers.add(controller);const timeout=setTimeout(()=>controller.abort(),12000);
-  try{const r=await fetch(RPC,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}),signal:controller.signal});if(!r.ok)throw Error('Robinhood RPC HTTP '+r.status);const data=await r.json();if(data.error)throw Error(data.error.message);return data.result;}
-  finally{clearTimeout(timeout);controllers.delete(controller);}
+  const controller=new AbortController();controllers.add(controller);
+  try{return await budgetedRPC(RPC,method,params,controller.signal);}
+  finally{controllers.delete(controller);}
  }
  function blockTime(block){
-  if(!blockTimes.has(block)){blockTimes.set(block,rpc('eth_getBlockByNumber',[block,false]).then(b=>Number(BigInt(b.timestamp))*1000));if(blockTimes.size>128)blockTimes.delete(blockTimes.keys().next().value);}
+  if(!blockTimes.has(block)){const pending=rpc('eth_getBlockByNumber',[block,false]).then(b=>Number(BigInt(b.timestamp))*1000).catch(error=>{if(blockTimes.get(block)===pending)blockTimes.delete(block);throw error;});blockTimes.set(block,pending);if(blockTimes.size>128)blockTimes.delete(blockTimes.keys().next().value);}
   return blockTimes.get(block);
  }
  async function priceAt(block){
@@ -65,6 +66,7 @@ export function subscribeRobinhoodV4(market,onEvent,onState){
   if(closed)return;let delay=2000;
   try{
    const head=Number(BigInt(await rpc('eth_blockNumber',[]))),end=Math.min(head,cursor+10000);
+   if(head===cursor){if(Date.now()-lastState>=15000)await priceAt(hex(head));if(!closed)timer=setTimeout(poll,delay);return;}
    const start=Math.max(0,Math.min(cursor,head)-64);
    const logs=await rpc('eth_getLogs',[{address:MANAGER,topics:[SWAP,pool],fromBlock:hex(start),toBlock:hex(end)}]);
    if(closed)return;let fresh=false;
