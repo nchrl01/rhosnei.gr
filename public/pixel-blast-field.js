@@ -1,4 +1,4 @@
-import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=115';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=119';
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
 // One shared frame clock; no autonomous animation or pointer-triggered effects.
@@ -18,6 +18,9 @@ uniform float uDotStrength;
 uniform float uPixelSize;
 uniform float uScale;
 uniform float uDensity;
+uniform sampler2D uIdentityImage;
+uniform float uIdentity;
+uniform float uIdentityMotion;
 uniform float uPixelJitter;
 uniform int   uEnableRipples;
 uniform float uRippleSpeed;
@@ -106,6 +109,19 @@ float maskDiamond(vec2 p, float cov){
   return step(abs(p.x - 0.49) + abs(p.y - 0.49), r);
 }
 
+float identityInk(vec2 point){
+  float side=.82*min(uResolution.x,uResolution.y);
+  vec2 p=point/side;
+  float flow=((1.0-uIdentity)*.1+.012)*uIdentityMotion;
+  float phase=uTime*.65+uSeed*.013;
+  vec2 uv=vec2(.5+p.x,.5-p.y)+vec2(
+    sin(p.y*9.0+phase)+.35*sin(p.x*5.0-phase*.7),
+    sin(p.x*8.0-phase*.85)+.3*sin(p.y*5.0+phase*.6)
+  )*flow;
+  if(any(lessThan(uv,vec2(0.0)))||any(greaterThanEqual(uv,vec2(1.0))))return 0.0;
+  return texture(uIdentityImage,uv).r;
+}
+
 void main(){
   float pixelSize = uPixelSize;
   vec2 fragCoord = gl_FragCoord.xy - uResolution * .5;
@@ -144,6 +160,16 @@ void main(){
     }
   }
 
+  // The coin is a target for the same dot field, not a pasted image layer.
+  // Its coordinates flow only with the existing market/audio clock. The
+  // low-cap field is scattered; a high-cap field settles into recognizable ink.
+  float imageInk=0.0;
+  if(uIdentity>0.0){
+    imageInk=identityInk((pixelId+.5)*pixelSize);
+    float imageFeed=mix(feed-.25,.68+.16*min(3.0,uDensity)+.13*feed,imageInk);
+    feed=mix(feed,imageFeed,uIdentity);
+  }
+
   float bayer = Bayer8(fragCoord / uPixelSize) - 0.5;
   float bw = step(0.5, feed + bayer);
 
@@ -151,7 +177,8 @@ void main(){
   float jitterScale = 1.0 + (h - 0.5) * uPixelJitter;
   float coverage = bw;
   // Quiet dots shrink inside their existing cells. Their edges stay binary.
-  float dotSize = clamp(floor(pixelSize * uDotScale * jitterScale + .5), 1.0, pixelSize);
+  float backgroundScale=mix(1.0,.7+.3*imageInk,uIdentity);
+  float dotSize = clamp(floor(pixelSize * uDotScale * jitterScale * backgroundScale + .5), 1.0, pixelSize);
   float square = step(max(abs(pixelUV.x - .5), abs(pixelUV.y - .5)) * pixelSize, dotSize * .5);
   float M;
   if      (uShapeType == SHAPE_CIRCLE)   M = maskCircle (pixelUV, coverage);
@@ -168,14 +195,15 @@ void main(){
     step(0.0031308, color)
   );
 
-  fragColor = vec4(srgbColor * uDotStrength, clamp(M, 0.0, 1.0));
+  float inkStrength=mix(1.0,.45+.55*imageInk,uIdentity);
+  fragColor = vec4(srgbColor * uDotStrength * inkStrength, clamp(M, 0.0, 1.0));
 }
 `;
 
 const unit = n => Math.max(0, Math.min(1, Number(n) || 0));
 // Market cap controls the lattice size; liquidity controls its density.
 // Activity changes individual dot size and brightness, never layer opacity.
-export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,active=false,reducedMotion=false,mobile=false,piano=0}={}){
+export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0}={}){
  const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
  const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
  const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
@@ -184,6 +212,8 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
   pixelSize:((mobile?3.4:2.8)+3.8*unit(capital))*(1+.45*unit(piano)),
   scale:4+7.5*unit(capital),
   density:(mobile?.8:.6)+1.35*unit(depth)+.7*unit(piano),
+  identity:unit(identity),
+  identityMotion:reducedMotion?0:unit(.7*movement+.3*flow),
   speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),
   edgeFade:0,
   jitter:.03+.35*movement,
@@ -202,12 +232,21 @@ function hash(key,seed){
 }
 export function createPixelBlastField(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer';canvas.setAttribute('aria-hidden','true');host.append(canvas);
- let gl,software=null;
+ let gl,software=null,identityMask=null,identityTexture=null;
  const useSoftware=matchMedia('(max-width:760px), (pointer:coarse)').matches;
- function fallback(){software??=createPixelBlastCanvas(host);canvas.hidden=true;host.dataset.pixelBlast='canvas';}
+ function fallback(){if(!software){software=createPixelBlastCanvas(host);software.setImage(identityMask);}canvas.hidden=true;host.dataset.pixelBlast='canvas';}
  try{gl=useSoftware?null:canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
  let program=null,locations={},closed=false,lost=false,seed=0,ripples=[],lastPulse=-Infinity;
- function release(){if(program)gl?.deleteProgram(program);program=null;}
+ function release(){if(program)gl?.deleteProgram(program);if(identityTexture)gl?.deleteTexture(identityTexture);program=null;identityTexture=null;}
+ function uploadImage(){
+  if(!gl||lost||!program)return;
+  identityTexture??=gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,identityMask?.width||1,identityMask?.height||1,0,gl.RED,gl.UNSIGNED_BYTE,identityMask?.data||new Uint8Array(1));
+ }
  function initialize(){
   if(!gl)return;
   const shaders=[];let candidate;
@@ -219,46 +258,50 @@ export function createPixelBlastField(host){
    candidate=gl.createProgram();for(const shader of shaders)gl.attachShader(candidate,shader);gl.linkProgram(candidate);
    if(!gl.getProgramParameter(candidate,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(candidate));
    program=candidate;
-   const names=['uColor','uResolution','uTime','uEventTime','uSeed','uDotScale','uDotStrength','uPixelSize','uScale','uDensity','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uShapeType','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]'];
+   const names=['uColor','uResolution','uTime','uEventTime','uSeed','uDotScale','uDotStrength','uPixelSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uShapeType','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   uploadImage();
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
   }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
   finally{for(const shader of shaders)gl.deleteShader(shader);}
  }
- function contextLost(event){event.preventDefault();lost=true;program=null;fallback();}
+ function contextLost(event){event.preventDefault();lost=true;program=null;identityTexture=null;fallback();}
  function contextRestored(){if(closed)return;lost=false;initialize();}
  canvas.addEventListener('webglcontextlost',contextLost);canvas.addEventListener('webglcontextrestored',contextRestored);
  initialize();if(!gl)fallback();
  return {
+  setImage(image){if(closed)return;identityMask=preparePixelIdentity(image);software?.setImage(identityMask);uploadImage();},
   reset(nextSeed=seed){seed=Number(nextSeed)>>>0;ripples=[];lastPulse=-Infinity;},
   pulse({key,time,strength=.5,balance=.5}={}){
    if(!Number.isFinite(time)||time-lastPulse<.15||ripples.some(p=>p.key===key))return;
    const h=hash(key,seed),x=.15+.7*((h&65535)/65535),y=.15+.7*((h>>>16)/65535);
    ripples.push({key,time,strength:unit(strength),x:unit(.75*x+.25*unit(balance)),y});ripples=ripples.slice(-6);lastPulse=time;
   },
-  render({width,height,time,eventTime,level,formation,piano=0,active,mobile,reducedMotion,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,dither}={}){
+  render({width,height,time,eventTime,level,formation,piano=0,active,mobile,reducedMotion,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,identity=0,dither}={}){
    if(closed)return;
    const limit=mobile?384:640,scale=Math.min(1,limit/Math.max(width,height));
    const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
-   const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,active,reducedMotion,mobile:mobile||useSoftware,piano});
+   const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,identity,active,reducedMotion,mobile:mobile||useSoftware,piano});
    if(lost||!program){fallback();software.render({width,height,time,eventTime,seed,params,dither,ripples});return;}
    const positions=new Float32Array(12).fill(-1),times=new Float32Array(6),strengths=new Float32Array(6);
    ripples.forEach((p,i)=>{positions[i*2]=p.x*w;positions[i*2+1]=p.y*h;times[i]=p.time;strengths[i]=p.strength;});
    gl.viewport(0,0,w,h);gl.useProgram(program);
+   gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotScale',params.dotScale);f('uDotStrength',params.dotStrength);
    f('uPixelSize',params.pixelSize);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
+   i('uIdentityImage',0);f('uIdentity',identityMask?params.identity:0);f('uIdentityMotion',params.identityMotion);
    i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);i('uShapeType',0);
    gl.uniform2fv(locations['uClickPos[0]'],positions);gl.uniform1fv(locations['uClickTimes[0]'],times);gl.uniform1fv(locations['uClickStrengths[0]'],strengths);
    gl.drawArrays(gl.TRIANGLES,0,3);
    canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);
-   Object.assign(canvas.dataset,{pixelSize:params.pixelSize.toFixed(3),dotSize:Math.max(1,params.pixelSize*params.dotScale).toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:'0',rippleEnabled:String(params.ripples)});
+   Object.assign(canvas.dataset,{pixelSize:params.pixelSize.toFixed(3),dotSize:Math.max(1,params.pixelSize*params.dotScale).toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:'0',rippleEnabled:String(params.ripples),identity:(identityMask?params.identity:0).toFixed(3),identityImage:String(!!identityMask)});
   },
   clear(){software?.clear();if(gl&&!lost){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ripples=[];},
-  close(){closed=true;software?.close();release();canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);canvas.remove();},
+  close(){closed=true;software?.close();release();identityMask=null;canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);canvas.remove();},
  };
 }

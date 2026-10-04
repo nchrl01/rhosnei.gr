@@ -27,7 +27,7 @@ export function ditherPixels(source,width,height){
  return out;
 }
 let filterSerial=0;
-export function createCoinDither(img,fallback){
+export function createCoinDither(img,fallback,{onPixels=()=>{}}={}){
  const filterId=`coin-bayer-filter-${++filterSerial}`;
  const host=img.parentElement,canvas=document.createElement('canvas');canvas.className='coin-dither';canvas.setAttribute('aria-hidden','true');canvas.hidden=true;host.append(canvas);
  // SVG can threshold SourceGraphic without exposing cross-origin image bytes
@@ -38,9 +38,11 @@ export function createCoinDither(img,fallback){
  defs.innerHTML=`<defs><filter id="${filterId}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0" result="gray"/><feImage href="${threshold.toDataURL()}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="threshold"/><feComposite in="gray" in2="threshold" operator="arithmetic" k1="0" k2="1" k3="-1" k4="0.5"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 1"/><feFuncG type="discrete" tableValues="0 1"/><feFuncB type="discrete" tableValues="0 1"/><feFuncA type="linear" slope="0" intercept="1"/></feComponentTransfer></filter></defs>`;host.append(defs);
  const context=canvas.getContext('2d');
  let serial=0,current='',pixels=null,size=96;
+ // Share the decoded source once; the field never fetches or reads it per frame.
+ function notify(image){try{onPixels(image);}catch(error){console.warn('Coin artwork unavailable to the visual field:',error.message);}}
  function paint(){if(!pixels)return;context.putImageData(new ImageData(ditherPixels(pixels,size,size),size,size),0,0);}
  function load(url,token){
-  img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';
+  img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
   if(!url){img.removeAttribute('src');return;}
   const decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
   decoded.onload=()=>{
@@ -49,7 +51,7 @@ export function createCoinDither(img,fallback){
     size=Math.max(64,Math.min(256,Math.round(host.clientWidth||96)));canvas.width=canvas.height=size;
     const scratch=document.createElement('canvas');scratch.width=scratch.height=size;const c=scratch.getContext('2d',{willReadFrequently:true});
     c.fillStyle='#fff';c.fillRect(0,0,size,size);const scale=Math.min(size/decoded.width,size/decoded.height),w=decoded.width*scale,h=decoded.height*scale;c.drawImage(decoded,(size-w)/2,(size-h)/2,w,h);
-    pixels=c.getImageData(0,0,size,size).data;canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';paint();
+    pixels=c.getImageData(0,0,size,size).data;canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';paint();notify({pixels,width:size,height:size});
    }catch{original(url,token);}
   };
   decoded.onerror=()=>{if(token===serial)original(url,token);};decoded.src=url;

@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=112';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=115';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=119';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -16,17 +16,20 @@ export function fieldState(m={}){
  const values=[finite(m.music?.changePct),m.decoded?finite(m.tradeRate):null,finite(m.replay?.volume??(m.decoded?m.observedVolume:m.observation?.volume)),m.availability?.balance===false?null:finite(m.balance),liquidity,finite(context.latestCap),holder];
  // Missing historical liquidity stays neutral, never borrowed from today's pool.
  const capital=values[5]>0?unit((Math.log10(values[5])-4)/4):.5;
+ // A known cap gradually pulls the flow into the artwork: $100K → $5M.
+ const imageGrowth=values[5]>0?unit((Math.log10(values[5])-5)/Math.log10(50)):0;
+ const identity=imageGrowth*imageGrowth*(3-2*imageGrowth);
  const depth=liquidity>0?unit((Math.log10(liquidity)-3)/4):.5;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
- return {drive,fresh,trace,values,activity,volume,motion:unit(raw.motion),capital,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {drive,fresh,trace,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Quiet activity leaves smaller, weaker dots;
 // the individual squares change without fading or hiding the whole layer.
 export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={}){
  const c=canvas?.getContext('2d',{alpha:true});
- if(!c)return {frame(){},event(){},pulse(){},piano(){},refresh(){},reset(){},close(){}};
+ if(!c)return {frame(){},event(){},pulse(){},piano(){},setImage(){},refresh(){},reset(){},close(){}};
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
  const blast=host?createPixelBlastField(host):null;
@@ -148,7 +151,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const transient=active?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
-  for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','depth','surge','imbalance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
+  for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
   const visualInputs={...smoothed,level,formation,piano:pianoEnergy,active,reducedMotion:reduced.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Integrate speed rather than multiplying a large clock by changing speed:
@@ -196,6 +199,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   },
   piano(at,strength=1){if(running()&&Number.isFinite(at)){pianoPulses.push({at,strength:unit(strength)});pianoPulses=pianoPulses.slice(-24);dirty=true;}},
   pulse(strength=.7){excite(unit(strength)||.7);},
+  setImage(image){blast?.setImage(image);dirty=true;},
   refresh(){dirty=true;},
   reset(){clear();},
   close(){

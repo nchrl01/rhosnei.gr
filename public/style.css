@@ -17,7 +17,7 @@ input[type=range]{display:block;width:100%;margin:0;accent-color:#f2f2f2;cursor:
 details{border-top:1px solid #333;padding:12px 0}summary{font-size:12px;line-height:1.4;cursor:pointer;list-style:none}summary::-webkit-details-marker{display:none}summary::before{content:'+ ';color:#f2f2f2}details[open]>summary::before{content:'− '}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
-/* One aligned header row and a seamless market tape. */
+/* Shared header and market-tape primitives. */
 .market-header{display:grid;grid-template-columns:max-content max-content minmax(0,1fr) max-content;align-items:center;gap:0;min-height:48px;margin:0 -16px 20px;padding:8px 0;border-bottom:1px solid #333;position:relative;z-index:20}
 .trending-heading{padding:0 16px;border-right:1px solid #f2f2f2}
 .trending-menu{position:relative;margin:0;padding:0;border:0}
@@ -445,4 +445,37 @@ body.visual-expanded{overflow:hidden}
 .audio-visualizer:not(.is-expanded){height:56px!important;min-height:56px!important;margin:12px 0!important}
 .audio-visualizer:not(.is-expanded) canvas{visibility:hidden}
 .audio-visualizer:not(.is-expanded) .visual-fullscreen{inset:0;width:100%}
+}
+
+/* Identity and navigation occupy the first row; the compact tape has its own row. */
+.market-header{grid-template-columns:minmax(0,1fr);min-height:0;padding:0;gap:0}
+.header-main{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0;min-height:44px;padding:0 8px 0 0}
+.header-main .upic-brand{height:44px;min-height:44px;min-width:0;flex:0 1 auto}
+.header-links{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex:0 0 auto;min-width:0}
+.header-link{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:36px;padding:0 2px;border:0;background:transparent;color:#f2f2f2;font-size:14px;font-weight:400;line-height:1;text-decoration:none;white-space:nowrap}
+.header-link:hover:not(:disabled){background:transparent;color:#aaa}
+.header-link svg{display:block;width:16px;height:16px}
+.market-tape{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;min-width:0;height:28px;border-top:1px solid #333}
+.market-tape .trending-heading{height:27px;padding:0 12px;border-right:1px solid #333}
+.market-tape .trending-cycle,.market-tape .trending-menu>summary{height:27px;min-height:27px;font-size:11px;line-height:1;gap:5px;letter-spacing:.02em}
+.market-tape #trending-list{height:27px;min-height:27px}
+.market-tape .ticker-track,.market-tape .ticker-group{height:27px;align-items:center}
+.market-tape .trending-card{padding-inline:10px;border-right-color:#333}
+.market-tape .trending-pick,.market-tape .trending-empty{height:27px;min-height:27px;gap:6px}
+.market-tape .trending-avatar{flex-basis:18px;width:18px;height:18px;font-size:9px}
+.market-tape .trending-name,.market-tape .trending-market-cap{font-size:12px;line-height:16px}
+.market-tape #trending-loader{height:100%;min-height:0}
+
+@media(max-width:760px){
+ .header-main{gap:8px;padding-right:3px}
+ .header-links{gap:10px}
+ .header-link{min-height:44px;font-size:13px}
+ .market-tape .trending-heading{padding-inline:8px}
+ .market-tape .trending-card{padding-inline:8px}
+ .market-tape .trending-name,.market-tape .trending-market-cap{font-size:11px}
+}
+@media(max-width:380px){
+ .header-links{gap:8px}
+ .market-tape .trending-heading{padding-inline:6px}
+ .market-tape .trending-cycle{font-size:10px;gap:4px;letter-spacing:0}
 }
