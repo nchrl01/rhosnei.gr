@@ -181,14 +181,14 @@ void main(){
 const unit = n => Math.max(0, Math.min(1, Number(n) || 0));
 // The supplied studio preset (2px / 7.75 scale / .6 density / .75 speed /
 // .15 edge fade) is the centre of bounded, market-controlled ranges.
-export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,active=false,reducedMotion=false,mobile=false}={}){
+export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,active=false,reducedMotion=false,mobile=false,piano=0}={}){
  const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
  const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
  const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
  return {
-  pixelSize:(mobile?3.4:2.8)+3.8*movement,
+  pixelSize:((mobile?3.4:2.8)+3.8*movement)*(1+.45*unit(piano)),
   scale:4+7.5*unit(capital),
-  density:(mobile?.8:.6)+1.35*flow,
+  density:(mobile?.8:.6)+1.35*flow+.7*unit(piano),
   speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),
   edgeFade:(.03+.24*(1-unit(depth)))*(mobile?.65:1),
   jitter:.03+.35*movement,
@@ -240,14 +240,14 @@ export function createPixelBlastField(host){
    const h=hash(key,seed),x=.15+.7*((h&65535)/65535),y=.15+.7*((h>>>16)/65535);
    ripples.push({key,time,strength:unit(strength),x:unit(.75*x+.25*unit(balance)),y});ripples=ripples.slice(-6);lastPulse=time;
   },
-  render({width,height,time,eventTime,level,formation,birth=1,active,mobile,reducedMotion,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,dither}={}){
+  render({width,height,time,eventTime,level,formation,birth=1,piano=0,active,mobile,reducedMotion,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,dither}={}){
    if(closed)return;
    const limit=mobile?384:640,scale=Math.min(1,limit/Math.max(width,height));
    const w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    if(canvas.width!==w)canvas.width=w;if(canvas.height!==h)canvas.height=h;
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
-   const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,active,reducedMotion,mobile:mobile||useSoftware});
+   const params=pixelBlastParameters({level,formation,drive,pressure,activity,volume,motion,fresh,capital,depth,surge,imbalance,active,reducedMotion,mobile:mobile||useSoftware,piano});
    if(lost||!program){fallback();software.render({width,height,time,eventTime,seed,params,formation:unit(formation),birth:unit(birth),dither,ripples});return;}
    const positions=new Float32Array(12).fill(-1),times=new Float32Array(6),strengths=new Float32Array(6);
    ripples.forEach((p,i)=>{positions[i*2]=p.x*w;positions[i*2+1]=p.y*h;times[i]=p.time;strengths[i]=p.strength;});

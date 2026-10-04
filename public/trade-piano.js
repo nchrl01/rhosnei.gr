@@ -131,7 +131,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
    arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*24;lastArpBucket=bucket;
   }
-  onVoice({id:event.id,notes:[midi],harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
+  onVoice({time,id:event.id,notes:[midi],harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
   return true;
  }
  return {

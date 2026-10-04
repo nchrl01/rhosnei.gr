@@ -1,4 +1,4 @@
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=107';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=108';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -25,7 +25,7 @@ export function fieldState(m={}){
 // a sparse, slowly forming structure. Quiet motion is visual, not a trade signal.
 export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={}){
  const c=canvas?.getContext('2d',{alpha:true});
- if(!c)return {frame(){},event(){},pulse(){},refresh(){},reset(){},close(){}};
+ if(!c)return {frame(){},event(){},pulse(){},piano(){},refresh(){},reset(){},close(){}};
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
  const blast=host?createPixelBlastField(host):null;
@@ -36,6 +36,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let pulseAt=-Infinity,pulseStrength=0,level=0,previousLevel=0,lastSound=-Infinity;
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
+ let pianoPulses=[],pianoEnergy=0;
  let formation=0,birth=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
@@ -49,7 +50,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
  function clear(newCoin=false){
-  previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;seen.clear();sourceClock=null;sourceAt=0;
+  previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;pianoPulses=[];pianoEnergy=0;seen.clear();sourceClock=null;sourceAt=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
@@ -129,8 +130,14 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(host){host.dataset.audible=String(audible);host.dataset.visible='true';}
   const target=audible?unit((20*Math.log10(Math.max(1e-8,rms))+70)/52):0;
   level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:1.4)));
+  const audioTime=getAudio()?.context?.currentTime??0;
+  if(!active)pianoPulses=[];
+  pianoPulses=pianoPulses.filter(p=>audioTime-p.at<9);
+  const pianoTarget=active?pianoPulses.reduce((peak,p)=>{const age=audioTime-p.at;return age<0?peak:Math.max(peak,p.strength*Math.min(1,age/.08)*Math.exp(-age/2.8));},0):0;
+  pianoEnergy+=(pianoTarget-pianoEnergy)*(1-Math.exp(-dt/.12));
   const eventHeat=active?Math.exp(-Math.max(0,now-marketPulse)/3500):0;
-  const shapeTarget=eventHeat<.002?0:eventHeat*unit(.6+.4*level);
+  const presence=Math.max(eventHeat,active?pianoEnergy:0);
+  const shapeTarget=presence<.002?0:presence*unit(.6+.4*level);
   formation+=(shapeTarget-formation)*(1-Math.exp(-dt/(shapeTarget>formation?.35:1.2)));
   if(shapeTarget===0&&formation<.002)formation=0;
   birth=Math.min(1,birth+dt/2);
@@ -141,7 +148,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','depth','surge','imbalance'])smoothed[key]+=(latest[key]-smoothed[key])*approach;
-  const visualInputs={...smoothed,level,formation,active,reducedMotion:reduced.matches};
+  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,active,reducedMotion:reduced.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Integrate speed rather than multiplying a large clock by changing speed:
   // a new observation then changes motion smoothly, without jumping patterns.
@@ -186,6 +193,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(id){seen.add(id);if(seen.size>256)seen.delete(seen.values().next().value);}
    lastEvent=performance.now();marketPulse=lastEvent;excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
   },
+  piano(at,strength=1){if(running()&&Number.isFinite(at)){pianoPulses.push({at,strength:unit(strength)});pianoPulses=pianoPulses.slice(-24);dirty=true;}},
   pulse(strength=.7){excite(unit(strength)||.7);},
   refresh(){dirty=true;},
   reset(){clear();},

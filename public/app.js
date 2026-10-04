@@ -11,12 +11,12 @@ import {createCoinDither} from './coin-dither.js?v=90';
 import {createUpicBrand} from './upic-brand.js?v=91';
 import {createTransportIndicator} from './transport-indicator.js?v=87';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=107';
+import {createAudioDots} from './audio-dots.js?v=108';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
 import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=65';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=76';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=108';
 import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=85';
 import {createMathPatternView} from './math-pattern-view.js?v=85';
 import {contextualizeMarket} from './market-state.js?v=53';
@@ -326,7 +326,7 @@ async function initialize(){
  const epoch=audioEpoch,context=ctx,destination=instrumentTap;
  if(!piano&&!pianoLoading){
   audioErrors.piano='';
-  pianoLoading=createTradePiano(context,destination,{onVoice:()=>{if(epoch===audioEpoch)pianoChordCount++;}}).then(instrument=>{
+  pianoLoading=createTradePiano(context,destination,{onVoice:event=>{if(epoch===audioEpoch){pianoChordCount++;if(event.time!=null)dataVisual.piano(event.time,1);}},onArpeggio:event=>{if(epoch===audioEpoch&&event.time!=null)dataVisual.piano(event.time,.65);}}).then(instrument=>{
    if(epoch!==audioEpoch){instrument.close();throw Error('Audio loading cancelled');}
    piano=instrument;piano.setArpeggioPattern(arpeggioAI.snapshot());piano.setEnabled(pianoEnabled);piano.setMaster(Number($('master').value));piano.reset(seed);piano.resonance(liveMetrics().context?.latestCap);piano.setRunning(playing);
    if(playing){flushPianoTrade();if(replay.state.active)tick();}audioStatus();return piano;
