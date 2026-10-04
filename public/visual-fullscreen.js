@@ -1,6 +1,12 @@
 // Expand the existing renderer, keeping its audio clock and GPU/canvas alive.
 export function createVisualFullscreen(host){
- const button=document.createElement('button');button.type='button';button.className='visual-fullscreen';button.textContent='Fullscreen';button.setAttribute('aria-expanded','false');host.append(button);
+ const button=document.createElement('button');button.type='button';button.className='visual-fullscreen';host.append(button);
+ function icon(expanded){
+  const label=expanded?'Collapse visualization':'Expand visualization';
+  button.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true" focusable="false"><path d="${expanded?'M8 3v5H3m13-5v5h5M3 16h5v5m13-5h-5v5':'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5'}"/></svg>`;
+  button.setAttribute('aria-label',label);button.title=label;button.setAttribute('aria-expanded',String(expanded));
+ }
+ icon(false);
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],chartPlaceholder=null;
  const chart=document.querySelector('.chart-panel'),play=document.querySelector('#play');
@@ -32,14 +38,14 @@ export function createVisualFullscreen(host){
    document.body.classList.add('visual-expanded');host.classList.add('is-expanded');top();
    savedInert=[...document.querySelector('main').children].filter(node=>node!==header).map(node=>[node,node.inert]);
    for(const [node] of savedInert)node.inert=true;
-   button.textContent='Return';button.setAttribute('aria-expanded','true');
+   icon(true);
    await motion(transform(from,host.getBoundingClientRect()),'none');
   }else{
    const from=host.getBoundingClientRect(),to=placeholder.getBoundingClientRect();
    await motion('none',transform(to,from));
    placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;mobileChart();window.dispatchEvent(new Event('resize'));
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
-   button.textContent='Fullscreen';button.setAttribute('aria-expanded','false');
+   icon(false);
   }
   busy=false;button.focus({preventScroll:true});
  }
