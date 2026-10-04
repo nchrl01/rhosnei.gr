@@ -21,8 +21,8 @@ export function createUIControls(){
   panel.style.left=left+'px';panel.style.top=top+'px';
  }
  function setVolumeOpen(open,focus=false){
-  volumeOpen=Boolean(open);panel.hidden=mobile.matches&&!volumeOpen;
-  volumeButton.hidden=!mobile.matches;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
+  volumeOpen=Boolean(open);panel.hidden=!volumeOpen;
+  volumeButton.hidden=false;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
   volume?.setOpen(mobile.matches?volumeOpen:true);
   if(mobile.matches&&volumeOpen)positionVolumePanel();
   if(mobile.matches&&volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;positionVolumePanel();if(focus&&!volume?.focus())input.focus({preventScroll:true});});
@@ -32,6 +32,8 @@ export function createUIControls(){
   volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);
  }
  volumeButton.addEventListener('click',()=>setVolumeOpen(!volumeOpen,true));
+ volumeButton.parentElement.addEventListener('pointerenter',()=>{if(!mobile.matches)setVolumeOpen(true);});
+ volumeButton.parentElement.addEventListener('pointerleave',()=>{if(!mobile.matches&&!volumeButton.parentElement.contains(document.activeElement))setVolumeOpen(false);});
  document.addEventListener('pointerdown',event=>{if(volumeOpen&&!volumeButton.parentElement.contains(event.target))setVolumeOpen(false);});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){event.preventDefault();setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
  volumeButton.parentElement.addEventListener('focusout',event=>{if(volumeOpen&&event.relatedTarget&&!volumeButton.parentElement.contains(event.relatedTarget))setVolumeOpen(false);});
