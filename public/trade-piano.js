@@ -1,6 +1,6 @@
 // CC0 sampled piano. Meaningful moves and known quiet intervals select single notes.
 import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=123';
-import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=123';
+import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=124';
 import {createPianoPolicy} from './piano-policy.js?v=61';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
@@ -63,6 +63,10 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   }
  }
  room.buffer=impulse;input.connect(filter);filter.connect(dry);filter.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
+ // New patterned notes retain a little room, with 75% less reverb send.
+ const patternFilter=ctx.createBiquadFilter(),patternSend=ctx.createGain();
+ patternFilter.type='lowpass';patternFilter.frequency.value=7000;patternFilter.Q.value=.55;
+ patternSend.gain.value=.25;patternFilter.connect(dry);patternFilter.connect(patternSend);patternSend.connect(roomInput);
  let enabled=true,running=false,volume=.5,seed=1917,closed=false,arp=null,pattern=[],nextArp=0,lastArpBucket=null,roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
  const policy=createPianoPolicy(seed);
  const phrasing=createPianoPhrasing(seed);
@@ -101,7 +105,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   // Stolen voices retain stopVoice's independent, click-free release.
   const onset=Math.min(Math.max(.003,attack),duration*.2);
   gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(peak,time+onset);gain.gain.setValueAtTime(peak,end-release);gain.gain.linearRampToValueAtTime(0,end-.002);
-  source.connect(gain);gain.connect(input);const voice={source,gain,kind,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
+  source.connect(gain);gain.connect(kind==='interlock'?patternFilter:input);const voice={source,gain,kind,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
   return time;
  }
  // Audio-clock lookahead keeps attacks independent of the drawing frame rate.
@@ -113,7 +117,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     if(time>=ctx.currentTime+.12)break;
     interlock.index++;
     if(time<ctx.currentTime-.08)continue;
-    const sounded=note(event.midi,time,event.gain,event.duration,'arp',.006);
+    const sounded=note(event.midi,time,event.gain,event.duration,'interlock',.006);
     onArpeggio({midi:event.midi,step:event.tick,time:sounded,tempo:interlock.tempo});
    }
    if(interlock.index>=interlock.events.length)interlock=null;
@@ -182,12 +186,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    this.resonance(m.context?.latestCap);this.setTempo(m.music?.tempo);
    if(interlock&&Number.isFinite(m.music?.tonic)&&Number.isFinite(interlock.tonic)&&m.music.tonic!==interlock.tonic){
     const shift=m.music.tonic-interlock.tonic;
-    for(let i=interlock.index;i<interlock.events.length;i++){const event=interlock.events[i];event.midi+=shift;while(event.midi>81)event.midi-=12;while(event.midi<48)event.midi+=12;}
+    for(let i=interlock.index;i<interlock.events.length;i++){const event=interlock.events[i];event.midi+=shift;while(event.midi>93)event.midi-=12;while(event.midi<57)event.midi+=12;}
     interlock.tonic=m.music.tonic;
    }
    const selection=policy.idle({at,quietAt:ctx.currentTime*1000,price,music:m.music,known,quiet,referencePrice});
    return selection?play(selection,{id:'quiet:'+selection.at,at:selection.at},m.context?.latestCap,m.music||{}):false;
   },
-  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [input,filter,roomInput,dry,wet,room,tailGate,master])node.disconnect();},50);},
+  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [input,filter,patternFilter,patternSend,roomInput,dry,wet,room,tailGate,master])node.disconnect();},50);},
  };
 }

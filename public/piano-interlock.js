@@ -16,7 +16,7 @@ export function interlockPitch(event,harmony){
  const pool=Array.from({length:37},(_,i)=>45+i).filter(n=>pcs.includes(n%12));
  const target=event.target+(root%12-6)*.35;
  const centre=pool.reduce((best,n,i)=>Math.abs(n-target)<Math.abs(pool[best]-target)?i:best,0);
- return pool[Math.max(0,Math.min(pool.length-1,centre+event.degree))];
+ return pool[Math.max(0,Math.min(pool.length-1,centre+event.degree))]+12;
 }
 export function interlockingPiano(seed,cap,intensity,harmony){
  const amount=pianoArticulation(cap);
