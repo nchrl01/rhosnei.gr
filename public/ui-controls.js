@@ -5,7 +5,7 @@ export function createUIControls(){
  const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
  let components,volume,clock,lastClock=null,sequence=0;
  const dial=document.createElement('div');dial.id='volume-dial';dial.hidden=true;input.before(dial);
- const volumeButton=$('volume-button');
+ const volumeButton=$('volume-button'),mobile=matchMedia('(max-width:760px)');
  let volumeOpen=false;
  function positionVolumePanel(){
   if(!volumeOpen)return;
@@ -21,11 +21,11 @@ export function createUIControls(){
   panel.style.left=left+'px';panel.style.top=top+'px';
  }
  function setVolumeOpen(open,focus=false){
-  volumeOpen=Boolean(open);panel.hidden=!volumeOpen;
-  volumeButton.hidden=false;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
-  volume?.setOpen(volumeOpen);
-  if(volumeOpen)positionVolumePanel();
-  if(volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;positionVolumePanel();if(focus&&!volume?.focus())input.focus({preventScroll:true});});
+  volumeOpen=Boolean(open);panel.hidden=mobile.matches&&!volumeOpen;
+  volumeButton.hidden=!mobile.matches;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
+  volume?.setOpen(mobile.matches?volumeOpen:true);
+  if(mobile.matches&&volumeOpen)positionVolumePanel();
+  if(mobile.matches&&volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;positionVolumePanel();if(focus&&!volume?.focus())input.focus({preventScroll:true});});
  }
  function volumeLabel(){
   const amount=Math.round(Number(input.value)*100);
@@ -35,6 +35,7 @@ export function createUIControls(){
  document.addEventListener('pointerdown',event=>{if(volumeOpen&&!volumeButton.parentElement.contains(event.target))setVolumeOpen(false);});
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){event.preventDefault();setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
  volumeButton.parentElement.addEventListener('focusout',event=>{if(volumeOpen&&event.relatedTarget&&!volumeButton.parentElement.contains(event.relatedTarget))setVolumeOpen(false);});
+ mobile.addEventListener('change',()=>setVolumeOpen(false));
  window.addEventListener('resize',()=>requestAnimationFrame(positionVolumePanel));
  document.addEventListener('scroll',positionVolumePanel,true);
  window.visualViewport?.addEventListener('resize',positionVolumePanel);
@@ -70,8 +71,8 @@ export function createUIControls(){
   try{
    volume=components.mountVolume(dial,input);panel.dataset.volumeUi='true';
    dial.addEventListener('ui-component-error',()=>{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;});
-   volume.setOpen(volumeOpen);
-   if(volumeOpen)requestAnimationFrame(positionVolumePanel);
+   volume.setOpen(mobile.matches?volumeOpen:true);
+   if(mobile.matches&&volumeOpen)requestAnimationFrame(positionVolumePanel);
   }catch{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;}
   try{
    clock=components.mountClock(clockHost);time.dataset.clockUi='true';

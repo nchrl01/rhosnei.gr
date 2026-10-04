@@ -16,6 +16,12 @@
 #volume-panel[data-volume-ui=true] #master,#volume-panel[data-volume-ui=true] #master-value{display:none}
 #volume-panel>span{margin:0;font-size:12px;color:#f5f5f5}
 .visual-volume-control{position:fixed;left:60px;top:calc(var(--visual-full-top,64px) + 8px);z-index:120;pointer-events:auto}
+@media(min-width:761px){
+ #volume-panel{position:static;display:flex;width:52px;max-width:none;max-height:none;overflow:visible;gap:0;padding:0;border:0;background:transparent;box-shadow:none}
+ #volume-panel>label,#volume-panel>span{display:none}
+ #volume-panel #volume-dial{display:block;width:52px;height:52px;flex:0 0 52px}
+ #volume-dial .comet-dial{--cd-size:52px!important;--cd-figure:13px!important}
+}
 @media(max-width:760px){
  .transport #volume-button,.visual-volume-control #volume-button{width:60px;height:60px;min-width:60px;min-height:60px}
  #volume-button svg{width:28px;height:28px}
