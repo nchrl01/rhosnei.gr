@@ -46,7 +46,7 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(Math.floor(px)*127.1+Math.floor(py)*311.7)-.5)*params.jitter;
     const radius=Math.sqrt(Math.max(0,jitter))*.43;
-    const shape=clamp((radius-Math.hypot(fract(px)-.5,fract(py)-.5))*params.pixelSize+.5);
+    const shape=1;
     const edge=Math.min(x/w,y/h,1-x/w,1-y/h),t=clamp(edge/Math.max(.0001,params.edgeFade));
     const alpha=Math.round(255*clamp(shape*opacity*t*t*(3-2*t)));
     const at=(y*w+x)*4;pixels[at]=pixels[at+1]=pixels[at+2]=255;pixels[at+3]=alpha;
