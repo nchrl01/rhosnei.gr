@@ -6,12 +6,12 @@ import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=114';
-import {createEngineView} from './engine-view.js?v=131';
+import {createEngineView} from './engine-view.js?v=132';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=131';
+import {createAudioDots} from './audio-dots.js?v=132';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -368,16 +368,16 @@ function setPlayState(active){
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
  button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
- button.title=starting?'Opening instrument':interrupted?'Resume':active?'Pause':'Listen';
- button.setAttribute('aria-label',starting?'Opening instrument':interrupted?'Resume interrupted audio':active?'Pause audio':'Listen to market');
+ button.title=interrupted?'Resume':active?'Pause':'Listen';
+ button.setAttribute('aria-label',interrupted?'Resume interrupted audio':active?'Pause audio':'Listen to market');
  button.setAttribute('aria-pressed',String(active&&!interrupted));
  button.setAttribute('aria-busy',String(starting));
 }
 let audioLoadFailed=false;
 function audioBusy(value){
  starting=value;$('play').disabled=value;setPlayState(playing);
- if(value){audioLoadFailed=false;ui.loading('audio','working','Opening instrument',{restart:true});}
- else ui.loading('audio',audioLoadFailed?'error':'done','Opening instrument');
+ if(value)audioLoadFailed=false;
+ ui.loading('audio',null,'');
 }
 setPlayState(false);
 $('play').onclick=async()=>{

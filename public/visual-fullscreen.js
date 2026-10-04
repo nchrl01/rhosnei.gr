@@ -3,7 +3,7 @@ export function createVisualFullscreen(host){
  const button=document.createElement('button');button.type='button';button.className='visual-fullscreen';host.append(button);
  function icon(expanded){
   const label=expanded?'Collapse visualization':'Expand visualization';
-  button.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true" focusable="false"><path d="${expanded?'M8 3v5H3m13-5v5h5M3 16h5v5m13-5h-5v5':'M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5'}"/></svg>`;
+  button.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true" focusable="false"><path d="${expanded?'M5 5l14 14M11 19h8v-8':'M19 19 5 5M5 13V5h8'}"/></svg>`;
   button.setAttribute('aria-label',label);button.title=label;button.setAttribute('aria-expanded',String(expanded));
  }
  icon(false);
@@ -22,7 +22,7 @@ export function createVisualFullscreen(host){
   mini.hidden=!(expanded&&mobile);
  }
  function fullscreenVolume(){
-  if(!volumeWidget)return;
+  if(!volumeWidget||volumeWidget.closest('.header-links'))return;
   if(expanded&&!volumePlaceholder){
    if(volumeButton?.getAttribute('aria-expanded')==='true')volumeButton.click();
    volumePlaceholder=document.createElement('span');volumeWidget.before(volumePlaceholder);
@@ -42,10 +42,21 @@ export function createVisualFullscreen(host){
  }
  function motion(from,to){
   if(reduced.matches)return Promise.resolve();
-  animation=host.animate([{transform:from},{transform:to}],{duration:440,easing:'cubic-bezier(.22,.8,.25,1)',fill:'none'});
-  return animation.finished.catch(()=>{});
+  // Animate layout dimensions so the renderer redraws its square lattice at
+  // each size. Scaling a finished canvas would stretch the pixels.
+  return new Promise(resolve=>{
+   const started=performance.now();let cancelled=false;
+   animation={cancel(){cancelled=true;}};
+   function frame(now){
+    const progress=Math.min(1,(now-started)/440),eased=1-Math.pow(1-progress,3);
+    for(const key of ['left','top','width','height'])host.style.setProperty(key,(from[key]+(to[key]-from[key])*eased)+'px','important');
+    window.dispatchEvent(new Event('resize'));
+    if(progress<1&&!cancelled)requestAnimationFrame(frame);
+    else {for(const key of ['left','top','width','height'])host.style.removeProperty(key);animation=null;resolve();}
+   }
+   frame(started);
+  });
  }
- function transform(from,to){return `translate(${from.left-to.left}px,${from.top-to.top}px) scale(${from.width/Math.max(1,to.width)},${from.height/Math.max(1,to.height)})`;}
  async function toggle(){
   if(busy)return;busy=true;
   if(!expanded){
@@ -58,10 +69,10 @@ export function createVisualFullscreen(host){
    savedInert=[...document.querySelector('main').children].filter(node=>node!==header).map(node=>[node,node.inert]);
    for(const [node] of savedInert)node.inert=true;
    icon(true);
-   await motion(transform(from,host.getBoundingClientRect()),'none');
+   await motion(from,host.getBoundingClientRect());
   }else{
    const from=host.getBoundingClientRect(),to=placeholder.getBoundingClientRect();
-   await motion('none',transform(to,from));
+   await motion(from,to);
    placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;mobileChart();fullscreenVolume();window.dispatchEvent(new Event('resize'));
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
    icon(false);
