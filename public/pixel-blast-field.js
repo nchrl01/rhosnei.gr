@@ -186,9 +186,9 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
  const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
  return {
-  pixelSize:((mobile?3.4:2.8)+3.8*movement)*(1+.45*unit(piano)),
+  pixelSize:((mobile?3.4:2.8)+3.8*unit(capital))*(1+.45*unit(piano)),
   scale:4+7.5*unit(capital),
-  density:(mobile?.8:.6)+1.35*flow+.7*unit(piano),
+  density:(mobile?.8:.6)+1.35*unit(depth)+.7*unit(piano),
   speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),
   edgeFade:(.03+.24*(1-unit(depth)))*(mobile?.65:1),
   jitter:.03+.35*movement,
