@@ -77,6 +77,8 @@ export function createPixelBlastCanvas(host){
     const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
     const taper=edgeT*edgeT*(3-2*edgeT);
     if(edge<=0||taper<=.015)continue;
+    // Sparse stable perimeter: shrink and remove cells rather than draw a rim.
+    if(hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
     // small liquid movement survives without moving the square lattice.
     const cx=Math.floor(fx/cell),cy=Math.floor(fy/cell),key=cx+':'+cy;
@@ -97,6 +99,12 @@ export function createPixelBlastCanvas(host){
      for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
+     // Pattern Waves silk folds sampled on the fixed square lattice.
+     const waveU=cx*cell/(520*1.75),waveV=cy*cell/(520*1.75),waveT=time*1.95/1.35;
+     const bend=noise(waveV*.85,waveU*.3,waveT*.05)*1.7+.4*Math.sin(waveV*1.6+waveT*.2);
+     const phase=waveU*5.5+bend-waveT*.45;
+     const fold=(Math.sin(phase)+.32*Math.sin(phase*2+1.3))*(.6+.4*noise(waveU*.55+3,waveV*.45,waveT*.04));
+     feed+=(fold*.14)*(.25+.75*params.dotStrength);
      if(params.ripples)for(const p of ripples){
       const age=Math.max(0,eventTime-p.time),r=Math.hypot(u-(((p.x*w-originX)/ratio-cell/2)/cssHeight),v-(((p.y*h-originY)/ratio-cell/2)/cssHeight));
       const ring=Math.exp(-(((r-params.rippleSpeed*age)/params.rippleThickness)**2))*Math.exp(-age-10*r)*params.rippleIntensity*p.strength;

@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=121';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=130';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=131';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -189,6 +189,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    dirty=true;
   }
   visualCursor=replaying?eventTime:null;
+  if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);dirty=true;return;}
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
   blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});

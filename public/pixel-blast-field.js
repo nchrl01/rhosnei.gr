@@ -1,5 +1,5 @@
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=130';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=130';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=131';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=131';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -153,6 +153,13 @@ void main(){
   float feed = base + (uDensity - 0.5) * 0.3;
   // Distributed local populations, with no central image or radial attractor.
   feed+=uEcosystem*vnoise(vec3(uv*6.0+vec2(uSeed*.19,uSeed*.41),uTime*.04));
+  // Silk folds from Pattern Waves, adapted to the shared noise and sound clock.
+  vec2 wavePoint=cellCoord/(520.0*1.75);
+  float waveTime=uTime*1.95/1.35;
+  float bend=vnoise(vec3(wavePoint.y*.85,wavePoint.x*.3,waveTime*.05))*1.7+.4*sin(wavePoint.y*1.6+waveTime*.2);
+  float phase=wavePoint.x*5.5+bend-waveTime*.45;
+  float fold=(sin(phase)+.32*sin(phase*2.0+1.3))*(.6+.4*vnoise(vec3(wavePoint.x*.55+3.0,wavePoint.y*.45,waveTime*.04)));
+  feed+=fold*.14*(.25+.75*uDotStrength);
 
   float speed     = uRippleSpeed;
   float thickness = uRippleThickness;
@@ -203,7 +210,8 @@ void main(){
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
   float square = step(start.x,point.x)*step(start.y,point.y)
     *(1.0-step(start.x+dotSize,point.x))*(1.0-step(start.y+dotSize,point.y))*step(.015,edge);
-  float M = coverage * square;
+  float perimeterHash=hash11(pixelId.x*127.1+pixelId.y*311.7+19.7);
+  float M = coverage * square * step(perimeterHash,edge*edge);
 
   vec3 color = uColor;
 
