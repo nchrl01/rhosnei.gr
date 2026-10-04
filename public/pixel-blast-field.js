@@ -1,4 +1,4 @@
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=136';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=138';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=136';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
@@ -31,8 +31,6 @@ uniform int   uEnableRipples;
 uniform float uRippleSpeed;
 uniform float uRippleThickness;
 uniform float uRippleIntensity;
-uniform float uWaveform[64];
-uniform int uWaveformEnabled;
 uniform int   uLiquid;
 uniform float uLiquidStrength;
 uniform float uLiquidRadius;
@@ -168,17 +166,6 @@ void main(){
   const float dampT     = 1.0;
   const float dampR     = 10.0;
 
-  if(uWaveformEnabled==1){
-    float x=clamp(cellCoord.x/viewSize.x+.5,0.0,1.0)*63.0;
-    int a=int(floor(x)),b=min(63,a+1);
-    float amplitude=clamp(mix(uWaveform[a],uWaveform[b],fract(x))*2.8,-1.0,1.0);
-    for(int row=0;row<3;row++){
-      float baseline=(float(row)-1.0)*.28;
-      float y=baseline+amplitude*(.13+.025*float(row));
-      float band=exp(-pow((cellCoord.y/viewSize.y-y)/max(.005,uRippleThickness*.35),2.0));
-      feed=max(feed,band*(.55+.4*uDotStrength)*uRippleIntensity);
-    }
-  }
 
   // The coin is a target for the same dot field, not a pasted image layer.
   // Its coordinates flow only with the existing market/audio clock. The
@@ -262,7 +249,6 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
-   locations.uWaveform=gl.getUniformLocation(program,'uWaveform[0]');locations.uWaveformEnabled=gl.getUniformLocation(program,'uWaveformEnabled');
    uploadImage();
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
   }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
@@ -292,7 +278,7 @@ export function createPixelBlastField(host){
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
    const params=parameters||pixelBlastParameters({...inputs,mobile:mobile||useSoftware});lastParameters={...params};
-   if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples,waveform:inputs.waveform});return;}
+   if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples});return;}
    // Integer cell boundaries keep a square's complete width and height even
    // on odd viewport dimensions or fractional device pixel ratios.
    const grid=Math.max(2,Math.round(params.cellSize*scale)),rasterScale=grid/params.cellSize;
@@ -302,7 +288,6 @@ export function createPixelBlastField(host){
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
-   gl.uniform1fv(locations.uWaveform,inputs.waveform||new Float32Array(64));i('uWaveformEnabled',params.waveformEnabled&&inputs.waveform?1:0);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uPixelSize',params.cellSize);f('uNoiseCellSize',16);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
    i('uIdentityImage',0);f('uIdentity',identityMask?params.identity:0);f('uIdentityMotion',params.identityMotion);

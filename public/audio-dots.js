@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=132';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=136';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=138';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -34,8 +34,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const blast=host?createPixelBlastField(host):null;
  const fullscreen=host?createVisualFullscreen(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
- const buffers=new WeakMap();
- const waveform=new Float32Array(64);
+ const buffers=new WeakMap(),spectra=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0,liquidClock=0,audioEvent=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
  let displayClock=0,displayCursor=null,displayAt=0,displayRunning=false;
@@ -104,7 +103,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  window.addEventListener('resize',layoutChanged);
  document.addEventListener('visibilitychange',layoutChanged);window.addEventListener('pageshow',layoutChanged);arrange();
  function measure(){
-  waveform.fill(0);
   const source=getAudio(),channels=source?.channels||[source];
   let power=0,count=0;
   for(const channel of channels){
@@ -112,13 +110,48 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    let samples=buffers.get(channel);
    if(!samples||samples.length!==channel.fftSize){samples=new Float32Array(channel.fftSize);buffers.set(channel,samples);}
    channel.getFloatTimeDomainData(samples);
-   for(let i=0;i<samples.length;i++){const bin=Math.min(63,Math.floor(i*64/samples.length)),value=samples[i];if(Number.isFinite(value)&&Math.abs(value)>Math.abs(waveform[bin]))waveform[bin]=value;}
    let sum=0,squares=0;for(const sample of samples){sum+=sample;squares+=sample*sample;}
    const mean=sum/samples.length;
    power+=Math.max(0,squares/samples.length-mean*mean);count++;
   }
-  // Separate L/R power measurements cannot cancel opposite stereo phases.
+ // Separate L/R power measurements cannot cancel opposite stereo phases.
   return count?Math.sqrt(power/count):0;
+ }
+ function drawNotation(params){
+  const scopes=getAudio()?.scopes||[],d=canvas.width/Math.max(1,width);
+  const cell=Math.max(2,Math.round(params.cellSize*d));let drawn=0;
+  const hash=n=>{n=Math.imul(n^(n>>>16),0x45d9f3b);n=Math.imul(n^(n>>>16),0x45d9f3b);return ((n^(n>>>16))>>>0)/4294967296;};
+  // Independent sound spectra form disconnected square constellations.
+  // No paths, baselines, fixed lanes or repeated copies of the master signal.
+  for(const [index,scope] of scopes.entries()){
+   let meter=null,power=0;
+   for(const channel of scope.channels){
+    let samples=buffers.get(channel);if(!samples){samples=new Float32Array(channel.fftSize);buffers.set(channel,samples);}
+    channel.getFloatTimeDomainData(samples);let squares=0;
+    for(const sample of samples)squares+=sample*sample;
+    const rms=Math.sqrt(squares/samples.length);if(rms>power){power=rms;meter=channel;}
+   }
+   if(!meter||power<.0005)continue;
+   let spectrum=spectra.get(meter);if(!spectrum){spectrum=new Float32Array(meter.frequencyBinCount);spectra.set(meter,spectrum);}
+   meter.getFloatFrequencyData(spectrum);
+   const hz=meter.context.sampleRate/meter.fftSize;
+   for(let band=0;band<16;band++){
+    const low=70*Math.pow(130,band/16),high=70*Math.pow(130,(band+1)/16);
+    let db=-Infinity;for(let bin=Math.max(1,Math.floor(low/hz));bin<Math.min(spectrum.length,Math.ceil(high/hz));bin++)db=Math.max(db,spectrum[bin]);
+    const energy=unit((db+65)/45)*unit(power*40);if(energy<.035)continue;
+    const key=(seed^Math.imul(index+1,73856093)^Math.imul(band+1,19349663))>>>0;
+    const x=canvas.width*(.07+.86*hash(key)),y=canvas.height*(.08+.84*hash(key+71));
+    const count=1+Math.floor(energy*7),size=cell*(energy>.65?2:1);
+    c.fillStyle=`rgba(255,255,255,${.25+.75*energy})`;
+    for(let mark=0;mark<count;mark++){
+     const spread=cell*(3+energy*9),dx=(hash(key+mark*131+17)-.5)*spread*2,dy=(hash(key+mark*173+53)-.5)*spread*2;
+     c.fillRect(Math.round((x+dx)/cell)*cell,Math.round((y+dy)/cell)*cell,size,size);
+    }
+   }
+   drawn++;
+  }
+  canvas.dataset.scopeInputs=String(drawn);
+  canvas.dataset.notation='discrete-spectral-marks';
  }
  function presentationTime(now,active=running()&&hasMarket){
   if(!replaying||sourceClock===null)return now/1000;
@@ -179,7 +212,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!smoothed)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
-  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,waveform,reducedMotion:reduced.matches,mobile:mobile.matches};
+  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Integrate speed rather than multiplying a large clock by changing speed:
   // a new observation then changes motion smoothly, without jumping patterns.
@@ -192,10 +225,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    dirty=true;
   }
   visualCursor=replaying?eventTime:null;
-  if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);dirty=true;return;}
+  if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
   blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});
+  drawNotation(visualParams);
   Object.assign(canvas.dataset,{composition:['ready','canvas'].includes(host?.dataset.pixelBlast)?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
