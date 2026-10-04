@@ -38,13 +38,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  const decoded=await Promise.allSettled(downloaded.map(async item=>({...item,trim:Number(item.trim)||1,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
  const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
  if(!samples.length)throw Error('This browser could not decode the EarthBound samples');
- const input=ctx.createGain(),filter=ctx.createBiquadFilter(),roomInput=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
- // Keep the sampled hammer, then let its body merge into a long diffuse room.
- // One fixed convolution is shared by all notes; no delay loop or extra voice
- // runs after a market note. Seeking/pause still clears the complete tail.
- filter.type='lowpass';filter.frequency.value=2200;filter.Q.value=.55;
- // Remove sub-bass only from the room so overlapping low notes can stay
- // suspended without accumulating rumble. The hammer's direct path is intact.
+ const instrumentFilter=ctx.createBiquadFilter(),instrumentSend=ctx.createGain(),roomInput=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
+ // Harmony notes and arpeggios share one instrument and its dry/room balance.
+ // One fixed convolution is shared by all notes; seeking/pause clears its tail.
+ instrumentFilter.type='lowpass';instrumentFilter.frequency.value=7000;instrumentFilter.Q.value=.55;
+ instrumentSend.gain.value=.25;
+ // Remove sub-bass only from the room; the direct instrument stays intact.
  roomInput.type='highpass';roomInput.frequency.value=75;roomInput.Q.value=.707;
  dry.gain.value=.34;wet.gain.value=1.45;master.gain.value=0;
  // Eight seconds at ordinary phone sample rates; cap unusually high
@@ -63,11 +62,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    data[i]=(.65*smooth+.35*diffuse)*bloom*Math.exp(-t*.38)*fade;
   }
  }
- room.buffer=impulse;input.connect(filter);filter.connect(dry);filter.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
- // New patterned notes retain a little room, with 75% less reverb send.
- const patternFilter=ctx.createBiquadFilter(),patternSend=ctx.createGain();
- patternFilter.type='lowpass';patternFilter.frequency.value=7000;patternFilter.Q.value=.55;
- patternSend.gain.value=.25;patternFilter.connect(dry);patternFilter.connect(patternSend);patternSend.connect(roomInput);
+ room.buffer=impulse;instrumentFilter.connect(dry);instrumentFilter.connect(instrumentSend);instrumentSend.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
  let enabled=true,running=false,volume=.5,seed=1917,closed=false,arp=null,pattern=[],nextArp=0,lastArpBucket=null,roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
  const policy=createPianoPolicy(seed);
  const phrasing=createPianoPhrasing(seed);
@@ -101,15 +96,16 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const now=ctx.currentTime;hold(tailGate.gain,now);tailGate.gain.linearRampToValueAtTime(1,now+.02);
   },55);
  }
- function note(midi,time,dynamics,duration=5.8,kind='note',attack=.018){
+ function note(midi,time,dynamics,duration=3.5,kind='note',attack=.018){
   time=Math.max(time,reopenAt,ctx.currentTime+.012);
   // Reserve voices at their audible onset, not when the lookahead schedules
   // them. Expired voices must not steal a note that has not sounded yet.
   const active=[...voices].filter(voice=>!voice.fading&&voice.end>time).sort((a,b)=>a.end-b.end);
   while(active.length>=6)stopVoice(active.shift(),time-.035);
   midi=instrumentPitch(midi,profile);
-  const patterned=kind==='interlock'||kind==='arp';
-  duration=Math.min(duration*(patterned?profile.gate:1),patterned?profile.phraseMax:profile.noteMax);
+  // Use the arpeggiator's articulation for the harmonic layer as well, so
+  // held sample loops do not build a second, competing pad around the phrase.
+  duration=Math.min(duration*profile.gate,profile.phraseMax);
   const sample=instrument;
   const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi+(sample.correction||0)/100)/12);
   const loopEnd=Math.min(sample.loopEnd,source.buffer.duration);
@@ -122,7 +118,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(peak,time+onset);
   gain.gain.exponentialRampToValueAtTime(Math.max(.000001,body),time+onset+decay);
   gain.gain.setValueAtTime(body,end-release);gain.gain.linearRampToValueAtTime(0,end);
-  source.connect(gain);gain.connect(patterned?patternFilter:input);const voice={source,gain,kind,end,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
+  source.connect(gain);gain.connect(instrumentFilter);const voice={source,gain,kind,end,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
   return time;
  }
  // Audio-clock lookahead keeps attacks independent of the drawing frame rate.
@@ -164,8 +160,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  function play(selection,event,cap,music){
   const quiet=selection.reason==='quiet',phrase=phrasing.next(event,music,{quiet,changePct:selection.changePct});
   const {midi,harmony}=phrase,intensity=unit(music.intensity);
-  const articulation=pianoArticulation(cap);
-  const time=note(midi,ctx.currentTime+phrase.delay,(quiet?.105:.20*(.7+.3*intensity))*phrase.velocity,(quiet?5.2:5.8-4.8*articulation)*phrase.duration,'note',quiet?phrase.attack:.018-.012*articulation);
+  const time=note(midi,ctx.currentTime+phrase.delay,.075*(quiet?.6:.6+.4*intensity)*phrase.velocity,3.5*phrase.duration,'note',phrase.attack);
   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/30000);
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
   if(!quiet&&arp){arp.harmony=[...harmony.notes];arp.tonic=music.tonic;}
@@ -199,7 +194,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   reset(value=seed){clear();seed=Number(value)>>>0;instrument=chooseInstrument(seed);profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=30/tempo;}if(interlock)interlock.pendingTempo=tempo;},
-  resonance(cap){currentCap=cap;const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;filter.Q.setTargetAtTime(.55,ctx.currentTime,.8);filter.frequency.setTargetAtTime(Math.min(profile.cutoff,2200+4800*a),ctx.currentTime,.8);patternFilter.frequency.setTargetAtTime(profile.cutoff,ctx.currentTime,.08);patternSend.gain.setTargetAtTime(profile.room,ctx.currentTime,.08);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}return r;},
+  resonance(cap){currentCap=cap;const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;instrumentFilter.frequency.setTargetAtTime(profile.cutoff,ctx.currentTime,.08);instrumentSend.gain.setTargetAtTime(profile.room,ctx.currentTime,.08);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}return r;},
   snapshot(){return {name:instrument.name,family:profile.family,preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:Boolean(interlock||arp),tempo:interlock?.tempo??arp?.tempo??null,roomSend:profile.room,wetReturn:1.45-1.15*pianoArticulation(currentCap)};},
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
@@ -226,6 +221,6 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const selection=policy.idle({at,quietAt:ctx.currentTime*1000,price,music:m.music,known,quiet,referencePrice});
    return selection?play(selection,{id:'quiet:'+selection.at,at:selection.at},m.context?.latestCap,m.music||{}):false;
   },
-  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [input,filter,patternFilter,patternSend,roomInput,dry,wet,room,tailGate,master])node.disconnect();},50);},
+  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [instrumentFilter,instrumentSend,roomInput,dry,wet,room,tailGate,master])node.disconnect();},50);},
  };
 }
