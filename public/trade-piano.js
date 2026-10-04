@@ -1,4 +1,4 @@
-// CC0 sampled piano. Meaningful moves and known quiet intervals select single notes.
+// Seeded EarthBound instruments following the existing piano composition engine.
 import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=123';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=124';
 import {createPianoPolicy} from './piano-policy.js?v=61';
@@ -7,7 +7,7 @@ let sampleDownload;
 async function loadSampleAsset(path,format){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  try{
-  const response=await fetch('samples/piano/'+path+'?v=59',{signal:controller.signal});
+  const response=await fetch('samples/earthbound/'+path+'?v=125',{signal:controller.signal});
   if(!response.ok)throw Error('Cannot load piano asset '+path);
   return await response[format]();
  }finally{clearTimeout(timeout);}
@@ -34,7 +34,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  const downloaded=await preloadPianoSamples();
  // Mono, short assets are normalized offline. Startup no longer scans every
  // decoded sample on the main thread while the Pd engine is already sounding.
- const decoded=await Promise.allSettled(downloaded.map(async item=>({midi:item.midi,trim:Number(item.trim)||1,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
+ const decoded=await Promise.allSettled(downloaded.map(async item=>({...item,trim:Number(item.trim)||1,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
  const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
  if(!samples.length)throw Error('This browser could not decode the piano samples');
  const input=ctx.createGain(),filter=ctx.createBiquadFilter(),roomInput=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
@@ -71,6 +71,14 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  const policy=createPianoPolicy(seed);
  const phrasing=createPianoPhrasing(seed);
  const voices=new Set();
+ // Select against stable preset IDs, not array positions of successful loads.
+ const presetIds=[1,2,3,4,5,6,7,8,13,14,18,27,29,30,34];
+ function chooseInstrument(value){
+  let hash=value>>>0;hash=Math.imul(hash^(hash>>>16),0x45d9f3b)>>>0;hash=(hash^(hash>>>16))>>>0;
+  const id=presetIds[hash%presetIds.length];
+  return samples.find(sample=>sample.preset===id)||samples.find(sample=>sample.preset===1)||samples[0];
+ }
+ let instrument=chooseInstrument(seed);
  let interlock=null;
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.025);}
  function hold(param,time){
@@ -97,9 +105,11 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const active=[...voices].filter(voice=>!voice.fading);
   while(active.length>=6)stopVoice(active.shift());
   time=Math.max(time,reopenAt,ctx.currentTime+.012);
-  const sample=samples.reduce((a,b)=>Math.abs(a.midi-midi)<=Math.abs(b.midi-midi)?a:b);
-  const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi)/12);
-  duration=Math.min(duration,source.buffer.duration/source.playbackRate.value);
+  const sample=instrument;
+  const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi+(sample.correction||0)/100)/12);
+  source.loop=Boolean(sample.loop&&sample.loopEnd>sample.loopStart);
+  if(source.loop){source.loopStart=sample.loopStart;source.loopEnd=Math.min(sample.loopEnd,source.buffer.duration);}
+  else duration=Math.min(duration,source.buffer.duration/source.playbackRate.value);
   const end=time+duration,peak=dynamics*sample.trim,release=Math.min(kind==='arp'?1.2:1.8,duration*.4);
   // Preserve the sampled hammer transient with the original brief touch ramp.
   // Stolen voices retain stopVoice's independent, click-free release.
@@ -169,7 +179,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){running=Boolean(value);updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();seed=Number(value)>>>0;policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
+  reset(value=seed){clear();seed=Number(value)>>>0;instrument=chooseInstrument(seed);policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=30/tempo;}if(interlock){const next=interlock.events[interlock.index];if(next){const time=interlock.start+next.tick*interlock.step;interlock.step=30/tempo;interlock.start=time-next.tick*interlock.step;interlock.tempo=tempo;}}},
   resonance(cap){const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;filter.Q.setTargetAtTime(.55,ctx.currentTime,.8);filter.frequency.setTargetAtTime(2200+4800*a,ctx.currentTime,.8);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}return r;},

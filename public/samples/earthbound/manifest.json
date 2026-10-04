@@ -1,0 +1,173 @@
+{
+  "instrument": "EarthBound per-coin instruments",
+  "source": "EarthBound.sf2",
+  "sourceSha256": "5b355757434aa6e20d831107c31e2510caee2e575bad6608576d1dcab2d84df5",
+  "license": "User-supplied soundfont; no open license asserted",
+  "files": [
+    {
+      "file": "preset-1.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 1,
+      "name": "Mellow Piano",
+      "correction": 15,
+      "loop": true,
+      "loopStart": 1.0314651874521805,
+      "loopEnd": 1.1237566947207345
+    },
+    {
+      "file": "preset-2.wav",
+      "midi": 38,
+      "trim": 0.65,
+      "preset": 2,
+      "name": "Electric Piano",
+      "correction": 10,
+      "loop": true,
+      "loopStart": 0.005215419501133787,
+      "loopEnd": 0.032471655328798185
+    },
+    {
+      "file": "preset-3.wav",
+      "midi": 61,
+      "trim": 0.65,
+      "preset": 3,
+      "name": "Rhodes",
+      "correction": -45,
+      "loop": true,
+      "loopStart": 0.007704879757179547,
+      "loopEnd": 0.011207097828624796
+    },
+    {
+      "file": "preset-4.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 4,
+      "name": "Marimba 1",
+      "correction": 0,
+      "loop": false,
+      "loopStart": 0.0,
+      "loopEnd": 0.0
+    },
+    {
+      "file": "preset-5.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 5,
+      "name": "Marimba 2",
+      "correction": 0,
+      "loop": true,
+      "loopStart": 0.25360130111524165,
+      "loopEnd": 0.25743494423791824
+    },
+    {
+      "file": "preset-6.wav",
+      "midi": 55,
+      "trim": 0.65,
+      "preset": 6,
+      "name": "Xylophone",
+      "correction": -25,
+      "loop": true,
+      "loopStart": 0.23325,
+      "loopEnd": 0.24325
+    },
+    {
+      "file": "preset-7.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 7,
+      "name": "Organ 1",
+      "correction": 0,
+      "loop": true,
+      "loopStart": 0.0017213446739570675,
+      "loopEnd": 0.005535304441744296
+    },
+    {
+      "file": "preset-8.wav",
+      "midi": 48,
+      "trim": 0.65,
+      "preset": 8,
+      "name": "Organ 2",
+      "correction": 0,
+      "loop": true,
+      "loopStart": 0.007618751457669284,
+      "loopEnd": 0.011428127186503927
+    },
+    {
+      "file": "preset-13.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 13,
+      "name": "Synth Lead 1",
+      "correction": -10,
+      "loop": true,
+      "loopStart": 0.00576587070471753,
+      "loopEnd": 0.00955154338963308
+    },
+    {
+      "file": "preset-14.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 14,
+      "name": "Synth Lead 2",
+      "correction": 8,
+      "loop": true,
+      "loopStart": 0.018118102106992773,
+      "loopEnd": 0.025824838958281835
+    },
+    {
+      "file": "preset-18.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 18,
+      "name": "Steel Guitar",
+      "correction": 0,
+      "loop": true,
+      "loopStart": 0.2611055980386434,
+      "loopEnd": 0.27645788336933047
+    },
+    {
+      "file": "preset-27.wav",
+      "midi": 56,
+      "trim": 0.65,
+      "preset": 27,
+      "name": "Trumpet",
+      "correction": 66,
+      "loop": true,
+      "loopStart": 0.025526225787395454,
+      "loopEnd": 0.03553772968939464
+    },
+    {
+      "file": "preset-29.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 29,
+      "name": "French Horn",
+      "correction": 22,
+      "loop": true,
+      "loopStart": 0.08131662905610458,
+      "loopEnd": 0.10824060384405883
+    },
+    {
+      "file": "preset-30.wav",
+      "midi": 59,
+      "trim": 0.65,
+      "preset": 30,
+      "name": "Flute",
+      "correction": -17,
+      "loop": true,
+      "loopStart": 0.132625,
+      "loopEnd": 0.148625
+    },
+    {
+      "file": "preset-34.wav",
+      "midi": 60,
+      "trim": 0.65,
+      "preset": 34,
+      "name": "Sine 1",
+      "correction": 50,
+      "loop": true,
+      "loopStart": 0.0005422258370611359,
+      "loopEnd": 0.004473363155754371
+    }
+  ]
+}
