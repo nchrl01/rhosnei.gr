@@ -1,15 +1,25 @@
 /* Component-specific shapes are intentional exceptions to the square UI. */
-#volume-panel{position:static;display:flex;align-items:center;gap:8px;width:auto;padding:0;border:0;background:transparent;box-shadow:none}
-#volume-panel>label{margin:0;font-size:12px;font-weight:400;letter-spacing:0}
-#volume-panel #master{width:64px;min-height:44px}
-#volume-dial{width:64px;flex:0 0 64px;margin:0}
-#volume-dial .comet-dial{max-width:100%;height:auto;aspect-ratio:1;--cd-figure:14px!important}
+.volume-widget{position:relative;display:flex;align-items:center;justify-content:center;align-self:center;flex:none;z-index:auto;border:0;padding:0}
+.transport #volume-button,.visual-volume-control #volume-button{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;min-width:52px;min-height:52px;padding:0;flex:none;border:1px solid #f2f2f2;border-radius:50%!important;background:#000;color:#f2f2f2}
+#volume-button[aria-expanded=true]{background:#202020}
+#volume-button svg{display:block;width:24px;height:24px}
+#volume-button .volume-muted{display:none}
+#volume-button[data-muted=true] .volume-muted{display:block}
+#volume-button[data-muted=true] .volume-waves{display:none}
+#volume-panel{position:fixed;top:12px;left:12px;right:auto;display:flex;flex-direction:column;align-items:center;gap:12px;width:168px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:16px;border:1px solid #777;background:#080808;box-shadow:0 8px 24px #0009;z-index:120}
+#volume-panel>label{display:block;margin:0;font-size:14px;font-weight:400;letter-spacing:0}
+#volume-panel #master{width:100%;min-height:44px}
+#volume-panel #volume-dial{width:128px;max-width:100%;flex:0 0 128px;margin:0}
+#volume-dial .comet-dial{max-width:100%;height:auto;aspect-ratio:1;--cd-size:128px!important;--cd-figure:22px!important}
 #volume-dial .comet-dial__ring{border-radius:50%!important}
 #volume-dial .comet-dial__ring:focus-visible{outline:1px solid #aaa;outline-offset:2px}
 #volume-panel[data-volume-ui=true] #master,#volume-panel[data-volume-ui=true] #master-value{display:none}
 #volume-panel>span{margin:0;font-size:12px;color:#f5f5f5}
-.volume-widget{border:0;padding:0 8px}
-@media(max-width:760px){#volume-panel>label{display:none}#volume-dial{width:56px;flex-basis:56px}.volume-widget{padding-inline:5px}}
+.visual-volume-control{position:fixed;left:60px;top:calc(var(--visual-full-top,64px) + 8px);z-index:120;pointer-events:auto}
+@media(max-width:760px){
+ .transport #volume-button,.visual-volume-control #volume-button{width:60px;height:60px;min-width:60px;min-height:60px}
+ #volume-button svg{width:28px;height:28px}
+}
 .component-loader{margin:7px 0;min-width:0;color:#f5f5f5}
 .component-loader .lattice-loader{max-width:100%;flex-wrap:wrap;row-gap:4px;font-family:inherit}
 .component-loader .lattice-loader[data-shape=round] .lattice-loader__cell{border-radius:50%!important}
@@ -37,30 +47,9 @@
 .clock-island,.market-clock{display:inline-flex;vertical-align:middle}
 #coin-time .counter-container{line-height:1}
 #coin-time .counter-counter{font-family:inherit;font-weight:400}
-@media(max-width:380px){#volume-panel{gap:4px}#volume-dial{width:52px;flex-basis:52px}}
 @media(prefers-reduced-motion:reduce){
  .component-loader .lattice-loader__run .lattice-loader__cell{animation:none!important;opacity:.55}
  .component-loader .lattice-loader *{transition:none!important}
-}
-
-#volume-dial{width:44px;flex:0 0 44px}
-#volume-dial .comet-dial{--cd-figure:11px!important}
-#volume-panel #master{width:44px}
-
-/* Mobile opens the volume control from a compact, accessible speaker button. */
-#volume-button{display:none}
-#volume-button svg{display:block;width:23px;height:23px}
-#volume-button .volume-muted{display:none}
-#volume-button[data-muted=true] .volume-muted{display:block}
-#volume-button[data-muted=true] .volume-waves{display:none}
-@media(max-width:760px){
- #volume-button{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:#fff}
- #volume-button[aria-expanded=true]{background:#202020}
- #volume-panel{position:absolute;top:calc(100% + 8px);right:6px;display:flex;flex-direction:column;align-items:center;gap:12px;width:168px;max-width:calc(100vw - 24px);padding:16px;border:1px solid #777;background:#080808;box-shadow:0 8px 24px #0009;z-index:50}
- #volume-panel>label{display:block;font-size:14px}
- #volume-panel #volume-dial{width:128px;flex:0 0 128px}
- #volume-dial .comet-dial{--cd-size:128px!important;--cd-figure:22px!important}
- #volume-panel #master{width:136px}
 }
 
 #trending-list{position:relative}

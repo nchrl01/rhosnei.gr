@@ -8,8 +8,9 @@ export function createVisualFullscreen(host){
  }
  icon(false);
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],chartPlaceholder=null;
+ let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],chartPlaceholder=null,volumePlaceholder=null;
  const chart=document.querySelector('.chart-panel'),play=document.querySelector('#play');
+ const volumeWidget=document.querySelector('.volume-widget'),volumeButton=document.querySelector('#volume-button');
  const mini=document.createElement('button');mini.type='button';mini.className='visual-mini-play';mini.hidden=true;host.append(mini);
  const sync=()=>{mini.textContent=play?.getAttribute('aria-label')||play?.textContent||'Listen';mini.disabled=!!play?.disabled;};
  mini.addEventListener('click',()=>{play?.click();sync();});
@@ -20,7 +21,25 @@ export function createVisualFullscreen(host){
   if((!expanded||!mobile)&&chartPlaceholder){chartPlaceholder.replaceWith(chart);chartPlaceholder=null;}
   mini.hidden=!(expanded&&mobile);
  }
- function top(){mobileChart();host.style.setProperty('--visual-full-top',Math.max(0,header?.getBoundingClientRect().bottom||0)+'px');}
+ function fullscreenVolume(){
+  if(!volumeWidget)return;
+  if(expanded&&!volumePlaceholder){
+   if(volumeButton?.getAttribute('aria-expanded')==='true')volumeButton.click();
+   volumePlaceholder=document.createElement('span');volumeWidget.before(volumePlaceholder);
+   document.body.append(volumeWidget);volumeWidget.classList.add('visual-volume-control');
+  }
+  if(!expanded&&volumePlaceholder){
+   if(volumeButton?.getAttribute('aria-expanded')==='true')volumeButton.click();
+   volumePlaceholder.replaceWith(volumeWidget);volumePlaceholder=null;volumeWidget.classList.remove('visual-volume-control');
+   volumeWidget.style.removeProperty('--visual-full-top');
+  }
+ }
+ function top(){
+  mobileChart();fullscreenVolume();
+  const offset=Math.max(0,header?.getBoundingClientRect().bottom||0)+'px';
+  host.style.setProperty('--visual-full-top',offset);
+  if(expanded)volumeWidget?.style.setProperty('--visual-full-top',offset);
+ }
  function motion(from,to){
   if(reduced.matches)return Promise.resolve();
   animation=host.animate([{transform:from},{transform:to}],{duration:440,easing:'cubic-bezier(.22,.8,.25,1)',fill:'none'});
@@ -43,14 +62,14 @@ export function createVisualFullscreen(host){
   }else{
    const from=host.getBoundingClientRect(),to=placeholder.getBoundingClientRect();
    await motion('none',transform(to,from));
-   placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;mobileChart();window.dispatchEvent(new Event('resize'));
+   placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;mobileChart();fullscreenVolume();window.dispatchEvent(new Event('resize'));
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
    icon(false);
   }
   busy=false;button.focus({preventScroll:true});
  }
- function escape(event){if(event.key==='Escape'&&expanded){event.preventDefault();void toggle();}}
+ function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);
- return {close(){expanded=false;mobileChart();mini.remove();playObserver.disconnect();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
+ return {close(){expanded=false;mobileChart();fullscreenVolume();mini.remove();playObserver.disconnect();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
 }

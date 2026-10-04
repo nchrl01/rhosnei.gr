@@ -1,4 +1,4 @@
-import {createUIControls} from './ui-controls.js?v=103';
+import {createUIControls} from './ui-controls.js?v=121';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=92';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
@@ -11,7 +11,7 @@ import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=120';
+import {createAudioDots} from './audio-dots.js?v=121';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';

@@ -1,4 +1,4 @@
-import {createVisualFullscreen} from './visual-fullscreen.js?v=120';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=121';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=119';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;

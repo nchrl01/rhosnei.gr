@@ -5,12 +5,27 @@ export function createUIControls(){
  const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
  let components,volume,clock,lastClock=null,sequence=0;
  const dial=document.createElement('div');dial.id='volume-dial';dial.hidden=true;input.before(dial);
- const volumeButton=$('volume-button'),mobile=matchMedia('(max-width:760px)');
+ const volumeButton=$('volume-button');
  let volumeOpen=false;
+ function positionVolumePanel(){
+  if(!volumeOpen)return;
+  const edge=12,gap=8,button=volumeButton.getBoundingClientRect();
+  const viewport=window.visualViewport,width=viewport?.width||window.innerWidth,height=viewport?.height||window.innerHeight;
+  panel.style.maxWidth=Math.max(0,width-edge*2)+'px';panel.style.maxHeight=Math.max(0,height-edge*2)+'px';
+  const popup=panel.getBoundingClientRect();
+  const leftEdge=(viewport?.offsetLeft||0)+edge,topEdge=(viewport?.offsetTop||0)+edge;
+  const rightEdge=leftEdge+width-edge*2,bottomEdge=topEdge+height-edge*2;
+  const left=Math.max(leftEdge,Math.min(button.right-popup.width,rightEdge-popup.width));
+  const below=button.bottom+gap,above=button.top-popup.height-gap;
+  const top=Math.max(topEdge,Math.min(below+popup.height<=bottomEdge?below:above,bottomEdge-popup.height));
+  panel.style.left=left+'px';panel.style.top=top+'px';
+ }
  function setVolumeOpen(open,focus=false){
-  volumeOpen=mobile.matches&&Boolean(open);panel.hidden=mobile.matches&&!volumeOpen;
-  volumeButton.hidden=!mobile.matches;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
-  if(focus&&volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;if(!volume?.focus())input.focus({preventScroll:true});});
+  volumeOpen=Boolean(open);panel.hidden=!volumeOpen;
+  volumeButton.hidden=false;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
+  volume?.setOpen(volumeOpen);
+  if(volumeOpen)positionVolumePanel();
+  if(volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;positionVolumePanel();if(focus&&!volume?.focus())input.focus({preventScroll:true});});
  }
  function volumeLabel(){
   const amount=Math.round(Number(input.value)*100);
@@ -18,9 +33,12 @@ export function createUIControls(){
  }
  volumeButton.addEventListener('click',()=>setVolumeOpen(!volumeOpen,true));
  document.addEventListener('pointerdown',event=>{if(volumeOpen&&!volumeButton.parentElement.contains(event.target))setVolumeOpen(false);});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){event.preventDefault();setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
  volumeButton.parentElement.addEventListener('focusout',event=>{if(volumeOpen&&event.relatedTarget&&!volumeButton.parentElement.contains(event.relatedTarget))setVolumeOpen(false);});
- mobile.addEventListener('change',()=>setVolumeOpen(false));
+ window.addEventListener('resize',()=>requestAnimationFrame(positionVolumePanel));
+ document.addEventListener('scroll',positionVolumePanel,true);
+ window.visualViewport?.addEventListener('resize',positionVolumePanel);
+ window.visualViewport?.addEventListener('scroll',positionVolumePanel);
  input.addEventListener('input',volumeLabel);setVolumeOpen(false);volumeLabel();
  const clockFallback=document.createElement('span'),clockHost=document.createElement('span');
  clockFallback.className='clock-fallback';clockHost.className='clock-island';time.replaceChildren(clockFallback,clockHost);
@@ -52,7 +70,8 @@ export function createUIControls(){
   try{
    volume=components.mountVolume(dial,input);panel.dataset.volumeUi='true';
    dial.addEventListener('ui-component-error',()=>{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;});
-   volume.setOpen(true);
+   volume.setOpen(volumeOpen);
+   if(volumeOpen)requestAnimationFrame(positionVolumePanel);
   }catch{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;}
   try{
    clock=components.mountClock(clockHost);time.dataset.clockUi='true';
