@@ -31,16 +31,8 @@ export function mathIdentity(seed){
 }
 function graphSnapshot(pattern,phase,seed){
  const {points,auxiliary,domain}=pattern.graphCache;
- const progress=clamp(phase),count=Math.floor(progress*GRAPH_SAMPLES)+1;
- const graphPoints=points.slice(0,count);
- const x=domain.xMin+(domain.xMax-domain.xMin)*Math.min(progress,1-1e-9);
- const previous=graphPoints.at(-1)?.x;
- const auxPoints=auxiliary.slice(0,count);
- if(previous!=null&&x>previous){
-  graphPoints.push({x,y:pattern.graph(x),breakBefore:pattern.breakBetween?.(previous,x)??pattern.breakAt?.(x,previous)??false});
-  if(pattern.aux){const [y,gate]=pattern.aux(x,seed);auxPoints.push({x,y:gate>.002?y:NaN,breakBefore:Math.floor(x*4)!==Math.floor(previous*4)});}
- }
- return {graphPoints,graphDomain:domain,graphOverlays:auxiliary.length?[{points:auxPoints}]:[]};
+ const x=domain.xMin+(domain.xMax-domain.xMin)*clamp(phase);
+ return {graphPoints:points,graphCursor:{x,y:pattern.graph(x)},graphDomain:domain,graphOverlays:auxiliary.length?[{points:auxiliary}]:[]};
 }
 const UNLOCK_KEY='av.math-unlocks.v2';
 function readUnlocks(){
@@ -97,14 +89,13 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
     const target=performing ? .28*intensity*fresh:0;
     s.level+=(target-s.level)*(1-Math.exp(-dt/.08));if(!performing)s.level=0;
     const audibleGate=performing?clamp(gate):0,auxGate=performing?clamp(auxEnvelope):0;
-    // y is an octave-like pitch coordinate; wide graphs are compressed into a
-    // bounded range. The visual still shows the literal, unclipped equation.
-    const pitch=clamp(54+(seed%5)+raw*12*Math.min(1,5.5/(yMax-yMin)),24,84);
+    // One graph unit is one octave above MIDI 48, bounded for playback.
+    const pitch=clamp(48+raw*12,24,84);
     send(`math-${i}-pitch`,pitch);send(`math-${i}-cutoff`,350+value*2200);send(`math-${i}-shape`,pattern.shape);
     send(`math-${i}-drive`,pattern.drive);send(`math-${i}-level`,s.level);send(`math-${i}-gate`,audibleGate);
-    send(`math-${i}-aux-pitch`,clamp(54+(seed%5)+auxRaw*12,24,96));send(`math-${i}-aux-gate`,auxGate);
+    send(`math-${i}-aux-pitch`,clamp(48+auxRaw*12,24,96));send(`math-${i}-aux-gate`,auxGate);
     const status=!enabled||!s.enabled?'Muted':!transport?'Paused':!running?(options.error?'Audio unavailable':'Loading audio'):!entered?'Waiting for market cap':!fresh?'Waiting for fresh data':performing?'Playing':s.queued!==null?'Queued':intensity<=.015?'Quiet market':'Rest · awaiting new activity';
-    return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,unlocked:entered,enabled:enabled&&s.enabled,level:s.level,active:performing&&(audibleGate>0||auxGate>0)&&s.level>.0001,performing,phase,value,...graphSnapshot(pattern,s.played?phase:.5,seed),pitch,gate:audibleGate,auxGate,status,beats:performing?(beat-s.start):0};
+    return {slot:i,id:pattern.id,name:pattern.name,formula:pattern.formula,threshold:pattern.threshold,unlocked:entered,enabled:enabled&&s.enabled,level:s.level,active:performing&&(audibleGate>0||auxGate>0)&&s.level>.0001,performing,phase,value,...graphSnapshot(pattern,s.played?phase:0,seed),pitch,gate:audibleGate,auxGate,status,beats:performing?(beat-s.start):0};
    });
    const view={playing:transport,seed,cap,tempo,globalEnabled:enabled,slots:views};onView(view);return view;
   },

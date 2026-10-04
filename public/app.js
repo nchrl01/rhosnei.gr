@@ -9,16 +9,16 @@ import {createEnvion} from './envion.js?v=91';
 import {createEngineView} from './engine-view.js?v=65';
 import {createCoinDither} from './coin-dither.js?v=90';
 import {createUpicBrand} from './upic-brand.js?v=91';
-import {createTransportIndicator} from './transport-indicator.js?v=87';
+import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=110';
+import {createAudioDots} from './audio-dots.js?v=112';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
 import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=65';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=108';
-import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=85';
-import {createMathPatternView} from './math-pattern-view.js?v=85';
+import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=112';
+import {createMathPatternView} from './math-pattern-view.js?v=112';
 import {contextualizeMarket} from './market-state.js?v=53';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=79';
 import {signalFreshness} from './market-controls.js?v=18';
@@ -336,9 +336,9 @@ async function initialize(){
   audioErrors.pd='';audioErrors.envion='';
   pdLoading=(async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{
-    const response=await fetch('patches/orchestra/manifest.json?v=87');if(!response.ok)throw Error('Cannot load orchestra manifest');
+    const response=await fetch('patches/orchestra/manifest.json?v=112');if(!response.ok)throw Error('Cannot load orchestra manifest');
     const manifest=await response.json();
-    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=87');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=112');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
     return {manifest,files};
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');

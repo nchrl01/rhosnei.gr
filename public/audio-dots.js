@@ -1,4 +1,5 @@
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=110';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=112';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=112';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -29,6 +30,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
  const blast=host?createPixelBlastField(host):null;
+ const fullscreen=host?createVisualFullscreen(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
  const buffers=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0;
@@ -87,7 +89,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // Mobile has its own panel after the player, before mathematical phrases.
   // It is never attached to body or painted over other interface elements.
   const readings=document.querySelector('.instrument > .readings');
-  if(host){if(mobile.matches&&readings)readings.after(host);else anchor.parentNode?.insertBefore(host,anchor);}
+  if(host&&!host.classList.contains('is-expanded')){if(mobile.matches&&readings)readings.after(host);else anchor.parentNode?.insertBefore(host,anchor);}
   size();
  }
  const layoutChanged=()=>{layoutPending=true;dirty=true;};
@@ -198,7 +200,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   refresh(){dirty=true;},
   reset(){clear();},
   close(){
-   closed=true;cancelAnimationFrame(frameID);hide();blast?.close();resize.disconnect();visibility?.disconnect();
+   closed=true;cancelAnimationFrame(frameID);hide();fullscreen?.close();blast?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
    window.removeEventListener('resize',layoutChanged);
    document.removeEventListener('visibilitychange',layoutChanged);window.removeEventListener('pageshow',layoutChanged);

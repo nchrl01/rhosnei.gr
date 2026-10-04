@@ -1,4 +1,4 @@
-import {MATH_SLOT_COUNT} from './math-patterns.js?v=85';
+import {MATH_SLOT_COUNT} from './math-patterns.js?v=112';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 360;
@@ -46,7 +46,7 @@ function graphPoints(slot, domain) {
   const points = [];
   for (let index = 0; index < count; index++) {
     const position = index / (count - 1);
-    if (position > phase) break;
+
     const source = position * (curve.length - 1);
     const left = Math.floor(source), fraction = source - left;
     const value = number(curve[left], .5) * (1 - fraction) + number(curve[Math.min(left + 1, curve.length - 1)], .5) * fraction;
@@ -54,12 +54,6 @@ function graphPoints(slot, domain) {
       x: domain.xMin + position * (domain.xMax - domain.xMin),
       y: domain.yMin + clamp(value) * (domain.yMax - domain.yMin),
     });
-  }
-  if (points.length && phase > 0) {
-    const position = phase * (curve.length - 1);
-    const left = Math.floor(position), fraction = position - left;
-    const value = number(curve[left], .5) * (1 - fraction) + number(curve[Math.min(left + 1, curve.length - 1)], .5) * fraction;
-    points.push({x: domain.xMin + phase * (domain.xMax - domain.xMin), y: domain.yMin + clamp(value) * (domain.yMax - domain.yMin)});
   }
   return points;
 }
@@ -154,6 +148,9 @@ function drawGraph(card, slot) {
   card.yLabel.setAttribute('x', String(axisX));
   card.yLabel.setAttribute('y', String(PLOT.top - 11));
   drawTrace(card.trace, graphPoints(slot, domain), mapX, mapY);
+  const cursor=slot.graphCursor;
+  card.trace.marker.setAttribute('visibility',slot.performing&&cursor&&Number.isFinite(cursor.y)&&cursor.y>=domain.yMin&&cursor.y<=domain.yMax?'visible':'hidden');
+  if(cursor){card.trace.marker.setAttribute('cx',String(mapX(cursor.x)));card.trace.marker.setAttribute('cy',String(mapY(cursor.y)));}
   const overlays = Array.isArray(slot.graphOverlays) ? slot.graphOverlays : [];
   for (let index = 0; index < Math.max(overlays.length, card.overlays.length); index++) {
     if (!card.overlays[index]) {
@@ -162,6 +159,7 @@ function drawGraph(card, slot) {
       card.graph.append(trace.path, trace.marker);
     }
     drawTrace(card.overlays[index], Array.isArray(overlays[index]?.points) ? overlays[index].points : [], mapX, mapY);
+    card.overlays[index].marker.setAttribute("visibility","hidden");
   }
   card.rendered = true;
 }

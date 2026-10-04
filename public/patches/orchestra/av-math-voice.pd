@@ -4,7 +4,7 @@
 #X obj 25 90 r math-\$1-pitch;
 #X obj 25 125 clip 24 84;
 #X obj 25 160 mtof;
-#X obj 25 195 pack f 25;
+#X obj 25 195 pack f 6;
 #X obj 25 230 line~;
 #X obj 300 90 loadbang;
 #X obj 300 125 samplerate~;
@@ -30,7 +30,7 @@
 #X obj 915 195 line~;
 #X obj 1100 90 r math-\$1-gate;
 #X obj 1100 125 clip 0 1;
-#X obj 1100 160 pack f 15;
+#X obj 1100 160 pack f 4;
 #X obj 1100 195 line~;
 #X obj 25 705 *~;
 #X obj 25 740 *~;
@@ -80,7 +80,7 @@
 #X obj 250 885 s math-\$1-meter;
 #X text 575 630 Measured output RMS dB: -100 = silence. Maximum level 0.4 x trim 0.55.;
 #X text 575 665 Seed changes and run=0 clear the envelope. A voice needs new market controls to sound again.;
-#X text 575 700 No gate updates for 400 ms -> fade to silence in 15 ms.;
+#X text 575 700 No gate updates for 400 ms -> fade to silence in 4 ms.;
 #X connect 2 0 3 0;
 #X connect 3 0 4 0;
 #X connect 4 0 5 0;

@@ -423,4 +423,24 @@ input{caret-color:#fff}
 @media(max-width:760px){.market-announcement strong{font-size:clamp(40px,14vw,90px)}}
 @media(min-width:761px){main{align-content:start}}
 
-.audio-visualizer .pixel-blast-layer{image-rendering:auto}
+.audio-visualizer .pixel-blast-layer{image-rendering:pixelated}
+
+/* The header remains accessible while the visual expands beneath it. */
+.market-header{position:sticky;top:0;z-index:100;background:#000}
+.visual-fullscreen{position:absolute;right:14px;top:14px;z-index:5;pointer-events:auto;background:#080808cc;color:#fff;border:1px solid #666;padding:9px 14px;min-height:44px;font:inherit;font-size:14px}
+.visual-fullscreen:hover{background:#292929}
+body.visual-expanded{overflow:hidden}
+.audio-visualizer.is-expanded{position:fixed!important;inset:auto!important;left:0!important;top:var(--visual-full-top,64px)!important;width:100vw!important;height:calc(100dvh - var(--visual-full-top,64px))!important;margin:0!important;max-width:none!important;z-index:90;transform-origin:top left;background:#000}
+.visual-placeholder{pointer-events:none;min-width:0}
+
+/* Keep the pixel lattice hard edged when the render buffer is scaled. */
+.audio-visualizer .pixel-blast-layer{image-rendering:pixelated;filter:none!important}
+.visual-mini-play{position:absolute;top:14px;left:14px;z-index:6;pointer-events:auto}
+.audio-visualizer.is-expanded .chart-panel{position:absolute;bottom:0;left:0;width:100%;box-sizing:border-box;padding:12px 16px;background:#000e;z-index:6;pointer-events:auto;max-width:none}
+.audio-visualizer.is-expanded .chart-stage{height:100px!important;min-height:100px!important}
+.audio-visualizer.is-expanded .chart-status,.audio-visualizer.is-expanded #replay-hint,.audio-visualizer.is-expanded .tick-heading{display:none!important}
+@media(max-width:760px){
+.audio-visualizer:not(.is-expanded){height:56px!important;min-height:56px!important;margin:12px 0!important}
+.audio-visualizer:not(.is-expanded) canvas{visibility:hidden}
+.audio-visualizer:not(.is-expanded) .visual-fullscreen{inset:0;width:100%}
+}
