@@ -433,7 +433,7 @@ input{caret-color:#fff}
 .visual-fullscreen svg{display:block;width:24px;height:24px;flex:none}
 .visual-fullscreen:hover:not(:disabled){background:#161616}
 body.visual-expanded{overflow:hidden}
-.audio-visualizer.is-expanded{position:fixed!important;inset:auto!important;left:0!important;top:var(--visual-full-top,64px)!important;width:100vw!important;height:calc(100dvh - var(--visual-full-top,64px))!important;margin:0!important;max-width:none!important;z-index:90;transform-origin:top left;background:#000}
+.audio-visualizer.is-expanded{position:fixed!important;inset:auto!important;left:0!important;top:var(--visual-full-top,64px)!important;width:100vw!important;height:calc(100svh - var(--visual-full-top,64px))!important;margin:0!important;max-width:none!important;z-index:90;transform-origin:top left;background:#000}
 .visual-placeholder{pointer-events:none;min-width:0}
 
 /* Keep the pixel lattice hard edged when the render buffer is scaled. */

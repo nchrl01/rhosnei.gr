@@ -201,23 +201,24 @@ void main(){
 `;
 
 const unit = n => Math.max(0, Math.min(1, Number(n) || 0));
-// Market cap controls the lattice size; liquidity controls its density.
-// Activity changes individual dot size and brightness, never layer opacity.
+// Cell centres and noise scale stay fixed. Market cap and sound grow the
+// squares inside those cells; liquidity controls coverage, never scene zoom.
 export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0}={}){
  const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
  const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
  const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
  const strength=unit(.6*flow+.25*presence+.15*sound);
+ const dotGrowth=(.18+.72*strength)*(.55+.45*unit(capital))*(1+.35*unit(piano));
  return {
-  pixelSize:((mobile?3.4:2.8)+3.8*unit(capital))*(1+.45*unit(piano)),
-  scale:4+7.5*unit(capital),
+  pixelSize:8,
+  scale:7.75,
   density:(mobile?.8:.6)+1.35*unit(depth)+.7*unit(piano),
   identity:unit(identity),
   identityMotion:reducedMotion?0:unit(.7*movement+.3*flow),
   speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),
   edgeFade:0,
   jitter:.03+.35*movement,
-  dotScale:.18+.82*strength,
+  dotScale:Math.min(.95,dotGrowth),
   dotStrength:(mobile?.28:.2)+(mobile?.72:.8)*strength,
   rippleIntensity:.35+1.1*unit(.65*unit(surge)+.35*unit(imbalance)),
   rippleSpeed:.12+.45*movement,
