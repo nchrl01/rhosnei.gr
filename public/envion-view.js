@@ -1,4 +1,4 @@
-import {createEnvionSimpleView} from './envion-simple-view.js?v=113';
+import {createEnvionSimpleView} from './envion-simple-view.js?v=114';
 // Envion's own Pd object positions and GUI arguments drive this view.
 // The browser renders the controls; it does not invent a parallel patch graph.
 const NS = 'http://www.w3.org/2000/svg';
@@ -106,9 +106,10 @@ function showNumber(value) {
 }
 
 /** Render a source-derived Envion patch and relay controls to its Pd receivers. */
-export function createEnvionView(container, {onControl = () => {}, onFile = () => {}, onCommand = () => {}} = {}) {
+export function createEnvionView(container, {onControl = () => {}, onFile = () => {}, onCommand = () => {},onInspect=()=>{}} = {}) {
   container.classList.add('envion-view');
-  const simple=createEnvionSimpleView();
+  let visible=!container.hidden;
+  const simple=createEnvionSimpleView({visible});
   const toolbar = elt('div', 'envion-toolbar'), files = elt('div', 'envion-file-actions'), nav = elt('div', 'envion-navigation');
   const viewport = elt('div', 'envion-viewport'), spacer = elt('div', 'envion-spacer'), surface = elt('div', 'envion-surface');
   const status = elt('span', 'envion-status', 'Loading original patch…'), zoomValue = elt('output', 'envion-zoom', '100%');
@@ -163,7 +164,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   const mappingOutputs=new Map();
   const original=elt('details','envion-original');
   original.append(elt('summary','','Original Pure Data patch'),mappingDetails,fileRequest,nav,viewport,hint);
-  original.addEventListener('toggle',()=>{if(original.open&&model){if(!surface.childElementCount)render();else if(fitting)fit();}});
+  original.addEventListener('toggle',()=>{if(visible&&original.open&&model)render();onInspect(visible,visible&&original.open);});
   container.replaceChildren(toolbar,simple.element,original);
 
   function setZoom(value, keepFit = false) {
@@ -388,15 +389,19 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   }
   function navigate(id) { if (!model?.canvases?.[id]) return; current = id; trail.push(id); render(); viewport.scrollLeft = 0; viewport.scrollTop = 0; }
   function flush() {
-    frame = 0; if (destroyed) return;
-    for (const [receiver, data] of pending) { simple.receive(receiver,data);values.set(receiver, data); if(mappingOutputs.has(receiver))mappingOutputs.get(receiver).textContent=showNumber(scalar(data)); for (const update of controls.get(receiver) || []) update(data); }
+    frame = 0; if (destroyed || !visible) return;
+    for (const [receiver, data] of pending) { values.set(receiver,data); if(original.open){if(mappingOutputs.has(receiver))mappingOutputs.get(receiver).textContent=showNumber(scalar(data));for(const update of controls.get(receiver)||[])update(data);} }
     pending.clear();simple.refresh();
   }
   viewport.addEventListener('dragover', event => { if (event.dataTransfer?.types.includes('Files')) { event.preventDefault(); viewport.classList.add('envion-dragover'); } });
   viewport.addEventListener('dragleave', () => viewport.classList.remove('envion-dragover'));
   viewport.addEventListener('drop', event => { event.preventDefault(); viewport.classList.remove('envion-dragover'); status.textContent='Samples and envelopes are selected by market data.'; });
   const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => { if (fitting) fit(); }) : null; observer?.observe(viewport);
+  const visibilityObserver=new MutationObserver(()=>{visible=!container.hidden;simple.setVisible(visible);if(visible){if(original.open&&model)render();}else{if(frame)cancelAnimationFrame(frame);frame=0;pending.clear();}onInspect(visible,visible&&original.open);});
+  visibilityObserver.observe(container,{attributes:true,attributeFilter:['hidden']});
   return {
+    isDetailed(){return visible&&original.open;},
+    isVisible(){return visible;},
     load(nextModel) { model = nextModel;
       mappingBody.replaceChildren();mappingOutputs.clear();
       for(const canvas of Object.values(model.canvases))for(const node of canvas.nodes){
@@ -406,9 +411,9 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
         mappingOutputs.set(node.receive,value);
       }
  current = model.root; trail = [current]; values.clear(); pending.clear();simple.reset(); fitting = true; render(); },
-    receive(receiver, data) { if (destroyed) return; pending.set(String(receiver), Array.isArray(data) ? data : [data]); if (!frame) frame = requestAnimationFrame(flush); },
-    setScopes(data){simple.setScopes(data);for(const [id,channels] of Object.entries(data))scopeValues.set(id,channels);if(!container.hidden)drawScopes();},
-    receiveCanvas(id,data){canvasValues.set(id,data);canvasViews.get(id)?.(data);},
+    receive(receiver,data){if(destroyed)return;const key=String(receiver),message=Array.isArray(data)?data:[data];values.set(key,message);simple.receive(key,message);if(!visible)return;pending.set(key,message);if(!frame)frame=requestAnimationFrame(flush);},
+    setScopes(data){simple.setScopes(data);for(const [id,channels] of Object.entries(data))scopeValues.set(id,channels);if(visible&&original.open)drawScopes();},
+    receiveCanvas(id,data){canvasValues.set(id,data);if(visible&&original.open)canvasViews.get(id)?.(data);},
     setPerformance(text,active,loading,details) { simple.setPerformance(active,loading,details); },
     setStatus(text) { status.textContent = String(text); },
     requestFile(id, mode = '0') {
@@ -422,8 +427,8 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
     reset(){simple.reset();values.clear();pending.clear();},
     setRunning(value) { running = Boolean(value);simple.setRunning(running); transport.textContent = running ? 'Pause' : 'Listen'; transport.setAttribute('aria-pressed', String(running)); },
     setClockMode,
-    setWaveform(channels) { waveform = channels; drawWaveforms(); },
-    setArray(name, samples) { arrayValues.set(name, samples); drawWaveforms(); },
-    destroy() { destroyed = true; observer?.disconnect(); if (frame) cancelAnimationFrame(frame); for (const timer of timers) clearTimeout(timer); container.replaceChildren(); }
+    setWaveform(channels) { waveform = channels;if(visible&&original.open)drawWaveforms(); },
+    setArray(name, samples) { arrayValues.set(name,samples);if(visible&&original.open)drawWaveforms(); },
+    destroy() { destroyed = true;simple.destroy();visibilityObserver.disconnect();observer?.disconnect(); if (frame) cancelAnimationFrame(frame); for (const timer of timers) clearTimeout(timer); container.replaceChildren(); }
   };
 }

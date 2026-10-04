@@ -5212,7 +5212,7 @@
       this.bindings = /* @__PURE__ */ new Map();
       this.printBuf = "";
       this.recording = null;
-      this.scopesEnabled = true;
+      this.scopesEnabled = false;
       this.scopeBuffers = Array.from({length:7}, () => new Float32Array(512));
       this.scopePosition = 0;
       this.scopeElapsed = 0;

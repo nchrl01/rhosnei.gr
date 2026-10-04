@@ -1,5 +1,5 @@
 import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=40';
-import {createEnvionView} from './envion-view.js?v=113';
+import {createEnvionView} from './envion-view.js?v=114';
 import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=40';
 export {applyEnvionMarket} from './envion-market.js?v=40';
 
@@ -87,13 +87,29 @@ export function encodeWave(channels, sampleRate) {
 export function createEnvion(container, {onTransport = () => {}} = {}) {
   let pd, context, model, namespace, running = false, serial = 0, recordingPath = null;
   let activePicker = null, pendingDialog = null, generation = 0, initialized = false;
-  let sampleWaveforms = [null,null];
+  let sampleWaveforms=[null,null],scopeOff=null,waveformSource=null,waveformLoading=null,waveformLoaded=null;
   const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [];
   let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0;
   const marketWrites = new Map();
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
   let recordingOperation = Promise.resolve();
-  const view = createEnvionView(container, {onControl:control, onFile:openFile, onCommand:command});
+  const view = createEnvionView(container, {onControl:control, onFile:openFile, onCommand:command,onInspect:inspect});
+
+  function inspect(visible,detailed){
+    if(scopeOff&&(!visible||!pd)){scopeOff();scopeOff=null;}
+    if(visible&&pd&&!scopeOff)scopeOff=pd.subscribeScopes(({channels})=>{const scopes={};for(const item of model.scopes)scopes[item.id]=item.channels.map(channel=>channels[channel-5]);view.setScopes(scopes);});
+    if(detailed)void refreshWaveform().catch(report);
+  }
+  async function refreshWaveform(){
+    const source=waveformSource,target=pd;if(!source||!target||!view.isDetailed()||waveformLoaded===source||waveformLoading===source)return;
+    waveformLoading=source;
+    try{
+      const data=await target.readFile(source.virtual);
+      if(pd!==target||generation!==source.epoch||waveformSource!==source||!view.isDetailed())return;
+      const wave=decodeWave(data);
+      if(wave){sampleWaveforms=[wave.channels[0],wave.channels[1]||new Float32Array(wave.frames)];view.setWaveform(sampleWaveforms);waveformLoaded=source;}
+    }finally{if(waveformLoading===source)waveformLoading=null;}
+  }
   let ready;
   function loadModel() {
     if (ready) return ready;
@@ -250,13 +266,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     pd.sendMessage(id+'-soundfile-ready',method,args.map(value=>/^[-+]?\d+(?:\.\d+)?$/.test(value)?Number(value):value));
     clocks();
     const virtual=path.replace(/^\/patches\//,'').replace(/^(?!orchestra\/)/,ROOT);
-    const data=await pd.readFile(virtual);
-    if(requests.get(key)!==request || generation!==epoch || !pd)return;
-    const wave=decodeWave(data);
-    if(wave && args.includes('samplebufL')) {
-      sampleWaveforms=[wave.channels[0],wave.channels[1]||new Float32Array(wave.frames)];
-      view.setWaveform(sampleWaveforms);
-    }
+    if(args.includes('samplebufL')){waveformSource={virtual,epoch,request,key};await refreshWaveform();}
   }
   async function sfload(atoms) {
     const [id,array,method,path,channelArg,sizeArg,startArg]=atoms;
@@ -409,11 +419,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       const epoch=generation;
       for(const path of Object.keys(files))staged.add(path);
       for(const receiver of model.receivers)subscriptions.push(pd.subscribe(receiver,message=>view.receive(receiver,message.values)));
-      subscriptions.push(pd.subscribeScopes(({channels})=>{
-        const scopes={};
-        for(const item of model.scopes)scopes[item.id]=item.channels.map(channel=>channels[channel-5]);
-        view.setScopes(scopes);
-      }));
+      inspect(view.isVisible(),view.isDetailed());
       subscriptions.push(pd.subscribe('av-envion-sample-frames',()=>marketWrites.clear()));
       subscriptions.push(pd.subscribe('generation',message=>decide(Number(message.values[0]))));
       subscriptions.push(pd.subscribe('av-envion-id',message=>{namespace=Math.round(message.values[0]);clocks();}));
@@ -440,6 +446,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       if(!performancePlan&&running)decide(0,true);
       applyCurrent();
     },
-    detach(){materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
+    detach(){scopeOff?.();scopeOff=null;waveformSource=null;waveformLoaded=null;waveformLoading=null;materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
   };
 }

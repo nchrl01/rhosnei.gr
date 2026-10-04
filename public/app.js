@@ -5,7 +5,7 @@ import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.j
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
-import {createEnvion} from './envion.js?v=113';
+import {createEnvion} from './envion.js?v=114';
 import {createEngineView} from './engine-view.js?v=65';
 import {createCoinDither} from './coin-dither.js?v=90';
 import {createUpicBrand} from './upic-brand.js?v=91';
@@ -343,7 +343,7 @@ async function initialize(){
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');
    const {manifest,files}=orchestra;Object.assign(files,envionFiles);
-   const runtime=await createPd({audioContext:context,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=30',onPrint:text=>{if(epoch===audioEpoch&&!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log(error.message);audioStatus();}}});
+   const runtime=await createPd({audioContext:context,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>{if(epoch===audioEpoch&&!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log(error.message);audioStatus();}}});
    if(epoch!==audioEpoch){await runtime.close();throw Error('Audio loading cancelled');}
    pd=runtime;replayPhrase=null;runtime.connect(destination);engineView.setFiles(files,manifest,true);bindSignalMap();
    send('seed',seed%16777216);send('master',playing?Number($('master').value):0);if(playing)tick();send('run',playing?1:0);
