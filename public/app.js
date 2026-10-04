@@ -5,7 +5,7 @@ import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.j
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
-import {createEnvion} from './envion.js?v=91';
+import {createEnvion} from './envion.js?v=113';
 import {createEngineView} from './engine-view.js?v=65';
 import {createCoinDither} from './coin-dither.js?v=90';
 import {createUpicBrand} from './upic-brand.js?v=91';

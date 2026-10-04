@@ -102,6 +102,16 @@ followed by `python3 build-orchestra.py`.
 Run `npm start`, open http://localhost:4173, then press Listen.
 Full Envion uses the browser Pd runtime with ELSE and Cyclone. Native AV output is
 currently disabled because desktop Pd does not implement the browser file bridge.
+Type `pdata` in the coin field to open the compact ENVION monitor. It shows actual
+control readings grouped by timing, layers, filter, space and stereo; the full
+source drawing remains under **Original Pure Data patch**. The monitor does not
+send musical edits. See `public/patches/envion/MINIMAL-VIEW.txt`.
+
+`public/patches/envion/ENVION-Minimal.pd` is a separate compact desktop front panel
+containing the complete unchanged source engine. It uses the original native
+clocks and controls. Keep its sample folders together and follow
+`public/patches/envion/ENVION-Minimal-README.txt` for native library setup.
+
 The supplied standalone desktop source is `public/patches/envion/Envion_v5.2_Plugdata.pd`;
 see `public/patches/envion/PORT-NOTES.txt` for its library requirements.
 

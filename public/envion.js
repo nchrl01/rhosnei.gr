@@ -1,5 +1,5 @@
 import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=40';
-import {createEnvionView} from './envion-view.js?v=80';
+import {createEnvionView} from './envion-view.js?v=113';
 import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=40';
 export {applyEnvionMarket} from './envion-market.js?v=40';
 
@@ -349,7 +349,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     for(const [name,value] of Object.entries(values)){const target=document.getElementById('function-'+name);if(target)target.textContent=value;}
     const description=performancePlan?.summary||'Waiting for a market phrase';
     const output=document.getElementById('function-performance');if(output)output.textContent=description;
-    view.setPerformance?.(description,activeMaterial,materialBusy);
+    view.setPerformance?.(description,activeMaterial,materialBusy,{plan:soundingPlan,row:soundingPlan?.row??0,market:latestMarket.m,tempo:latestMarket.tempo});
   }
   function decide(step,force=false) {
     if(!running||!initialized||!latestMarket||!performer)return;
@@ -390,7 +390,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   }
   return {
     view, get ready(){return loadModel();}, printed,
-    setSeed(value){materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
+    setSeed(value){materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;view.reset?.();performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
     async files() {
       await loadModel();
       const manifest=await loadAsset('manifest.json','json');
@@ -440,6 +440,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       if(!performancePlan&&running)decide(0,true);
       applyCurrent();
     },
-    detach(){materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
+    detach(){materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
   };
 }

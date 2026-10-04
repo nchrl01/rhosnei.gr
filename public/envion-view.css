@@ -92,3 +92,42 @@
 
 .envion-surface{filter:invert(1) grayscale(1)}
 .envion-hint{color:#aaa!important;border-color:#333}
+
+/* Minimal monitor: the detailed source drawing stays available on demand. */
+.envion-simple{padding:18px;line-height:1.4}
+.envion-simple-flow{margin:0 0 20px!important;font-size:14px!important;color:#aaa}
+.envion-simple-source{padding-bottom:16px;border-bottom:1px solid #333}
+.envion-simple-source h3{font-size:17px;margin:0 0 6px}
+.envion-simple-source strong,.envion-simple-source small{display:block;overflow-wrap:anywhere}
+.envion-simple-source strong{font-size:17px;font-weight:400}
+.envion-simple-source small{font-size:12px;color:#aaa;margin-top:5px}
+.envion-simple-material{margin-top:8px;font-size:13px}
+.envion-simple summary{cursor:pointer}
+.envion-simple-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}
+.envion-simple-card{border-bottom:1px solid #333;padding:15px 0}
+.envion-simple-card summary{display:flex;gap:12px;align-items:baseline;justify-content:space-between;list-style:none}
+.envion-simple-card summary::-webkit-details-marker{display:none}
+.envion-simple-name{font-size:17px;white-space:nowrap}
+.envion-simple-name::after{content:' +';color:#777}
+.envion-simple-card[open] .envion-simple-name::after{content:' −'}
+.envion-simple-reading{font-size:13px;color:#aaa;text-align:right;overflow-wrap:anywhere}
+.envion-simple-explanation{font-size:13px!important;margin:12px 0!important;color:#aaa}
+.envion-simple dl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;margin:12px 0 0;font-size:13px}
+.envion-simple dt{margin:0;color:#bbb}
+.envion-simple dd{margin:0;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.envion-simple-output{display:flex;gap:16px;align-items:center;padding-top:18px;font-size:14px}
+.envion-simple-output meter{flex:1;max-width:180px;height:10px;accent-color:#fff}
+.envion-simple-output output{color:#aaa;min-width:70px}
+.envion-original>summary{padding:14px 18px;border-top:1px solid #333;font-size:14px;cursor:pointer}
+.envion-original .envion-viewport{height:60vh;min-height:320px}
+.envion-toolbar .envion-port,.envion-toolbar .envion-clock-choices{display:none}
+.envion-toolbar{border-color:#333;gap:12px}
+.envion-toolbar .envion-file-actions{margin-left:auto}
+.envion-toolbar .envion-status{flex-basis:100%;text-align:left;color:#aaa;min-width:0}
+.envion-simple-card[open] summary{margin-bottom:4px}
+@media(max-width:700px){.envion-simple{padding:14px}.envion-simple-grid{grid-template-columns:1fr}.envion-toolbar .envion-file-actions{width:auto}.envion-simple-flow{font-size:12px!important}.envion-simple-name{font-size:16px}}
+
+.envion-simple-market{font-size:14px;border-bottom:1px solid #333;padding:0 0 14px;margin-bottom:16px}
+.envion-simple details{border-top:0}
+.envion-simple-card summary::before{content:none}
+.envion-simple-card summary>*{pointer-events:none}
