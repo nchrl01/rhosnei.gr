@@ -41,7 +41,7 @@ let pd,ctx,gain,outputTap,outputMeters,instrumentTap,instrumentSamples,playing=f
 let requestedNetwork=null,requestedAutoplay=false;
 let seed=1917,state=1917,step=0,timer,next=0,bpm=120,session=null;
 const controls=['master'];
-let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='';
+let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='',sharedMarket=false;
 let streamKind='snapshot',tradeEvents=[],lastTrade=null,lastChainPrice=null,discovered=[],lastExcitation=0;
 let piano=null,pianoEnabled=true,pianoHistory=[],pianoReplayCursor=null,pianoChordCount=0;
 let audioEpoch=0,pianoLoading=null,pdLoading=null,pendingPianoTrade=null;
@@ -235,7 +235,7 @@ function setupStream(){
    if(!replay.state.active){dataSonification.frame(live,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});dataSonification.event(e,{playing:playing&&ctx?.state==='running',replay:false,clock:ctx?.currentTime??0});dataVisual.event(e);touchDesigner.event(e);}
    pianoHistory.push({...e,at:e.receivedAt});if(pianoHistory.length>20000)pianoHistory.shift();
    if((playing||starting)&&!replay.state.active){
-    if(playing&&piano?.trade(e,liveMetrics().context?.latestCap,{...e.music,tonic:marketRoot(liveMetrics())})){pendingPianoTrade=null;audioStatus();}
+    if(playing&&piano?.trade(e,live.context?.latestCap,{...e.music,tonic:marketRoot(live)})){pendingPianoTrade=null;audioStatus();}
     else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=e;
    }
    if(e.priceUsd)chart.add({at:Number.isFinite(e.occurredAt)?e.occurredAt:e.receivedAt,price:e.priceUsd,volume:e.usdVolume,id:e.id,source:'swap'});
@@ -297,6 +297,7 @@ function tick(){
 // Browser updates market controls; the Pd worklet schedules musical events.
 function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);}
 function mathLoop(){
+ if(document.hidden&&!playing){setTimeout(mathLoop,1000);return;}
  const active=playing&&!replay.state.dragging&&!replay.state.ended&&replay.state.endHold===null&&(!ctx||ctx.state==='running');
  const frozen=replay.state.frozen,interval=frozen?.interval||chart.interval;
  const rate=replay.state.speed==='candle'?interval/1000:Number(replay.state.speed)||1;
@@ -459,7 +460,7 @@ function startHistory(pair){
  if(contextHistoryKey!==key){historyContext=null;contextCandles=[];musicalCandles=[];}
  contextHistoryKey=key;const operation=beginHistoryLoad();contextHistoryOperation=operation;
  contextHistoryState=historyLoadState({candles:contextCandles,interval:contextInterval,state:'loading',error:null},operation);
- function refreshMusicHistory(){if(gen!==generation)return;stopMusicHistory?.();stopMusicHistory=loadHistory(pair,data=>{if(gen!==generation)return;musicalCandles=data.candles;musicalInterval=data.interval;},{timeframe:'minute',aggregate:5,maxPages:1,cacheAge:60000,priority:60});musicHistoryTimer=setTimeout(refreshMusicHistory,300000);}
+ function refreshMusicHistory(){if(gen!==generation)return;if(document.hidden&&!playing){musicHistoryTimer=setTimeout(refreshMusicHistory,10000);return;}stopMusicHistory?.();stopMusicHistory=loadHistory(pair,data=>{if(gen!==generation)return;musicalCandles=data.candles;musicalInterval=data.interval;},{timeframe:'minute',aggregate:5,maxPages:1,cacheAge:60000,priority:60});musicHistoryTimer=setTimeout(refreshMusicHistory,300000);}
  if($('chart-timeframe').value!=='auto')loadChartTimeframe();else setHistoryLoading(contextHistoryState);
  refreshMusicHistory();
  const dates=discovered.filter(p=>p.chainId===pair.chainId).map(p=>Number(p.pairCreatedAt)).filter(n=>n>0);
@@ -520,17 +521,19 @@ function chooseMarket(pair,{shared=false}={}){
  resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);coinVoice.setCoin(pair.baseToken.name||pair.baseToken.symbol,seed);if(playing)void coinVoice.prepare();applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
+ sharedMarket=shared;
  if(shared)return;
  const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
  if(isExchangeMarket(pair)){
-  const refresh=async()=>{try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('chart-source').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
+  const refresh=async()=>{if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,30000);return;}try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('chart-source').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
   poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Listen');return;
  }
  const refresh=async()=>{
+  if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,10000);return;}
   try{const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address));if(gen!==generation)return;
    const raw=(data.pairs||[]).find(p=>p.chainId===chain&&p.pairAddress===address);const updated=raw&&orientPair(raw,token);if(!updated)throw Error('Selected pool snapshot unavailable');applySnapshot(updated);
   }catch(e){if(gen===generation)$('chart-source').textContent='Snapshot delayed: '+e.message;}
-  if(gen===generation)poll=setTimeout(refresh,5000);
+  if(gen===generation)poll=setTimeout(refresh,streamConnected&&['swap','rpc-poll'].includes(streamKind)?15000:5000);
  };poll=setTimeout(refresh,5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Listen');
 }
 const addressField=$('address').closest('.address-field');
@@ -665,7 +668,12 @@ if(!restoreSharedScore())startTrending((item,options={})=>{
  if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);
  $('address').value=item.address;syncAddressLabel();$('coin-form').requestSubmit();
 },state=>ui.loading('trending',state.status,state.label,{host:state.host,operation:state.operation}));
-setInterval(()=>{if(!playing)syncLevels(metrics());},250);
+function reconcileIdleFeed(){
+ if(document.hidden&&!playing){stopStream?.();stopStream=null;streamPool='';streamConnected=false;return;}
+ if(market&&!stopStream&&mode==='live'&&!sharedMarket)setupStream();
+}
+document.addEventListener('visibilitychange',reconcileIdleFeed);
+setInterval(()=>{reconcileIdleFeed();if(!playing&&!document.hidden)syncLevels(metrics());},1000);
 const chartStatus=document.querySelector('.chart-status');
 new MutationObserver(()=>{for(const item of chartStatus.children)item.title=item.textContent;}).observe(chartStatus,{childList:true,characterData:true,subtree:true});
 function audioContext(){
@@ -721,6 +729,7 @@ $('chart-live').onclick=()=>{$('chart-range').value='live';chart.goLive();};
 $('chart-zoom-in').onclick=()=>chart.zoom(.7);
 $('chart-zoom-out').onclick=()=>chart.zoom(1.4);
 setInterval(()=>{
+ if(document.hidden||!document.body.classList.contains('inspecting'))return;
  $('event-age').textContent=lastTrade?'Last trade received '+((Date.now()-lastTrade.receivedAt)/1000).toFixed(1)+'s ago':'Last trade: none received';
  $('data-delay').textContent=lastTrade?.occurredAt?(lastTrade.precision==='block-timestamp'?'Block → receipt (approx.): ':'Trade timestamp → receipt: ')+Math.max(0,(lastTrade.receivedAt-lastTrade.occurredAt)/1000).toFixed(1)+'s':'Source delay: unknown (no trade timestamp)';
  $('event-count').textContent=receivedTradeCount+' trades received';
