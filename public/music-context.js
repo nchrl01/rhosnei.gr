@@ -40,7 +40,7 @@ export function pianoHarmony(seed,event={},music={}){
  const index=((step+(seed>>>0)%4)%4+4)%4,root=Number.isFinite(music.tonic)?48+((Math.round(music.tonic)%12)+12)%12:48+(seed>>>0)%5;
  const previous=compactVoicing(h.chords[(index+3)%4],root);
  const notes=compactVoicing(h.chords[index],root,previous);
- return {character,name:h.name,progression:h.progression,index,notes};
+ return {character,name:h.name,progression:h.progression,index,notes,root};
 }
 
 // Functional harmony, extensions and modal interchange studied in ChordSeqAI's

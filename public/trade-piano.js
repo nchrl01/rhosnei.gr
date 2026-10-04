@@ -1,6 +1,6 @@
 // CC0 sampled piano. Meaningful moves and known quiet intervals select single notes.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=122';
-import {pianoArticulation,interlockingPiano} from './piano-interlock.js?v=122';
+import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=123';
+import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=123';
 import {createPianoPolicy} from './piano-policy.js?v=61';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
@@ -113,7 +113,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     if(time>=ctx.currentTime+.12)break;
     interlock.index++;
     if(time<ctx.currentTime-.08)continue;
-    const sounded=note(event.midi,time,event.gain,.45,'arp',.006);
+    const sounded=note(event.midi,time,event.gain,event.duration,'arp',.006);
     onArpeggio({midi:event.midi,step:event.tick,time:sounded,tempo:interlock.tempo});
    }
    if(interlock.index>=interlock.events.length)interlock=null;
@@ -140,13 +140,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
   if(!quiet&&interlock){
    for(let i=interlock.index;i<interlock.events.length;i++){
-    const event=interlock.events[i],candidates=harmony.notes.flatMap(n=>[n-12,n,n+12]).filter(n=>n>=48&&n<=81);
-    event.midi=candidates.reduce((a,b)=>Math.abs(a-event.midi)<=Math.abs(b-event.midi)?a:b);
+    const event=interlock.events[i];event.midi=interlockPitch(event,harmony);
    }
    interlock.tonic=music.tonic;
   }
   if(!quiet&&!interlock){
-   const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony.notes);
+   const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony);
    if(events.length){
     const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40));
     arp=null;interlock={events,index:0,start:time+30/tempo,step:30/tempo,tempo,tonic:music.tonic};
