@@ -1,4 +1,4 @@
-import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=105';
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=107';
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
 // One shared frame clock; no autonomous animation or pointer-triggered effects.
@@ -87,7 +87,7 @@ float fbm2(vec2 uv, float t){
 }
 
 float maskCircle(vec2 p, float cov){
-  float r = sqrt(cov) * .25;
+  float r = sqrt(cov) * .43;
   float d = length(p - 0.5) - r;
   float aa = 0.5 * fwidth(d);
   return cov * (1.0 - smoothstep(-aa, aa, d * 2.0));
@@ -186,9 +186,9 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
  const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
  return {
-  pixelSize:(mobile?2.8:2.2)+3.8*movement,
+  pixelSize:(mobile?3.4:2.8)+3.8*movement,
   scale:4+7.5*unit(capital),
-  density:(mobile?.45:.25)+1.35*flow,
+  density:(mobile?.8:.6)+1.35*flow,
   speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),
   edgeFade:(.03+.24*(1-unit(depth)))*(mobile?.65:1),
   jitter:.03+.35*movement,
@@ -256,7 +256,7 @@ export function createPixelBlastField(host){
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uOpacity',params.opacity*unit(birth));f('uReveal',unit(formation));
    f('uPixelSize',params.pixelSize);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
-   i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);f('uEdgeFade',params.edgeFade);i('uShapeType',dither?0:1);
+   i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);f('uEdgeFade',params.edgeFade);i('uShapeType',1);
    gl.uniform2fv(locations['uClickPos[0]'],positions);gl.uniform1fv(locations['uClickTimes[0]'],times);gl.uniform1fv(locations['uClickStrengths[0]'],strengths);
    gl.drawArrays(gl.TRIANGLES,0,3);
    canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);

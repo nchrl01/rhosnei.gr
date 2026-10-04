@@ -422,3 +422,5 @@ input{caret-color:#fff}
 .market-announcement span{font-size:clamp(24px,4vw,64px);margin-top:18px}
 @media(max-width:760px){.market-announcement strong{font-size:clamp(40px,14vw,90px)}}
 @media(min-width:761px){main{align-content:start}}
+
+.audio-visualizer .pixel-blast-layer{image-rendering:auto}
