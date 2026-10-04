@@ -47,7 +47,7 @@ export function createPixelBlastCanvas(host){
  return {
   canvas,
   setImage(mask){identityMask=mask;},
-  render({width,height,time=0,eventTime=0,seed=0,params,dither=false,ripples=[]}){
+  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[]}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
@@ -56,7 +56,14 @@ export function createPixelBlastCanvas(host){
    ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
    const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
-   const cell=8*params.pixelSize,offset=(seed%65521)/65521*173.6,cache=new Map();
+   const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
+   const liquidRadius=Math.max(.001,.12*params.liquidRadius),grainFrame=Math.floor(time*12);
+   const touches=params.liquid?ripples.filter(p=>eventTime-p.time>=0&&eventTime-p.time<3).map(p=>{
+    let dx=Number.isFinite(p.dx)?p.dx:params.direction,dy=Number.isFinite(p.dy)?p.dy:(params.balance-.5)*.6;
+    const length=Math.hypot(dx,dy);
+    if(length>.000001){dx/=length;dy/=length;}else{dx=1;dy=0;}
+    return {x:(p.x*w-originX)/ratio/cssHeight,y:(p.y*h-originY)/ratio/cssHeight,dx,dy,strength:Math.exp(-(eventTime-p.time)*1.8)*p.strength};
+   }):[];
    const identity=identityMask?params.identity:0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
@@ -70,22 +77,37 @@ export function createPixelBlastCanvas(host){
     const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
     const taper=edgeT*edgeT*(3-2*edgeT);
     if(edge<=0||taper<=.015)continue;
+    // Snap the source cell first, then displace its sample continuously so
+    // small liquid movement survives without moving the square lattice.
     const cx=Math.floor(fx/cell),cy=Math.floor(fy/cell),key=cx+':'+cy;
-    let feed=cache.get(key);
-    if(feed===undefined){
-     const u=cx*cell/cssHeight,v=cy*cell/cssHeight;let sum=1,freq=1;
+    let sample=cache.get(key);
+    if(sample===undefined){
+     const u0=cx*cell/cssHeight,v0=cy*cell/cssHeight;
+     let warpX=0,warpY=0;
+     for(const touch of touches){
+      const dx=u0-touch.x,dy=v0-touch.y;
+      const distanceSquared=dx*dx+dy*dy;
+      if(distanceSquared>12*liquidRadius*liquidRadius)continue;
+      const intensity=Math.exp(-distanceSquared/(liquidRadius*liquidRadius))*touch.strength;
+      const wave=.5+.5*Math.sin((Number.isFinite(liquidTime)?liquidTime:time*params.liquidWobbleSpeed)+intensity*2*Math.PI);
+      const amplitude=params.liquidStrength*intensity*wave;
+      warpX+=touch.dx*amplitude;warpY+=touch.dy*amplitude;
+     }
+     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
      for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
-     feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
+     let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
+     feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
      if(params.ripples)for(const p of ripples){
       const age=Math.max(0,eventTime-p.time),r=Math.hypot(u-(((p.x*w-originX)/ratio-cell/2)/cssHeight),v-(((p.y*h-originY)/ratio-cell/2)/cssHeight));
       const ring=Math.exp(-(((r-params.rippleSpeed*age)/params.rippleThickness)**2))*Math.exp(-age-10*r)*params.rippleIntensity*p.strength;
       feed=Math.max(feed,ring);
      }
-     cache.set(key,feed);
+     sample={feed,warpX,warpY};cache.set(key,sample);
     }
+    let feed=sample.feed;
     let maskInk=0;
     if(identity>0){
-     maskInk=identityInk(identityMask,fx,fy,cssWidth,cssHeight,time,offset,params);
+     maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,cssWidth,cssHeight,time,offset,params);
      const imageFeed=mix(feed-.25,.68+.16*Math.min(3,params.density)+.13*feed,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
@@ -93,16 +115,17 @@ export function createPixelBlastCanvas(host){
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
     const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale)*taper;
-    const diameter=Math.min(grid,Math.max(1,Math.round(dotSize*ratio)));
+    const diameter=Math.min(Math.max(1,grid-1),Math.max(1,Math.round(dotSize*ratio)));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
-    const ink=Math.round(255*clamp(params.dotStrength)*mix(1,.45+.55*maskInk,identity));
+    const grain=(hash(px*127.1+py*311.7+grainFrame*74.7+offset)-.5)*params.noiseAmount;
+    const ink=Math.round(255*clamp(params.dotStrength*mix(1,.45+.55*maskInk,identity)+grain));
     if(ink!==previousInk){ctx.fillStyle=`rgb(${ink},${ink},${ink})`;previousInk=ink;}
     ctx.fillRect(x0,y0,x1-x0,y1-y0);
    }
    canvas.hidden=false;
-   Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),basePixelSize:params.pixelSize.toFixed(3),cellSize:cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),ripples:String(params.ripples?ripples.length:0),identity:identity.toFixed(3),identityImage:String(!!identityMask)});
+   Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),basePixelSize:params.pixelSize.toFixed(3),cellSize:cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),ecosystem:params.ecosystem.toFixed(3),jitter:params.jitter.toFixed(3),ripples:String(params.ripples?ripples.length:0),rippleIntensity:params.rippleIntensity.toFixed(3),rippleSpeed:params.rippleSpeed.toFixed(3),rippleThickness:params.rippleThickness.toFixed(3),liquid:String(params.liquid),liquidStrength:params.liquidStrength.toFixed(3),liquidRadius:params.liquidRadius.toFixed(3),liquidWobbleSpeed:params.liquidWobbleSpeed.toFixed(3),noiseAmount:params.noiseAmount.toFixed(3),balance:params.balance.toFixed(3),direction:params.direction.toFixed(3),identity:identity.toFixed(3),identityMotion:params.identityMotion.toFixed(3),identityImage:String(!!identityMask)});
   },
   clear(){ctx?.clearRect(0,0,canvas.width,canvas.height);},
   close(){identityMask=null;canvas.remove();}

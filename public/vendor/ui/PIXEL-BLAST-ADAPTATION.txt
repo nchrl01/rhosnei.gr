@@ -17,29 +17,91 @@ patternScale 0.25 / speed 1.35 / edgeFade 0.5 / density 1.65 / pixelSize 2.
 License: see REACT-BITS-LICENSE.md in this directory.
 
 UPIC retains noise/Bayer construction and ripple math with a shared market clock.
-It is an adaptation, not an identical standalone demo. All pixels are squares.
-The base square is 2 CSS pixels. A fixed 4 CSS-pixel lattice reserves room for
-growth to 3.8 pixels without moving pixel centres or zooming the scene.
+All numerical appearance controls are derived from chart data and measured sound
+in pixel-blast-parameters.js, shared by both renderers. It is an adaptation, not
+an identical standalone demo. The reference square is 2 CSS pixels; its rendered
+requested width varies between 0.2 and 3.8 CSS pixels; rasterization rounds it
+to whole device pixels with a minimum of one and keeps a black gap between cells. A fixed 4 CSS-pixel lattice reserves
+room for this growth without moving pixel centres or zooming the scene.
+The underlying noise-cell spacing stays fixed at 16 CSS pixels, independent of
+the dynamic occupied square width.
 Physical cell boundaries and dot bounds are integer-aligned in both renderers.
 Rendering is bounded to 1.2 million pixels; very large surfaces can use a lower
 pixel ratio. Canvas visits cells rather than every image pixel.
 
 Mappings:
-- Market cap grows dot size and gradually reveals the coin image. Procedural
-  noise remains present at high caps so the image cannot completely stop flow.
-- Liquidity adjusts coverage around the 1.65 density baseline. A missing value
-  is neutral; a known zero is sparse, not treated as missing.
-- Fresh contextual movement, activity and volume shape speed around 1.35.
-- Measured sound, instrument notes and Pd onsets add brief square-size accents.
-- Significant market events trigger seeded ripples using the original ring math.
-- Quiet playback retains small, weaker squares and settles movement to rest.
-- EdgeFade 0.5 tapers square size spatially toward the perimeter. It does not
-  fade the whole canvas or soften square edges.
-- Spatial scale remains 0.25. No signal changes the camera or grid spacing.
+- pixelSize / dotSize: market cap, fresh activity and volume, measured level,
+  formation, notes and transients determine the square width (0.2 to 3.8).
+  The cellSize remains 4. The two size names are aliases for the same control.
+- patternScale / scale: cap, liquidity, contextual movement and note accents
+  vary the noise scale from 0.18 to 0.34 around the reference 0.25. This changes
+  the texture inside the fixed viewport; camera and grid stay put.
+- patternDensity / density: liquidity sets coverage around 1.65, with fresh
+  flow and note/onset accents; the result is bounded to 0.65 through 2.6.
+  Missing liquidity stays neutral; a known zero produces sparse coverage.
+- speed: contextual movement, activity, volume, measured level, notes, onsets
+  and the actual music tempo scale the shared clock around the 1.35 reference.
+- edgeFade: liquidity, movement, sound, notes and pressure vary a narrow edge
+  taper from 0.015 to 0.09, replacing the standalone reference's 0.5 spotlight.
+  Only squares near the perimeter shrink, retaining binary coverage and sharp
+  square edges while allowing the field to cover the full viewport.
+- pixelSizeJitter / jitter: movement, flow and note/onset energy vary square
+  sizes by 0 through 0.24. Pixel centres remain fixed.
+- enableRipples / ripples: fresh significant movement, volume surges, notes or
+  transients enable rings. Actual event keys seed their positions. Ripple speed
+  (0.12 to 0.57), thickness (0.02 to 0.075) and rippleIntensityScale /
+  rippleIntensity (0 to 1.75) follow movement, tempo, flow, sound and event energy.
+- liquid / liquidStrength: movement, flow, sound, notes and onsets set distortion
+  from 0 to 0.08. The radius (0.15 to 1.5) follows liquidity, cap, flow and sound;
+  liquidWobbleSpeed (1 to 8) follows tempo, movement and note/onset energy.
+  Distortion changes sampled field content on the fixed square grid. It does
+  not displace raster cells or soften the rendered image.
+- noiseAmount: fresh flow, movement and audio energy set 0 through 0.2 of
+  deterministic field grain, evaluated on the same square grid.
+- balance (0 to 1) retains observed buy/sell balance. Direction (-1 to 1)
+  combines that balance and signed contextual price change, then applies
+  freshness. A 5 percent move gives half the signed-change response; extreme
+  changes approach the limit smoothly. Missing direction inputs stay neutral.
+- ecosystem: liquidity and fresh flow/contextual movement set 0.18 through 0.36
+  of regional density variation. A second deterministic noise layer forms
+  distributed pockets across the viewport, with no centre mask or focal image.
+  The former identity and identityMotion values remain as compatibility fields
+  fixed at zero; market cap affects square size and texture instead of forming
+  the coin artwork in the middle.
+- Measured loudness and formation also set individual square brightness.
+
+Liquid is adapted to affect field samples before rasterization,
+instead of applying upstream's pointer-driven postprocessing distortion. Actual
+market/audio events supply local direction. Nonzero direction vectors are
+normalized; neutral audio touches use a fixed horizontal direction. Actual
+measured envelope rises also create finite touches. The unwarped noise sample
+cell is selected before continuous displacement, so sub-cell liquid motion
+remains effective without moving or distorting the squares. Their influence has a Gaussian
+radius of 0.12 times liquidRadius in height-normalized coordinates, follows the
+source wobble expression, decays as exp(-age * 1.8), and ends after three seconds.
+Noise is likewise sampled as field grain before sharp square rasterization.
+
+The source control names and renderer aliases are exported together for the
+inspector. No random parameter changes or invented trades/audio drive this map.
+Market motion requires fresh observations. Measured sound and actual notes or
+onsets can energize the effects even without a new market observation.
+Quiet playback retains smaller, weaker squares and settles movement to rest.
+Pausing disables ripples, liquid distortion, noise, jitter and the shared clock;
+existing loudness/formation envelopes can settle in place. Reduced motion also
+suppresses these effects and note/onset accents.
+
+Deliberate fixed settings: variant is square to preserve the requested square
+pixels; color is white; transparent is true for the existing background;
+antialias is false for sharp binary raster edges; autoPauseOffscreen is true to
+stop work when the visualization is hidden. These are structural and accessibility
+choices rather than extra market signals. Alternate source shapes and colour
+variation are intentionally excluded. The caller provides offscreen pausing.
 
 Replay uses one relative presentation clock for noise and ripple age. Pausing
 preserves phase, explicit seeks reset it, and candle-speed playback passes the
-actual chart rate. Reduced-motion preference freezes flow and suppresses pulses.
+actual chart rate. Liquid wobble integrates its own phase from that clock and
+its changing frequency, avoiding jumps caused by multiplying a large time by a
+new frequency. Reduced-motion preference freezes flow and suppresses pulses.
 
 Read source and reviewed changes statically. No browser or device audition was
 performed for this revision.

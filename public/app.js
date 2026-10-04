@@ -6,12 +6,12 @@ import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=114';
-import {createEngineView} from './engine-view.js?v=129';
+import {createEngineView} from './engine-view.js?v=130';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=128';
+import {createAudioDots} from './audio-dots.js?v=130';
 import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -101,7 +101,7 @@ let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 const engineView=createEngineView($('engine-view'),{onBundle:(name,enabled)=>{if(name==='data'){dataSonification.setEnabled(enabled);}else if(name==='math'){mathPatterns.setEnabled(enabled);}else if(name==='piano'){pianoEnabled=enabled;piano?.setEnabled(enabled);}else if(name==='voice'){coinVoice.setEnabled(enabled);}else conductor.setBundle(name,enabled);if(market)syncLevels(metrics());}});
 const envion=createEnvion($('envion'),{onTransport:command=>{if((command==='start'&&!playing)||(command==='stop'&&playing))$('play').click();}});
 function resetEnsemble({preserveVisual=false}={}){touchDesigner.reset();if(!preserveVisual)dataVisual.reset();coinVoice.reset();dataSonification.reset(seed);replayPianoPrimed=false;replayPhrase=null;conductor.reset();mathPatterns.reset();piano?.reset(seed);pianoReplayCursor=replay.state.active?replay.state.cursor:null;for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
-function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),pianoChordCount,instrument:piano?.snapshot(),resonance:marketResonance(m.context?.latestCap),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:market?streamKind:'loading',liquidity:m.observation?.liquidity});}
+function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),pianoChordCount,instrument:piano?.snapshot(),visual:dataVisual.snapshot(),resonance:marketResonance(m.context?.latestCap),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:market?streamKind:'loading',liquidity:m.observation?.liquidity});}
 function bindSignalMap(){pd.subscribe?.('data-onset',message=>{dataVisual.pulse(Number(message.values?.[0]),ctx?.currentTime??0);touchDesigner.pulse(Number(message.values?.[0]));engineView.receive('data-onset',Number(message.values?.[0])||0);});for(const name of ['generation','av-envion-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);engineView.receive(name,value);});for(let slot=0;slot<MATH_SLOT_COUNT;slot++)pd.subscribe?.(`math-${slot}-meter`,message=>mathView.receive(slot,Number(message.values[0])));}
 const scale=[0,2,3,5,7,9,10];
 const hash=s=>{let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;};
