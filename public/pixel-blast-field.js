@@ -184,7 +184,7 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const movement=unit(.55*unit(drive)+.3*unit(motion)+.15*unit(pressure))*current;
  const flow=unit(.45*unit(activity)+.35*unit(volume)+.2*unit(surge))*current;
  return {
-  pixelSize:(mobile?1.6:1.25)+2.75*movement,
+  pixelSize:(mobile?2.8:2.2)+3.8*movement,
   scale:4+7.5*unit(capital),
   density:(mobile?.45:.25)+1.35*flow,
   speed:reducedMotion?0:.025+1.45*unit(.65*movement+.35*flow),

@@ -1,5 +1,4 @@
-import {createMarketAnnouncement} from './market-announcement.js?v=98';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=103';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=104';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -30,7 +29,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const host=canvas.closest('.audio-visualizer'),anchor=document.createComment('binary visual home');
  const blast=host?createPixelBlastField(host):null;
- const announcement=host?createMarketAnnouncement(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
  const buffers=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0;
@@ -46,7 +44,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  function hide(){
   audible=false;level=0;previousLevel=0;lastSound=-Infinity;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.clear();announcement?.clear();
+  blast?.clear();
   if(host){host.dataset.audible='false';host.dataset.visible='false';}
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
@@ -55,7 +53,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
   if(newCoin){clock=0;level=0;previousLevel=0;formation=0;birth=0;}
-  blast?.reset(seed);announcement?.clear();
+  blast?.reset(seed);
  }
  function fitHeight(){
   if(!host)return;
@@ -124,8 +122,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(now-lastPaint<(audible?(mobile.matches?1000/24:1000/30):1000/15))return;
   const dt=lastPaint?Math.min(.1,(now-lastPaint)/1000):1/30;lastPaint=now;
   const active=running()&&hasMarket;
-  if(!active){pulseStrength=0;pulseAt=-Infinity;announcement?.clear();}
-  announcement?.render(now,{width,height,reducedMotion:reduced.matches});
+  if(!active){pulseStrength=0;pulseAt=-Infinity;}
   const rms=active?measure():0;
   if(rms>(audible?.0002:.0005))lastSound=now;
   audible=active&&(rms>.0005||now-lastSound<100);
@@ -172,10 +169,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),cap:finite(next.context?.latestCap),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;
    if(!running())return;
-   if(old?.cap>0&&current.cap>old.cap){const reached=[100000,500000,1000000,2000000,5000000].filter(n=>old.cap<n&&current.cap>=n).at(-1);if(reached)announcement?.show('MARKET CAP',new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',notation:'compact',maximumFractionDigits:1}).format(reached));}
    const changed=current.price>0&&old?.price>0&&Math.abs(current.price/old.price-1)>1e-9;
    if(replaying){
-    if(changed&&current.at!==old?.at){const pct=(current.price/old.price-1)*100;if(Math.abs(pct)>=.05)announcement?.show(pct>0?'PRICE UP':'PRICE DOWN',(pct>0?'+':'')+pct.toFixed(2)+'%');}
     if(current.at!==old?.at&&(current.volume>0||changed))excite(.35+.65*latest.drive,changed||current.volume!==old?.volume?'replay:'+current.price+':'+current.volume:null);
    }else if(!next.decoded&&performance.now()-lastEvent>1000&&old){
     if(changed||(current.volume!=null&&old.volume!=null&&current.volume>old.volume)||(current.trades!=null&&old.trades!=null&&current.trades>old.trades))excite(.35+.65*latest.drive,'market:'+current.price+':'+current.volume+':'+current.trades);
@@ -185,14 +180,13 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(trade.removed||replaying||!['swap','pool-transaction','market-price'].includes(trade.kind))return;
    const id=trade.id||trade.signature;if(id&&seen.has(id))return;
    if(id){seen.add(id);if(seen.size>256)seen.delete(seen.values().next().value);}
-   if(running())announcement?.show(trade.side?.toLowerCase()==='buy'?'BUY':trade.side?.toLowerCase()==='sell'?'SELL':'MARKET UPDATE',Number(trade.usdVolume)>0?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:0}).format(trade.usdVolume):'');
    lastEvent=performance.now();excite(.4+.6*unit(Math.log1p(Math.max(0,Number(trade.usdVolume)||0))/Math.log(100001)),id??('trade:'+trade.occurredAt+':'+trade.priceUsd));
   },
   pulse(strength=.7){excite(unit(strength)||.7);},
   refresh(){dirty=true;},
   reset(){clear();},
   close(){
-   closed=true;cancelAnimationFrame(frameID);hide();blast?.close();announcement?.close();resize.disconnect();visibility?.disconnect();
+   closed=true;cancelAnimationFrame(frameID);hide();blast?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
    window.removeEventListener('resize',layoutChanged);
    document.removeEventListener('visibilitychange',layoutChanged);window.removeEventListener('pageshow',layoutChanged);
