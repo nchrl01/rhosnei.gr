@@ -37,7 +37,7 @@ export function pianoHarmony(seed,event={},music={}){
  const character=HARMONIES[music.character]?music.character:'serene',h=harmonyPlan(seed,character);
  const at=Number(event.occurredAt??event.at??event.receivedAt)||0;
  const step=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(at/30000);
- const index=((step+(seed>>>0)%4)%4+4)%4,root=48+(seed>>>0)%5;
+ const index=((step+(seed>>>0)%4)%4+4)%4,root=Number.isFinite(music.tonic)?48+((Math.round(music.tonic)%12)+12)%12:48+(seed>>>0)%5;
  const previous=compactVoicing(h.chords[(index+3)%4],root);
  const notes=compactVoicing(h.chords[index],root,previous);
  return {character,name:h.name,progression:h.progression,index,notes};

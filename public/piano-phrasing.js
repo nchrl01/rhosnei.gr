@@ -1,4 +1,4 @@
-import {pianoHarmony,HARMONIES} from './music-context.js?v=53';
+import {pianoHarmony,HARMONIES} from './music-context.js?v=122';
 // Small timing/velocity differences are stable for a coin and phrase, so replay
 // has a human contour without drawing fresh random notes on each listen.
 export function pianoNuance(seed,step){

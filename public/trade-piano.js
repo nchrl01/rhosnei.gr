@@ -1,5 +1,6 @@
 // CC0 sampled piano. Meaningful moves and known quiet intervals select single notes.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=59';
+import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=122';
+import {pianoArticulation,interlockingPiano} from './piano-interlock.js?v=122';
 import {createPianoPolicy} from './piano-policy.js?v=61';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
@@ -66,6 +67,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  const policy=createPianoPolicy(seed);
  const phrasing=createPianoPhrasing(seed);
  const voices=new Set();
+ let interlock=null;
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.025);}
  function hold(param,time){
   if(param.cancelAndHoldAtTime)param.cancelAndHoldAtTime(time);
@@ -77,7 +79,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   try{voice.source.stop(time+.04);}catch{}
  }
  function clear(){
-  arp=null;for(const voice of voices)stopVoice(voice);
+  arp=null;interlock=null;for(const voice of voices)stopVoice(voice);
   if(!roomDirty)return;
   clearTimeout(roomTimer);const time=ctx.currentTime;reopenAt=time+.075;
   hold(tailGate.gain,time);tailGate.gain.linearRampToValueAtTime(0,time+.035);
@@ -105,6 +107,17 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  // Audio-clock lookahead keeps attacks independent of the drawing frame rate.
  // Only a triggered four-beat phrase is scheduled; this never free-runs.
  const scheduler=setInterval(()=>{
+  if(interlock&&!closed&&running&&enabled&&ctx.state==='running'){
+   while(interlock.index<interlock.events.length){
+    const event=interlock.events[interlock.index],time=interlock.start+event.tick*interlock.step;
+    if(time>=ctx.currentTime+.12)break;
+    interlock.index++;
+    if(time<ctx.currentTime-.08)continue;
+    const sounded=note(event.midi,time,event.gain,.45,'arp',.006);
+    onArpeggio({midi:event.midi,step:event.tick,time:sounded,tempo:interlock.tempo});
+   }
+   if(interlock.index>=interlock.events.length)interlock=null;
+  }
   if(!arp||closed||!running||!enabled||ctx.state!=='running')return;
   while(arp.index<arp.notes.length&&arp.nextTime<ctx.currentTime+.12){
    const [step,pitch]=arp.notes[arp.index++],time=arp.nextTime;arp.nextTime+=arp.step;if(time<ctx.currentTime-.08)continue;
@@ -121,12 +134,27 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  function play(selection,event,cap,music){
   const quiet=selection.reason==='quiet',phrase=phrasing.next(event,music,{quiet,changePct:selection.changePct});
   const {midi,harmony}=phrase,intensity=unit(music.intensity);
-  const time=note(midi,ctx.currentTime+phrase.delay,(quiet?.105:.20*(.7+.3*intensity))*phrase.velocity,(quiet?5.2:5.8)*phrase.duration,'note',phrase.attack);
+  const articulation=pianoArticulation(cap);
+  const time=note(midi,ctx.currentTime+phrase.delay,(quiet?.105:.20*(.7+.3*intensity))*phrase.velocity,(quiet?5.2:5.8-4.8*articulation)*phrase.duration,'note',quiet?phrase.attack:.018-.012*articulation);
   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/30000);
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
+  if(!quiet&&interlock){
+   for(let i=interlock.index;i<interlock.events.length;i++){
+    const event=interlock.events[i],candidates=harmony.notes.flatMap(n=>[n-12,n,n+12]).filter(n=>n>=48&&n<=81);
+    event.midi=candidates.reduce((a,b)=>Math.abs(a-event.midi)<=Math.abs(b-event.midi)?a:b);
+   }
+   interlock.tonic=music.tonic;
+  }
+  if(!quiet&&!interlock){
+   const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony.notes);
+   if(events.length){
+    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40));
+    arp=null;interlock={events,index:0,start:time+30/tempo,step:30/tempo,tempo,tonic:music.tonic};
+   }
+  }
   // The existing occasional AI phrase is allowed only after a significant move.
   // Quiet notes never start a phrase or a chord.
-  if(!quiet&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
+  if(!quiet&&!interlock&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
    const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
    arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*24;lastArpBucket=bucket;
@@ -140,8 +168,8 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
   reset(value=seed){clear();seed=Number(value)>>>0;policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
-  setTempo(value){if(arp){arp.tempo=Math.max(40,Math.min(140,Number(value)||40));arp.step=30/arp.tempo;}},
-  resonance(cap){const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;filter.Q.setTargetAtTime(.55+1.4*r,ctx.currentTime,.8);filter.frequency.setTargetAtTime(2200-500*r,ctx.currentTime,.8);dry.gain.setTargetAtTime(.34-.08*r,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45+.55*r,ctx.currentTime,.8);}return r;},
+  setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=30/tempo;}if(interlock){const next=interlock.events[interlock.index];if(next){const time=interlock.start+next.tick*interlock.step;interlock.step=30/tempo;interlock.start=time-next.tick*interlock.step;interlock.tempo=tempo;}}},
+  resonance(cap){const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;filter.Q.setTargetAtTime(.55,ctx.currentTime,.8);filter.frequency.setTargetAtTime(2200+4800*a,ctx.currentTime,.8);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}return r;},
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
@@ -150,7 +178,14 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    return selection?play(selection,event,cap,music):false;
   },
   frame(m,{playing=false,seeking=false,ended=false,at,price,known=false,quiet=false,referencePrice}={}){
+   if(seeking||ended||!playing){if(arp||interlock)clear();return false;}
    if(closed||!enabled||!running||!playing||seeking||ended||ctx.state!=='running')return false;
+   this.resonance(m.context?.latestCap);this.setTempo(m.music?.tempo);
+   if(interlock&&Number.isFinite(m.music?.tonic)&&Number.isFinite(interlock.tonic)&&m.music.tonic!==interlock.tonic){
+    const shift=m.music.tonic-interlock.tonic;
+    for(let i=interlock.index;i<interlock.events.length;i++){const event=interlock.events[i];event.midi+=shift;while(event.midi>81)event.midi-=12;while(event.midi<48)event.midi+=12;}
+    interlock.tonic=m.music.tonic;
+   }
    const selection=policy.idle({at,quietAt:ctx.currentTime*1000,price,music:m.music,known,quiet,referencePrice});
    return selection?play(selection,{id:'quiet:'+selection.at,at:selection.at},m.context?.latestCap,m.music||{}):false;
   },

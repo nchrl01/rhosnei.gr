@@ -16,7 +16,7 @@ import {createHolderMetadata} from './holder-metadata.js?v=60';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
 import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=65';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=108';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=122';
 import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=112';
 import {createMathPatternView} from './math-pattern-view.js?v=112';
 import {contextualizeMarket} from './market-state.js?v=53';
@@ -121,7 +121,7 @@ function flushPianoTrade(){
  const trade=pendingPianoTrade;pendingPianoTrade=null;
  // Only a real, recently received event can survive the loading boundary.
  // Do not replay a stale backlog or turn snapshots into invented trades.
- if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000)piano?.trade(trade,liveMetrics().context?.latestCap,trade.music);
+ if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000)piano?.trade(trade,liveMetrics().context?.latestCap,{...trade.music,tonic:marketRoot(liveMetrics())});
 }
 function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
 function marketRoot(m){
@@ -235,7 +235,7 @@ function setupStream(){
    if(!replay.state.active){dataSonification.frame(live,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});dataSonification.event(e,{playing:playing&&ctx?.state==='running',replay:false,clock:ctx?.currentTime??0});dataVisual.event(e);touchDesigner.event(e);}
    pianoHistory.push({...e,at:e.receivedAt});if(pianoHistory.length>20000)pianoHistory.shift();
    if((playing||starting)&&!replay.state.active){
-    if(playing&&piano?.trade(e,liveMetrics().context?.latestCap,e.music)){pendingPianoTrade=null;audioStatus();}
+    if(playing&&piano?.trade(e,liveMetrics().context?.latestCap,{...e.music,tonic:marketRoot(liveMetrics())})){pendingPianoTrade=null;audioStatus();}
     else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=e;
    }
    if(e.priceUsd)chart.add({at:Number.isFinite(e.occurredAt)?e.occurredAt:e.receivedAt,price:e.priceUsd,volume:e.usdVolume,id:e.id,source:'swap'});
@@ -267,7 +267,7 @@ function replayPiano(m){
   // instruction to play. Large seeks reset without firing a note backlog.
   const frame=scoreCandle(bars,replay.state.frozen?.market||market,interval,bar);
   const event={id:'candle:'+interval+':'+bar.time,at:candleEnd(bar,interval),priceUsd:bar.close,referencePrice:bar.open,historical:true,volume:bar.volume,chordStep:Math.floor(bar.time/interval),music:frame.music};
-  piano.trade(event,frame.context?.latestCap,frame.music);
+  piano.trade(event,frame.context?.latestCap,{...frame.music,tonic:marketRoot({...frame,replay:{price:bar.close,at:bar.time}})});
   // Selection can legitimately be silent. Consume each candle exactly once.
   replayPianoPrimed=true;
  }
@@ -290,7 +290,7 @@ function tick(){
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
  if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
  const historical=replay.state.active,bar=replay.state.bar;
- piano?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)&&m.fresh>0,quiet:historical?bar?.volume===0:true});
+ piano?.frame({...m,music:{...m.music,tonic:marketRoot(m)}},{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)&&m.fresh>0,quiet:historical?bar?.volume===0:true});
  send('tempo',bpm);send('activity',music.activity);send('motion',music.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
 }
