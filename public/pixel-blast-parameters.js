@@ -10,7 +10,7 @@ export const PIXEL_BLAST_REFERENCE=Object.freeze({
  variant:'square',color:'#ffffff',transparent:true,antialias:false,autoPauseOffscreen:true,
 });
 
-export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
+export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,bass=0,treble=0,balance=.5,change=null,tempo=40}={}){
  const reference=PIXEL_BLAST_REFERENCE;
  const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
  const animated=active&&!reducedMotion;
@@ -33,14 +33,14 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const pixelSize=clamp(reference.pixelSize*(.25+1.05*strength)*(.7+.6*valuation)*(1+.32*notes+.18*attack),.2,3.8);
  // Pattern scale changes only the noise sampled at existing square centres.
  // Cell spacing and scene framing stay fixed.
- const patternScale=clamp(reference.patternScale+.06*(valuation-.5)-.04*(liquidity-.5)+.04*movement+.025*notes+.015*attack,.18,.34);
- const patternDensity=clamp(reference.patternDensity+1.2*(liquidity-.5)+.18*flow+.12*notes+.1*attack,.65,2.6);
+ const patternScale=clamp(.09+.42*movement+.6*flow+.35*notes+.45*attack,.09,1.9);
+ const patternDensity=clamp(.35+1.65*liquidity+.7*flow+.55*notes+.4*attack,.35,3.5);
  // A narrow perimeter taper keeps the ecosystem distributed across the view.
  const edgeFade=clamp(.05+.04*(liquidity-.5)-.025*movement-.015*sound-.015*notes+.025*unit(pressure)*current,.015,.09);
  const ecosystem=mix(.18,.36,unit(.45*liquidity+.35*flow+.2*movement));
- const pixelSizeJitter=.24*unit(.5*movement+.25*flow+.15*notes+.1*attack)*response;
+ const pixelSizeJitter=.65+.55*unit(.5*movement+.25*flow+.15*notes+.1*attack)*response;
  const rippleIntensityScale=(.35+1.1*eventEnergy+.3*sound)*response;
- const liquidStrength=.08*unit(.4*movement+.2*flow+.2*sound+.12*notes+.08*attack)*response;
+ const liquidStrength=.22*unit(.4*movement+.2*flow+.2*sound+.12*notes+.08*attack)*response;
  const noiseAmount=.2*unit(.35*flow+.25*movement+.2*sound+.12*notes+.08*attack)*response;
 
  return {
@@ -49,9 +49,11 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
   pixelSize,cellSize:4,dotSize:pixelSize,
+  cluster:unit(.4*valuation+.3*unit(bass)+.3*notes),
+  turbulence:.025+.2*movement+.1*attack+.12*unit(treble),
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
-  speed:reference.speed*(.55+.85*motionEnergy)*(.85+.3*pace)*response,
+  speed:reference.speed*(.12+2.8*motionEnergy)*(.55+1.3*pace)*response,
   edgeFade,pixelSizeJitter,jitter:pixelSizeJitter,
   dotStrength:(mobile?.28:.2)+(mobile?.72:.8)*strength,
   // Retain the former image uniforms' API without forming a central image.
