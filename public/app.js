@@ -11,7 +11,7 @@ import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=140';
+import {createAudioDots} from './audio-dots.js?v=141';
 import {createHolderMetadata} from './holder-metadata.js?v=136';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=65';
@@ -87,7 +87,8 @@ async function loadCoinImage(pair){
 }
 function displayCoinImage(){
  const token=market?.baseToken;
- $('coin-image-fallback').textContent=(token?.symbol||'AV').slice(0,2).toUpperCase();
+ if(token)$('coin-image-fallback').textContent=token.symbol.slice(0,2).toUpperCase();
+ else if(!$('coin-image-fallback').querySelector('img'))$('coin-image-fallback').innerHTML='<img src="upic-logo-transparent.svg?v=115" alt="UPIC" class="coin-placeholder-logo">';
  const candidates=market?[market,...discovered.filter(p=>p.chainId===market.chainId&&sameToken(p.baseToken?.address,token.address))]:[];
  const image=candidates.find(p=>p.historyTokenSide!=='quote'&&p.info?.imageUrl)?.info?.imageUrl;
  let url='';try{const parsed=new URL(token?.imageUrl||image||(market&&tokenImages.get(imageKey(market))));if(parsed.protocol==='https:')url=parsed.href;}catch{}
@@ -427,10 +428,11 @@ function orientPair(pair,token){
  return {...pair,marketCap:null,fdv:null,historyTokenSide:'quote',baseToken:pair.quoteToken,quoteToken:pair.baseToken,priceNative:native>0?String(1/native):null,priceUsd:native>0&&usd>0?String(usd/native):null,txns,priceChange:{}};
 }
 function display(){
+ document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
  displayCoinImage();
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
- $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):!market?'LOADING TRENDING MARKET':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
- $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'Loading trending market';
+ $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
+ $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
  const exchangeMarket=isExchangeMarket(market),firstTrade=tradeEvents[0];

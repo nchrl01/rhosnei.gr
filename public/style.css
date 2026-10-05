@@ -478,3 +478,6 @@ body.visual-expanded{overflow:hidden}
  .market-tape .trending-heading{padding-inline:6px}
  .market-tape .trending-cycle{font-size:10px;gap:4px;letter-spacing:0}
 }
+
+.coin-placeholder-logo{display:block;width:100%;height:100%;object-fit:contain;opacity:.85}
+#mode:empty{display:none}

@@ -7,6 +7,9 @@ export function createVisualFullscreen(host){
   button.setAttribute('aria-label',label);button.title=label;button.setAttribute('aria-expanded',String(expanded));
  }
  icon(false);
+ const availability=new MutationObserver(()=>{button.disabled=host.dataset.marketLoaded!=='true';});
+ availability.observe(host,{attributes:true,attributeFilter:['data-market-loaded']});
+ button.disabled=host.dataset.marketLoaded!=='true';
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],volumePlaceholder=null;
  const share=document.querySelector('#share');
@@ -53,7 +56,7 @@ export function createVisualFullscreen(host){
   });
  }
  async function toggle(){
-  if(busy)return;busy=true;
+  if(busy||(!expanded&&button.disabled))return;busy=true;
   if(!expanded){
    const from=host.getBoundingClientRect();
    placeholder=document.createElement('div');placeholder.className='visual-placeholder';
@@ -77,5 +80,5 @@ export function createVisualFullscreen(host){
  function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);
- return {close(){expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
+ return {close(){availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
 }
