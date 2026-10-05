@@ -104,7 +104,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   // Reserve voices at their audible onset, not when the lookahead schedules
   // them. Expired voices must not steal a note that has not sounded yet.
   const active=[...voices].filter(voice=>!voice.fading&&voice.end>time).sort((a,b)=>a.end-b.end);
-  while(active.length>=6)stopVoice(active.shift(),time-.035);
+  while(active.length>=8)stopVoice(active.shift(),time-.035);
   midi=instrumentPitch(midi,profile);
   // Use the arpeggiator's articulation for the harmonic layer as well, so
   // held sample loops do not build a second, competing pad around the phrase.
@@ -164,6 +164,13 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const quiet=selection.reason==='quiet',phrase=phrasing.next(event,music,{quiet,changePct:selection.changePct});
   const {midi,harmony}=phrase,intensity=unit(music.intensity);
   const time=note(midi,ctx.currentTime+phrase.delay,.075*(quiet?.6:.6+.4*intensity)*phrase.velocity,(quiet?2.4:1.6)*phrase.duration,'note',phrase.attack);
+  // Significant moves sound the current harmony on this coin's instrument.
+  // Arpeggios decorate that chord; they do not replace its harmonic onset.
+  const chordNotes=quiet?[]:[...new Set(harmony.notes)].slice(0,3);
+  for(const pitch of chordNotes){
+   if(pitch===midi)continue;
+   note(pitch,time,.052*(.6+.4*intensity)*phrase.velocity,1.6*phrase.duration,'chord',phrase.attack);
+  }
   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/30000);
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
   if(!quiet&&arp){arp=null;} // A new harmony replaces the previous finite phrase.
@@ -187,7 +194,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
    arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],tonic:music.tonic,seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*24;lastArpBucket=bucket;
   }
-  onVoice({time,id:event.id,notes:[instrumentPitch(midi,profile)],instrument:instrument.name,harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
+  onVoice({time,id:event.id,notes:[...new Set([midi,...chordNotes])].map(pitch=>instrumentPitch(pitch,profile)),instrument:instrument.name,harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
   return true;
  }
  return {
