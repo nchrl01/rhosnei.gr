@@ -481,3 +481,5 @@ body.visual-expanded{overflow:hidden}
 
 .coin-placeholder-logo{display:block;width:100%;height:100%;object-fit:contain;opacity:.4}
 #mode:empty{display:none}
+
+.coin-avatar,.coin-avatar img,.coin-avatar canvas{-webkit-user-drag:none;user-select:none;-webkit-user-select:none}
