@@ -8,19 +8,14 @@ export function createVisualFullscreen(host){
  }
  icon(false);
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],chartPlaceholder=null,volumePlaceholder=null;
- const chart=document.querySelector('.chart-panel'),play=document.querySelector('#play');
+ let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],volumePlaceholder=null;
+ const share=document.querySelector('#share');
  const volumeWidget=document.querySelector('.volume-widget'),volumeButton=document.querySelector('#volume-button');
- const mini=document.createElement('button');mini.type='button';mini.className='visual-mini-play';mini.hidden=true;host.append(mini);
- const sync=()=>{mini.textContent=play?.getAttribute('aria-label')||play?.textContent||'Listen';mini.disabled=!!play?.disabled;};
- mini.addEventListener('click',()=>{play?.click();sync();});
- const playObserver=new MutationObserver(sync);if(play)playObserver.observe(play,{attributes:true,childList:true,subtree:true});sync();
- function mobileChart(){
-  const mobile=matchMedia('(max-width:760px)').matches;
-  if(expanded&&mobile&&chart&&!chartPlaceholder){chartPlaceholder=document.createElement('div');chart.before(chartPlaceholder);host.append(chart);}
-  if((!expanded||!mobile)&&chartPlaceholder){chartPlaceholder.replaceWith(chart);chartPlaceholder=null;}
-  mini.hidden=!(expanded&&mobile);
+ function placeButton(){
+  if(!expanded&&matchMedia('(max-width:760px)').matches&&share)share.after(button);
+  else if(button.parentElement!==host)host.append(button);
  }
+ placeButton();
  function fullscreenVolume(){
   if(!volumeWidget||volumeWidget.closest('.header-links'))return;
   if(expanded&&!volumePlaceholder){
@@ -35,7 +30,7 @@ export function createVisualFullscreen(host){
   }
  }
  function top(){
-  mobileChart();fullscreenVolume();
+  placeButton();fullscreenVolume();
   const offset=Math.max(0,header?.getBoundingClientRect().bottom||0)+'px';
   host.style.setProperty('--visual-full-top',offset);
   if(expanded)volumeWidget?.style.setProperty('--visual-full-top',offset);
@@ -73,7 +68,7 @@ export function createVisualFullscreen(host){
   }else{
    const from=host.getBoundingClientRect(),to=placeholder.getBoundingClientRect();
    await motion(from,to);
-   placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;mobileChart();fullscreenVolume();window.dispatchEvent(new Event('resize'));
+   placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;placeButton();fullscreenVolume();window.dispatchEvent(new Event('resize'));
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
    icon(false);
   }
@@ -82,5 +77,5 @@ export function createVisualFullscreen(host){
  function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);
- return {close(){expanded=false;mobileChart();fullscreenVolume();mini.remove();playObserver.disconnect();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
+ return {close(){expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
 }

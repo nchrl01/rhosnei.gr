@@ -438,14 +438,12 @@ body.visual-expanded{overflow:hidden}
 
 /* Keep the pixel lattice hard edged when the render buffer is scaled. */
 .audio-visualizer .pixel-blast-layer{image-rendering:pixelated;filter:none!important}
-.visual-mini-play{position:absolute;top:8px;right:8px;left:auto;z-index:6;pointer-events:auto}
-.audio-visualizer.is-expanded .chart-panel{position:absolute;bottom:0;left:0;width:100%;box-sizing:border-box;padding:12px 16px;background:#000e;z-index:6;pointer-events:auto;max-width:none}
-.audio-visualizer.is-expanded .chart-stage{height:100px!important;min-height:100px!important}
-.audio-visualizer.is-expanded .chart-status,.audio-visualizer.is-expanded #replay-hint,.audio-visualizer.is-expanded .tick-heading{display:none!important}
 @media(max-width:760px){
-.audio-visualizer:not(.is-expanded){height:56px!important;min-height:56px!important;margin:12px 0!important}
+.audio-visualizer:not(.is-expanded){height:0!important;min-height:0!important;margin:0!important;overflow:hidden}
 .audio-visualizer:not(.is-expanded) canvas{visibility:hidden}
-.audio-visualizer:not(.is-expanded) .visual-fullscreen{top:6px;left:6px}
+.transport .visual-fullscreen,.audio-visualizer.is-expanded .visual-fullscreen{width:60px;height:60px;min-width:60px;min-height:60px;border-radius:50%!important;border:1px solid #777;padding:15px;box-sizing:border-box;background:#000;color:#f2f2f2}
+.transport .visual-fullscreen{position:static;flex:none;align-self:center}
+.transport .visual-fullscreen svg,.audio-visualizer.is-expanded .visual-fullscreen svg{width:28px;height:28px}
 }
 
 /* Identity and navigation occupy the first row; the compact tape has its own row. */
