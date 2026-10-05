@@ -1,4 +1,5 @@
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=138';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=154';
+import {scoreGLSL} from './score-morph.js?v=154';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=136';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
@@ -37,6 +38,7 @@ uniform float uLiquidRadius;
 uniform float uLiquidTime;
 uniform float uNoiseAmount;
 uniform float uEcosystem;
+${scoreGLSL}
 
 const int   MAX_CLICKS = 6;
 
@@ -177,6 +179,11 @@ void main(){
     feed=mix(feed,imageFeed,uIdentity);
   }
 
+  // Reshape a single density field, then apply its one shared pixel threshold.
+  // This is a geometric morph into the saved score, not an alpha crossfade.
+  vec2 scoreUV=(origin+squarePoint*uCanvasScale)/uResolution;
+  float targetInk=scoreInk(clamp(scoreUV,vec2(0.),vec2(.999999)));
+  feed=mix(feed,mix(-.25,1.25,targetInk),uScoreMorph);
   float bayer = Bayer8(fragCoord / uPixelSize) - 0.5;
   float bw = step(0.5, feed + bayer);
 
@@ -249,6 +256,7 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   for(const name of ['uScoreMorph','uScoreEnergy','uScoreMotion','uScoreValues','uScoreHistory[0]'])locations[name]=gl.getUniformLocation(program,name);
    uploadImage();
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
   }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
@@ -269,7 +277,7 @@ export function createPixelBlastField(host){
    const length=Math.hypot(dx,dy);if(length>.000001){dx/=length;dy/=length;}else{dx=1;dy=0;}
    ripples.push({key,time,strength:unit(strength),x,y,dx,dy});ripples=ripples.slice(-6);lastPulse=time;
   },
-  render({width,height,time,liquidTime,eventTime,parameters,...inputs}={}){
+  render({width,height,time,liquidTime,eventTime,parameters,score,...inputs}={}){
    if(closed)return;
    const {active,mobile,dither}=inputs;
    const scale=Math.min(Math.max(1,devicePixelRatio||1),2,Math.sqrt(1200000/Math.max(1,width*height)));
@@ -278,7 +286,7 @@ export function createPixelBlastField(host){
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
    const params=parameters||pixelBlastParameters({...inputs,mobile:mobile||useSoftware});lastParameters={...params};
-   if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples});return;}
+   if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples,score});return;}
    // Integer cell boundaries keep a square's complete width and height even
    // on odd viewport dimensions or fractional device pixel ratios.
    const grid=Math.max(2,Math.round(params.cellSize*scale)),rasterScale=grid/params.cellSize;
@@ -287,6 +295,9 @@ export function createPixelBlastField(host){
    gl.viewport(0,0,w,h);gl.useProgram(program);
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
+   f('uScoreMorph',score?.morph||0);f('uScoreEnergy',score?.energy||0);f('uScoreMotion',score?.motion||0);
+   gl.uniform4fv(locations.uScoreValues,score?.values||[0,0,0,0]);
+   gl.uniform1fv(locations['uScoreHistory[0]'],score?.history||new Array(8).fill(-1));
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uPixelSize',params.cellSize);f('uNoiseCellSize',16);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);

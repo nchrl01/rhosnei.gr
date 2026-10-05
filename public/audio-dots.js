@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=138';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=154';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -42,7 +42,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
- let formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
+ let formation=0,scoreMorph=0,scoreValues=[0,0,0,0],scoreHistory=new Array(8).fill(-1),layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -60,7 +60,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   audioEvent=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;lastEnvelope=-Infinity;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
-  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;}
+  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;scoreMorph=0;}
   blast?.reset(seed);
  }
  function fitHeight(){
@@ -226,6 +226,9 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
   const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
+  const morphTarget=active?unit((.5*smoothed.drive+.3*smoothed.activity+.2*pianoEnergy-.12)/.5):0;
+  scoreMorph+=(morphTarget-scoreMorph)*(1-Math.exp(-dt/.9));
+  const score={morph:scoreMorph,energy:unit(.5*level+.2*smoothed.volume+.2*smoothed.pressure+.1*smoothed.surge),motion:smoothed.motion,values:scoreValues,history:scoreHistory};
   // Integrate speed rather than multiplying a large clock by changing speed:
   // a new observation then changes motion smoothly, without jumping patterns.
   if(!reduced.matches){
@@ -240,13 +243,17 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});
+  blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime,...visualInputs,parameters:visualParams,score,dither:getState().dither===true});
   drawNotation(visualParams,dt);
   Object.assign(canvas.dataset,{composition:['ready','canvas'].includes(host?.dataset.pixelBlast)?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }
  frameID=requestAnimationFrame(draw);
  return {
   frame(next={},settings={}){
+   scoreValues=[next.replay?.price??next.context?.latestPrice,next.context?.latestCap,next.availability?.liquidity===false?null:next.observation?.liquidity,next.decoded?next.tradeRate:null].map(n=>Number.isFinite(Number(n))?Number(n):0);
+   const path=(next.context?.path||[]).slice(-8).map(p=>Number(p.close));
+   const known=path.filter(n=>Number.isFinite(n)&&n>0),low=Math.min(...known),high=Math.max(...known);
+   scoreHistory=new Array(8-path.length).fill(-1).concat(path.map(n=>Number.isFinite(n)&&n>0?(high>low?(n-low)/(high-low):.5):-1));
    const nextSeed=settings.seed==null?seed:Number(settings.seed)>>>0,nextReplay=!!next.replay;
    if(nextSeed!==seed||nextReplay!==replaying){clear(true);seed=nextSeed;replaying=nextReplay;blast?.reset(seed);}
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
@@ -281,7 +288,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   snapshot(){return blast?.snapshot()??null;},
   setImage(image){blast?.setImage(image);dirty=true;},
   refresh(){dirty=true;},
-  reset(){clear(true);},
+  reset(){clear(true);scoreMorph=0;scoreHistory=new Array(8).fill(-1);scoreValues=[0,0,0,0];},
   close(){
    closed=true;cancelAnimationFrame(frameID);hide();fullscreen?.close();blast?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);

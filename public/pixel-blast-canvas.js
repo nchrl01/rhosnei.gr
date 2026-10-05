@@ -2,6 +2,7 @@
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
 import {ditherPixels} from './coin-dither.js?v=119';
+import {scoreInk} from './score-morph.js?v=154';
 const fract=x=>x-Math.floor(x);
 const hash=n=>fract(Math.sin(n)*43758.5453);
 const fade=x=>x*x*x*(x*(x*6-15)+10);
@@ -47,7 +48,7 @@ export function createPixelBlastCanvas(host){
  return {
   canvas,
   setImage(mask){identityMask=mask;},
-  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[]}){
+  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],score}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
@@ -113,6 +114,10 @@ export function createPixelBlastCanvas(host){
      maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,cssWidth,cssHeight,time,offset,params);
      const imageFeed=mix(feed-.25,.68+.16*Math.min(3,params.density)+.13*feed,maskInk);
      feed=mix(feed,imageFeed,identity);
+    }
+    if(score?.morph>0){
+     const target=scoreInk(clamp(centerX/w),clamp(centerY/h),{...score,seed:offset});
+     feed=mix(feed,mix(-.25,1.25,target),score.morph);
     }
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
