@@ -117,6 +117,7 @@ const definitions = [
   },
   {
     id: 'heart', name: 'THE HEART FUNCTION', base: 41, shape: .1, drive: 1,
+    graphRange: [-2.8, 2.8],
     formula: 'y = 1.25(|u|²ᐟ³ + 0.9√(3.3 − u²)sin(17.6πu)) − 0.6; u = x/4.4',
     graph(x) {
       const u = domain(x) / 4.4, square = 3.3 - u * u;

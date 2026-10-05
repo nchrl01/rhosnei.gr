@@ -1,18 +1,19 @@
 // Both source reels share one data-gated, finite-phrase Pure Data transport.
 import {REFERENCE_FUNCTIONS} from './math-reference-functions.js?v=85';
-import {REEL_FUNCTIONS} from './math-reel-functions.js?v=85';
+import {REEL_FUNCTIONS} from './math-reel-functions.js?v=139';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,Number(n)||0));
 const hash=n=>{n=Math.imul((n>>>0)^0x9e3779b9,0x85ebca6b);n^=n>>>13;return Math.imul(n,0xc2b2ae35)>>>0;};
 export const MATH_FAMILIES=[...REEL_FUNCTIONS,...REFERENCE_FUNCTIONS];
 export const MATH_THRESHOLDS=[100000,500000,1000000,2000000,5000000];
 export const MATH_SLOT_COUNT=MATH_THRESHOLDS.length;
-const GRAPH_SAMPLES=1200;
+const GRAPH_SAMPLES=2400;
 function graphCache(pattern,seed){
  const [xMin,xMax]=pattern.graphSpan,[yMin,yMax]=pattern.graphRange;
  const points=[],auxiliary=[];
  let previous;
- for(let i=0;i<=GRAPH_SAMPLES;i++){
-  const x=xMin+(xMax-xMin)*Math.min(i/GRAPH_SAMPLES,1-1e-9),y=pattern.graph(x);
+ const samples=pattern.id==='fourier'?GRAPH_SAMPLES*2:GRAPH_SAMPLES;
+ for(let i=0;i<=samples;i++){
+  const x=xMin+(xMax-xMin)*Math.min(i/samples,1-1e-9),y=pattern.graph(x);
   const broken=previous==null||!Number.isFinite(y)||(pattern.breakBetween?.(previous,x)??pattern.breakAt?.(x,previous)??false);
   points.push({x,y,breakBefore:broken});
   if(pattern.aux){const [ay,gate]=pattern.aux(x,seed);auxiliary.push({x,y:gate>.002?ay:NaN,breakBefore:i===0||Math.floor(x*4)!==Math.floor(previous*4)});}

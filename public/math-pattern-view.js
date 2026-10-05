@@ -1,4 +1,4 @@
-import {MATH_SLOT_COUNT} from './math-patterns.js?v=112';
+import {MATH_SLOT_COUNT} from './math-patterns.js?v=139';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 360;
@@ -69,8 +69,7 @@ function makeCard(clipId) {
   node.className = 'math-pattern-card';
   node.innerHTML = `
     <div class="math-pattern-heading"><h4 class="math-pattern-name"></h4><span class="math-pattern-threshold"></span></div>
-    <div class="math-pattern-plot"></div>
-    <div class="math-pattern-formula"></div>`;
+    <div class="math-pattern-plot"></div>`;
 
   const svg = svgNode('svg', {viewBox: `0 0 ${WIDTH} ${HEIGHT}`, preserveAspectRatio: 'xMidYMid meet', role: 'img'});
   const defs = svgNode('defs');
@@ -94,8 +93,7 @@ function makeCard(clipId) {
     node, svg, graph, trace, overlays: [], xAxis, yAxis, xArrow, yArrow, xLabel, yLabel,
     name: node.querySelector('.math-pattern-name'),
     threshold: node.querySelector('.math-pattern-threshold'),
-    formula: node.querySelector('.math-pattern-formula'),
-    identity: null, rendered: false,
+    identity: null, rendered: false, geometry: null, domain: null,
   };
 }
 
@@ -147,10 +145,10 @@ function drawGraph(card, slot) {
   card.xLabel.setAttribute('y', String(axisY + 4));
   card.yLabel.setAttribute('x', String(axisX));
   card.yLabel.setAttribute('y', String(PLOT.top - 11));
-  drawTrace(card.trace, graphPoints(slot, domain), mapX, mapY);
-  const cursor=slot.graphCursor;
-  card.trace.marker.setAttribute('visibility',slot.performing&&cursor&&Number.isFinite(cursor.y)&&cursor.y>=domain.yMin&&cursor.y<=domain.yMax?'visible':'hidden');
-  if(cursor){card.trace.marker.setAttribute('cx',String(mapX(cursor.x)));card.trace.marker.setAttribute('cy',String(mapY(cursor.y)));}
+  const geometry=slot.graphPoints||slot.curve;
+  const domainKey=Object.values(domain).join(':');
+  const changed=!card.rendered||card.geometry!==geometry||card.domain!==domainKey;
+  if(changed)drawTrace(card.trace, graphPoints(slot, domain), mapX, mapY);
   const overlays = Array.isArray(slot.graphOverlays) ? slot.graphOverlays : [];
   for (let index = 0; index < Math.max(overlays.length, card.overlays.length); index++) {
     if (!card.overlays[index]) {
@@ -158,10 +156,20 @@ function drawGraph(card, slot) {
       card.overlays.push(trace);
       card.graph.append(trace.path, trace.marker);
     }
-    drawTrace(card.overlays[index], Array.isArray(overlays[index]?.points) ? overlays[index].points : [], mapX, mapY);
+    if(changed)drawTrace(card.overlays[index], Array.isArray(overlays[index]?.points) ? overlays[index].points : [], mapX, mapY);
     card.overlays[index].marker.setAttribute("visibility","hidden");
   }
-  card.rendered = true;
+  card.rendered = true;card.geometry=geometry;card.domain=domainKey;
+}
+
+function drawCursor(card,slot){
+  const cursor=slot.graphCursor,domain=graphDomain(slot);
+  const visible=slot.performing&&cursor&&Number.isFinite(cursor.x)&&Number.isFinite(cursor.y)
+    &&cursor.x>=domain.xMin&&cursor.x<=domain.xMax&&cursor.y>=domain.yMin&&cursor.y<=domain.yMax;
+  card.trace.marker.setAttribute('visibility',visible?'visible':'hidden');
+  if(!visible)return;
+  card.trace.marker.setAttribute('cx',String(PLOT.left+(cursor.x-domain.xMin)/(domain.xMax-domain.xMin)*(PLOT.right-PLOT.left)));
+  card.trace.marker.setAttribute('cy',String(PLOT.bottom-(cursor.y-domain.yMin)/(domain.yMax-domain.yMin)*(PLOT.bottom-PLOT.top)));
 }
 
 /**
@@ -201,6 +209,7 @@ export function createMathPatternView(container) {
       }
       const nextIdentity = `${view.seed ?? ''}/${slot.slot ?? index}/${slot.id ?? slot.name ?? ''}`;
       const changed = card.identity !== nextIdentity;
+      if(changed)card.rendered=false;
       card.identity = nextIdentity;
       const performing = slot.performing ?? slot.active ?? true;
       const moving = Boolean(view.playing && performing && slot.enabled !== false && view.globalEnabled !== false);
@@ -209,10 +218,9 @@ export function createMathPatternView(container) {
       const threshold = number(slot.threshold);
       card.threshold.hidden = threshold <= 0;
       text(card.threshold, threshold > 0 ? `≥ ${money(threshold)}` : '');
-      text(card.formula, slot.formula);
-      card.formula.hidden = !slot.formula;
-      card.svg.setAttribute('aria-label', `${slot.name || 'Function'}${slot.formula ? `. ${slot.formula}` : ''}`);
-      if (changed || !card.rendered || moving) drawGraph(card, slot);
+      card.svg.setAttribute('aria-label', `${slot.name || 'Function'}. Complete function shape; moving marker follows playback.`);
+      if (changed || !card.rendered) drawGraph(card, slot);
+      drawCursor(card,{...slot,performing:moving});
     });
   }
 
