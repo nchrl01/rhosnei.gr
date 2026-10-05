@@ -46,6 +46,20 @@ let requestedNetwork=null,requestedAutoplay=false;
 let snapshotController,searchController;
 const providerCooldowns=new Map();
 const shouldFetchHistory=()=>!document.hidden||playing;
+let pendingHistoryReplay=false;
+function historyReplayReady(){return (replay.state.frozen?.bars||chart.history||[]).length>1;}
+function finishHistoryReplay(){
+ if(!pendingHistoryReplay||!historyReplayReady()||!market)return;
+ pendingHistoryReplay=false;chart.draw();seekHistory(chart.history[0]);
+}
+async function prepareReplayAudio(){
+ // Optional engines must not keep a ready replay waiting indefinitely.
+ let timeout;
+ try{await Promise.race([
+  Promise.allSettled([pianoLoading,pdLoading,envionLoading,drums?.ready()].filter(Boolean)),
+  new Promise(resolve=>{timeout=setTimeout(resolve,12000);}),
+ ]);}finally{clearTimeout(timeout);}
+}
 let seed=1917,state=1917,step=0,timer,next=0,bpm=120,session=null;
 const controls=['master'];
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='',sharedMarket=false;
@@ -172,7 +186,7 @@ function updateReplayUI(m){
  $('replay-speed').setAttribute('aria-hidden',String(!active));
  transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active;
- $('replay-play').disabled=!(chart.renderedBars?.length);
+ $('replay-play').disabled=!market||pendingHistoryReplay;
  $('replay-play').textContent=active?'Restart':'Replay';
  $('replay-play').setAttribute('aria-label',active?'Restart loaded history':'Play loaded history');
  $('replay-live').textContent=active?'Back to live':'Live';
@@ -422,7 +436,7 @@ $('play').onclick=async()=>{
  }
  if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();arpeggioAI.suspend();mathPatterns.stop();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);drums?.setRunning(false);coinVoice.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},250);status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await Promise.allSettled([pianoLoading,pdLoading,envionLoading,drums?.ready()].filter(Boolean));resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);drums?.setRunning(true);coinVoice.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);drums?.setRunning(true);coinVoice.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
@@ -500,7 +514,7 @@ function startHistory(pair){
   contextHistoryState=historyLoadState(data,operation);
   const first=data.candles[0];historyContext=first?{first,peak:Math.max(...data.candles.map(b=>b.high)),state:data.state,interval:data.interval}:null;
   contextCandles=data.candles;contextInterval=data.interval;
-  if($('chart-timeframe').value==='auto'){setHistoryLoading(contextHistoryState);chart.setHistory(data.candles,data.interval,originDate);$('chart-resolution').textContent='Auto context · '+data.timeframe+' candles';}
+  if($('chart-timeframe').value==='auto'){setHistoryLoading(contextHistoryState);chart.setHistory(data.candles,data.interval,originDate);chart.draw();finishHistoryReplay();$('chart-resolution').textContent='Auto context · '+data.timeframe+' candles';}
   const gap=first&&originDate&&first.time>originDate+data.interval?' · gap between first known market and available history':'';
   $('history-status').textContent=data.message+' · '+data.timeframe+' candles'+gap;
   updateContext();session?.controls.push({at:Date.now(),name:'history-context',first:first?.time,firstOpen:first?.open,state:data.state,originDate});
@@ -508,6 +522,9 @@ function startHistory(pair){
 }
 function setHistoryLoading(data={}){
  const host=$('history-loading'),has=data.candles?.length>0,failed=Boolean(data.error)||data.state==='unavailable',busy=!failed&&['loading','cached'].includes(data.state);
+ if(pendingHistoryReplay&&failed&&!data.retrying&&!historyReplayReady()){
+  pendingHistoryReplay=false;status('History unavailable · retry history to replay');updateReplayUI({});
+ }
  host.hidden=has&&!busy&&!failed;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
  $('history-loading-label').textContent=failed?(has?'History refresh delayed · showing loaded candles':'History delayed')+(data.retrying?' · retrying automatically':' · retry available'):has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
  $('history-retry').hidden=busy;
@@ -527,7 +544,7 @@ function loadChartTimeframe(){
  if(!market)return;
  stopChartHistory=loadHistory(market,data=>{
   if(gen!==generation||request!==chartRequest)return;
-  setHistoryLoading(historyLoadState(data,operation));chart.setHistory(data.candles,data.interval,originDate);
+  setHistoryLoading(historyLoadState(data,operation));chart.setHistory(data.candles,data.interval,originDate);chart.draw();finishHistoryReplay();
   $('chart-resolution').textContent=selection+' · '+data.candles.length+' provider candles · '+data.message;
  },{...frame,maxPages:3,priority:100,shouldFetch:shouldFetchHistory});
 }
@@ -553,6 +570,7 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
+ pendingHistoryReplay=false;
  void takeShare.finish();takeShare.reset();
  pendingPianoTrade=null;preloadPianoSamples().catch(error=>engineView.log('Piano preload: '+error.message));
  mathMarket=null;
@@ -698,7 +716,7 @@ function restoreSharedScore(){
  try{
   const score=decodeScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval);replay.state.speed=['1','2','10','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval);replay.state.speed=['1','10','100','1000'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
@@ -737,6 +755,9 @@ function primeAudio(){try{unlockPlayback(audioContext()).catch(()=>{});}catch{}}
 function seekHistory(bar,dragging=false){
  pendingPianoTrade=null;
  if(!bar)return;
+ if(!replay.state.active&&!historyReplayReady()){
+  pendingHistoryReplay=true;primeAudio();status('Loading history for replay');return;
+ }
  if(!playing)primeAudio();
  if(!replay.state.active){arpeggioAI.freezeScore();resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);replay.state.score=buildReplayScore(replay.state.frozen.bars,seed,chart.interval);}
  replayPianoPrimed=false;replayPhrase=null;mathPatterns.reset();dataSonification.reset(seed);dataVisual.reset();
@@ -749,9 +770,15 @@ function seekHistory(bar,dragging=false){
 chart.onHistorySeek=seekHistory;
 chart.onHistorySeekEnd=()=>replay.release();
 $('replay-play').onclick=()=>{
- seekHistory((replay.state.frozen?.bars||chart.renderedBars)[0]);
+ if(!historyReplayReady()){
+  pendingHistoryReplay=true;primeAudio();status('Loading history for replay');
+  if(!contextHistoryState||contextHistoryState.error)startHistory(market);
+  updateReplayUI({});return;
+ }
+ chart.draw();seekHistory((replay.state.frozen?.bars||chart.history)[0]);
 };
 $('replay-live').onclick=()=>{
+ pendingHistoryReplay=false;
  replay.live();arpeggioAI.setSeed(seed);resetEnsemble();chart.tickView?.live();chart.goLive();$('chart-range').value='live';display();
  session?.controls.push({at:Date.now(),name:'history-live'});
  if(playing)tick();else{const m=metrics();drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
