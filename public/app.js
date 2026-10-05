@@ -1,3 +1,4 @@
+import {createCyberneticDrums} from './cybernetic-drums.js?v=149';
 import {createUIControls} from './ui-controls.js?v=133';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=136';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
@@ -6,7 +7,7 @@ import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan} from './music-context.js?v=53';
 import {createEnvion} from './envion.js?v=114';
-import {createEngineView} from './engine-view.js?v=136';
+import {createEngineView} from './engine-view.js?v=149';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
@@ -37,7 +38,7 @@ import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
 const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-let sharedHarmony=null;
+let sharedHarmony=null,drums=null,drumInput=null,drumsEnabled=true;
 let pd,ctx,gain,outputTap,outputMeters,instrumentTap,instrumentSamples,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let requestedNetwork=null,requestedAutoplay=false;
 let snapshotController,searchController;
@@ -104,9 +105,9 @@ mathPatterns.setSeed(mathSeed);
 const levels=Object.fromEntries(ORCHESTRA_LAYERS.map(name=>[name,0]));
 let orchestraState={state:'SPARSE',phrase:0,parameters:{}};
 
-const engineView=createEngineView($('engine-view'),{onBundle:(name,enabled)=>{if(name==='data'){dataSonification.setEnabled(enabled);}else if(name==='math'){mathPatterns.setEnabled(enabled);}else if(name==='piano'){pianoEnabled=enabled;piano?.setEnabled(enabled);}else if(name==='voice'){coinVoice.setEnabled(enabled);}else conductor.setBundle(name,enabled);if(market)syncLevels(metrics());}});
+const engineView=createEngineView($('engine-view'),{onBundle:(name,enabled)=>{if(name==='drums'){drumsEnabled=enabled;drums?.setEnabled(enabled);}else if(name==='data'){dataSonification.setEnabled(enabled);}else if(name==='math'){mathPatterns.setEnabled(enabled);}else if(name==='piano'){pianoEnabled=enabled;piano?.setEnabled(enabled);}else if(name==='voice'){coinVoice.setEnabled(enabled);}else conductor.setBundle(name,enabled);if(market)syncLevels(metrics());}});
 const envion=createEnvion($('envion'),{onTransport:command=>{if((command==='start'&&!playing)||(command==='stop'&&playing))$('play').click();}});
-function resetEnsemble({preserveVisual=false}={}){sharedHarmony=null;touchDesigner.reset();if(!preserveVisual)dataVisual.reset();coinVoice.reset();dataSonification.reset(seed);replayPianoPrimed=false;replayPhrase=null;conductor.reset();mathPatterns.reset();piano?.reset(seed);pianoReplayCursor=replay.state.active?replay.state.cursor:null;for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
+function resetEnsemble({preserveVisual=false}={}){sharedHarmony=null;drums?.reset(seed);touchDesigner.reset();if(!preserveVisual)dataVisual.reset();coinVoice.reset();dataSonification.reset(seed);replayPianoPrimed=false;replayPhrase=null;conductor.reset();mathPatterns.reset();piano?.reset(seed);pianoReplayCursor=replay.state.active?replay.state.cursor:null;for(const name of Object.keys(levels))levels[name]=0;engineView.reset();}
 function updateSignalMap(m){const view={m,levels,orchestra:orchestraState,bpm:orchestraTempo(m),pianoChordCount,instrument:piano?.snapshot(),visual:dataVisual.snapshot(),resonance:marketResonance(m.context?.latestCap),root:marketRoot(m),master:Number($('master').value),playing,native:$('audio-output').value==='native'};engineView.update({...view,coin:market?.baseToken?.symbol,feed:m.replay?'History · '+m.replay.source:market?streamKind:'loading',liquidity:m.observation?.liquidity});}
 function bindSignalMap(){pd.subscribe?.('data-onset',message=>{dataVisual.pulse(Number(message.values?.[0]),ctx?.currentTime??0);touchDesigner.pulse(Number(message.values?.[0]));engineView.receive('data-onset',Number(message.values?.[0])||0);});for(const name of ['generation','av-envion-voice','av-output-left','av-output-right'])pd.subscribe?.(name,message=>{const value=Number(message.values[0]);conductor.observe(name,value);engineView.receive(name,value);});for(let slot=0;slot<MATH_SLOT_COUNT;slot++)pd.subscribe?.(`math-${slot}-meter`,message=>mathView.receive(slot,Number(message.values[0])));}
 const scale=[0,2,3,5,7,9,10];
@@ -283,7 +284,7 @@ let instrumentWasAudible=false;
 function otherInstrumentsAudible(){
  if(!playing||ctx?.state!=='running'){instrumentWasAudible=false;return false;}
  let power=0,count=0;
- for(const bus of audioScopes.slice(0,2))for(const meter of bus.channels){
+ for(const bus of audioScopes.filter(bus=>bus.name!=='Voice'))for(const meter of bus.channels){
   meter.musicSamples??=new Float32Array(meter.fftSize);
   meter.getFloatTimeDomainData(meter.musicSamples);
   for(const sample of meter.musicSamples){power+=sample*sample;count++;}
@@ -298,6 +299,7 @@ function tick(){
  coinVoice.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended,audible});
  if(audible&&!replay.state.active)void arpeggioAI.prepare();
  if(replay.state.active&&replay.state.bar){const phrase=Math.floor(replay.state.bar.time/(4*(replay.state.frozen?.interval||chart.interval)));if(phrase!==replayPhrase){replayPhrase=phrase;const phraseSeed=hash(seed+':'+phrase);send('seed',phraseSeed%16777216);envion.setSeed(phraseSeed);}}
+ drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
  syncLevels(m);envion.market(music,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
  if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
@@ -335,10 +337,11 @@ async function initialize(){
   // original master path while preventing voice/reverb from opening its own gate.
   instrumentTap=ctx.createAnalyser();instrumentTap.fftSize=2048;instrumentSamples=new Float32Array(instrumentTap.fftSize);instrumentTap.connect(gain);
   function scope(name,out){const input=ctx.createGain();input.connect(out);const split=ctx.createChannelSplitter(2);input.connect(split);const channels=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;split.connect(meter,channel);return meter;});audioScopes.push({name,input,channels});return input;}
-  scope('EarthBound',instrumentTap);scope('Pure Data',instrumentTap);
+  scope('EarthBound',instrumentTap);scope('Pure Data',instrumentTap);drumInput=scope('Cybernetic drums',instrumentTap);
   coinVoice.attach(ctx,scope('Voice',gain));coinVoice.setMaster(Number($('master').value));coinVoice.setRunning(playing);
  }
  const epoch=audioEpoch,context=ctx,destination=instrumentTap;
+ if(!drums){drums=createCyberneticDrums(context,drumInput||destination,{onHit:hit=>dataVisual.piano(hit.time,.4),onError:error=>engineView.log('Drums: '+error)});drums.reset(seed);drums.setEnabled(drumsEnabled);drums.setMaster(Number($('master').value));drums.setRunning(playing);}
  if(!piano&&!pianoLoading){
   audioErrors.piano='';
   pianoLoading=createTradePiano(context,audioScopes[0]?.input||destination,{onVoice:event=>{if(epoch===audioEpoch){sharedHarmony=event.harmony;pianoChordCount++;if(event.time!=null)dataVisual.piano(event.time,1);}},onArpeggio:event=>{if(epoch===audioEpoch&&event.time!=null)dataVisual.piano(event.time,.65);}}).then(instrument=>{
@@ -376,7 +379,7 @@ async function initialize(){
 async function closeAudio(){
  clearTimeout(idleAudioTimer);
  coinVoice.close();arpeggioAI.close();stopLegacyPlayback();audioEpoch++;pianoLoading=null;pdLoading=null;pendingPianoTrade=null;
- piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;instrumentSamples=null;audioScopes=[];
+ drums?.close();drums=null;drumInput=null;piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;instrumentSamples=null;audioScopes=[];
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
  if(runtime)await runtime.close();await context?.close();
 }
@@ -409,9 +412,9 @@ $('play').onclick=async()=>{
   finally{audioBusy(false);}
   return;
  }
- if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();arpeggioAI.suspend();mathPatterns.stop();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);coinVoice.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},250);status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
+ if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();arpeggioAI.suspend();mathPatterns.stop();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);drums?.setRunning(false);coinVoice.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},250);status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);coinVoice.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);drums?.setRunning(true);coinVoice.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
@@ -423,7 +426,7 @@ $('audio-output').onchange=async()=>{
  catch(e){audioLoadFailed=true;status('Could not change audio output: '+e.message);}
  finally{audioBusy(false);$('audio-output').disabled=false;}
 };
-for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);if(id==='master'){piano?.setMaster(Number($(id).value));coinVoice.setMaster(Number($(id).value));}session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
+for(const id of controls)$(id).addEventListener('input',()=>{send(id,playing?Number($(id).value):0);if(id==='master'){piano?.setMaster(Number($(id).value));coinVoice.setMaster(Number($(id).value));drums?.setMaster(Number($(id).value));}session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 $('master').addEventListener('input',()=>{$('master-value').textContent=Math.round(Number($('master').value)*100)+'%';});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
@@ -549,7 +552,7 @@ function chooseMarket(pair,{shared=false}={}){
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);coinVoice.setCoin(pair.baseToken.name||pair.baseToken.symbol,seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
+ resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);mathSeed=hash(pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address));mathPatterns.setSeed(mathSeed);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);drums?.reset(seed);arpeggioAI.setSeed(seed);coinVoice.setCoin(pair.baseToken.name||pair.baseToken.symbol,seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  sharedMarket=shared;
@@ -732,7 +735,8 @@ function seekHistory(bar,dragging=false){
  replay.seek(bar,chart.interval,dragging);chart.schedule();
  piano?.reset(seed);coinVoice.reset();pianoReplayCursor=replay.state.cursor;
  session?.controls.push({at:Date.now(),name:'history-seek',cursor:replay.state.cursor,source:'loaded-candle',speed:replay.state.speed});
- if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));if(!starting)$('play').onclick();}
+ if(playing)tick();else{const m=metrics();drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
+ syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));if(!starting)$('play').onclick();}
 }
 chart.onHistorySeek=seekHistory;
 chart.onHistorySeekEnd=()=>replay.release();
@@ -742,7 +746,8 @@ $('replay-play').onclick=()=>{
 $('replay-live').onclick=()=>{
  replay.live();arpeggioAI.setSeed(seed);resetEnsemble();chart.tickView?.live();chart.goLive();$('chart-range').value='live';display();
  session?.controls.push({at:Date.now(),name:'history-live'});
- if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
+ if(playing)tick();else{const m=metrics();drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
+ syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
  status(playing?'Piano ready · waiting for trades':'Live market · press Listen');
 };
 function updateSpeedButtons(){

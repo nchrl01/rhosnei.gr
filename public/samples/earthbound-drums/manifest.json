@@ -1,0 +1,68 @@
+{
+  "instrument": "EarthBound percussion for cybernetic network",
+  "source": "EarthBound.sf2",
+  "sourceSha256": "5b355757434aa6e20d831107c31e2510caee2e575bad6608576d1dcab2d84df5",
+  "license": "User-supplied soundfont; no open license asserted",
+  "files": [
+    {
+      "file": "preset-16384.wav",
+      "midi": 60,
+      "trim": 0.85,
+      "preset": 16384,
+      "bank": 128,
+      "program": 0,
+      "peak": 0.304077,
+      "bodyRms": 0.068133,
+      "name": "Hi Hat 1",
+      "correction": 0,
+      "loop": false,
+      "loopStart": 0.0,
+      "loopEnd": 0.0
+    },
+    {
+      "file": "preset-16389.wav",
+      "midi": 48,
+      "trim": 0.85,
+      "preset": 16389,
+      "bank": 128,
+      "program": 5,
+      "peak": 0.507996,
+      "bodyRms": 0.037709,
+      "name": "Ride",
+      "correction": 0,
+      "loop": true,
+      "loopStart": 0.10205487658758687,
+      "loopEnd": 0.24116343158399234
+    },
+    {
+      "file": "preset-16390.wav",
+      "midi": 60,
+      "trim": 0.664427,
+      "preset": 16390,
+      "bank": 128,
+      "program": 6,
+      "peak": 0.841614,
+      "bodyRms": 0.195657,
+      "name": "Onett Snare",
+      "correction": 0,
+      "loop": false,
+      "loopStart": 0.0,
+      "loopEnd": 0.0
+    },
+    {
+      "file": "preset-16397.wav",
+      "midi": 48,
+      "trim": 0.636674,
+      "preset": 16397,
+      "bank": 128,
+      "program": 13,
+      "peak": 0.766235,
+      "bodyRms": 0.204186,
+      "name": "Onett Kick",
+      "correction": 0,
+      "loop": false,
+      "loopStart": 0.0,
+      "loopEnd": 0.0
+    }
+  ]
+}
