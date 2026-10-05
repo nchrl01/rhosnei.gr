@@ -164,6 +164,7 @@ function metrics(){
 }
 function updateReplayUI(m){
  const active=replay.state.active,source=m.replay?.source;
+ $('replay-speed').hidden=!active;
  transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active;
  $('replay-play').disabled=!(chart.renderedBars?.length);
