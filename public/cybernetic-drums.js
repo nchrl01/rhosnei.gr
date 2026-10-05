@@ -51,6 +51,7 @@ export function createCyberneticDrums(ctx,destination,{onHit=()=>{},onError=()=>
  }
  void prepare();
  return {
+  ready:prepare,
   reset(value=seed){clear();seed=value>>>0;randomState=seed;lastEvent=null;restUntil=0;},
   setEnabled(value){enabled=!!value;if(!enabled)clear();update();},
   setRunning(value){running=!!value;if(running&&!timer)timer=setInterval(schedule,25);if(!running){clearInterval(timer);timer=null;clear();}update();},

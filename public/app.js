@@ -1,25 +1,26 @@
-import {createCyberneticDrums} from './cybernetic-drums.js?v=149';
+import {buildReplayScore} from './replay-score.js?v=152';
+import {createCyberneticDrums} from './cybernetic-drums.js?v=152';
 import {createUIControls} from './ui-controls.js?v=133';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=136';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
-import {harmonyPlan} from './music-context.js?v=53';
-import {createEnvion} from './envion.js?v=114';
+import {harmonyPlan,pianoHarmony} from './music-context.js?v=53';
+import {createEnvion} from './envion.js?v=152';
 import {createEngineView} from './engine-view.js?v=149';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=150';
+import {createAudioDots} from './audio-dots.js?v=152';
 import {createHolderMetadata} from './holder-metadata.js?v=136';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=146';
-import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=148';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=147';
-import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=146';
-import {createMathPatternView} from './math-pattern-view.js?v=146';
+import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=152';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=152';
+import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=152';
+import {createMathPatternView} from './math-pattern-view.js?v=152';
 import {contextualizeMarket} from './market-state.js?v=53';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=79';
 import {signalFreshness} from './market-controls.js?v=18';
@@ -38,6 +39,7 @@ import {pollPoolTrades} from './trades.js?v=39';
 const $=id=>document.getElementById(id);
 const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+let envionLoading=null;
 let sharedHarmony=null,drums=null,drumInput=null,drumsEnabled=true;
 let pd,ctx,gain,outputTap,outputMeters,instrumentTap,instrumentSamples,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let requestedNetwork=null,requestedAutoplay=false;
@@ -164,7 +166,10 @@ function metrics(){
 }
 function updateReplayUI(m){
  const active=replay.state.active,source=m.replay?.source;
- $('replay-speed').hidden=!active;
+ $('replay-speed').hidden=false;
+ $('replay-speed').classList.toggle('is-live',!active);
+ $('replay-speed').inert=!active;
+ $('replay-speed').setAttribute('aria-hidden',String(!active));
  transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active;
  $('replay-play').disabled=!(chart.renderedBars?.length);
@@ -185,6 +190,7 @@ function updateReplayUI(m){
 }
 let outputGateOpen=null;
 function syncLevels(m){
+ if(m.replay&&replay.state.score){const score=replay.state.score.frames.get(replay.state.bar?.time);if(score){m={...m,replay:{...m.replay,scoreIndex:score.index,sceneSeed:score.sceneSeed}};sharedHarmony=pianoHarmony(seed,{chordStep:score.index},{...m.music,tonic:marketRoot(m)});}}
  m={...m,music:{...m.music,tonic:marketRoot(m),harmony:sharedHarmony}};
  const audibleTransport=playing&&!replay.state.dragging&&!replay.state.ended&&replay.state.endHold===null;
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1.5:0,ctx.currentTime,.025);}
@@ -265,7 +271,7 @@ function setupStream(){
  }
  stopStream=()=>{stopNative?.();stopFallback?.();};
 }
-function musicalFrame(m){const intensity=m.music?.intensity||0;return {...m,activity:intensity,motion:intensity,volume:intensity,pressure:intensity};}
+function musicalFrame(m){const intensity=m.music?.intensity||0,score=m.replay?replay.state.score?.frames.get(replay.state.bar?.time):null;return {...m,replay:m.replay?{...m.replay,scoreIndex:score?.index,sceneSeed:score?.sceneSeed}:undefined,activity:intensity,motion:intensity,volume:intensity,pressure:intensity};}
 function replayPiano(m){
  if(!playing||replay.state.dragging||!piano)return;
  const cursor=replay.state.cursor,bars=replay.state.frozen?.bars||chart.renderedBars,interval=replay.state.frozen?.interval||chart.interval;
@@ -274,8 +280,9 @@ function replayPiano(m){
   // Completed candles are observations for the selection policy, not an
   // instruction to play. Large seeks reset without firing a note backlog.
   const frame=scoreCandle(bars,replay.state.frozen?.market||market,interval,bar);
-  const event={id:'candle:'+interval+':'+bar.time,at:candleEnd(bar,interval),priceUsd:bar.close,referencePrice:bar.open,historical:true,volume:bar.volume,chordStep:Math.floor(bar.time/interval),music:frame.music};
-  piano.trade(event,frame.context?.latestCap,{...frame.music,tonic:marketRoot({...frame,replay:{price:bar.close,at:bar.time}})});
+  const score=replay.state.score?.frames.get(bar.time);
+  const event={id:'candle:'+interval+':'+bar.time,at:candleEnd(bar,interval),priceUsd:bar.close,referencePrice:bar.open,historical:true,volume:bar.volume,chordStep:score?.index??Math.floor(bar.time/interval),music:frame.music};
+  piano.replay(event,score?.selection,frame.context?.latestCap,{...frame.music,tonic:marketRoot({...frame,replay:{price:bar.close,at:bar.time}})});
   // Selection can legitimately be silent. Consume each candle exactly once.
   replayPianoPrimed=true;
  }
@@ -299,7 +306,7 @@ function tick(){
  const audible=otherInstrumentsAudible();
  coinVoice.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended,audible});
  if(audible&&!replay.state.active)void arpeggioAI.prepare();
- if(replay.state.active&&replay.state.bar){const phrase=Math.floor(replay.state.bar.time/(4*(replay.state.frozen?.interval||chart.interval)));if(phrase!==replayPhrase){replayPhrase=phrase;const phraseSeed=hash(seed+':'+phrase);send('seed',phraseSeed%16777216);envion.setSeed(phraseSeed);}}
+
  drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
  syncLevels(m);envion.market(music,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
@@ -318,7 +325,7 @@ function mathLoop(){
  const rate=replay.state.speed==='candle'?interval/1000:Number(replay.state.speed)||1;
  const position=replay.state.active?(replay.state.cursor-candleEnd((frozen?.bars||chart.renderedBars)[0]||{time:replay.state.cursor},interval))/rate/1000:undefined;
  const event=replay.state.active?replay.state.bar?.time:lastTrade?.id??lastChainPrice?.receivedAt??null;
- mathPatterns.frame(mathMarket||{},{playing:active,seeking:replay.state.dragging,ended:replay.state.ended,ready:!!pd&&!audioErrors.pd,error:audioErrors.pd,event,position,clock:ctx?.currentTime??performance.now()/1000});
+ mathPatterns.frame(mathMarket||{},{playing:active,seeking:replay.state.dragging,ended:replay.state.ended,ready:!!pd&&!audioErrors.pd,error:audioErrors.pd,event,position,scoreIndex:replay.state.active?replay.state.score?.frames.get(replay.state.bar?.time)?.index:null,frameSeconds:replay.state.active?Math.max(0,(replay.state.cursor-candleEnd(replay.state.bar||{time:replay.state.cursor},interval))/rate/1000):null,clock:ctx?.currentTime??performance.now()/1000});
  setTimeout(mathLoop,playing?33:250);
 }
 mathLoop();
@@ -368,7 +375,7 @@ async function initialize(){
    send('seed',seed%16777216);send('master',playing?Number($('master').value):0);if(playing)tick();send('run',playing?1:0);
    // Math and beat voices can start as soon as Pd is ready. Envion's sample
    // handshake has its own outcome and cannot close the other instruments.
-   envion.attach(runtime,context,files).then(attached=>{if(epoch!==audioEpoch||!attached)return;envion.setSeed(replayPhrase==null?seed:hash(seed+':'+replayPhrase));envion.setRunning(playing);if(playing)tick();audioStatus();}).catch(error=>{if(epoch===audioEpoch){send('av-envion-ready',0);envion.detach();audioErrors.envion=error.message;engineView.log('Envion: '+error.message);audioStatus();}});
+   envionLoading=envion.attach(runtime,context,files).then(attached=>{if(epoch!==audioEpoch||!attached)return;envion.setSeed(replayPhrase==null?seed:hash(seed+':'+replayPhrase));envion.setRunning(playing);if(playing)tick();audioStatus();}).catch(error=>{if(epoch===audioEpoch){send('av-envion-ready',0);envion.detach();audioErrors.envion=error.message;engineView.log('Envion: '+error.message);audioStatus();}});
    audioStatus();return runtime;
   })().catch(error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log('Pd: '+error.message);audioStatus();}throw error;}).finally(()=>{if(epoch===audioEpoch)pdLoading=null;});
  }
@@ -415,7 +422,7 @@ $('play').onclick=async()=>{
  }
  if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();arpeggioAI.suspend();mathPatterns.stop();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);drums?.setRunning(false);coinVoice.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();$('audio-output').disabled=false;setPlayState(false);void takeShare.finish();idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},250);status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
  audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);drums?.setRunning(true);coinVoice.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await Promise.allSettled([pianoLoading,pdLoading,envionLoading,drums?.ready()].filter(Boolean));resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',Number($('master').value));$('audio-output').disabled=true;playing=true;piano?.setRunning(true);drums?.setRunning(true);coinVoice.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);$('audio-output').disabled=false;status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
@@ -691,7 +698,7 @@ function restoreSharedScore(){
  try{
   const score=decodeScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.speed=['1','2','10','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval);replay.state.speed=['1','2','10','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
@@ -731,10 +738,10 @@ function seekHistory(bar,dragging=false){
  pendingPianoTrade=null;
  if(!bar)return;
  if(!playing)primeAudio();
- if(!replay.state.active){arpeggioAI.setSeed(seed,arpeggioAI.snapshot());resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);}
+ if(!replay.state.active){arpeggioAI.freezeScore();resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);replay.state.score=buildReplayScore(replay.state.frozen.bars,seed,chart.interval);}
  replayPianoPrimed=false;replayPhrase=null;mathPatterns.reset();dataSonification.reset(seed);dataVisual.reset();
  replay.seek(bar,chart.interval,dragging);chart.schedule();
- piano?.reset(seed);coinVoice.reset();pianoReplayCursor=replay.state.cursor;
+ piano?.reset(seed);drums?.reset(seed);coinVoice.reset();sharedHarmony=null;pianoReplayCursor=replay.state.cursor;
  session?.controls.push({at:Date.now(),name:'history-seek',cursor:replay.state.cursor,source:'loaded-candle',speed:replay.state.speed});
  if(playing)tick();else{const m=metrics();drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
  syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));if(!starting)$('play').onclick();}

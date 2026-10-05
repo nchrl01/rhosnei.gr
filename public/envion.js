@@ -89,7 +89,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   let activePicker = null, pendingDialog = null, generation = 0, initialized = false;
   let sampleWaveforms=[null,null],scopeOff=null,waveformSource=null,waveformLoading=null,waveformLoaded=null;
   const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [];
-  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0;
+  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917,replayScene=null, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0;
   const marketWrites = new Map();
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
   let recordingOperation = Promise.resolve();
@@ -400,7 +400,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   }
   return {
     view, get ready(){return loadModel();}, printed,
-    setSeed(value){materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;view.reset?.();performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
+    setSeed(value){replayScene=null;materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;view.reset?.();performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
     async files() {
       await loadModel();
       const manifest=await loadAsset('manifest.json','json');
@@ -421,7 +421,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       for(const receiver of model.receivers)subscriptions.push(pd.subscribe(receiver,message=>view.receive(receiver,message.values)));
       inspect(view.isVisible(),view.isDetailed());
       subscriptions.push(pd.subscribe('av-envion-sample-frames',()=>marketWrites.clear()));
-      subscriptions.push(pd.subscribe('generation',message=>decide(Number(message.values[0]))));
+      subscriptions.push(pd.subscribe('generation',message=>{if(!latestMarket?.m?.replay)decide(Number(message.values[0]));}));
       subscriptions.push(pd.subscribe('av-envion-id',message=>{namespace=Math.round(message.values[0]);clocks();}));
       subscriptions.push(pd.subscribe('av-envion-stop-request',()=>{if(namespace)pd.sendFloat(namespace+'-met0',0);}));
       pd.sendBang('av-envion-identify');
@@ -443,6 +443,10 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     market(m,tempo){
       if(!pd||!namespace||!initialized)return;
       clocks();latestMarket={m,tempo};
+      if(m.replay){
+       const scene=m.replay.sceneSeed??Math.floor(m.replay.at||0);
+       if(scene!==replayScene){replayScene=scene;performer?.reset(scene);performancePlan=null;decide(0,true);}
+      }
       if(!performancePlan&&running)decide(0,true);
       applyCurrent();
     },

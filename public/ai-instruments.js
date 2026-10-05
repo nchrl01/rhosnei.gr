@@ -18,6 +18,12 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
  function publish(){onPattern(pattern,source);}
  return {
   setSeed(value,frozen){epoch++;retryAt=0;seed=value>>>0;pattern=validArp(frozen)?frozen:cache.get(seed)||seededArp(seed);source=validArp(frozen)?'frozen':cache.has(seed)?'ai':'seeded';publish();onStatus(source==='seeded'?'Seeded arpeggios · AI loads with Listen':source==='frozen'?'Frozen arpeggio score':'AI arpeggios ready');},
+  freezeScore(){
+   const key='upic.replay-arps.v1:'+seed;let saved;
+   try{saved=JSON.parse(localStorage.getItem(key)||'null');}catch{}
+   if(!validArp(saved)){saved=this.snapshot();try{localStorage.setItem(key,JSON.stringify(saved));}catch{}}
+   this.setSeed(seed,saved);
+  },
   async prepare(){if(source!=='seeded'||loading||Date.now()<retryAt)return;loading=true;const token=epoch,current=seed;
    try{const result=await runner.request({seed:current});if(!validArp(result.pattern))throw Error('Invalid musical phrase');cache.delete(current);cache.set(current,result.pattern);if(cache.size>64)cache.delete(cache.keys().next().value);try{localStorage.setItem(KEY,JSON.stringify([...cache]));}catch{}if(token===epoch){pattern=result.pattern;source='ai';publish();}}
    catch(error){if(error.name!=='AbortError'){retryAt=Date.now()+60000;if(token===epoch)onStatus('AI unavailable · seeded arpeggios active · Retry');}}

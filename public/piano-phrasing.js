@@ -14,8 +14,9 @@ export function createPianoPhrasing(seed=0){
   next(event,music,{quiet=false,changePct=0}={}){
    // Complete a four-note harmonic arc before choosing its next character.
    // Clock buckets no longer skip unheard stages of the progression.
-   if(step%4===0)character=HARMONIES[music.character]?music.character:'serene';
-   const harmony=pianoHarmony(seed,{...event,chordStep:network.next(music,quiet)-(seed%4)},{...music,character});
+   if(event.historical){step=Number(event.chordStep)||0;previous=null;repeats=0;}
+   if(event.historical||step%4===0)character=HARMONIES[music.character]?music.character:'serene';
+   const harmony=pianoHarmony(seed,{...event,chordStep:event.historical?step:network.next(music,quiet)-(seed%4)},{...music,character});
    const candidates=[...new Set(harmony.notes.flatMap(note=>[note-12,note,note+12]).filter(note=>note>=45&&note<=67))];
    const target=previous??(52+seed%5),direction=quiet?0:Math.sign(changePct);
    const cost=note=>Math.abs(note-target)*1.2+Math.abs(note-54)*.12

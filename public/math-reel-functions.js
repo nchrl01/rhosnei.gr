@@ -53,7 +53,7 @@ const definitions = [
     gate(x) { return Math.exp(-5 * funkDistance(x)); },
     breakAt(x, previousX) {
       if (!Number.isFinite(previousX)) return true;
-      return funkDistance(x) < funkDistance(previousX) || melodyIndex(x) !== melodyIndex(previousX);
+      return funkDistance(x) < funkDistance(previousX);
     },
   },
   {

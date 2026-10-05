@@ -1,7 +1,7 @@
 import {harmoniousPitch} from './harmonic-network.js?v=146';
 // Both source reels share one data-gated, finite-phrase Pure Data transport.
 import {REFERENCE_FUNCTIONS} from './math-reference-functions.js?v=85';
-import {REEL_FUNCTIONS} from './math-reel-functions.js?v=139';
+import {REEL_FUNCTIONS} from './math-reel-functions.js?v=152';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,Number(n)||0));
 const hash=n=>{n=Math.imul((n>>>0)^0x9e3779b9,0x85ebca6b);n^=n>>>13;return Math.imul(n,0xc2b2ae35)>>>0;};
 export const MATH_FAMILIES=[...REEL_FUNCTIONS,...REFERENCE_FUNCTIONS];
@@ -71,6 +71,16 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
    if(!running&&wasRunning)cancel();wasRunning=running;
    const event=options.event??null;
    let queuedUntil=Math.max(beat,...slots.map(s=>s.start===null?s.queued===null?beat:s.queued+10:s.start+10));
+   if(m.replay&&Number.isFinite(options.scoreIndex)){
+    // The history frame owns phrase identity and phase, independent of FPS.
+    beat=Math.max(0,Number(options.frameSeconds)||0)*tempo/60;
+    const eligible=unlocked.map((v,i)=>v&&slots[i].enabled?i:-1).filter(i=>i>=0);
+    const selected=eligible.length?eligible[options.scoreIndex%eligible.length]:-1;
+    for(let i=0;i<slots.length;i++){
+     const s=slots[i],allowed=running&&enabled&&fresh>0&&intensity>.015&&i===selected&&beat<8;
+     s.start=allowed?0:null;s.queued=null;s.played=allowed;
+    }
+   }else{
    // At most one eight-beat phrase at a time; subsequent functions wait two beats.
    for(let i=0;i<slots.length;i++){
     const s=slots[i],allowed=enabled&&s.enabled&&running&&fresh>0&&unlocked[i]&&intensity>.015;
@@ -81,6 +91,7 @@ export function createMathPatterns({send=()=>{},onView=()=>{}}={}){
      s.queued=Math.ceil(queuedUntil/4)*4;queuedUntil=s.queued+10;
      if(s.queued<=beat){s.start=s.queued;s.queued=null;s.played=true;s.event=event;}
     }
+   }
    }
    const views=profile.map((pattern,i)=>{
     const s=slots[i],entered=unlocked[i],performing=running&&s.start!==null;

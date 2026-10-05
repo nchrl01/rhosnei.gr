@@ -177,7 +177,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   // Keep event ages relative so long history ranges retain shader precision.
   displayCursor=displayCursor===null?cursor:Math.max(displayCursor,cursor);
   displayAt=now;displayRunning=active;
-  return displayClock;
+  return cursor;
  }
  function excite(strength=.65,key=null,frameTime=null){
   if(!running())return;
@@ -221,7 +221,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    lastEnvelope=now;excite(envelopeRise,'envelope:'+audioEvent++,eventTime);
   }
   const transient=active&&!reduced.matches?Math.max(pulseStrength*Math.exp(-(now-pulseAt)/280),envelopeRise):0;
-  if(!smoothed)smoothed={...latest};
+  if(!smoothed||replaying)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
   const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
@@ -233,7 +233,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(replaying&&sourceClock!==null){
     if(active&&!resumedPaint&&visualCursor!==null)advance=Math.max(0,eventTime-visualCursor)*visualParams.speed;
    }else advance=dt*visualParams.speed;
-   clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;
+   if(replaying){clock=eventTime*1.35;liquidClock=eventTime*.6;}else{clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;}
    dirty=true;
   }
   visualCursor=replaying?eventTime:null;
@@ -248,7 +248,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  return {
   frame(next={},settings={}){
    const nextSeed=settings.seed==null?seed:Number(settings.seed)>>>0,nextReplay=!!next.replay;
-   if(nextSeed!==seed||nextReplay!==replaying){clear(nextSeed!==seed);seed=nextSeed;replaying=nextReplay;blast?.reset(seed);}
+   if(nextSeed!==seed||nextReplay!==replaying){clear(true);seed=nextSeed;replaying=nextReplay;blast?.reset(seed);}
    const incoming=finite(settings.clock)??(finite(settings.position)==null?null:Number(settings.position)*60);
    const seeking=Boolean(settings.seeking)&&(!options.seeking||incoming!==sourceClock);
    const backwards=incoming!==null&&sourceClock!==null&&incoming<sourceClock;
@@ -281,7 +281,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   snapshot(){return blast?.snapshot()??null;},
   setImage(image){blast?.setImage(image);dirty=true;},
   refresh(){dirty=true;},
-  reset(){clear();},
+  reset(){clear(true);},
   close(){
    closed=true;cancelAnimationFrame(frameID);hide();fullscreen?.close();blast?.close();resize.disconnect();visibility?.disconnect();
    mobile.removeEventListener('change',arrange);reduced.removeEventListener('change',motionChanged);
