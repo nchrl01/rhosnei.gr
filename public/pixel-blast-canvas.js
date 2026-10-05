@@ -64,6 +64,10 @@ export function createPixelBlastCanvas(host){
     if(length>.000001){dx/=length;dy/=length;}else{dx=1;dy=0;}
     return {x:(p.x*w-originX)/ratio/cssHeight,y:(p.y*h-originY)/ratio/cssHeight,dx,dy,strength:Math.exp(-(eventTime-p.time)*1.8)*p.strength};
    }):[];
+   const packets=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<=1.1).map(p=>{
+    const age=eventTime-p.time,t=clamp(age/.16),out=clamp((age-.38)/.72);
+    return {...p,x:(p.x*w-originX)/ratio,y:(p.y*h-originY)/ratio,physicalX:p.x*w/ratio,enter:1-(1-t)**3,leave:1-out*out*(3-2*out)};
+   });
    const identity=identityMask?params.identity:0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
@@ -99,9 +103,18 @@ export function createPixelBlastCanvas(host){
      for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
+     feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
      sample={feed,warpX,warpY};cache.set(key,sample);
     }
     let feed=sample.feed;
+    let packet=0;
+    for(const p of packets){
+     const span=10+30*p.strength,column=Math.floor((fx-p.x)/cellSize*(p.dx<0?-1:1)+span*.5),row=Math.floor((fy-p.y)/cellSize);
+     if(column<0||column>span*p.enter||Math.abs(row)>1+Math.floor(3*p.strength))continue;
+     const bit=hash(Math.floor(column/2)*17.1+row*73.9+p.physicalX*.1+offset)>=.3?1:0;
+     packet=Math.max(packet,bit*p.leave*(.6+.4*p.strength));
+    }
+    feed=Math.max(feed,packet*1.4-.1);
     let maskInk=0;
     if(identity>0){
      maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,cssWidth,cssHeight,time,offset,params);
@@ -111,13 +124,13 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale)*taper;
+    const dotSize=Math.min(cellSize,mix(params.dotSize*jitter*backgroundScale,cellSize-.25,packet))*taper;
     const diameter=Math.min(Math.max(1,grid-1),Math.max(1,Math.round(dotSize*ratio)));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
     const grain=(hash(px*127.1+py*311.7+grainFrame*74.7+offset)-.5)*params.noiseAmount;
-    const ink=Math.round(255*clamp(params.dotStrength*mix(1,.45+.55*maskInk,identity)+grain));
+    const ink=Math.round(255*clamp(Math.max(params.dotStrength*mix(1,.45+.55*maskInk,identity),packet*.9)+grain));
     if(ink!==previousInk){ctx.fillStyle=`rgb(${ink},${ink},${ink})`;previousInk=ink;}
     ctx.fillRect(x0,y0,x1-x0,y1-y0);
    }

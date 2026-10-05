@@ -1,5 +1,5 @@
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=157';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=157';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=158';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=158';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -130,6 +130,30 @@ float identityInk(vec2 point){
   return texture(uIdentityImage,uv).r;
 }
 
+// Finite rectangular transmissions. A sound reveals its data cells, holds
+// briefly, then the individual cells contract. No repeating spatial oscillator.
+float dataPacket(vec2 point){
+ float ink=0.;
+ vec2 origin=floor(uResolution*.5)/uCanvasScale;
+ for(int i=0;i<MAX_CLICKS;i++){
+  float age=uEventTime-uClickTimes[i];
+  if(uClickPos[i].x<0.||age<0.||age>1.1)continue;
+  float strength=uClickStrengths[i];
+  float enter=1.-pow(1.-clamp(age/.16,0.,1.),3.);
+  float leave=1.-smoothstep(.38,1.1,age);
+  vec2 delta=(point-(uClickPos[i]-origin))/uPixelSize;
+  float direction=uClickDirections[i].x<0.?-1.:1.;
+  float span=10.+30.*strength;
+  float column=floor(delta.x*direction+span*.5);
+  float row=floor(delta.y);
+  float height=1.+floor(3.*strength);
+  if(column<0.||column>span*enter||abs(row)>height)continue;
+  float bit=step(.3,hash11(floor(column/2.)*17.1+row*73.9+uClickPos[i].x*.1+uSeed));
+  ink=max(ink,bit*leave*(.6+.4*strength));
+ }
+ return ink;
+}
+
 void main(){
   float pixelSize = uPixelSize;
   vec2 viewSize=uResolution/uCanvasScale;
@@ -151,8 +175,11 @@ void main(){
   base = base * 0.5 - 0.65;
 
   float feed = base + (uDensity - 0.5) * 0.3;
+  float packet=dataPacket(squarePoint);
+  feed=max(feed,packet*1.4-.1);
   // Distributed local populations, with no central image or radial attractor.
   feed+=uEcosystem*vnoise(vec3(uv*6.0+vec2(uSeed*.19,uSeed*.41),uTime*.04));
+  feed=max(feed,.07+.045*vnoise(vec3(uv*14.0+uSeed,uTime*.03)));
   float speed     = uRippleSpeed;
   float thickness = uRippleThickness;
   const float dampT     = 1.0;
@@ -183,7 +210,8 @@ void main(){
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
-  float dotSize = min(max(1.0,pixelSize*rasterScale-1.0),max(1.0,floor(min(pixelSize,uDotSize*jitterScale*backgroundScale)*edge*rasterScale+.5)));
+  float markSize=mix(uDotSize*jitterScale*backgroundScale,pixelSize-.25,packet);
+  float dotSize = min(max(1.0,pixelSize*rasterScale-1.0),max(1.0,floor(min(pixelSize,markSize)*edge*rasterScale+.5)));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
   float square = step(start.x,point.x)*step(start.y,point.y)
@@ -202,7 +230,7 @@ void main(){
 
   float inkStrength=mix(1.0,.45+.55*imageInk,uIdentity);
   float grain=(hash11(dot(pixelId,vec2(127.1,311.7))+floor(uTime*12.0)*74.7+uSeed)-.5)*uNoiseAmount;
-  fragColor = vec4(srgbColor * clamp(uDotStrength * inkStrength+grain,0.0,1.0), clamp(M, 0.0, 1.0));
+  fragColor = vec4(srgbColor * clamp(max(uDotStrength * inkStrength,packet*.9)+grain,0.0,1.0), clamp(M, 0.0, 1.0));
 }
 `;
 

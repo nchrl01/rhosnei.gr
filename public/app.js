@@ -13,7 +13,7 @@ import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=157';
+import {createAudioDots} from './audio-dots.js?v=158';
 import {createHolderMetadata} from './holder-metadata.js?v=136';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=146';
@@ -716,7 +716,7 @@ function restoreSharedScore(){
  try{
   const score=decodeScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval);replay.state.speed=['1','10','100','1000'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval);replay.state.speed=['1','10','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }

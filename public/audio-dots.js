@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=157';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=158';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -34,7 +34,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const blast=host?createPixelBlastField(host):null;
  const fullscreen=host?createVisualFullscreen(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
- const buffers=new WeakMap(),spectra=new WeakMap(),notationBands=new WeakMap();
+ const buffers=new WeakMap();let notationBands=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0,liquidClock=0,audioEvent=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
  let displayClock=0,displayCursor=null,displayAt=0,displayRunning=false;
@@ -60,7 +60,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   audioEvent=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;lastEnvelope=-Infinity;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
-  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;}
+  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;notationBands=new WeakMap();}
   blast?.reset(seed);
  }
  function fitHeight(){
@@ -118,52 +118,25 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   return count?Math.sqrt(power/count):0;
  }
  function drawNotation(params,dt){
-  const scopes=getAudio()?.scopes||[],d=canvas.width/Math.max(1,width);
-  const layer=[...host.querySelectorAll('.pixel-blast-layer')].find(n=>getComputedStyle(n).display!=='none');
-  const w=layer?.width||canvas.width,h=layer?.height||canvas.height;
-  const raster=Math.max(2,Math.round(params.cellSize*w/Math.max(1,width)));
-  const cellX=raster*canvas.width/w,cellY=raster*canvas.height/h;
-  const originX=Math.floor(w/2)*canvas.width/w;
-  const originY=(layer?.classList.contains('pixel-blast-software')?Math.floor(h/2):h-Math.floor(h/2))*canvas.height/h;
-  let drawn=0;
-  const hash=n=>{n=Math.imul(n^(n>>>16),0x45d9f3b);n=Math.imul(n^(n>>>16),0x45d9f3b);return ((n^(n>>>16))>>>0)/4294967296;};
-  // Independent sound spectra form disconnected square constellations.
-  // No paths, baselines, fixed lanes or repeated copies of the master signal.
-  for(const [index,scope] of scopes.entries()){
-   let meter=null,power=0;
+  let sounding=0;
+  for(const [index,scope] of (getAudio()?.scopes||[]).entries()){
+   let power=0;
    for(const channel of scope.channels){
     let samples=buffers.get(channel);if(!samples){samples=new Float32Array(channel.fftSize);buffers.set(channel,samples);}
-    channel.getFloatTimeDomainData(samples);let squares=0;
-    for(const sample of samples)squares+=sample*sample;
-    const rms=Math.sqrt(squares/samples.length);if(rms>power){power=rms;meter=channel;}
+    channel.getFloatTimeDomainData(samples);let sum=0;
+    for(const value of samples)sum+=value*value;
+    power=Math.max(power,Math.sqrt(sum/samples.length));
    }
-   if(!meter||power<.0005)continue;
-   let spectrum=spectra.get(meter);if(!spectrum){spectrum=new Float32Array(meter.frequencyBinCount);spectra.set(meter,spectrum);}
-   meter.getFloatFrequencyData(spectrum);
-   const hz=meter.context.sampleRate/meter.fftSize;
-   for(let band=0;band<16;band++){
-    const low=70*Math.pow(130,band/16),high=70*Math.pow(130,(band+1)/16);
-    let db=-Infinity;for(let bin=Math.max(1,Math.floor(low/hz));bin<Math.min(spectrum.length,Math.ceil(high/hz));bin++)db=Math.max(db,spectrum[bin]);
-    let bands=notationBands.get(scope);if(!bands){bands=new Float32Array(16);notationBands.set(scope,bands);}
-    const target=unit((db+65)/45)*unit(power*40);
-    bands[band]+=(target-bands[band])*(1-Math.exp(-dt/(target>bands[band]?.12:.25)));
-    const energy=bands[band];if(energy<.035)continue;
-    const key=(seed^Math.imul(index+1,73856093)^Math.imul(band+1,19349663))>>>0;
-    const x=canvas.width*(.07+.86*hash(key)),y=canvas.height*(.08+.84*hash(key+71));
-    const count=8,size=Math.max(1,Math.min(cellX-1,params.dotSize*d*(.4+.6*energy)));
-    c.fillStyle=`rgba(255,255,255,${.25+.75*energy})`;
-    for(let mark=0;mark<count;mark++){
-     if(energy<(mark+1)/12)continue;
-     const dx=(hash(key+mark*131+17)-.5)*cellX*24,dy=(hash(key+mark*173+53)-.5)*cellY*24;
-     const cx=originX+(Math.floor((x+dx-originX)/cellX)+.5)*cellX;
-     const cy=originY+(Math.floor((y+dy-originY)/cellY)+.5)*cellY;
-     c.fillRect(Math.round(cx-size/2),Math.round(cy-size/2),Math.round(size),Math.round(size));
-    }
+   if(power>.0005)sounding++;
+   let state=notationBands.get(scope);if(!state){state={level:0,last:-Infinity,sequence:0};notationBands.set(scope,state);}
+   const target=unit(power*25),rise=target-state.level,now=getAudio()?.context?.currentTime??0;
+   state.level+=(target-state.level)*(1-Math.exp(-dt/.18));
+   if(rise>.08&&now-state.last>.4&&!reduced.matches){
+    state.last=now;
+    blast?.pulse({key:'voice:'+index+':'+seed+':'+state.sequence++,time:now,strength:unit(.3+rise),balance:latest.balance,direction:params.direction});
    }
-   drawn++;
   }
-  canvas.dataset.scopeInputs=String(drawn);
-  canvas.dataset.notation='discrete-spectral-marks';
+  canvas.dataset.scopeInputs=String(sounding);canvas.dataset.notation='finite-data-cells';
  }
  function presentationTime(now,active=running()&&hasMarket){
   if(!replaying||sourceClock===null)return now/1000;
@@ -184,7 +157,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const now=performance.now(),remaining=pulseStrength*Math.exp(-(now-pulseAt)/280);
   pulseStrength=Math.max(remaining,unit(strength));pulseAt=now;dirty=true;
   const settings=pixelBlastParameters({...latest,active:true});
-  blast?.pulse({key:key??'audio:'+audioEvent++,time:frameTime??presentationTime(now),strength,balance:settings.balance,direction:settings.direction});
+  blast?.pulse({key:key??'audio:'+audioEvent++,time:getAudio()?.context?.currentTime??0,strength,balance:settings.balance,direction:settings.direction});
  }
  function draw(now){
   if(closed)return;frameID=requestAnimationFrame(draw);
@@ -246,7 +219,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
-  blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});
+  blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime:audioTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});
   drawNotation(visualParams,dt);
   Object.assign(canvas.dataset,{composition:['ready','canvas'].includes(host?.dataset.pixelBlast)?'pixel-blast':'unavailable',active:String(audible),visible:'true',overlay:'false',moving:String(!reduced.matches),motion:clock.toFixed(4),phase:clock.toFixed(4),level:level.toFixed(4),density:formation.toFixed(4),rows:'0',transitioning:String(Math.abs(shapeTarget-formation)>.001),formation:formation.toFixed(4)});
  }

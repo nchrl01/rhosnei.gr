@@ -1,5 +1,5 @@
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
-// These controls change the field inside a fixed 6 CSS-pixel square lattice.
+// These controls change the field inside a fixed 4 CSS-pixel square lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const mix=(a,b,t)=>a+(b-a)*unit(t);
@@ -30,11 +30,11 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const motionEnergy=unit(.45*movement+.2*flow+.15*sound+.12*notes+.08*attack);
  const eventEnergy=unit(.35*unit(surge)*current+.2*unit(imbalance)*current+.25*notes+.2*attack);
 
- const pixelSize=clamp(.65+1.65*sound+.8*valuation+1.8*notes+.5*attack,.5,5.2);
+ const pixelSize=clamp(.6+1.05*sound+.55*valuation+1.05*notes+.3*attack,.5,3.5);
  // Pattern scale changes only the noise sampled at existing square centres.
  // Cell spacing and scene framing stay fixed.
  const patternScale=reference.patternScale;
- const patternDensity=clamp(1.25+.5*liquidity+.3*flow+.3*notes,1.25,2.35);
+ const patternDensity=clamp(.85+.55*liquidity+.2*flow+.2*notes,.85,1.8);
  // A narrow perimeter taper keeps the ecosystem distributed across the view.
  const edgeFade=clamp(.05+.04*(liquidity-.5)-.025*movement-.015*sound-.015*notes+.025*unit(pressure)*current,.015,.09);
  const ecosystem=mix(.18,.36,unit(.45*liquidity+.35*flow+.2*movement));
@@ -48,14 +48,14 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
   // structural settings, independent of changing market or audio signals.
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
-  pixelSize,cellSize:6,dotSize:pixelSize,
+  pixelSize,cellSize:4,dotSize:pixelSize,
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
-  speed:reference.speed*(.55+.85*motionEnergy)*(.85+.3*pace)*response,
+  speed:reference.speed*(.2+.65*motionEnergy)*(.85+.3*pace)*response,
   edgeFade,pixelSizeJitter:0,jitter:0,
   dotStrength:(mobile?.28:.2)+(mobile?.72:.8)*strength,
   // Retain the former image uniforms' API without forming a central image.
-  identity:0,identityMotion:0,ecosystem:0,
+  identity:0,identityMotion:0,ecosystem:.28,
   enableRipples:false,ripples:false,waveformEnabled:active&&engagement>.002,
   rippleSpeed:.12+.45*unit(.55*movement+.2*pace*response+.15*notes+.1*attack),
   rippleThickness:.02+.055*unit(.55*flow+.2*sound+.15*notes+.1*attack),
