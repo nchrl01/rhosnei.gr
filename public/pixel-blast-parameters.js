@@ -1,3 +1,4 @@
+import {capitalStage} from './capital-field.js?v=160';
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
 // These controls change the field inside a fixed 4 CSS-pixel square lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
@@ -10,7 +11,7 @@ export const PIXEL_BLAST_REFERENCE=Object.freeze({
  variant:'square',color:'#ffffff',transparent:true,antialias:false,autoPauseOffscreen:true,
 });
 
-export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
+export function pixelBlastParameters({marketCap=null,level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
  const reference=PIXEL_BLAST_REFERENCE;
  const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
  const animated=active&&!reducedMotion;
@@ -48,7 +49,7 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
   // structural settings, independent of changing market or audio signals.
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
-  pixelSize,cellSize:4,dotSize:pixelSize,
+  capitalStage:capitalStage(marketCap),pixelSize,cellSize:4,dotSize:pixelSize,
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
   speed:reference.speed*(.2+.65*motionEnergy)*(.85+.3*pace)*response,

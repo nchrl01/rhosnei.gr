@@ -1,5 +1,6 @@
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=158';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=158';
+import {capitalGLSL} from './capital-field.js?v=160';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=160';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=160';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -94,6 +95,8 @@ float fbm2(vec2 uv, float t){
   return sum * 0.5 + 0.5;
 }
 
+${capitalGLSL}
+
 // Upstream liquid displacement, driven by finite market/audio touches. Warp
 // the sampled field before drawing squares so their edges remain orthogonal.
 vec2 liquidOffset(vec2 point){
@@ -130,28 +133,22 @@ float identityInk(vec2 point){
   return texture(uIdentityImage,uv).r;
 }
 
-// Finite rectangular transmissions. A sound reveals its data cells, holds
-// briefly, then the individual cells contract. No repeating spatial oscillator.
-float dataPacket(vec2 point){
- float ink=0.;
+// Sound injects local motion into the same noise coordinates. There is no
+// second ink mask, brightness overlay, or independently drawn sound shape.
+vec2 dataMotion(vec2 point){
+ vec2 flow=vec2(0.);
  vec2 origin=floor(uResolution*.5)/uCanvasScale;
  for(int i=0;i<MAX_CLICKS;i++){
   float age=uEventTime-uClickTimes[i];
-  if(uClickPos[i].x<0.||age<0.||age>1.1)continue;
+  if(uClickPos[i].x<0.||age<0.||age>1.8)continue;
   float strength=uClickStrengths[i];
-  float enter=1.-pow(1.-clamp(age/.16,0.,1.),3.);
-  float leave=1.-smoothstep(.38,1.1,age);
-  vec2 delta=(point-(uClickPos[i]-origin))/uPixelSize;
-  float direction=uClickDirections[i].x<0.?-1.:1.;
-  float span=10.+30.*strength;
-  float column=floor(delta.x*direction+span*.5);
-  float row=floor(delta.y);
-  float height=1.+floor(3.*strength);
-  if(column<0.||column>span*enter||abs(row)>height)continue;
-  float bit=step(.3,hash11(floor(column/2.)*17.1+row*73.9+uClickPos[i].x*.1+uSeed));
-  ink=max(ink,bit*leave*(.6+.4*strength));
+  float envelope=smoothstep(0.,.16,age)*(1.-smoothstep(.25,1.8,age));
+  vec2 delta=(point-(uClickPos[i]-origin))/vec2(100.,65.);
+  float weight=exp(-dot(delta,delta)*1.5)*envelope*strength;
+  vec2 direction=uClickDirections[i];
+  flow+=vec2(direction.x-delta.y*.35,direction.y+delta.x*.35)*weight*70.;
  }
- return ink;
+ return flow;
 }
 
 void main(){
@@ -167,19 +164,18 @@ void main(){
   float cellPixelSize = uNoiseCellSize;
   vec2 cellId = floor(squarePoint / cellPixelSize);
   vec2 cellCoord = cellId * cellPixelSize;
-  vec2 displacement=liquidOffset(cellCoord/viewSize.y);
+  vec2 displacement=dataMotion(squarePoint)/viewSize.y;
   vec2 samplePoint=squarePoint+displacement*viewSize.y;
-  vec2 uv = cellCoord / viewSize * vec2(aspectRatio, 1.0)+displacement;
+  vec2 uv = squarePoint / viewSize * vec2(aspectRatio, 1.0)+displacement;
 
   float base = fbm2(uv, uTime * 0.05);
   base = base * 0.5 - 0.65;
 
   float feed = base + (uDensity - 0.5) * 0.3;
-  float packet=dataPacket(squarePoint);
-  feed=max(feed,packet*1.4-.1);
   // Distributed local populations, with no central image or radial attractor.
   feed+=uEcosystem*vnoise(vec3(uv*6.0+vec2(uSeed*.19,uSeed*.41),uTime*.04));
   feed=max(feed,.07+.045*vnoise(vec3(uv*14.0+uSeed,uTime*.03)));
+  feed=capitalFeed(uv,feed);
   float speed     = uRippleSpeed;
   float thickness = uRippleThickness;
   const float dampT     = 1.0;
@@ -210,7 +206,7 @@ void main(){
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
-  float markSize=mix(uDotSize*jitterScale*backgroundScale,pixelSize-.25,packet);
+  float markSize=uDotSize*jitterScale*backgroundScale;
   float dotSize = min(max(1.0,pixelSize*rasterScale-1.0),max(1.0,floor(min(pixelSize,markSize)*edge*rasterScale+.5)));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
@@ -230,7 +226,7 @@ void main(){
 
   float inkStrength=mix(1.0,.45+.55*imageInk,uIdentity);
   float grain=(hash11(dot(pixelId,vec2(127.1,311.7))+floor(uTime*12.0)*74.7+uSeed)-.5)*uNoiseAmount;
-  fragColor = vec4(srgbColor * clamp(max(uDotStrength * inkStrength,packet*.9)+grain,0.0,1.0), clamp(M, 0.0, 1.0));
+  fragColor = vec4(srgbColor * clamp(uDotStrength * inkStrength+grain,0.0,1.0), clamp(M, 0.0, 1.0));
 }
 `;
 
@@ -269,6 +265,7 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.uCapitalStage=gl.getUniformLocation(program,'uCapitalStage');
    uploadImage();
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
   }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
@@ -307,6 +304,7 @@ export function createPixelBlastField(host){
    gl.viewport(0,0,w,h);gl.useProgram(program);
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
+   f('uCapitalStage',params.capitalStage??-1);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uPixelSize',params.cellSize);f('uNoiseCellSize',16);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);

@@ -1,3 +1,4 @@
+import {capitalFeed} from './capital-field.js?v=160';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
@@ -64,10 +65,30 @@ export function createPixelBlastCanvas(host){
     if(length>.000001){dx/=length;dy/=length;}else{dx=1;dy=0;}
     return {x:(p.x*w-originX)/ratio/cssHeight,y:(p.y*h-originY)/ratio/cssHeight,dx,dy,strength:Math.exp(-(eventTime-p.time)*1.8)*p.strength};
    }):[];
-   const packets=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<=1.1).map(p=>{
-    const age=eventTime-p.time,t=clamp(age/.16),out=clamp((age-.38)/.72);
-    return {...p,x:(p.x*w-originX)/ratio,y:(p.y*h-originY)/ratio,physicalX:p.x*w/ratio,enter:1-(1-t)**3,leave:1-out*out*(3-2*out)};
+   const packets=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<=1.8).map(p=>{
+    const age=eventTime-p.time,t=clamp(age/.16),out=clamp((age-.25)/1.55);
+    return {...p,x:(p.x*w-originX)/ratio,y:(p.y*h-originY)/ratio,envelope:t*t*(3-2*t)*(1-out*out*(3-2*out))};
    });
+   function sampleAt(cx,cy){
+    const key=cx+':'+cy;let sample=cache.get(key);
+    if(sample===undefined){
+     const u0=cx*cell/cssHeight,v0=cy*cell/cssHeight;
+     let warpX=0,warpY=0;
+     for(const p of packets){
+      const dx=(cx*cell-p.x)/100,dy=(cy*cell-p.y)/65;
+      const weight=Math.exp(-(dx*dx+dy*dy)*1.5)*p.envelope*p.strength*70/cssHeight;
+      warpX+=((p.dx??1)-dy*.35)*weight;warpY+=((p.dy??0)+dx*.35)*weight;
+     }
+     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
+     for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
+     let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
+     feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
+     feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
+     feed=capitalFeed(params.capitalStage??-1,u,v,.5+.5*noise(u*4+offset,v*4+offset,time*.055),.5+.5*noise(u*3-offset,v*3-offset,time*.04),offset,feed);
+     sample={feed,warpX,warpY};cache.set(key,sample);
+    }
+    return sample;
+   }
    const identity=identityMask?params.identity:0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
@@ -85,36 +106,10 @@ export function createPixelBlastCanvas(host){
     if(hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
     // small liquid movement survives without moving the square lattice.
-    const cx=Math.floor(fx/cell),cy=Math.floor(fy/cell),key=cx+':'+cy;
-    let sample=cache.get(key);
-    if(sample===undefined){
-     const u0=cx*cell/cssHeight,v0=cy*cell/cssHeight;
-     let warpX=0,warpY=0;
-     for(const touch of touches){
-      const dx=u0-touch.x,dy=v0-touch.y;
-      const distanceSquared=dx*dx+dy*dy;
-      if(distanceSquared>12*liquidRadius*liquidRadius)continue;
-      const intensity=Math.exp(-distanceSquared/(liquidRadius*liquidRadius))*touch.strength;
-      const wave=.5+.5*Math.sin((Number.isFinite(liquidTime)?liquidTime:time*params.liquidWobbleSpeed)+intensity*2*Math.PI);
-      const amplitude=params.liquidStrength*intensity*wave;
-      warpX+=touch.dx*amplitude;warpY+=touch.dy*amplitude;
-     }
-     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
-     for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
-     let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
-     feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
-     feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
-     sample={feed,warpX,warpY};cache.set(key,sample);
-    }
+    const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy),tx=fract(sx),ty=fract(sy);
+    const a=sampleAt(cx,cy),b=sampleAt(cx+1,cy),cc=sampleAt(cx,cy+1),dd=sampleAt(cx+1,cy+1);
+    const sample={};for(const name of ['feed','warpX','warpY'])sample[name]=mix(mix(a[name],b[name],tx),mix(cc[name],dd[name],tx),ty);
     let feed=sample.feed;
-    let packet=0;
-    for(const p of packets){
-     const span=10+30*p.strength,column=Math.floor((fx-p.x)/cellSize*(p.dx<0?-1:1)+span*.5),row=Math.floor((fy-p.y)/cellSize);
-     if(column<0||column>span*p.enter||Math.abs(row)>1+Math.floor(3*p.strength))continue;
-     const bit=hash(Math.floor(column/2)*17.1+row*73.9+p.physicalX*.1+offset)>=.3?1:0;
-     packet=Math.max(packet,bit*p.leave*(.6+.4*p.strength));
-    }
-    feed=Math.max(feed,packet*1.4-.1);
     let maskInk=0;
     if(identity>0){
      maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,cssWidth,cssHeight,time,offset,params);
@@ -124,13 +119,13 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const dotSize=Math.min(cellSize,mix(params.dotSize*jitter*backgroundScale,cellSize-.25,packet))*taper;
+    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale)*taper;
     const diameter=Math.min(Math.max(1,grid-1),Math.max(1,Math.round(dotSize*ratio)));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
     const grain=(hash(px*127.1+py*311.7+grainFrame*74.7+offset)-.5)*params.noiseAmount;
-    const ink=Math.round(255*clamp(Math.max(params.dotStrength*mix(1,.45+.55*maskInk,identity),packet*.9)+grain));
+    const ink=Math.round(255*clamp(params.dotStrength*mix(1,.45+.55*maskInk,identity)+grain));
     if(ink!==previousInk){ctx.fillStyle=`rgb(${ink},${ink},${ink})`;previousInk=ink;}
     ctx.fillRect(x0,y0,x1-x0,y1-y0);
    }
