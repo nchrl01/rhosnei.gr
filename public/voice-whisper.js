@@ -27,7 +27,7 @@ export function whisperVoice(samples,rate){
   const value=Number.isFinite(samples[i])?samples[i]:0;
   last=highpass*(last+value-previous);previous=value;
   const edge=Math.min(1,i/(rate*.015),(length-1-i)/(rate*.025));
-  result[i]=(result[i]*.78+last*.22)*Math.max(0,edge);
+  result[i]=(result[i]*.6+last*.4)*Math.max(0,edge);
   peak=Math.max(peak,Math.abs(result[i]));
  }
  const trim=peak>0?.16/peak:1;

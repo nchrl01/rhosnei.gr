@@ -1,4 +1,4 @@
-import {whisperVoice} from './voice-whisper.js?v=58';
+import {whisperVoice} from './voice-whisper.js?v=148';
 let tts,queue=Promise.resolve(),lastProgress=-1;
 self.onmessage=({data})=>{queue=queue.then(async()=>{
  const {id,text}=data;

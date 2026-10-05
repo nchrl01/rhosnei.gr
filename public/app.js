@@ -15,7 +15,7 @@ import {createAudioDots} from './audio-dots.js?v=141';
 import {createHolderMetadata} from './holder-metadata.js?v=136';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=146';
-import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=146';
+import {createArpeggioAI,createCoinVoice} from './ai-instruments.js?v=148';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=147';
 import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=146';
 import {createMathPatternView} from './math-pattern-view.js?v=146';
@@ -281,12 +281,17 @@ function replayPiano(m){
 }
 let instrumentWasAudible=false;
 function otherInstrumentsAudible(){
- if(!instrumentTap||!instrumentSamples||!playing||ctx?.state!=='running'){instrumentWasAudible=false;return false;}
- instrumentTap.getFloatTimeDomainData(instrumentSamples);
- let power=0;for(const sample of instrumentSamples)power+=sample*sample;
- const rms=Math.sqrt(power/instrumentSamples.length);
+ if(!playing||ctx?.state!=='running'){instrumentWasAudible=false;return false;}
+ let power=0,count=0;
+ for(const bus of audioScopes.slice(0,2))for(const meter of bus.channels){
+  meter.musicSamples??=new Float32Array(meter.fftSize);
+  meter.getFloatTimeDomainData(meter.musicSamples);
+  for(const sample of meter.musicSamples){power+=sample*sample;count++;}
+ }
+ const rms=count?Math.sqrt(power/count):0;
  instrumentWasAudible=rms>(instrumentWasAudible?.0002:.0005);return instrumentWasAudible;
 }
+
 function tick(){
  const m=metrics(),music=musicalFrame(m),energy=music.volume*m.fresh;
  const audible=otherInstrumentsAudible();
