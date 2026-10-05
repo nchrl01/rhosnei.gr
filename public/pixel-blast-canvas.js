@@ -47,7 +47,7 @@ export function createPixelBlastCanvas(host){
  return {
   canvas,
   setImage(mask){identityMask=mask;},
-  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],drift=[0,0]}){
+  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[]}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
@@ -71,13 +71,8 @@ export function createPixelBlastCanvas(host){
    // Share the shader's integer lattice and bottom-up origin. Cell ownership
    // and square bounds agree even when either canvas dimension is odd.
    for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
-    const coarse=hash(Math.floor(px/4)*127.1+Math.floor(py/4)*311.7+offset);
-    const medium=hash(Math.floor(px/2)*71.3+Math.floor(py/2)*173.9+offset);
-    const group=coarse<params.cluster*.55?4:medium<params.cluster?2:1;
-    const gx=Math.floor(px/group)*group,gy=Math.floor(py/group)*group;
-    if(px!==gx||py!==gy)continue;
-    const fx=(gx+group*.5)*cellSize,fy=(gy+group*.5)*cellSize;
-    const centerX=originX+(gx+group*.5)*grid,centerY=originY+(gy+group*.5)*grid;
+    const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
+    const centerX=originX+(px+.5)*grid,centerY=originY+(py+.5)*grid;
     const edge=Math.min(centerX/w,1-centerX/w,centerY/h,1-centerY/h);
     const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
     const taper=edgeT*edgeT*(3-2*edgeT);
@@ -96,16 +91,14 @@ export function createPixelBlastCanvas(host){
       const distanceSquared=dx*dx+dy*dy;
       if(distanceSquared>12*liquidRadius*liquidRadius)continue;
       const intensity=Math.exp(-distanceSquared/(liquidRadius*liquidRadius))*touch.strength;
-      const amplitude=params.liquidStrength*intensity;
+      const wave=.5+.5*Math.sin((Number.isFinite(liquidTime)?liquidTime:time*params.liquidWobbleSpeed)+intensity*2*Math.PI);
+      const amplitude=params.liquidStrength*intensity*wave;
       warpX+=touch.dx*amplitude;warpY+=touch.dy*amplitude;
      }
-     let u=u0+warpX+drift[0],v=v0+warpY+drift[1];
-     const flowX=noise(u*3+offset,v*3+offset,time*.09),flowY=noise(u*3-offset,v*3-offset,time*.07);
-     u+=flowX*params.turbulence;v+=flowY*params.turbulence;let sum=1,freq=1;
+     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
      for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
-     feed+=.22*noise(u*11+offset,v*11+offset,time*.12)*params.dotStrength;
      sample={feed,warpX,warpY};cache.set(key,sample);
     }
     let feed=sample.feed;
@@ -118,8 +111,8 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const dotSize=Math.min(cellSize*group,params.dotSize*group*jitter*backgroundScale)*taper;
-    const diameter=Math.min(Math.max(1,grid*group-1),Math.max(1,Math.round(dotSize*ratio)));
+    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale)*taper;
+    const diameter=Math.min(Math.max(1,grid-1),Math.max(1,Math.round(dotSize*ratio)));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;

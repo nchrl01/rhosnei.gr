@@ -1,5 +1,5 @@
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=156';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=156';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=157';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=157';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -37,10 +37,6 @@ uniform float uLiquidRadius;
 uniform float uLiquidTime;
 uniform float uNoiseAmount;
 uniform float uEcosystem;
-uniform float uCluster;
-uniform float uTurbulence;
-uniform float uDirection;
-uniform vec2 uDrift;
 
 const int   MAX_CLICKS = 6;
 
@@ -114,7 +110,8 @@ vec2 liquidOffset(vec2 point){
     float distanceSquared=dot(delta,delta);
     if(distanceSquared>12.0*radius*radius)continue;
     float intensity=exp(-distanceSquared/(radius*radius))*exp(-age*1.8)*uClickStrengths[i];
-    result+=uClickDirections[i]*uLiquidStrength*intensity;
+    float wave=.5+.5*sin(uLiquidTime+intensity*6.2831853);
+    result+=uClickDirections[i]*uLiquidStrength*intensity*wave;
   }
   return result;
 }
@@ -141,11 +138,6 @@ void main(){
   vec2 fragCoord = (rasterPoint-origin)/uCanvasScale;
   float aspectRatio = viewSize.x / viewSize.y;
 
-  vec2 baseId=floor(fragCoord/pixelSize);
-  float coarse=hash11(dot(floor(baseId/4.0),vec2(127.1,311.7))+uSeed);
-  float medium=hash11(dot(floor(baseId/2.0),vec2(71.3,173.9))+uSeed);
-  float group=coarse<uCluster*.55?4.0:medium<uCluster?2.0:1.0;
-  pixelSize*=group;
   vec2 pixelId = floor(fragCoord / pixelSize);
   vec2 squarePoint=(pixelId+.5)*pixelSize;
   float cellPixelSize = uNoiseCellSize;
@@ -154,8 +146,6 @@ void main(){
   vec2 displacement=liquidOffset(cellCoord/viewSize.y);
   vec2 samplePoint=squarePoint+displacement*viewSize.y;
   vec2 uv = cellCoord / viewSize * vec2(aspectRatio, 1.0)+displacement;
-  uv+=uDrift;
-  uv+=vec2(vnoise(vec3(uv*3.0+uSeed,uTime*.09)),vnoise(vec3(uv*3.0-uSeed,uTime*.07)))*uTurbulence;
 
   float base = fbm2(uv, uTime * 0.05);
   base = base * 0.5 - 0.65;
@@ -163,9 +153,6 @@ void main(){
   float feed = base + (uDensity - 0.5) * 0.3;
   // Distributed local populations, with no central image or radial attractor.
   feed+=uEcosystem*vnoise(vec3(uv*6.0+vec2(uSeed*.19,uSeed*.41),uTime*.04));
-  // Irregular local growth instead of a periodic wave spanning the scene.
-  feed+=.22*vnoise(vec3(uv*11.0+uSeed,uTime*.12))*uDotStrength;
-
   float speed     = uRippleSpeed;
   float thickness = uRippleThickness;
   const float dampT     = 1.0;
@@ -196,7 +183,7 @@ void main(){
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
-  float dotSize = min(max(1.0,pixelSize*rasterScale-1.0),max(1.0,floor(min(pixelSize,uDotSize*group*jitterScale*backgroundScale)*edge*rasterScale+.5)));
+  float dotSize = min(max(1.0,pixelSize*rasterScale-1.0),max(1.0,floor(min(pixelSize,uDotSize*jitterScale*backgroundScale)*edge*rasterScale+.5)));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
   float square = step(start.x,point.x)*step(start.y,point.y)
@@ -230,7 +217,7 @@ export function createPixelBlastField(host){
  const useSoftware=matchMedia('(max-width:760px), (pointer:coarse)').matches;
  function fallback(){if(!software){software=createPixelBlastCanvas(host);software.setImage(identityMask);}canvas.hidden=true;host.dataset.pixelBlast='canvas';}
  try{gl=useSoftware?null:canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
- let program=null,locations={},closed=false,lost=false,seed=0,ripples=[],lastPulse=-Infinity,lastParameters=null,flowClock=null,drift=[0,0];
+ let program=null,locations={},closed=false,lost=false,seed=0,ripples=[],lastPulse=-Infinity,lastParameters=null;
  function release(){if(program)gl?.deleteProgram(program);if(identityTexture)gl?.deleteTexture(identityTexture);program=null;identityTexture=null;}
  function uploadImage(){
   if(!gl||lost||!program)return;
@@ -254,7 +241,6 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
-   for(const name of ['uCluster','uTurbulence','uDirection','uDrift'])locations[name]=gl.getUniformLocation(program,name);
    uploadImage();
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
   }catch(error){if(candidate)gl.deleteProgram(candidate);program=null;fallback();console.warn('Pixel field unavailable:',error.message);}
@@ -266,7 +252,7 @@ export function createPixelBlastField(host){
  initialize();if(!gl)fallback();
  return {
   setImage(image){if(closed)return;identityMask=preparePixelIdentity(image);software?.setImage(identityMask);uploadImage();},
-  reset(nextSeed=seed){seed=Number(nextSeed)>>>0;ripples=[];lastPulse=-Infinity;lastParameters=null;flowClock=null;drift=[0,0];},
+  reset(nextSeed=seed){seed=Number(nextSeed)>>>0;ripples=[];lastPulse=-Infinity;lastParameters=null;},
   snapshot(){return lastParameters?{...lastParameters}:null;},
   pulse({key,time,strength=.5,balance=.5,direction=0}={}){
    if(!Number.isFinite(time)||time-lastPulse<.15||ripples.some(p=>p.key===key))return;
@@ -284,9 +270,7 @@ export function createPixelBlastField(host){
    if(!active)ripples=[];
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
    const params=parameters||pixelBlastParameters({...inputs,mobile:mobile||useSoftware});lastParameters={...params};
-   const flowDelta=flowClock===null?0:Math.max(0,Math.min(5,(Number(time)||0)-flowClock));flowClock=Number(time)||0;
-   drift[0]+=flowDelta*params.direction*.025;drift[1]-=flowDelta*.012;
-   if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples,drift});return;}
+   if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples});return;}
    // Integer cell boundaries keep a square's complete width and height even
    // on odd viewport dimensions or fractional device pixel ratios.
    const grid=Math.max(2,Math.round(params.cellSize*scale)),rasterScale=grid/params.cellSize;
@@ -295,8 +279,6 @@ export function createPixelBlastField(host){
    gl.viewport(0,0,w,h);gl.useProgram(program);
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
-   f('uCluster',params.cluster);f('uTurbulence',params.turbulence);f('uDirection',params.direction);
-   gl.uniform2f(locations.uDrift,drift[0],drift[1]);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uPixelSize',params.cellSize);f('uNoiseCellSize',16);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);

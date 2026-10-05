@@ -1,5 +1,5 @@
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
-// These controls change the field inside a fixed 4 CSS-pixel square lattice.
+// These controls change the field inside a fixed 6 CSS-pixel square lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const mix=(a,b,t)=>a+(b-a)*unit(t);
@@ -10,7 +10,7 @@ export const PIXEL_BLAST_REFERENCE=Object.freeze({
  variant:'square',color:'#ffffff',transparent:true,antialias:false,autoPauseOffscreen:true,
 });
 
-export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,bass=0,treble=0,balance=.5,change=null,tempo=40}={}){
+export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
  const reference=PIXEL_BLAST_REFERENCE;
  const sound=unit(level),presence=unit(formation),current=active?unit(fresh):0;
  const animated=active&&!reducedMotion;
@@ -30,17 +30,17 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
  const motionEnergy=unit(.45*movement+.2*flow+.15*sound+.12*notes+.08*attack);
  const eventEnergy=unit(.35*unit(surge)*current+.2*unit(imbalance)*current+.25*notes+.2*attack);
 
- const pixelSize=clamp(reference.pixelSize*(.25+1.05*strength)*(.7+.6*valuation)*(1+.32*notes+.18*attack),.2,3.8);
+ const pixelSize=clamp(.65+1.65*sound+.8*valuation+1.8*notes+.5*attack,.5,5.2);
  // Pattern scale changes only the noise sampled at existing square centres.
  // Cell spacing and scene framing stay fixed.
- const patternScale=clamp(.09+.42*movement+.6*flow+.35*notes+.45*attack,.09,1.9);
- const patternDensity=clamp(.35+1.65*liquidity+.7*flow+.55*notes+.4*attack,.35,3.5);
+ const patternScale=reference.patternScale;
+ const patternDensity=clamp(1.25+.5*liquidity+.3*flow+.3*notes,1.25,2.35);
  // A narrow perimeter taper keeps the ecosystem distributed across the view.
  const edgeFade=clamp(.05+.04*(liquidity-.5)-.025*movement-.015*sound-.015*notes+.025*unit(pressure)*current,.015,.09);
  const ecosystem=mix(.18,.36,unit(.45*liquidity+.35*flow+.2*movement));
- const pixelSizeJitter=.65+.55*unit(.5*movement+.25*flow+.15*notes+.1*attack)*response;
+ const pixelSizeJitter=.24*unit(.5*movement+.25*flow+.15*notes+.1*attack)*response;
  const rippleIntensityScale=(.35+1.1*eventEnergy+.3*sound)*response;
- const liquidStrength=.22*unit(.4*movement+.2*flow+.2*sound+.12*notes+.08*attack)*response;
+ const liquidStrength=.08*unit(.4*movement+.2*flow+.2*sound+.12*notes+.08*attack)*response;
  const noiseAmount=.2*unit(.35*flow+.25*movement+.2*sound+.12*notes+.08*attack)*response;
 
  return {
@@ -48,24 +48,22 @@ export function pixelBlastParameters({level=0,formation=0,drive=0,pressure=0,act
   // structural settings, independent of changing market or audio signals.
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
-  pixelSize,cellSize:4,dotSize:pixelSize,
-  cluster:unit(.4*valuation+.3*unit(bass)+.3*notes),
-  turbulence:.025+.2*movement+.1*attack+.12*unit(treble),
+  pixelSize,cellSize:6,dotSize:pixelSize,
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
-  speed:reference.speed*(.12+2.8*motionEnergy)*(.55+1.3*pace)*response,
-  edgeFade,pixelSizeJitter,jitter:pixelSizeJitter,
+  speed:reference.speed*(.55+.85*motionEnergy)*(.85+.3*pace)*response,
+  edgeFade,pixelSizeJitter:0,jitter:0,
   dotStrength:(mobile?.28:.2)+(mobile?.72:.8)*strength,
   // Retain the former image uniforms' API without forming a central image.
-  identity:0,identityMotion:0,ecosystem,
+  identity:0,identityMotion:0,ecosystem:0,
   enableRipples:false,ripples:false,waveformEnabled:active&&engagement>.002,
   rippleSpeed:.12+.45*unit(.55*movement+.2*pace*response+.15*notes+.1*attack),
   rippleThickness:.02+.055*unit(.55*flow+.2*sound+.15*notes+.1*attack),
   rippleIntensityScale,rippleIntensity:rippleIntensityScale,
-  liquid:liquidStrength>.0001,liquidStrength,
+  liquid:false,liquidStrength:0,
   liquidRadius:mix(.15,1.5,unit(.3*liquidity+.2*valuation+.25*flow+.15*sound+.1*notes)),
   liquidWobbleSpeed:mix(1,8,unit(.35*pace+.35*movement+.15*notes+.15*attack)),
-  noiseAmount,
+  noiseAmount:0,
   balance:side,
   direction:clamp((.65*signedChange+.35*(2*side-1))*current,-1,1),
  };

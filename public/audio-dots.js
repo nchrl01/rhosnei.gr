@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=156';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=157';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -42,7 +42,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
- let formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
+ let appearance=null,formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
   return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
@@ -60,7 +60,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   audioEvent=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;lastEnvelope=-Infinity;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
-  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;}
+  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;}
   blast?.reset(seed);
  }
  function fitHeight(){
@@ -197,17 +197,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const eventTime=presentationTime(now,active);
   if(!active){pulseStrength=0;pulseAt=-Infinity;}
  const rms=active?measure():0;
-  let bass=0,treble=0;
-  const meter=getAudio()?.channels?.[0];
-  if(active&&meter){
-   let spectrum=spectra.get(meter);if(!spectrum){spectrum=new Float32Array(meter.frequencyBinCount);spectra.set(meter,spectrum);}
-   meter.getFloatFrequencyData(spectrum);const hz=meter.context.sampleRate/meter.fftSize;
-   for(let i=1;i<spectrum.length;i++){
-    const energy=unit((spectrum[i]+70)/50),frequency=i*hz;
-    if(frequency<250)bass=Math.max(bass,energy);
-    else if(frequency>2500)treble=Math.max(treble,energy);
-   }
-  }
   if(rms>(audible?.0002:.0005))lastSound=now;
   audible=active&&(rms>.0005||now-lastSound<100);
   if(host){host.dataset.audible=String(audible);host.dataset.visible='true';}
@@ -235,8 +224,14 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!smoothed||replaying)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
-  const visualInputs={...smoothed,level,formation,bass,treble,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
+  const visualInputs={...smoothed,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
+  appearance??={dotSize:visualParams.dotSize,density:visualParams.density};
+  for(const key of ['dotSize','density']){
+   appearance[key]+=(visualParams[key]-appearance[key])*(1-Math.exp(-dt/(visualParams[key]>appearance[key]?.14:.65)));
+   visualParams[key]=appearance[key];
+  }
+  visualParams.pixelSize=visualParams.dotSize;visualParams.patternDensity=visualParams.density;
   // Integrate speed rather than multiplying a large clock by changing speed:
   // a new observation then changes motion smoothly, without jumping patterns.
   if(!reduced.matches){
