@@ -1,6 +1,6 @@
 // Seeded EarthBound instruments following the existing piano composition engine.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=123';
-import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=126';
+import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=146';
+import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=146';
 import {createPianoPolicy} from './piano-policy.js?v=61';
 import {earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=126';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -156,24 +156,24 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const cost=n=>Math.abs(n-target)+(arp.previous===null?0:Math.abs(n-arp.previous)*.45);
    const midi=candidates.reduce((a,b)=>cost(a)<=cost(b)?a:b),nuance=pianoNuance(arp.seed,step);
    arp.previous=midi;
-   const sounded=note(midi,time+nuance.delay,arp.gain*nuance.velocity,3.5*nuance.duration,'arp',nuance.attack);onArpeggio({midi:instrumentPitch(midi,profile),step,time:sounded,tempo:arp.tempo,instrument:instrument.name});
+   const sounded=note(midi,time+nuance.delay,arp.gain*nuance.velocity,1.1*nuance.duration,'arp',nuance.attack);onArpeggio({midi:instrumentPitch(midi,profile),step,time:sounded,tempo:arp.tempo,instrument:instrument.name});
   }
   if(arp.index>=arp.notes.length)arp=null;
  },25);
  function play(selection,event,cap,music){
   const quiet=selection.reason==='quiet',phrase=phrasing.next(event,music,{quiet,changePct:selection.changePct});
   const {midi,harmony}=phrase,intensity=unit(music.intensity);
-  const time=note(midi,ctx.currentTime+phrase.delay,.075*(quiet?.6:.6+.4*intensity)*phrase.velocity,3.5*phrase.duration,'note',phrase.attack);
+  const time=note(midi,ctx.currentTime+phrase.delay,.075*(quiet?.6:.6+.4*intensity)*phrase.velocity,(quiet?2.4:1.6)*phrase.duration,'note',phrase.attack);
   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/30000);
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
-  if(!quiet&&arp){arp.harmony=[...harmony.notes];arp.tonic=music.tonic;}
+  if(!quiet&&arp){arp=null;} // A new harmony replaces the previous finite phrase.
   if(!quiet&&interlock){
    for(let i=interlock.index;i<interlock.events.length;i++){
     const event=interlock.events[i];event.midi=interlockPitch(event,harmony);
    }
    interlock.tonic=music.tonic;
   }
-  if(!quiet&&!interlock){
+  if(!quiet&&!interlock&&!(pattern.length&&draw===0&&time>=nextArp&&bucket!==lastArpBucket)){
    const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony);
    if(events.length){
     const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40));

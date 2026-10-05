@@ -1,3 +1,4 @@
+import {createHarmonicNetwork} from './harmonic-network.js?v=146';
 import {pianoHarmony,HARMONIES} from './music-context.js?v=123';
 // Small timing/velocity differences are stable for a coin and phrase, so replay
 // has a human contour without drawing fresh random notes on each listen.
@@ -7,14 +8,14 @@ export function pianoNuance(seed,step){
  return {delay:.012+random()*.016,velocity:.94+random()*.12,attack:.014+random()*.012,duration:.9+random()*.2};
 }
 export function createPianoPhrasing(seed=0){
- let step=0,previous=null,repeats=0,character='serene';
+ let step=0,previous=null,repeats=0,character='serene';const network=createHarmonicNetwork(seed);
  return {
-  reset(value=seed){seed=value>>>0;step=0;previous=null;repeats=0;character='serene';},
+  reset(value=seed){seed=value>>>0;network.reset(seed);step=0;previous=null;repeats=0;character='serene';},
   next(event,music,{quiet=false,changePct=0}={}){
    // Complete a four-note harmonic arc before choosing its next character.
    // Clock buckets no longer skip unheard stages of the progression.
    if(step%4===0)character=HARMONIES[music.character]?music.character:'serene';
-   const harmony=pianoHarmony(seed,{...event,chordStep:step-(seed%4)},{...music,character});
+   const harmony=pianoHarmony(seed,{...event,chordStep:network.next(music,quiet)-(seed%4)},{...music,character});
    const candidates=[...new Set(harmony.notes.flatMap(note=>[note-12,note,note+12]).filter(note=>note>=45&&note<=67))];
    const target=previous??(52+seed%5),direction=quiet?0:Math.sign(changePct);
    const cost=note=>Math.abs(note-target)*1.2+Math.abs(note-54)*.12

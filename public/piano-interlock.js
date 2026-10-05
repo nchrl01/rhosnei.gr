@@ -4,15 +4,9 @@ export function pianoArticulation(cap){
  return Math.max(0,Math.min(1,(Math.log10(Math.max(1,Number(cap)||1))-5)/2));
 }
 export function interlockPitch(event,harmony){
- const root=harmony.root??48,minor=['tense','restless'].includes(harmony.character);
- const scale=(minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11]).map(n=>(n+root)%12);
- const chord=[...new Set(harmony.notes.map(n=>n%12))];
- for(const pc of chord)if(!scale.includes(pc)){
-  const distance=n=>Math.min((n-pc+12)%12,(pc-n+12)%12);
-  let i=0;for(let j=1;j<scale.length;j++)if(distance(scale[j])<distance(scale[i]))i=j;
-  scale[i]=pc;
- }
- const pcs=event.chordTone?chord:scale;
+ const root=harmony.root??48;
+ const chord=[...new Set(harmony.notes.map(n=>((n%12)+12)%12))];
+ const pcs=chord; // Every simultaneous part shares the sounding chord.
  const pool=Array.from({length:37},(_,i)=>45+i).filter(n=>pcs.includes(n%12));
  const target=event.target+(root%12-6)*.35;
  const centre=pool.reduce((best,n,i)=>Math.abs(n-target)<Math.abs(pool[best]-target)?i:best,0);
@@ -21,7 +15,7 @@ export function interlockPitch(event,harmony){
 export function interlockingPiano(seed,cap,intensity,harmony){
  const amount=pianoArticulation(cap);
  if(amount<=0||intensity<.04||!harmony?.notes?.length)return [];
- const cycles=4+Math.floor(amount*2),parts=amount>=.7?3:amount>=.3?2:1;
+ const cycles=4+Math.floor(amount*2),parts=amount>=.7&&intensity>=.55?2:1;
  const motifs=[[0,1,2,4,5,7],[0,2,3,4,6,7],[0,1,3,4,5,6]];
  const motif=motifs[((seed>>>0)>>>8)%motifs.length],rotation=(seed>>>0)%8,events=[];
  for(let cycle=0;cycle<cycles;cycle++){

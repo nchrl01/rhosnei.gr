@@ -1,5 +1,5 @@
 import {createVoiceReverb} from './voice-space.js?v=57';
-const KEY='av.ai-arps.v1';
+const KEY='av.ai-arps.v2';
 export function validArp(pattern){return Array.isArray(pattern)&&pattern.length>=3&&pattern.length<=16&&pattern.every(row=>Array.isArray(row)&&row.length===2&&Number.isInteger(row[0])&&row[0]>=0&&row[0]<16&&Number.isInteger(row[1])&&row[1]>=48&&row[1]<=83)&&pattern.every((row,i)=>!i||row[0]>pattern[i-1][0]);}
 export function seededArp(seed){const notes=seed%2?[60,67,63,72,67,63,60,67]:[60,64,67,72,67,64,60,67];return notes.map((n,i)=>[i,n]);}
 function backgroundModel(path,onStatus,timeout){
@@ -14,7 +14,7 @@ function backgroundModel(path,onStatus,timeout){
 export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
  let cache=new Map(),seed=0,epoch=0,pattern=seededArp(0),source='seeded',loading=false,retryAt=0;
  try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');cache=new Map(saved.filter(([s,p])=>Number.isInteger(s)&&validArp(p)).slice(-64));}catch{}
- const runner=backgroundModel('./arp-ai-worker.js?v=56',text=>{if(source!=='frozen')onStatus(text);},150000);
+ const runner=backgroundModel('./arp-ai-worker.js?v=146',text=>{if(source!=='frozen')onStatus(text);},150000);
  function publish(){onPattern(pattern,source);}
  return {
   setSeed(value,frozen){epoch++;retryAt=0;seed=value>>>0;pattern=validArp(frozen)?frozen:cache.get(seed)||seededArp(seed);source=validArp(frozen)?'frozen':cache.has(seed)?'ai':'seeded';publish();onStatus(source==='seeded'?'Seeded arpeggios · AI loads with Listen':source==='frozen'?'Frozen arpeggio score':'AI arpeggios ready');},

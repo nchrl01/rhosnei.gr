@@ -1,4 +1,4 @@
-import {MATH_SLOT_COUNT} from './math-patterns.js?v=139';
+import {MATH_SLOT_COUNT} from './math-patterns.js?v=146';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const WIDTH = 360;
