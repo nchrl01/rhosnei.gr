@@ -19,16 +19,19 @@ headers=rows(b'shdr','<20sIIIIIBbHH')
 dest=Path(__file__).resolve().parents[1]/'public/samples/earthbound'
 dest.mkdir(parents=True,exist_ok=True)
 files=[]
+base_programs={0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,23,24,25,27,28,29,30,31,34,35,36,37,38}
+extra_programs={2,11,12,17,18,19,28,41,43,50}
 for name,program,bank,bag,*_ in ph:
- if bank or program not in [1,2,3,4,5,6,7,8,13,14,18,27,29,30,34]:continue
+ if not (bank==0 and program in base_programs or bank==1 and program in extra_programs):continue
+ preset_id=bank*128+program
  preset=dict(pg[pb[bag][0]:pb[bag+1][0]])
  instrument=preset[41];zone=ins[instrument][1]
  assert ins[instrument+1][1]==zone+1
  gen=dict(ig[ib[zone][0]:ib[zone+1][0]])
- assert set(gen)<=set([53,54]),'Unsupported soundfont generators'
+ assert set(gen)<=set([38,53,54]),'Unsupported soundfont generators'
  sample,start,end,loop_start,loop_end,rate,root,correction,link,kind=headers[gen[53]]
  assert kind==1
- filename=f'preset-{program}.wav'
+ filename=f'preset-{preset_id}.wav'
  with tempfile.TemporaryDirectory() as tmp:
   raw=Path(tmp)/'source.wav'
   with wave.open(str(raw),'wb') as out:
@@ -45,7 +48,7 @@ for name,program,bank,bag,*_ in ph:
  loop_pcm=pcm[round((loop_start-start)/rate*output_rate):round((loop_end-start)/rate*output_rate)]
  energy=max(body,rms(loop_pcm)*.8) if gen.get(54)==1 else body
  trim=round(min(.85,.65/max(peak,.001),.13/max(energy,.001)),6)
- files.append(dict(file=filename,midi=root,trim=trim,preset=program,
+ files.append(dict(file=filename,midi=root,trim=trim,preset=preset_id,bank=bank,program=program,
   peak=round(peak,6),bodyRms=round(body,6),
   name=name.split(b'\0')[0].decode('latin1'),correction=correction,
   loop=gen.get(54,0)==1,loopStart=(loop_start-start)/rate,loopEnd=(loop_end-start)/rate))
