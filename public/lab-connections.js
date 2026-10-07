@@ -1,3 +1,4 @@
+import {createCablePanel} from './lab-cables.js?v=1';
 // Bounded, one-update-delayed routing. No evaluation of code from presets.
 export function createLabConnections({audio,visualSpecs,onChange=()=>{}}){
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -7,12 +8,14 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{}}){
  let routes=[],enabled=true,nextId=1,smoothed=new Map(),outputs={},latest={},lastAt=null,readouts=[],marketPaints=[];
  const button=document.createElement('button');button.id='connections-button';button.textContent='Connections · 0';document.querySelector('header').insertBefore(button,document.getElementById('play'));
  const dialog=document.createElement('dialog');dialog.className='connections-menu';dialog.setAttribute('aria-label','Market parameters and signal connections');
- dialog.innerHTML='<div class="connections-head"><h2>MARKET / AUDIO / VISUAL</h2><button data-close aria-label="Close connections">Close</button></div><p class="connections-intro">Connect any listed signal to an engine parameter. Market values here are simulations, never edits to real market data. Feedback reads the previous update; one active connection controls each destination.</p><div class="connections-actions"><button data-tab="routes">Connections</button><button data-tab="market">Market parameters</button><button data-toggle>Connections on</button><button data-add>+ Add connection</button><button data-export>Export change note</button></div><div data-market hidden><p class="group-note">Raw USD values, holder counts and trade rate are available as sources. Connect them to the normalized controls or a sound/visual parameter. A connected destination is controlled by its route until bypassed.</p><div class="grid"></div></div><div data-routes></div><p class="connection-message" role="status"></p>';
+ dialog.innerHTML='<div class="connections-head"><h2>MARKET / AUDIO / VISUAL</h2><button data-close aria-label="Close connections">Close</button></div><p class="connections-intro">Connect any listed signal to an engine parameter. Market values here are simulations, never edits to real market data. Feedback reads the previous update; one active connection controls each destination.</p><div class="connections-actions"><button data-tab="cables">Cables</button><button data-tab="routes">Cable settings</button><button data-tab="market">Market parameters</button><button data-toggle>Connections on</button><button data-add>+ Add connection</button><button data-export>Export change note</button></div><div data-market hidden><p class="group-note">Raw USD values, holder counts and trade rate are available as sources. Connect them to the normalized controls or a sound/visual parameter. A connected destination is controlled by its route until bypassed.</p><div class="grid"></div></div><div data-cables></div><div data-routes hidden></div><p class="connection-message" role="status"></p>';
  document.body.append(dialog);const container=dialog.querySelector('[data-routes]'),message=dialog.querySelector('.connection-message');
- dialog.querySelector('[data-close]').onclick=()=>dialog.close();button.onclick=()=>{paint();dialog.showModal();};
+ dialog.querySelector('[data-close]').onclick=()=>dialog.close();button.onclick=()=>{dialog.showModal();paint();cablePanel.refresh();};
  dialog.querySelector('[data-export]').onclick=()=>document.getElementById('note').click();
- dialog.querySelector('[data-toggle]').onclick=()=>{enabled=!enabled;if(!enabled){outputs={};smoothed.clear();audio.connect({});}paint();onChange();};
- for(const tab of dialog.querySelectorAll('[data-tab]'))tab.onclick=()=>{const market=tab.dataset.tab==='market';dialog.querySelector('[data-market]').hidden=!market;container.hidden=market;for(const b of dialog.querySelectorAll('[data-tab]'))b.setAttribute('aria-pressed',b===tab);};
+ dialog.querySelector('[data-toggle]').onclick=()=>{enabled=!enabled;if(!enabled){outputs={};smoothed.clear();audio.connect({});}paint();cablePanel.refresh();onChange();};
+ function showTab(name){dialog.querySelector('[data-market]').hidden=name!=='market';container.hidden=name!=='routes';dialog.querySelector('[data-cables]').hidden=name!=='cables';for(const b of dialog.querySelectorAll('[data-tab]'))b.setAttribute('aria-pressed',b.dataset.tab===name);if(name==='cables')cablePanel.refresh();}
+ for(const tab of dialog.querySelectorAll('[data-tab]'))tab.onclick=()=>showTab(tab.dataset.tab);
+ const cablePanel=createCablePanel({host:dialog.querySelector('[data-cables]'),sources:sourceList,targets:descriptors,getRoutes:()=>routes.map(r=>({...r,enabled:enabled&&r.enabled})),onConnect:(source,target)=>add(source,target),onSelect:id=>{showTab('routes');const card=container.querySelector('[data-route="'+id+'"]');card?.scrollIntoView({block:'nearest'});card?.querySelector('select')?.focus({preventScroll:true});}});
  function select(list,value,label){const el=document.createElement('select');el.setAttribute('aria-label',label);for(const category of ['Market','Audio','Visual']){const group=document.createElement('optgroup');group.label=category;for(const d of list.filter(d=>d.category===category)){const option=document.createElement('option');option.value=d.id;option.textContent=(d.category==='Audio'&&!d.id.startsWith('signal.')?d.id.split('.')[0]+' · ':'')+d.label;group.append(option);}el.append(group);}el.value=value;return el;}
  function number(parent,label,value,min,max,step,change){const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement('input');input.type='number';input.min=min;input.max=max;input.step=step;input.value=value;input.onchange=()=>{const v=input.valueAsNumber;if(!Number.isFinite(v)){input.value=value;return;}value=clamp(v,min,max);input.value=value;change(value);smoothed.clear();onChange();};wrap.append(input);parent.append(wrap);return input;}
  function exclusive(route){if(!route.enabled)return;for(const other of routes)if(other!==route&&other.enabled&&other.target===route.target){other.enabled=false;message.textContent='Previous connection to this destination was bypassed.';}}
@@ -26,7 +29,7 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{}}){
   container.replaceChildren();readouts=[];
   if(!routes.length){const p=document.createElement('p');p.className='empty-connections';p.textContent='No custom connections yet. The existing engine mappings are still active. Add a connection to override one parameter.';container.append(p);}
   for(const route of routes){
-   const card=document.createElement('section');card.className='connection-card';const line=document.createElement('div');line.className='connection-path';
+   const card=document.createElement('section');card.className='connection-card';card.dataset.route=route.id;const line=document.createElement('div');line.className='connection-path';
    const from=select(sourceList,route.source,'Source signal'),arrow=document.createElement('span'),to=select(descriptors,route.target,'Destination parameter');arrow.textContent='→';line.append(from,arrow,to);card.append(line);
    from.onchange=()=>{route.source=from.value;const s=sourceById.get(route.source);route.inMin=s.min;route.inMax=s.max;route.log=s.min>0&&s.max/s.min>1000;smoothed.clear();build();onChange();};
    to.onchange=()=>{route.target=to.value;const t=targetById.get(route.target);route.outMin=t.min;route.outMax=t.max;exclusive(route);smoothed.clear();build();onChange();};
@@ -39,7 +42,7 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{}}){
    const remove=document.createElement('button');remove.textContent='Remove';remove.onclick=()=>{routes=routes.filter(r=>r!==route);smoothed.delete(route.id);build();onChange();};actions.append(active,logarithm,remove);card.append(actions);
    const live=document.createElement('p');live.className='connection-live';card.append(live);readouts.push(()=>{const source=latest[route.source],out=outputs[route.target];live.textContent=(Number.isFinite(source)?Number(source.toFixed(4)):'—')+' → '+(enabled&&route.enabled&&Number.isFinite(out)?Number(out.toFixed(4)):'bypassed')+(route.inMin===route.inMax?' · source range must have different endpoints':'')+(route.log&&(route.inMin<=0||route.inMax<=0)?' · log needs positive endpoints; using linear':'');});
    container.append(card);
-  }paint();
+  }paint();cablePanel.refresh();
  }
  function clean(value){
   if(!value||typeof value!=='object')return {enabled:true,routes:[]};const result=[];
@@ -51,7 +54,7 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{}}){
   }return {enabled:value.enabled!==false,routes:result};
  }
  function paint(){button.textContent='Connections · '+routes.filter(r=>enabled&&r.enabled).length;dialog.querySelector('[data-toggle]').textContent=enabled?'Connections on':'Connections bypassed';if(dialog.open){for(const fn of readouts)fn();for(const fn of marketPaints)fn();}}
- build();
+ build();showTab('cables');
  return {
   dialog,
   owns(id){return enabled&&routes.some(r=>r.enabled&&r.target===id);},
