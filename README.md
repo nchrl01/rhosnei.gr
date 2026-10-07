@@ -1,4 +1,4 @@
-# UPIC
+# AV
 
 UPIC is a live audiovisual instrument for cryptocurrency markets. Market activity
 drives musical timing and visual motion; price direction, liquidity, market cap
