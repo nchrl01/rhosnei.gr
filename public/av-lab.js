@@ -1,6 +1,6 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=2';
 import {createLabConnections} from './lab-connections.js?v=193';
-import {audioLab} from './audio-lab.js?v=195';
+import {audioLab} from './audio-lab.js?v=196';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=192';
 import {advancePixelSurvival} from './pixel-blast-parameters.js?v=192';

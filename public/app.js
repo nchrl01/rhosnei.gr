@@ -7,7 +7,7 @@ import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.j
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan,pianoHarmony} from './music-context.js?v=177';
-import {createEnvion} from './envion.js?v=152';
+import {createEnvion} from './envion.js?v=196';
 import {createEngineView} from './engine-view.js?v=195';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
@@ -18,7 +18,7 @@ import {createHolderMetadata} from './holder-metadata.js?v=168';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=187';
 import {createArpeggioAI} from './ai-instruments.js?v=190';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=195';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=196';
 import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=152';
 import {createMathPatternView} from './math-pattern-view.js?v=152';
 import {contextualizeMarket} from './market-state.js?v=53';
@@ -33,7 +33,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=99';
-import {MarketChart} from './chart.js?v=136';
+import {MarketChart} from './chart.js?v=196';
 import {loadHistory} from './history.js?v=136';
 import {pollPoolTrades} from './trades.js?v=194';
 const $=id=>document.getElementById(id);
@@ -294,7 +294,7 @@ function setupStream(){
 }
 function musicalFrame(m){const intensity=m.music?.intensity||0,score=m.replay?replay.state.score?.frames.get(replay.state.bar?.time):null;return {...m,replay:m.replay?{...m.replay,scoreIndex:score?.index,sceneSeed:score?.sceneSeed}:undefined,activity:intensity,motion:intensity,volume:intensity,pressure:intensity};}
 function replayPiano(m){
- if(!playing||replay.state.dragging||!piano)return;
+ if(!playing||replay.state.dragging||!piano||!pianoEnabled||ctx?.state!=='running')return;
  const cursor=replay.state.cursor,bars=replay.state.frozen?.bars||chart.renderedBars,interval=replay.state.frozen?.interval||chart.interval;
  const due=!replayPianoPrimed?[replay.state.bar].filter(Boolean):bars.filter(bar=>candleEnd(bar,interval)>(pianoReplayCursor??cursor)&&candleEnd(bar,interval)<=cursor);
  for(const bar of due){
@@ -303,7 +303,9 @@ function replayPiano(m){
   const frame=scoreCandle(bars,replay.state.frozen?.market||market,interval,bar);
   const score=replay.state.score?.frames.get(bar.time);
   const event={id:'candle:'+interval+':'+bar.time,at:candleEnd(bar,interval),priceUsd:bar.close,referencePrice:bar.open,historical:true,volume:bar.volume,chordStep:score?.index??Math.floor(bar.time/interval),music:frame.music};
-  piano.replay(event,score?.selection,frame.context?.latestCap,pianoMusic(frame));
+  const sounded=piano.replay(event,score?.selection,frame.context?.latestCap,pianoMusic(frame));
+  // Retry a selected phrase after an interrupted or unavailable instrument.
+  if(score?.selection&&!sounded)return;
   // Selection can legitimately be silent. Consume each candle exactly once.
   replayPianoPrimed=true;
  }
@@ -818,6 +820,6 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },500);
 const playerScreen=window.matchMedia('(max-width:760px)');
-function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'NDS12, sans-serif',fontSize:12}});}
+function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'"Andale Mono", AndaleMono, monospace',fontSize:12}});}
 playerScreen.addEventListener('change',syncChartTypography);
 document.fonts.ready.then(syncChartTypography);

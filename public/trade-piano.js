@@ -4,6 +4,10 @@ import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interl
 import {createPianoPolicy} from './piano-policy.js?v=195';
 import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=185';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
+// The soundfont assets are already trimmed to ~0.13 RMS before their short
+// envelopes. Calibrate this shared engine so chord bodies survive the mix;
+// keep the listening slider and instrument-specific dynamics independent.
+export const EARTHBOUND_OUTPUT_GAIN=6;
 let sampleDownload;
 const sampleAssets=new Map();
 async function loadSampleAsset(path,format){
@@ -79,7 +83,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  let profile=instrumentProfile(instrument.preset),currentCap=null;
  let interlock=null,lab={};
  function labRoom(){for(const [key,param] of [['cutoff',instrumentFilter.frequency],['q',instrumentFilter.Q],['roomSend',instrumentSend.gain],['dry',dry.gain],['wet',wet.gain]])if(Number.isFinite(lab[key]))param.setTargetAtTime(lab[key],ctx.currentTime,.05);}
- function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.025);}
+ function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.025);}
  function hold(param,time){
   if(param.cancelAndHoldAtTime)param.cancelAndHoldAtTime(time);
   else{const value=param.value;param.cancelScheduledValues(time);param.setValueAtTime(value,time);}
@@ -87,6 +91,13 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  function stopVoice(voice,when=ctx.currentTime){
   const time=Math.max(ctx.currentTime,when);
   if(voice.fading&&voice.fadeAt<=time)return;voice.fading=true;voice.fadeAt=time;
+  // A lookahead note has not sounded yet. Cancel it in silence; holding a
+  // fresh GainNode's default value could otherwise create a full-level burst.
+  if(voice.start>=time){
+   voice.gain.gain.cancelScheduledValues(time);voice.gain.gain.setValueAtTime(0,time);
+   try{voice.source.stop(time);}catch{}
+   return;
+  }
   hold(voice.gain.gain,time);voice.gain.gain.linearRampToValueAtTime(0,time+.035);
   try{voice.source.stop(time+.04);}catch{}
  }
@@ -113,7 +124,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   duration=Math.min(duration*profile.gate,profile.phraseMax);
   dynamics*=kind==='chord'?(lab.chordGain??1):kind==='arp'||kind==='interlock'?(lab.arpGain??1):(lab.noteGain??1);
   const sample=instrument;
-  const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi+(sample.correction||0)/100)/12);
+  const source=ctx.createBufferSource(),gain=ctx.createGain();gain.gain.value=0;source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi+(sample.correction||0)/100)/12);
   const loopEnd=Math.min(sample.loopEnd,source.buffer.duration);
   source.loop=Boolean(sample.loop&&sample.loopStart>=0&&loopEnd>sample.loopStart);
   if(source.loop){source.loopStart=sample.loopStart;source.loopEnd=loopEnd;}
@@ -124,7 +135,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(peak,time+onset);
   gain.gain.exponentialRampToValueAtTime(Math.max(.000001,body),time+onset+decay);
   gain.gain.setValueAtTime(body,end-release);gain.gain.linearRampToValueAtTime(0,end);
-  source.connect(gain);gain.connect(instrumentFilter);const voice={source,gain,kind,end,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
+  source.connect(gain);gain.connect(instrumentFilter);const voice={source,gain,kind,start:time,end,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
   return time;
  }
  // Audio-clock lookahead keeps attacks independent of the drawing frame rate.

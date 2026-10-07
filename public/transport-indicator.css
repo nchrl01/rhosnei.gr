@@ -1,4 +1,4 @@
-.transport-indicator{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;min-height:16px;white-space:nowrap;font:400 10px/16px NDS12,sans-serif;color:#f2f2f2}
+.transport-indicator{display:inline-flex;align-items:center;gap:5px;flex:0 0 auto;min-height:16px;white-space:nowrap;font:400 10px/16px 'Andale Mono',AndaleMono,monospace;color:#f2f2f2}
 .transport-indicator__dot{display:block;flex:0 0 auto;width:6px;height:6px;border:1px solid #999;border-radius:50%!important;background:transparent;opacity:1}
 .transport-indicator[data-state="live"] .transport-indicator__dot{border-color:#ff4141;background:#ff4141}
 .transport-indicator[data-state="replay"] .transport-indicator__dot{border-color:#ff40ec;background:#ff40ec}

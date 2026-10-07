@@ -329,7 +329,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
       const {width, height} = item.canvas; ctx.clearRect(0, 0, width, height);
       const isSample = /^samplebuf[LR]$/.test(item.name || '');
       const samples = arrayValues.get(item.name) || (item.data?.length ? item.data : isSample ? waveform?.[/R$/i.test(item.name || '') ? 1 : 0] : null);
-      if (!samples?.length) { ctx.fillStyle = '#777'; ctx.font = '10px NDS12'; ctx.fillText(isSample ? 'No sample loaded' : 'Awaiting array data', 5, height / 2); continue; }
+      if (!samples?.length) { ctx.fillStyle = '#777'; ctx.font = '10px "Andale Mono", AndaleMono, monospace'; ctx.fillText(isSample ? 'No sample loaded' : 'Awaiting array data', 5, height / 2); continue; }
       ctx.strokeStyle = '#111'; ctx.lineWidth = 1; ctx.beginPath();
       for (let x = 0; x < width; x++) {
         const start = Math.floor(x / width * samples.length), end = Math.max(start + 1, Math.floor((x + 1) / width * samples.length));
