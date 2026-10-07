@@ -318,7 +318,7 @@ function otherInstrumentsAudible(){
 function tick(){
  const m=metrics(),music=musicalFrame(m),energy=music.volume*m.fresh;
  const audible=otherInstrumentsAudible();
- 
+
  if(audible&&!replay.state.active)void arpeggioAI.prepare();
 
  drums?.frame(m,{playing,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,event:replay.state.active?(Number(replay.state.bar?.volume)>0?replay.state.bar.time:null):lastTrade?.id??null});
@@ -362,7 +362,7 @@ async function initialize(){
   instrumentTap=ctx.createAnalyser();instrumentTap.fftSize=2048;instrumentSamples=new Float32Array(instrumentTap.fftSize);instrumentTap.connect(gain);
   function scope(name,out){const input=ctx.createGain();input.connect(out);const split=ctx.createChannelSplitter(2);input.connect(split);const channels=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;split.connect(meter,channel);return meter;});audioScopes.push({name,input,channels});return input;}
   scope('EarthBound',instrumentTap);scope('Pure Data',instrumentTap);drumInput=scope('Cybernetic drums',instrumentTap);
-  
+
  }
  const epoch=audioEpoch,context=ctx,destination=instrumentTap;
  if(!drums){drums=createCyberneticDrums(context,drumInput||destination,{onHit:hit=>dataVisual.piano(hit.time,.4),onError:error=>engineView.log('Drums: '+error)});drums.reset(seed);drums.setEnabled(drumsEnabled);drums.setMaster(1);drums.setRunning(playing);}
