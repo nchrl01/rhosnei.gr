@@ -28,18 +28,18 @@ export function loadHistory(market,onUpdate,options={}){
   }
  }catch{}
  async function page(){
-  if(closed)return;if(options.shouldFetch?.()===false){timer=setTimeout(page,1000);return;}controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=0;const requestedAt=Date.now();
+  if(closed)return;if(options.shouldFetch?.()===false){timer=setTimeout(page,1000);return;}controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=0;
   if(failures)report('loading','Retrying market history…',{retrying:true});
   try{
    const query=new URLSearchParams({aggregate:String(aggregate),limit:'1000',currency:'usd',token:market.baseToken.address,include_empty_intervals:'false'});
    // A stable latest-page URL coalesces simultaneous chart/music requests.
    if(pages>0)query.set('before_timestamp',String(before));
    const r=await fetchGecko(base+'?'+query,{signal:controller.signal,priority:pages===0?(options.priority??80):20});if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
-   const data=await r.json();if(closed)return;const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
+   const data=await r.json();if(closed)return;const observedAt=Date.now();const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
    const validTimes=[];
-   for(const row of list){if(row.length<6||!row.every(v=>Number.isFinite(Number(v))))continue;const [seconds,open,high,low,close,volume]=row.map(Number);if(seconds<=0||open<=0||close<=0||low<=0||high<Math.max(open,close)||low>Math.min(open,close)||volume<0)continue;const bar={time:seconds*1000,open,high,low,close,volume,observedThrough:Math.min(seconds*1000+interval,requestedAt)};validTimes.push(bar.time);rows.set(bar.time,bar);}
+   for(const row of list){if(row.length<6||!row.every(v=>Number.isFinite(Number(v))))continue;const [seconds,open,high,low,close,volume]=row.map(Number);if(seconds<=0||open<=0||close<=0||low<=0||high<Math.max(open,close)||low>Math.min(open,close)||volume<0)continue;const bar={time:seconds*1000,open,high,low,close,volume,observedThrough:Math.min(seconds*1000+interval,observedAt)};validTimes.push(bar.time);rows.set(bar.time,bar);}
    if(list.length&&!validTimes.length)throw Error('History page contains no valid candles');
-   if(pages===0)latestSaved=requestedAt;
+   if(pages===0)latestSaved=observedAt;
    pages++;failures=0;const oldest=rows.size?Math.min(...rows.keys()):null;
    const pageOldest=validTimes.length?Math.min(...validTimes):null;
    if(pageOldest!=null){
