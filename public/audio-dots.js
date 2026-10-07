@@ -95,13 +95,13 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!visible)hide();else dirty=true;
  }):null;visibility?.observe(canvas);
  function arrange(){
-  // Mobile has its own panel after the player, before mathematical phrases.
-  // It is never attached to body or painted over other interface elements.
-  const readings=document.querySelector('.instrument > .readings');
-  if(host&&!host.classList.contains('is-expanded')){if(mobile.matches&&readings)readings.after(host);else anchor.parentNode?.insertBefore(host,anchor);}
+  // Reuse the live renderer in the former mobile artwork slot. The existing
+  // expand control stays beside Share; desktop retains its original column.
+  const identity=document.querySelector('.coin-title');
+  if(host&&!host.classList.contains('is-expanded')){if(mobile.matches&&identity){if(host.parentElement!==identity)identity.prepend(host);}else anchor.parentNode?.insertBefore(host,anchor);}
   size();
  }
- const layoutChanged=()=>{layoutPending=true;dirty=true;};
+ const layoutChanged=()=>{arrange();layoutPending=true;dirty=true;};
  const motionChanged=()=>{dirty=true;};
  mobile.addEventListener('change',arrange);reduced.addEventListener('change',motionChanged);
  window.addEventListener('resize',layoutChanged);
