@@ -1,3 +1,4 @@
+import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=172';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {battleMotion,battleWarp} from './earthbound-motion.js?v=171';
 import {capitalFeed} from './capital-field.js?v=167';
@@ -63,7 +64,7 @@ export function createPixelBlastCanvas(host){
    counts.fill(0);output.data.fill(0);
    const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
-   const battle=battleMotion(seed,time,params.capitalStage);
+   const battle=battleMotion(seed,time,params.capitalStage),pattern=battlePattern(seed);
    const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
    const liquidRadius=Math.max(.001,.12*params.liquidRadius),grainFrame=Math.floor(time*12);
    const touches=params.liquid?ripples.filter(p=>eventTime-p.time>=0&&eventTime-p.time<3).map(p=>{
@@ -91,7 +92,7 @@ export function createPixelBlastCanvas(host){
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
      feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
-     feed=capitalFeed(params.patternStage??params.capitalStage??-1,u,v,.5+.5*noise(u*4+offset,v*4+offset,time*.055),.5+.5*noise(u*3-offset,v*3-offset,time*.04),offset,feed);
+     feed=battlePatternFeed(u*Math.max(.2,params.scale/.25),v*Math.max(.2,params.scale/.25),time,pattern,feed);
      feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
      sample={feed,warpX,warpY};cache.set(key,sample);
     }

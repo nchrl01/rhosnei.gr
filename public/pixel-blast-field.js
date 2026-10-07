@@ -1,8 +1,9 @@
+import {battlePattern,battlePatternGLSL} from './earthbound-pattern.js?v=172';
 import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=167';
 import {battleMotion,battleGLSL} from './earthbound-motion.js?v=171';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=171';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=172';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=171';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
@@ -115,6 +116,7 @@ float fbm2(vec2 uv, float t){
 }
 
 ${capitalGLSL}
+${battlePatternGLSL}
 ${holderClusterGLSL}
 ${battleGLSL}
 
@@ -196,7 +198,7 @@ void main(){
   // Distributed local populations, with no central image or radial attractor.
   feed+=uEcosystem*vnoise(vec3(uv*6.0+vec2(uSeed*.19,uSeed*.41),uTime*.04));
   feed=max(feed,.07+.045*vnoise(vec3(uv*14.0+uSeed,uTime*.03)));
-  feed=capitalFeed(uv,feed);
+  feed=battlePatternFeed(uv*max(.2,uScale/.25),feed);
   feed+=holderClusterFeed(squarePoint/viewSize,aspectRatio);
   float speed     = uRippleSpeed;
   float thickness = uRippleThickness;
@@ -281,6 +283,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.battlePattern=gl.getUniformLocation(program,'uBattlePattern');
    locations.holderGroups=gl.getUniformLocation(program,'uHolderGroups[0]');
    locations.uGridStart=gl.getUniformLocation(program,'uGridStart');
    locations.uGridColumns=gl.getUniformLocation(program,'uGridColumns');
@@ -341,6 +344,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    gl.uniform4fv(locations.holderGroups,params.holderGroups||emptyHolderGroups);
    f('uCapitalStage',params.patternStage??params.capitalStage??-1);f('uPixelPresence',params.pixelPresence??1);
    const battle=battleMotion(seed,time||0,params.capitalStage);
+   gl.uniform4fv(locations.battlePattern,battlePattern(seed));
    gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
    const ink=params.inkColor??1;gl.uniform3f(locations.uColor,ink,ink,ink);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
