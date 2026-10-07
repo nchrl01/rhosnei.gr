@@ -224,3 +224,13 @@ window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);
 math.setSeed(state.market.seed);data.reset(state.market.seed);build();
 
 window.addEventListener('pageshow',event=>{if(event.persisted&&closed)location.reload();});
+
+// Shared-engine interface for the combined audiovisual workspace.
+export const audioLab={
+ snapshot(){
+  let rms=0;if(running&&musicMeter){musicMeter.getFloatTimeDomainData(musicData);for(const v of musicData)rms+=v*v;rms=Math.sqrt(rms/musicData.length);}
+  return {running,elapsed:elapsed+(running&&ctx?Math.max(0,ctx.currentTime-(lastTime??ctx.currentTime)):0),market:{...state.market},music:market().music,audioLevel:clamp(rms*8,0,1),rms,seed:state.market.seed};
+ },
+ preset(){return JSON.parse(JSON.stringify(state));},
+ load(value){const next=readPreset(value);stop();arpAI.suspend();state=next;solo=null;resetScore();build();save();},
+};
