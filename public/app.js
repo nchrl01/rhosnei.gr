@@ -1,3 +1,4 @@
+import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
@@ -64,6 +65,7 @@ const engineMaster=()=>1;
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='',sharedMarket=false;
 let streamKind='snapshot',tradePollingAt=0,tradeEvents=[],lastTrade=null,lastChainPrice=null,discovered=[],lastExcitation=0;
 let piano=null,pianoEnabled=true,pianoHistory=[],pianoReplayCursor=null,pianoChordCount=0;
+let vinyl=null,vinylStopping=false;
 let audioEpoch=0,pianoLoading=null,pdLoading=null,pendingPianoTrade=null,idleAudioTimer;
 const audioErrors={piano:'',pd:'',envion:''};
 let replayPianoPrimed=false,replayPhrase=null;
@@ -215,7 +217,7 @@ function syncLevels(m){
 
  m={...m,music:{...m.music,tonic:marketRoot(m),harmony:sharedHarmony}};
  // The final candle gets its existing one-second hold to sound before pause.
- const audibleTransport=playing&&!replay.state.dragging&&!replay.state.ended;
+ const audibleTransport=vinylStopping||(playing&&!replay.state.dragging&&!replay.state.ended);
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1.5:0,ctx.currentTime,.025);}
  updateCoinReadout(m);
  if(market)void milestoneSounds.setMarket(imageKey(market),m.context?.latestCap||0,!!m.replay);
@@ -342,16 +344,17 @@ function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);
 async function initialize(){
  if(audioContext().state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}
  if(!gain){
+  vinyl=await createVinylTransport(ctx);
   gain=ctx.createGain();gain.gain.value=0;
   const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;
   const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;
-  gain.connect(limiter);limiter.connect(analyser);
+  gain.connect(limiter);limiter.connect(vinyl.node);vinyl.node.connect(analyser);
   listeningGain=ctx.createGain();listeningGain.gain.value=Number($('master').value);
   const recordTap=ctx.createAnalyser();recordTap.fftSize=2048;
   analyser.connect(listeningGain);listeningGain.connect(recordTap);recordTap.connect(ctx.destination);outputTap=recordTap;
   // Measure engine output BEFORE listening volume: a mono downmix can cancel a wide
   // piano/reverb signal. This sidechain does not change listening or recording.
-  const splitter=ctx.createChannelSplitter(2);limiter.connect(splitter);
+  const splitter=ctx.createChannelSplitter(2);vinyl.node.connect(splitter);
   outputMeters=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;splitter.connect(meter,channel);return meter;});
   // Piano and Pd share the instrument-analysis tap.
   instrumentTap=ctx.createAnalyser();instrumentTap.fftSize=2048;instrumentSamples=new Float32Array(instrumentTap.fftSize);instrumentTap.connect(gain);
@@ -395,7 +398,7 @@ async function initialize(){
  catch{throw Error([audioErrors.piano,audioErrors.pd].filter(Boolean).join(' · ')||'No audio instrument could load');}
 }
 async function closeAudio(){
- clearTimeout(idleAudioTimer);
+ clearTimeout(idleAudioTimer);vinylStopping=false;vinyl?.close();vinyl=null;
  arpeggioAI.close();stopLegacyPlayback();audioEpoch++;pianoLoading=null;pdLoading=null;pendingPianoTrade=null;
  piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;listeningGain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;instrumentSamples=null;audioScopes=[];
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
@@ -430,9 +433,21 @@ $('play').onclick=async()=>{
   finally{audioBusy(false);}
   return;
  }
- if(playing){if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}playing=false;stopLegacyPlayback();arpeggioAI.suspend();dataSonification.reset(seed);pendingPianoTrade=null;piano?.setRunning(false);send('run',0);envion.setRunning(false);clearTimeout(timer);if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);send('master',0);pd?.flush?.();setPlayState(false);void takeShare.finish();idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},250);status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;}
- audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ if(playing){
+  if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}
+  playing=false;vinylStopping=true;arpeggioAI.suspend();pendingPianoTrade=null;clearTimeout(timer);setPlayState(false);
+  // Freeze the chart immediately, but let the complete sounding mix coast down.
+  const stopped=()=>{
+   if(playing||starting)return;
+   vinylStopping=false;stopLegacyPlayback();dataSonification.reset(seed);piano?.setRunning(false);send('run',0);envion.setRunning(false);
+   if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);outputGateOpen=false;send('master',0);pd?.flush?.();void takeShare.finish();
+   idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},100);
+  };
+  if(vinyl)vinyl.pause(stopped);else stopped();
+  status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;
+ }
+ vinylStopping=false;audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);vinyl?.play();setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
