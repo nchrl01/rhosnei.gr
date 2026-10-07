@@ -23,6 +23,11 @@ export function decodeScore(hash){
  if(score.engine>=56&&!validArp(score.arpeggio))throw Error('Invalid shared arpeggio');
  if(!score.market?.baseToken||!score.market?.quoteToken||!['chainId','pairAddress','dexId'].every(k=>typeof score.market[k]==='string'&&score.market[k].length<256))throw Error('Invalid shared coin');
  for(const token of [score.market.baseToken,score.market.quoteToken])if(!['address','symbol','name'].every(k=>typeof token[k]==='string'&&token[k].length<256))throw Error('Invalid shared coin');
+ // Image metadata is optional so all earlier shared links remain valid.
+ if(score.market.baseToken.imageUrl!=null){
+  let image;try{image=new URL(score.market.baseToken.imageUrl);}catch{throw Error('Invalid shared coin image');}
+  if(typeof score.market.baseToken.imageUrl!=='string'||image.protocol!=='https:'||image.href.length>2048||image.username||image.password)throw Error('Invalid shared coin image');
+ }
  if(!(Number(score.market.priceUsd)>0)||!Number.isFinite(Number(score.market.priceUsd)))throw Error('Invalid shared price');
  if(score.market.marketCap!=null&&(!Number.isFinite(Number(score.market.marketCap))||Number(score.market.marketCap)<0))throw Error('Invalid shared market cap');
  let previous=-Infinity;

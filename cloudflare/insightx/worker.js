@@ -4,6 +4,48 @@ const HOUR=3600000,DAY=24*HOUR,TTL=6*HOUR;
 const json=(body,status=200,headers={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...headers}});
 const number=value=>value!==null&&value!==''&&Number.isFinite(Number(value))?Number(value):null;
 const pct=value=>number(value)===null?null:Math.max(0,Math.min(100,Number(value)));
+const ARTWORK_HOSTS=new Set(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com']);
+const ARTWORK_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif','image/avif']);
+const ARTWORK_LIMIT=2*1024*1024;
+
+async function artwork(url,headers){
+ const source=url.searchParams.get('url')||'';let target;
+ try{
+  if(!source||source.length>4096||source!==source.trim())throw Error('invalid-url');
+  target=new URL(source);
+  const authority=/^https:\/\/([^/?#]+)/i.exec(source)?.[1];
+  if(target.protocol!=='https:'||!ARTWORK_HOSTS.has(target.hostname)||target.username||target.password||target.port||authority?.toLowerCase()!==target.hostname)throw Error('invalid-url');
+  target.hash='';
+ }catch{return json({state:'invalid-artwork-url'},400,headers);}
+ // Store only public image headers; apply the caller's CORS origin after lookup.
+ const cacheURL=new URL('/artwork',url.origin);cacheURL.searchParams.set('url',target.href);
+ const key=new Request(cacheURL.href),cache=caches.default;
+ const respond=result=>{const response=new Response(result.body,result);for(const [name,value] of Object.entries(headers))response.headers.set(name,value);return response;};
+ try{const cached=await cache.match(key);if(cached)return respond(cached);}catch{}
+ const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
+ let bytes,type;
+ try{
+  const upstream=await fetch(target.href,{method:'GET',redirect:'error',credentials:'omit',headers:{Accept:'image/avif,image/webp,image/png,image/jpeg,image/gif'},signal:controller.signal});
+  if(!upstream.ok){controller.abort();return json({state:'artwork-unavailable'},502,headers);}
+  type=(upstream.headers.get('Content-Type')||'').split(';')[0].trim().toLowerCase();
+  if(!ARTWORK_TYPES.has(type)){controller.abort();return json({state:'unsupported-artwork'},415,headers);}
+  if(Number(upstream.headers.get('Content-Length'))>ARTWORK_LIMIT){controller.abort();return json({state:'artwork-too-large'},413,headers);}
+  const reader=upstream.body?.getReader();if(!reader)return json({state:'artwork-unavailable'},502,headers);
+  const chunks=[];let size=0;
+  while(true){
+   const {done,value}=await reader.read();if(done)break;
+   size+=value.byteLength;
+   if(size>ARTWORK_LIMIT){controller.abort();return json({state:'artwork-too-large'},413,headers);}
+   chunks.push(value);
+  }
+  if(!size)return json({state:'artwork-unavailable'},502,headers);
+  bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength;}
+ }catch{return json({state:controller.signal.aborted?'artwork-timeout':'artwork-unavailable'},controller.signal.aborted?504:502,headers);}
+ finally{clearTimeout(timeout);}
+ const response=new Response(bytes,{headers:{'Content-Type':type,'Content-Length':String(bytes.byteLength),'Cache-Control':'public, max-age=86400','X-Content-Type-Options':'nosniff'}});
+ try{await cache.put(key,response.clone());}catch{}
+ return respond(response);
+}
 
 export default {
  async fetch(request,env){
@@ -22,6 +64,7 @@ export default {
    }catch{return json({state:'sharing-unavailable'},503,headers);}
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
+  if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);

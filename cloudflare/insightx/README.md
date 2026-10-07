@@ -29,3 +29,11 @@ Identical scores reuse the same ID. The independent SQLite TakeStore namespace
 keeps existing links; it limits new entries to 500/day and 10,000 in total,
 returning a capacity error instead of increasing storage indefinitely. It does
 not consume InsightX calls, store audio files, or change paid-plan settings.
+
+## Readable token artwork
+
+`GET /artwork?url=...` relays raster images from the fixed Dexscreener and
+CoinGecko CDN allowlist so both the coin avatar and visual field can read
+image pixels. Successful responses are cached for one day. Requests reject
+redirects, credentials, explicit ports and non-image content, and are bounded
+to 2 MiB and 12 seconds. No InsightX requests or secrets are involved.

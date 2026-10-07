@@ -2,7 +2,7 @@ import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visua
 import {createLabConnections} from './lab-connections.js?v=198';
 import {audioLab} from './audio-lab.js?v=214';
 import {knob} from './lab-knob.js?v=1';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=214';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=216';
 import {advancePixelSurvival} from './pixel-blast-parameters.js?v=214';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),KEY='upic-av-lab-v1';
 const specs=[['dotSize','Mark size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['speed','Flow speed',0,2.7,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Wallet size variation',0,1,.01],['pixelPresence','Audio presence',0,1,.01],['survivalRelease','Pixel survival · sec',.25,12,.01]];

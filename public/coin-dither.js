@@ -26,6 +26,18 @@ export function ditherPixels(source,width,height){
  }
  return out;
 }
+// Keep field artwork independent of the avatar's display size. Contain the
+// original aspect ratio and composite transparency onto the same white ground.
+export function coinImagePixels(image,size=256){
+ const width=Number(image.naturalWidth||image.width),height=Number(image.naturalHeight||image.height);
+ if(!(width>0&&height>0))throw Error('Coin artwork has no decoded dimensions');
+ const scratch=document.createElement('canvas');scratch.width=scratch.height=size;
+ const context=scratch.getContext('2d',{willReadFrequently:true});
+ context.fillStyle='#fff';context.fillRect(0,0,size,size);
+ const scale=Math.min(size/width,size/height),w=width*scale,h=height*scale;
+ context.drawImage(image,(size-w)/2,(size-h)/2,w,h);
+ return {pixels:context.getImageData(0,0,size,size).data,width:size,height:size};
+}
 let filterSerial=0;
 export function createCoinDither(img,fallback,{onPixels=()=>{}}={}){
  const filterId=`coin-bayer-filter-${++filterSerial}`;
@@ -49,12 +61,19 @@ export function createCoinDither(img,fallback,{onPixels=()=>{}}={}){
    if(token!==serial)return;
    try{
     size=Math.max(64,Math.min(256,Math.round(host.clientWidth||96)));canvas.width=canvas.height=size;
-    const scratch=document.createElement('canvas');scratch.width=scratch.height=size;const c=scratch.getContext('2d',{willReadFrequently:true});
-    c.fillStyle='#fff';c.fillRect(0,0,size,size);const scale=Math.min(size/decoded.width,size/decoded.height),w=decoded.width*scale,h=decoded.height*scale;c.drawImage(decoded,(size-w)/2,(size-h)/2,w,h);
-    pixels=c.getImageData(0,0,size,size).data;canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';paint();notify({pixels,width:size,height:size});
+    const fieldImage=coinImagePixels(decoded);
+    pixels=(size===fieldImage.width?fieldImage:coinImagePixels(decoded,size)).pixels;
+    canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';paint();notify(fieldImage);
    }catch{original(url,token);}
   };
-  decoded.onerror=()=>{if(token===serial)original(url,token);};decoded.src=url;
+  decoded.onerror=()=>{
+   if(token!==serial)return;
+   // These CDN hosts display <img> tags but deny canvas pixel access. A
+   // bounded, cached UPIC route makes the same artwork readable by the field.
+   let relay='';try{const source=new URL(url);if(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com'].includes(source.hostname))relay='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(source.href);}catch{}
+   if(relay&&decoded.src!==relay){decoded.src=relay;return;}
+   original(url,token);
+  };decoded.src=url;
  }
  // Retain the original SVG dithering for restricted hosts, without its fade mask.
  function original(url,token){

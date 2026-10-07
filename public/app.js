@@ -7,15 +7,15 @@ import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMa
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,loadSharedScore} from './take-share.js?v=214';
+import {createTakeShare,loadSharedScore} from './take-share.js?v=216';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=209';
 import {createEngineView} from './engine-view.js?v=209';
-import {createCoinDither} from './coin-dither.js?v=119';
+import {createCoinDither} from './coin-dither.js?v=216';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createAudioDots} from './audio-dots.js?v=214';
+import {createAudioDots} from './audio-dots.js?v=216';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -91,17 +91,30 @@ $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
 const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
+function safeCoinImage(value){
+ try{const url=new URL(value);return url.protocol==='https:'&&url.href.length<=2048&&!url.username&&!url.password?url.href:'';}catch{return '';}
+}
 async function loadCoinImage(pair){
  if(isExchangeMarket(pair))return;
  const key=imageKey(pair);if(imageToken===key)return;imageToken=key;imageController?.abort();
- if(tokenImages.has(key)||pair.historyTokenSide!=='quote'&&pair.info?.imageUrl)return;
+ if(safeCoinImage(pair.baseToken?.imageUrl)||safeCoinImage(tokenImages.get(key))||pair.historyTokenSide!=='quote'&&safeCoinImage(pair.info?.imageUrl))return;
  const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
  const controller=new AbortController();imageController=controller;const timeout=setTimeout(()=>controller.abort(),45000);
+ const accept=value=>{
+  const url=safeCoinImage(value);if(!url||controller.signal.aborted)return false;
+  tokenImages.set(key,url);if(market&&imageKey(market)===key)displayCoinImage();return true;
+ };
  try{
+  // Old shared scores contain no image. Fetch artwork metadata only: their
+  // saved prices, market cap and candles must remain exactly as shared.
+  try{
+   const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(pair.chainId)+'/'+encodeURIComponent(pair.pairAddress),{signal:controller.signal});
+   const match=data.pairs?.find(item=>item.chainId===pair.chainId&&sameToken(item.baseToken?.address,pair.baseToken.address));
+   if(accept(match?.info?.imageUrl))return;
+  }catch{if(controller.signal.aborted)return;}
   const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(aliases[pair.chainId]||pair.chainId)+'/tokens/'+encodeURIComponent(pair.baseToken.address)+'/info',{signal:controller.signal,priority:0});
-  if(!r.ok)throw Error('Token image unavailable');const data=await r.json();if(controller.signal.aborted)return;
-  tokenImages.set(key,data.data?.attributes?.image_url||'');if(market&&imageKey(market)===key)displayCoinImage();
- }catch{if(!controller.signal.aborted)tokenImages.set(key,'');}finally{clearTimeout(timeout);}
+  if(!r.ok)throw Error('Token image unavailable');const data=await r.json();accept(data.data?.attributes?.image_url);
+ }catch{if(!controller.signal.aborted)imageToken='';}finally{clearTimeout(timeout);}
 }
 function displayCoinImage(){
  const token=market?.baseToken;
@@ -109,7 +122,7 @@ function displayCoinImage(){
  else if(!$('coin-image-fallback').querySelector('img'))$('coin-image-fallback').innerHTML='<img src="upic-logo-transparent.svg?v=115" alt="UPIC" class="coin-placeholder-logo" draggable="false">';
  const candidates=market?[market,...discovered.filter(p=>p.chainId===market.chainId&&sameToken(p.baseToken?.address,token.address))]:[];
  const image=candidates.find(p=>p.historyTokenSide!=='quote'&&p.info?.imageUrl)?.info?.imageUrl;
- let url='';try{const parsed=new URL(token?.imageUrl||image||(market&&tokenImages.get(imageKey(market))));if(parsed.protocol==='https:')url=parsed.href;}catch{}
+ const url=safeCoinImage(token?.imageUrl)||safeCoinImage(image)||safeCoinImage(market&&tokenImages.get(imageKey(market)));
  if(url===coinImageURL)return;coinImageURL=url;
  coinDither.set(url);
 }
@@ -583,7 +596,7 @@ function chooseMarket(pair,{shared=false}={}){
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;void milestoneSounds.setMarket(imageKey(pair),Number(pair.marketCap)||0,false);seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();loadCoinImage(pair);}if(playing)takeShare.start(ctx,outputTap);
+ resetEnsemble();mode='live';market=pair;void milestoneSounds.setMarket(imageKey(pair),Number(pair.marketCap)||0,false);seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  sharedMarket=shared;
@@ -711,7 +724,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol,imageUrl:safeCoinImage(coinImageURL)||undefined},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));
