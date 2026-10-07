@@ -1,4 +1,4 @@
-import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=210';
+import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=211';
 // Seeded GeneralUser melodic voices and a dedicated EarthBound Kraken bass.
 import {createPianoPolicy} from './piano-policy.js?v=208';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=209';
@@ -189,13 +189,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const context=replaying?timeline.contextAtBeat(bar*4):{...pendingContext,active:pendingContext.active&&now<liveUntil};
     if(!context)continue;
     if(!replaying&&bar===currentBar){liveTempo=scoreTempo(context.music);}
-    plan=composeMarketBar(seed,bar,{...context,active:true,arpeggios:lab.arpeggios,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
-    // Order actual sounding pitches after instrument register folding, so a
-    // high note cannot wrap down and reverse the requested market direction.
-    const arp=plan.events.filter(e=>e.kind==='arp').sort((a,b)=>a.beat-b.beat);
-    const direction=context.music?.group==='down'?-1:1;
-    const pitches=arp.map(e=>instrumentPitch(e.midi,profile)).sort((a,b)=>direction*(a-b));
-    arp.forEach((event,index)=>{event.midi=pitches[index];});
+    plan=composeMarketBar(seed,bar,{...context,active:true,pitchLow:Math.max(profile.low,60),pitchHigh:profile.high,arpeggios:lab.arpeggios,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
     if(context.music?.movement?.event)lastMarketCue=context.music.movement.event.id;
     barCache.set(bar,plan);
    }

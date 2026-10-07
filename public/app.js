@@ -6,7 +6,7 @@ import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMa
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,loadSharedScore} from './take-share.js?v=210';
+import {createTakeShare,loadSharedScore} from './take-share.js?v=211';
 import {harmonyPlan,pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=209';
 import {createEngineView} from './engine-view.js?v=209';
@@ -18,7 +18,7 @@ import {createAudioDots} from './audio-dots.js?v=209';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=209';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=210';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=211';
 import {createMilestoneSounds} from './milestone-sounds.js?v=8';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=208';
@@ -696,7 +696,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:210,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:211,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));

@@ -1,3 +1,4 @@
+import {arpRhythm,arpPosition} from './arp-rhythm.js?v=211';
 import {MOTIF_MODEL} from './motif-model.js?v=209';
 import {pianoHarmony} from './music-context.js?v=208';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -18,27 +19,21 @@ export function composeMarketBar(seed,bar,context,motif=[]){
  const chordBeats=rave?[.5,2.5]:[0];
  for(const beat of chordBeats)for(const pitch of notes.slice(0,4))push(beat,pitch,rave?.45:1.5+1.8*wet,.038*(.65+.35*energy),'chord');
  const shape=learnedContour(seed,Math.floor(bar/8));
- const section=Math.floor((bar%8)/2),answer=bar%2===1;
- let rhythm=rave?[0,.5,.75,1.5,2,2.5,2.75,3.5]:energy>.45?[0,.75,1.5,2.5,3.25]:[0,1.5,3];
- // Optional neural output supplies a motif; it never chooses out-of-key pitches.
- if(motif.length>=3&&!rave)rhythm=motif.filter((_,i)=>energy>.45||i%2===0).map(([step])=>step/4);
- if(context.arpeggios!==false)rhythm.forEach((beat,i)=>{
-  if(answer&&i===0)return; // breathing space between call and answer
-  let degree=motif.length?Math.round((motif[i%motif.length][1]-60)/4):shape[(i+(seed%4))%shape.length];
-  if(section===1&&i===rhythm.length-1)degree=0;
-  if(section===2)degree=3-degree;
-  if(section===3&&answer&&i===rhythm.length-1)degree=0;
-  const index=((degree%notes.length)+notes.length)%notes.length;
-  let pitch=notes[index]+12+(rave&&i%4===3?12:0);
-  // Weak beats may connect chord tones by diatonic motion; strong beats and
-  // phrase endings resolve to the held chord. No unrelated chromatic melody.
-  if(!rave&&beat%1!==0&&i<rhythm.length-1){
-   const scale=music.group==='down'?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
-   const target=notes[0]+12+shape[i%shape.length]*2;
-   const choices=scale.flatMap(n=>[harmony.root+n,harmony.root+n+12,harmony.root+n+24]);
-   pitch=choices.reduce((a,b)=>Math.abs(a-target)<=Math.abs(b-target)?a:b);
-  }
-  push(beat,pitch,rave?.22:.45+.25*wet,.06*(.65+.35*energy)*(i%3===0?1:.8),'arp');
+ const groove=arpRhythm(seed,bar,music,cap);
+ // Build a palette inside the actual instrument register before choosing
+ // contour positions. Later octave folding cannot undo the market direction.
+ const low=context.pitchLow??60,high=context.pitchHigh??88;
+ const classes=new Set(notes.map(n=>((n%12)+12)%12));
+ const palette=Array.from({length:Math.max(1,high-low+1)},(_,i)=>low+i).filter(n=>classes.has(n%12));
+ const width=Math.min(palette.length,groove.span);
+ const offset=hash(seed,Math.floor(bar/4)+97)%Math.max(1,palette.length-width+1);
+ const pitches=palette.slice(offset,offset+width);
+ const down=music.group==='down';
+ if(context.arpeggios!==false&&pitches.length)groove.events.forEach((event,i)=>{
+  const learned=motif.length?Math.round((motif[i%motif.length][1]-60)/4):shape[i%shape.length];
+  const position=arpPosition(groove.gesture,i,groove.events.length,learned);
+  const index=Math.round((down?1-position:position)*(pitches.length-1));
+  push(event.beat,pitches[index],event.duration,.06*(.65+.35*energy)*event.accent,'arp');
  });
  // Kraken is always the bass voice, never a coin's lead. Root/fifth/octave
 // movement follows this bar's chord, with a cadence every fourth bar.
@@ -55,7 +50,7 @@ export function composeMarketBar(seed,bar,context,motif=[]){
   if(landmark.direction<0)tones.reverse();
   for(let i=0;i<4;i++)push(i*.5,tones[i],.35,.08,'arp');
  }
- return {events:events.sort((a,b)=>a.beat-b.beat),harmony};
+ return {events:events.sort((a,b)=>a.beat-b.beat),harmony,groove:groove.name};
 }
 import {chartHarmony} from './harmonic-characters.js?v=208';
 function chordFifth(music,index){const chord=chartHarmony(music.character||'serene',music).chords[index];return ((chord[2]??chord[0]+7)-chord[0]+12)%12;}
