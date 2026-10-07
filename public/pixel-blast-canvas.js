@@ -1,3 +1,4 @@
+import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {battleMotion,battleWarp} from './earthbound-motion.js?v=167';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -91,6 +92,7 @@ export function createPixelBlastCanvas(host){
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
      feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
      feed=capitalFeed(params.capitalStage??-1,u,v,.5+.5*noise(u*4+offset,v*4+offset,time*.055),.5+.5*noise(u*3-offset,v*3-offset,time*.04),offset,feed);
+     feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
      sample={feed,warpX,warpY};cache.set(key,sample);
     }
     return sample;

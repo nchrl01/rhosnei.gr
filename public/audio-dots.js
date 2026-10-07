@@ -1,5 +1,6 @@
+import {createHolderClusterField} from './holder-cluster-field.js?v=169';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=167';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=169';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -21,7 +22,7 @@ export function fieldState(m={}){
  const depth=liquidity===null?.5:liquidity>0?unit((Math.log10(liquidity)-3)/4):0;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
- return {marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Quiet activity leaves smaller, weaker dots;
@@ -34,6 +35,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const blast=host?createPixelBlastField(host):null;
  const fullscreen=host?createVisualFullscreen(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
+ const holderField=createHolderClusterField();
  const buffers=new WeakMap();let notationBands=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0,liquidClock=0,audioEvent=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
@@ -204,6 +206,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
   const visualInputs={...smoothed,marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
+  visualParams.holderGroups=holderField.update(latest.relationships,seed,dt,{replay:replaying,reduced:reduced.matches});
   appearance??={dotSize:visualParams.dotSize,density:visualParams.density,capitalStage:visualParams.capitalStage};
   if(visualParams.capitalStage<0||appearance.capitalStage<0)appearance.capitalStage=visualParams.capitalStage;
   else appearance.capitalStage+=(visualParams.capitalStage-appearance.capitalStage)*(1-Math.exp(-dt/2.5));

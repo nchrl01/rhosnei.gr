@@ -1,7 +1,8 @@
+import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=167';
 import {battleMotion,battleGLSL} from './earthbound-motion.js?v=167';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=167';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=169';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=167';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
@@ -114,6 +115,7 @@ float fbm2(vec2 uv, float t){
 }
 
 ${capitalGLSL}
+${holderClusterGLSL}
 ${battleGLSL}
 
 // Upstream liquid displacement, driven by finite market/audio touches. Warp
@@ -195,6 +197,7 @@ void main(){
   feed+=uEcosystem*vnoise(vec3(uv*6.0+vec2(uSeed*.19,uSeed*.41),uTime*.04));
   feed=max(feed,.07+.045*vnoise(vec3(uv*14.0+uSeed,uTime*.03)));
   feed=capitalFeed(uv,feed);
+  feed+=holderClusterFeed(squarePoint/viewSize,aspectRatio);
   float speed     = uRippleSpeed;
   float thickness = uRippleThickness;
   const float dampT     = 1.0;
@@ -250,7 +253,7 @@ function hash(key,seed){
 export function createPixelBlastField(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer';canvas.setAttribute('aria-hidden','true');host.append(canvas);
  let gl,software=null,identityMask=null,identityTexture=null,probeFramebuffer=null,probeTexture=null;
- const probePixels=new Uint8Array(32*32*4);
+ const probePixels=new Uint8Array(32*32*4),emptyHolderGroups=new Float32Array(32);
  const useSoftware=matchMedia('(max-width:760px), (pointer:coarse)').matches;
  function fallback(){if(!software){software=createPixelBlastCanvas(host);software.setImage(identityMask);}canvas.hidden=true;host.dataset.pixelBlast='canvas';}
  try{gl=useSoftware?null:canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
@@ -278,6 +281,7 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.holderGroups=gl.getUniformLocation(program,'uHolderGroups[0]');
    locations.uGridStart=gl.getUniformLocation(program,'uGridStart');
    locations.uGridColumns=gl.getUniformLocation(program,'uGridColumns');
    locations.uPixelPresence=gl.getUniformLocation(program,'uPixelPresence');
@@ -334,6 +338,7 @@ export function createPixelBlastField(host){
    gl.viewport(0,0,w,h);gl.useProgram(program);
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
+   gl.uniform4fv(locations.holderGroups,params.holderGroups||emptyHolderGroups);
    f('uCapitalStage',params.capitalStage??-1);f('uPixelPresence',params.pixelPresence??1);
    const battle=battleMotion(seed,time||0,params.capitalStage);
    gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
