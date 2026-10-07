@@ -1,5 +1,5 @@
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=2';
+import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=3';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {createTradePiano} from './trade-piano.js?v=174';
 import {instrumentProfile} from './earthbound-instruments.js?v=147';
@@ -11,6 +11,7 @@ import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=175';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=53';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs,drums:drumSpecs};
 const pdSpecs=[...envionSpecs,...dataSpecs,...phraseSpecs.flat()];
 const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},drums:Object.fromEntries(drumSpecs.map(s=>[s[0],s[5]])),pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
@@ -36,7 +37,7 @@ function readPreset(data){
  return next;
 }
 try{const saved=localStorage.getItem(KEY);if(saved)state=readPreset(JSON.parse(saved));}catch{}
-function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{report('Browser storage unavailable. Export your preset to keep it.');}},200);}
+function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(unpatchedState()));}catch{report('Browser storage unavailable. Export your preset to keep it.');}},200);}
 const level=key=>state.enabled[key]&&(!solo||solo===key)?state.mix[key]:0;
 function send(name,value){
  pdValues[name]=value;let v=Object.hasOwn(state.pd,name)?state.pd[name]:value;
@@ -139,7 +140,10 @@ function tick(){
  if(now-lastUI>.15||!running){lastUI=now;paint();}
 }
 function section(title,description,open=false){const d=document.createElement('details');d.open=open;const s=document.createElement('summary');s.textContent=title;const p=document.createElement('p');p.className='group-note';p.textContent=description;const grid=document.createElement('div');grid.className='grid';d.append(s,p,grid);$('controls').append(d);return grid;}
-function changed(){applyAudio();save();paint();}
+function changed(){
+ for(const [id,held] of connectionBaselines){const [group,key]=id.split('.');if(state[group][key]!==held.last)held.base=state[group][key];}
+ applyAudio();save();paint();
+}
 function addKnob(parent,spec,get,set,auto,manual){knob(parent,spec,get,set,{auto,manual,onChange:changed,paints});}
 function direct(parent,group,spec){addKnob(parent,spec,()=>state[group][spec[0]],v=>{state[group][spec[0]]=v;if(spec[0]==='seed'){state.arp=seededArp(v);arpAI.setSeed(v,state.arp);clearTimeout(seedTimer);seedTimer=setTimeout(resetScore,180);}});}
 function select(parent,label,options,value,onChange,id){const row=document.createElement('label');row.className='select-row';row.append(document.createTextNode(label));const el=document.createElement('select');if(id)el.id=id;for(const [v,name] of options){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}el.value=String(value);el.onchange=()=>{onChange(el.value);changed();};row.append(el);parent.append(row);return el;}
@@ -158,7 +162,7 @@ function build(){
  for(const spec of mixSpecs)direct(mixer,'mix',spec);
  const switches=document.createElement('div');switches.className='switches';mixer.append(switches);
  for(const [key,label] of mixSpecs){switchButton(switches,label,()=>state.enabled[key],v=>state.enabled[key]=v);const b=document.createElement('button');b.onclick=()=>{solo=solo===key?null:key;changed();};switches.append(b);paints.push(()=>{b.textContent='Solo '+label;b.setAttribute('aria-pressed',solo===key);});}
- const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades use the live ≥5% movement policy; Play chord bypasses that policy for audition. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it.',true);
+ const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades use the live ≥5% movement policy; Play chord bypasses that policy for audition. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
  for(const spec of marketSpecs)direct(input,'market',spec);
  select(input,'Harmonic character',[['auto','AUTO · price direction + intensity'],...Object.entries(HARMONIES).map(([k,v])=>[k,v.name])],state.character,v=>state.character=v);
  const tradeSwitch=document.createElement('div');tradeSwitch.className='switches';input.append(tradeSwitch);switchButton(tradeSwitch,'Automatic trades',()=>state.autoTrades,v=>{state.autoTrades=v;nextTrade=elapsed;});
@@ -204,7 +208,7 @@ $('note').onclick=()=>{
  download('upic-audio-change-note.md',lines.join('\n'),'text/markdown');report('Change note exported. Attach it in our chat.');
 };
 $('load').onchange=async event=>{const file=event.target.files?.[0];if(!file)return;try{if(file.size>100000)throw Error('Preset is too large');const next=readPreset(JSON.parse(await file.text()));stop();arpAI.suspend();state=next;solo=null;resetScore();build();save();report('Preset loaded. Press Start audio to hear it.');}catch(error){report(error.message);}finally{event.target.value='';}};
-$('reset').onclick=()=>{stop();arpAI.suspend();state=defaults();solo=null;resetScore();build();save();report('Default settings restored. Press Start audio.');};
+$('reset').onclick=()=>{connectionBaselines.clear();stop();arpAI.suspend();state=defaults();solo=null;resetScore();build();save();report('Default settings restored. Press Start audio.');};
 // Hidden pages stop expensive DSP and sequencing; return requires a deliberate tap.
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();void ctx?.suspend().catch(()=>{});}});
 window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);piano?.close();drums?.close();arpAI.close();envion.detach();void pd?.close();void ctx?.close();});
@@ -212,12 +216,29 @@ math.setSeed(state.market.seed);data.reset(state.market.seed);build();
 
 window.addEventListener('pageshow',event=>{if(event.persisted&&closed)location.reload();});
 
+function unpatchedState(){
+ const result=JSON.parse(JSON.stringify(state));
+ for(const [id,held] of connectionBaselines){const [group,key]=id.split('.');if(held.base===undefined)delete result[group][key];else result[group][key]=held.base;}
+ return result;
+}
+const connectionSpecs={...Object.fromEntries(Object.entries(groups).flatMap(([group,specs])=>specs.filter(s=>s[0]!=='seed').map(spec=>[group+'.'+spec[0],spec]))),...Object.fromEntries(pdSpecs.map(spec=>['pd.'+spec[0],spec]))};
+function readControl(id){const [group,key]=id.split('.');return state[group]?.[key]??(group==='piano'?pianoAuto(key):group==='pd'?pdValues[key]:undefined)??connectionSpecs[id]?.[5]??0;}
+function connectionValue(id,value){const spec=connectionSpecs[id];if(!spec||!Number.isFinite(value))return null;return clamp(Math.round(value/spec[4])*spec[4],spec[2],spec[3]);}
 // Shared-engine interface for the combined audiovisual workspace.
 export const audioLab={
+ descriptors(){return Object.entries(connectionSpecs).map(([id,s])=>({id,label:s[1],min:s[2],max:s[3],step:s[4],category:id.startsWith('market.')?'Market':'Audio'}));},
+ controls(){return Object.fromEntries(Object.keys(connectionSpecs).map(id=>[id,readControl(id)]));},
+ setControl(id,value){const v=connectionValue(id,value);if(v===null)return;const [group,key]=id.split('.');if(connectionBaselines.has(id))connectionBaselines.get(id).base=v;else state[group][key]=v;changed();},
+ connect(patch={}){
+  let dirty=false;
+  for(const [id,held] of connectionBaselines)if(!Object.hasOwn(patch,id)){const [group,key]=id.split('.');if(held.base===undefined)delete state[group][key];else state[group][key]=held.base;if(group==='pd'&&Number.isFinite(pdValues[key]))send(key,pdValues[key]);connectionBaselines.delete(id);dirty=true;}
+  for(const [id,value] of Object.entries(patch)){const v=connectionValue(id,value);if(v===null)continue;const [group,key]=id.split('.');if(!connectionBaselines.has(id))connectionBaselines.set(id,{base:state[group][key],last:state[group][key]});if(state[group][key]!==v){state[group][key]=v;dirty=true;}connectionBaselines.get(id).last=v;}
+  if(dirty){applyAudio();paint();}
+ },
  snapshot(){
   let rms=0;if(running&&musicMeter){musicMeter.getFloatTimeDomainData(musicData);for(const v of musicData)rms+=v*v;rms=Math.sqrt(rms/musicData.length);}
   return {running,elapsed:elapsed+(running&&ctx?Math.max(0,ctx.currentTime-(lastTime??ctx.currentTime)):0),market:{...state.market},music:market().music,audioLevel:clamp(rms*8,0,1),rms,seed:state.market.seed};
  },
- preset(){return JSON.parse(JSON.stringify(state));},
- load(value){const next=readPreset(value);stop();arpAI.suspend();state=next;solo=null;resetScore();build();save();},
+ preset(){return unpatchedState();},
+ load(value){const next=readPreset(value);connectionBaselines.clear();stop();arpAI.suspend();state=next;solo=null;resetScore();build();save();},
 };
