@@ -1,7 +1,7 @@
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=3';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=174';
+import {createTradePiano} from './trade-piano.js?v=177';
 import {instrumentProfile} from './earthbound-instruments.js?v=147';
 import {createCyberneticDrums} from './cybernetic-drums.js?v=174';
 import {createEnvion} from './envion.js?v=152';
@@ -9,7 +9,7 @@ import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {createDataSonification} from './data-sonification.js?v=146';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=175';
-import {HARMONIES,pianoHarmony} from './music-context.js?v=53';
+import {HARMONIES,pianoHarmony} from './music-context.js?v=177';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs,drums:drumSpecs};
@@ -164,7 +164,7 @@ function build(){
  for(const [key,label] of mixSpecs){switchButton(switches,label,()=>state.enabled[key],v=>state.enabled[key]=v);const b=document.createElement('button');b.onclick=()=>{solo=solo===key?null:key;changed();};switches.append(b);paints.push(()=>{b.textContent='Solo '+label;b.setAttribute('aria-pressed',solo===key);});}
  const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades use the live ≥5% movement policy; Play chord bypasses that policy for audition. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
  for(const spec of marketSpecs)direct(input,'market',spec);
- select(input,'Harmonic character',[['auto','AUTO · price direction + intensity'],...Object.entries(HARMONIES).map(([k,v])=>[k,v.name])],state.character,v=>state.character=v);
+ select(input,'Harmonic character',[['auto','AUTO · price direction + intensity'],...Object.entries(HARMONIES).filter(([,v])=>v.exact).map(([k,v])=>[k,`${v.mode} · ${v.name} — ${v.progression}`]),...Object.entries(HARMONIES).filter(([,v])=>!v.exact).map(([k,v])=>[k,`UPIC · ${v.name}`])],state.character,v=>state.character=v);
  const tradeSwitch=document.createElement('div');tradeSwitch.className='switches';input.append(tradeSwitch);switchButton(tradeSwitch,'Automatic trades',()=>state.autoTrades,v=>{state.autoTrades=v;nextTrade=elapsed;});
  const melodic=section('03 / EarthBound · chords + arpeggios','Choose the actual sampled instrument. AUTO follows its envelope and market-cap articulation. Chords and arpeggios always share the selected instrument.',true);
  select(melodic,'Instrument',[[-1,'Load audio to see instrument library']],state.instrument,v=>state.instrument=Number(v),'instrument-select');refreshInstruments();

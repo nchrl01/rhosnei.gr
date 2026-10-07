@@ -1,3 +1,4 @@
+import {REFERENCE_HARMONIES} from './harmony-catalog.js?v=1';
 // Musical interpretation of percentage movement, not a trading recommendation.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const median=values=>{const s=values.filter(Number.isFinite).sort((a,b)=>a-b);return s.length?s[Math.floor(s.length/2)]:0;};
@@ -25,6 +26,7 @@ export function musicContext({price,rows=[],interval=300000,changes={},cap,fresh
 const chord=(root,intervals)=>intervals.map(n=>root+n);
 const major=root=>chord(root,[0,4,7]),minor=root=>chord(root,[0,3,7]);
 export const HARMONIES={
+ ...REFERENCE_HARMONIES,
  serene:{name:'Serene',progression:'I · IVsus2 · I · V',chords:[chord(0,[0,4,7,14]),chord(5,[0,2,7]),major(0),major(7)]},
  hopeful:{name:'Hopeful',progression:'I · V · vi · IV',chords:[major(0),major(7),minor(9),major(5)]},
  confident:{name:'Confident',progression:'I · vi · IV · V',chords:[major(0),minor(9),major(5),major(7)]},
@@ -56,7 +58,7 @@ const HARMONY_VARIANTS={
  restless:[{progression:'i · iiø7 · V7 · iadd9',chords:[minor(0),chord(2,[0,3,6,10]),seventh(7,'dominant'),chord(0,[0,3,7,14])]}],
 };
 export function harmonyPlan(seed,character='serene'){
- const name=HARMONIES[character]?character:'serene',variants=[HARMONIES[name],...HARMONY_VARIANTS[name]];
+ const name=HARMONIES[character]?character:'serene',variants=[HARMONIES[name],...(HARMONY_VARIANTS[name]||[])];
  const choice=((seed>>>0)^(seed>>>8))>>>0;
  return {...variants[choice%variants.length],name:HARMONIES[name].name};
 }

@@ -1,5 +1,5 @@
 // Seeded EarthBound instruments following the existing piano composition engine.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=152';
+import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=177';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=146';
 import {createPianoPolicy} from './piano-policy.js?v=61';
 import {earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=147';
