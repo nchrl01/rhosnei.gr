@@ -4,6 +4,40 @@ const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom
 const money=value=>value!=null&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(Number(value)):null;
 function node(tag,text,className){const el=document.createElement(tag);if(text!=null)el.textContent=text;if(className)el.className=className;return el;}
 function safeImage(url){try{const parsed=new URL(url);return parsed.protocol==='https:'?parsed.href:null;}catch{return null;}}
+const windows=['m5','m15','m30','h1','h6','h24'];
+function number(value){return ['number','string'].includes(typeof value)&&String(value).trim()!==''&&Number.isFinite(Number(value))?Number(value):null;}
+function nonnegative(value){const parsed=number(value);return parsed!==null&&parsed>=0?parsed:null;}
+function tokenIdentity(attributes){
+ if(!attributes||!['address','symbol','name'].every(key=>typeof attributes[key]==='string'&&attributes[key].trim()&&attributes[key].length<256))return null;
+ const token={address:attributes.address,symbol:attributes.symbol,name:attributes.name},image=safeImage(attributes.image_url);
+ if(image)token.imageUrl=image;
+ return token;
+}
+// Trending pools already include their market snapshot. Retain that provider's
+// identifiers and base/quote orientation instead of rediscovering another pool.
+export function geckoPoolMarket(pool,included,networkID=pool?.relationships?.network?.data?.id){
+ const resources=included instanceof Map?included:new Map((included||[]).map(item=>[item.id,item]));
+ const attributes=pool?.attributes,relationships=pool?.relationships;
+ const baseToken=tokenIdentity(resources.get(relationships?.base_token?.data?.id)?.attributes),quoteToken=tokenIdentity(resources.get(relationships?.quote_token?.data?.id)?.attributes);
+ const dexId=relationships?.dex?.data?.id,priceUsd=number(attributes?.base_token_price_usd),priceNative=number(attributes?.base_token_price_quote_token);
+ if(!attributes||![networkID,dexId,attributes.address].every(value=>typeof value==='string'&&value.trim()&&value.length<256)||!baseToken||!quoteToken||!(priceUsd>0)||!(priceNative>0))return null;
+ const txns={},priceChange={},volume={};
+ for(const window of windows){
+  const transaction=attributes.transactions?.[window],buys=nonnegative(transaction?.buys),sells=nonnegative(transaction?.sells);
+  if(Number.isSafeInteger(buys)&&Number.isSafeInteger(sells)){
+   txns[window]={buys,sells};
+   for(const key of ['buyers','sellers']){const count=nonnegative(transaction[key]);if(Number.isSafeInteger(count))txns[window][key]=count;}
+  }
+  const change=number(attributes.price_change_percentage?.[window]),amount=nonnegative(attributes.volume_usd?.[window]);
+  if(change!==null)priceChange[window]=change;
+  if(amount!==null)volume[window]=amount;
+ }
+ const created=Date.parse(attributes.pool_created_at),reserve=nonnegative(attributes.reserve_in_usd);
+ const market={snapshotProvider:'gecko',geckoNetwork:networkID,chainId:aliases[networkID]||networkID,dexId,pairAddress:attributes.address,baseToken,quoteToken,priceUsd,priceNative,historyTokenSide:'base',marketCap:nonnegative(attributes.market_cap_usd),fdv:nonnegative(attributes.fdv_usd),txns,priceChange,volume,liquidity:reserve===null?{}:{usd:reserve}};
+ if(Number.isFinite(created)&&created>0)market.pairCreatedAt=market.poolCreatedAt=created;
+ if(baseToken.imageUrl)market.info={imageUrl:baseToken.imageUrl};
+ return market;
+}
 export function startTrending(onPick,onLoading=()=>{}){
  const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),cycleButton=document.getElementById('trending-cycle'),periodLabel=document.getElementById('trending-period');
  const periods=['24h','1h','5m'],periodNames={'24h':'24 hours','1h':'1 hour','5m':'5 minutes'};
@@ -112,7 +146,7 @@ export function startTrending(onPick,onLoading=()=>{}){
   try{
    // Refresh the leading page as one ranking snapshot. Deep pagination used
    // to occupy the shared free-provider budget and delay the next ranking.
-   const response=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,network&duration='+encodeURIComponent(duration)+'&page=1',{signal,priority:30});
+   const response=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,quote_token,dex,network&duration='+encodeURIComponent(duration)+'&page=1',{signal,priority:30});
    if(!response.ok)throw Error('Trending provider HTTP '+response.status);
    const data=await response.json();if(gen!==generation||signal.aborted)return;
    if(!Array.isArray(data.data))throw Error('Unexpected trending response');
@@ -121,6 +155,7 @@ export function startTrending(onPick,onLoading=()=>{}){
     rank++;const networkID=pool.relationships?.network?.data?.id,token=included.get(pool.relationships?.base_token?.data?.id)?.attributes,network=included.get(networkID)?.attributes;
     if(!networkID||!token?.address)continue;
     const item={rank,chain:aliases[networkID]||networkID,network:network?.name||networkID,address:token.address,symbol:token.symbol||token.name||'TOKEN',name:token.name||token.symbol||'Token',image:token.image_url,marketCap:pool.attributes?.market_cap_usd,fdv:pool.attributes?.fdv_usd};
+    const market=geckoPoolMarket(pool,included,networkID);if(market)item.market=market;
     if(!next.has(key(item)))next.set(key(item),item);
    }
    updated=Date.now();failures=0;applyRanking(next);loading(next.size?'done':'error','Loading trending');

@@ -31,7 +31,7 @@ import {subscribeEvm} from './evm.js?v=39';
 import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=206';
-import {startTrending} from './trending.js?v=206';
+import {startTrending,geckoPoolMarket} from './trending.js?v=218';
 import {MarketChart} from './chart.js?v=208';
 import {loadHistory} from './history.js?v=207';
 import {pollPoolTrades} from './trades.js?v=206';
@@ -62,7 +62,7 @@ async function prepareReplayAudio(){
 let seed=1917,state=1917,step=0,timer,next=0,bpm=120,session=null;
 const controls=['master'];
 const engineMaster=()=>1;
-let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='',sharedMarket=false;
+let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='',sharedMarket=false,liveConnection=null;
 let streamKind='snapshot',tradePollingAt=0,tradeEvents=[],lastTrade=null,lastChainPrice=null,discovered=[],lastExcitation=0;
 let piano=null,pianoEnabled=true,pianoHistory=[],pianoReplayCursor=null,pianoChordCount=0;
 let vinyl=null,vinylStopping=false;
@@ -207,11 +207,11 @@ function updateReplayUI(m){
  $('replay-speed').inert=!active;
  $('replay-speed').setAttribute('aria-hidden',String(!active));
  transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
- $('replay-live').disabled=!active;
+ $('replay-live').disabled=!active||!!liveConnection;
  $('replay-play').disabled=!market||pendingHistoryReplay;
  $('replay-play').textContent=active?'Restart':'Replay';
  $('replay-play').setAttribute('aria-label',active?'Restart loaded history':'Play loaded history');
- $('replay-live').textContent=active?'Back to live':'Live';
+ $('replay-live').textContent=liveConnection?'Connecting…':active?'Back to live':'Live';
  $('replay-live').setAttribute('aria-pressed',String(!active));
  $('replay-play').setAttribute('aria-pressed',String(active));
  const hint=$('replay-hint');
@@ -581,15 +581,35 @@ async function fetchJSON(url,{signal}={}){
   if(!r.ok)throw Error('Market provider returned '+r.status);return await r.json();
  }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
+async function freshMarketSnapshot(pair,{signal}={}){
+ if(isExchangeMarket(pair))return prepareExchangeMarket(pair);
+ const chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
+ if(pair.snapshotProvider!=='gecko'){
+  try{
+   const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address),{signal});
+   const raw=(data.pairs||[]).find(p=>p.chainId===chain&&(/^0x/i.test(address)?p.pairAddress?.toLowerCase()===address.toLowerCase():p.pairAddress===address));
+   const updated=raw&&orientPair(raw,token);if(updated&&Number(updated.priceUsd)>0&&Number.isFinite(Number(updated.priceUsd)))return updated;
+  }catch(error){if(signal?.aborted)throw error;}
+ }
+ // A pool can be indexed by GeckoTerminal even when DEX search has no result.
+ const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
+ const network=pair.geckoNetwork||aliases[chain]||chain;
+ const response=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/pools/'+encodeURIComponent(address)+'?include=base_token,quote_token,dex',{signal,priority:95});
+ if(!response.ok)throw Error('Live market provider returned '+response.status);
+ const data=await response.json(),included=new Map((data.included||[]).map(item=>[item.id,item]));
+ const raw=geckoPoolMarket(data.data,included,network),updated=raw&&orientPair(raw,token);
+ if(!updated||!(Number(updated.priceUsd)>0))throw Error('Selected live pool is unavailable');
+ return updated;
+}
 function applySnapshot(pair){
  const previous=currentPrice();
  market=isExchangeMarket(pair)?{...pair,exchangeBook:market?.pairAddress===pair.pairAddress?market.exchangeBook:null}:pair;lastSnapshot=Date.now();
- if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){observePianoPrice(Number(pair.priceUsd),previous,lastSnapshot);chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':'Observed market snapshots · 5-second polling; provider data may be cached';}
+ if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){observePianoPrice(Number(pair.priceUsd),previous,lastSnapshot);chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':pair.snapshotProvider==='gecko'?'GeckoTerminal market snapshots · 30-second refresh; provider data may be cached':'Observed market snapshots · 5-second polling; provider data may be cached';}
  display();
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
- pendingHistoryReplay=false;
+ liveConnection?.abort();liveConnection=null;pendingHistoryReplay=false;
  void takeShare.finish();takeShare.reset();
  pendingPianoTrade=null;tradePollingAt=0;preloadPianoSamples(hash(pair.chainId+':'+pair.baseToken.address)).catch(error=>engineView.log('Piano preload: '+error.message));
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
@@ -601,19 +621,18 @@ function chooseMarket(pair,{shared=false}={}){
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  sharedMarket=shared;
  if(shared)return;
- const gen=generation,chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
+ const gen=generation;
  if(isExchangeMarket(pair)){
   const refresh=async()=>{if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,30000);return;}try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('chart-source').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
   poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Listen');return;
  }
  const refresh=async()=>{
   if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,10000);return;}
-  snapshotController=new AbortController();
-  try{const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address),{signal:snapshotController.signal});if(gen!==generation)return;
-   const raw=(data.pairs||[]).find(p=>p.chainId===chain&&p.pairAddress===address);const updated=raw&&orientPair(raw,token);if(!updated)throw Error('Selected pool snapshot unavailable');applySnapshot(updated);
-  }catch(e){if(gen===generation)$('chart-source').textContent='Snapshot delayed: '+e.message;}
-  if(gen===generation)poll=setTimeout(refresh,streamConnected&&['swap','rpc-poll'].includes(streamKind)?15000:5000);
- };poll=setTimeout(refresh,5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Listen');
+  const request=snapshotController=new AbortController(),timeout=setTimeout(()=>request.abort(),45000);
+  try{const updated=await freshMarketSnapshot(market,{signal:request.signal});if(gen!==generation)return;applySnapshot(updated);
+  }catch(e){if(gen===generation)$('chart-source').textContent='Snapshot delayed: '+e.message;}finally{clearTimeout(timeout);}
+  if(gen===generation)poll=setTimeout(refresh,market.snapshotProvider==='gecko'?30000:streamConnected&&['swap','rpc-poll'].includes(streamKind)?15000:5000);
+ };poll=setTimeout(refresh,pair.snapshotProvider==='gecko'?30000:5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Listen');
 }
 const addressField=$('address').closest('.address-field');
 const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
@@ -652,7 +671,7 @@ function searchBusy(value){
  $('load').setAttribute('aria-busy',String(value));$('coin-form').setAttribute('aria-busy',String(value));
 }
 $('address').addEventListener('input',()=>{
- searchController?.abort();
+ liveConnection?.abort();liveConnection=null;searchController?.abort();
  searchRevision++;searchBusy(false);searchFeedback('');
  $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
 });
@@ -724,7 +743,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol,imageUrl:safeCoinImage(coinImageURL)||undefined},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,snapshotProvider:basis.snapshotProvider,geckoNetwork:basis.geckoNetwork,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol,imageUrl:safeCoinImage(coinImageURL)||undefined},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));
@@ -757,7 +776,8 @@ async function restoreSharedScore(){
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
 display();
-if(!await restoreSharedScore())startTrending((item,options={})=>{
+await restoreSharedScore();
+startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchRevision++;searchBusy(false);searchFeedback('');
  // Resume in the coin click itself: market discovery completes asynchronously.
@@ -765,7 +785,11 @@ if(!await restoreSharedScore())startTrending((item,options={})=>{
  if(!playing)primeAudio();
  requestedNetwork=item.chain;requestedAutoplay=options.autoplay??true;
  if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);
- $('address').value=item.address;syncAddressLabel();$('coin-form').requestSubmit();
+ $('address').value=item.address;syncAddressLabel();
+ if(item.market){
+  requestedNetwork=null;requestedAutoplay=false;
+  void selectSearchMarket(item.market,{autoPlay:options.autoplay??!options.initial,revision:searchRevision});
+ }else $('coin-form').requestSubmit();
 },state=>ui.loading('trending',state.status,state.label,{host:state.host,operation:state.operation}));
 function reconcileIdleFeed(){
  if(document.hidden&&!playing){stopStream?.();stopStream=null;streamPool='';streamConnected=false;return;}
@@ -813,13 +837,31 @@ $('replay-play').onclick=()=>{
  }
  chart.draw();seekHistory((replay.state.frozen?.bars||chart.history)[0]);
 };
-$('replay-live').onclick=()=>{
+$('replay-live').onclick=async()=>{
+ if(liveConnection)return false;
  pendingHistoryReplay=false;
- replay.live();arpeggioAI.setSeed(seed);resetEnsemble();chart.tickView?.live();chart.goLive();$('chart-range').value='live';display();
+ if(sharedMarket&&market){
+  // Keep the saved replay intact until its real market is connected.
+  const controller=new AbortController(),gen=generation,revision=searchRevision,pair=market;liveConnection=controller;
+  const timeout=setTimeout(()=>controller.abort(),45000);updateReplayUI(replay.state.controls||{});status('Connecting to live market…');
+  try{
+   const updated=await freshMarketSnapshot(pair,{signal:controller.signal});
+   if(controller.signal.aborted||gen!==generation||revision!==searchRevision||liveConnection!==controller)return false;
+   liveConnection=null;chooseMarket(updated);
+   history.replaceState(null,'',location.pathname+location.search);
+  }catch(error){
+   if(gen===generation&&revision===searchRevision)status('Live connection delayed · saved replay is still available. Try Back to live again.');
+   return false;
+  }finally{
+   clearTimeout(timeout);if(liveConnection===controller)liveConnection=null;updateReplayUI(replay.state.controls||{});
+  }
+ }else{
+  replay.live();arpeggioAI.setSeed(seed);resetEnsemble();chart.tickView?.live();chart.goLive();$('chart-range').value='live';display();
+ }
+ chart.tickView?.live();chart.goLive();$('chart-range').value='live';
  session?.controls.push({at:Date.now(),name:'history-live'});
- if(playing)tick();else{const m=metrics();
- syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
- status(playing?'Piano ready · waiting for trades':'Live market · press Listen');
+ if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
+ status(playing?'Listening live · waiting for trades':'Live market · press Listen');return true;
 };
 function updateSpeedButtons(){
  for(const button of $('replay-speed').querySelectorAll('[data-rate]'))button.setAttribute('aria-pressed',String(button.dataset.rate===replay.state.speed));
@@ -832,7 +874,7 @@ $('replay-speed').onclick=event=>{
 };
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
-$('chart-timeframe').onchange=()=>{if(replay.state.active)$('replay-live').onclick();loadChartTimeframe();};
+$('chart-timeframe').onchange=async()=>{if(replay.state.active&&!await $('replay-live').onclick())return;loadChartTimeframe();};
 $('chart-scale').onchange=()=>chart.setScale($('chart-scale').value);
 $('chart-fit').onclick=()=>{$('chart-range').value='history';chart.fit();};
 $('chart-live').onclick=()=>{$('chart-range').value='live';chart.goLive();};
