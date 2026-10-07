@@ -215,21 +215,6 @@
       "loopEnd": 0.005876846265862284
     },
     {
-      "file": "preset-171.wav",
-      "midi": 58,
-      "trim": 0.448375,
-      "preset": 171,
-      "bank": 1,
-      "program": 43,
-      "peak": 0.678589,
-      "bodyRms": 0.282729,
-      "name": "Summers Trumpet",
-      "correction": -40,
-      "loop": true,
-      "loopStart": 0.08637316561844864,
-      "loopEnd": 0.09056603773584905
-    },
-    {
       "file": "preset-169.wav",
       "midi": 66,
       "trim": 0.392802,
