@@ -1,15 +1,16 @@
+import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=188';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=206';
+import {createTradePiano} from './trade-piano.js?v=208';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
 import {createEnvion} from './envion.js?v=206';
 import {createPd} from './vendor/libpd-wasm.js?v=206';
-import {createDataSonification} from './data-sonification.js?v=206';
-import {createMathPatterns,mathIdentity} from './math-patterns.js?v=206';
+import {createDataSonification} from './data-sonification.js?v=208';
+import {createMathPatterns,mathIdentity} from './math-patterns.js?v=208';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=190';
-import {HARMONIES,pianoHarmony,chartCharacter,resolveHarmonicCharacter} from './music-context.js?v=206';
+import {HARMONIES,CHARACTER_GROUPS,pianoHarmony,chartCharacter,resolveHarmonicCharacter} from './music-context.js?v=208';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),combinedLab=Boolean(document.getElementById('patch-workspace'));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs};
@@ -54,14 +55,16 @@ const envion=createEnvion($('envion-host'));
 const arpAI=createArpeggioAI({onStatus:text=>setStatus('Arpeggio',text),onPattern:pattern=>{state.arp=pattern;piano?.setArpeggioPattern(pattern);save();}});
 function setStatus(name,text){engineStatus[name]=text;if(statuses[name])statuses[name].textContent=text;}
 for(const [name,text] of Object.entries(engineStatus)){const row=document.createElement('div');row.className='engine-line';const a=document.createElement('span'),b=document.createElement('span');a.textContent=name;b.textContent=text;statuses[name]=b;row.append(a,b);$('engines').append(row);}
+const labLandmarks=createMarketLandmarks();
 function currentTonic(){return state.seedKey&&!connectionBaselines.has('market.tonic')?seedTonic(state.market.seed):state.market.tonic;}
 function market(){
  const s=state.market;
- const features={changePct:s.change,intensity:s.intensity,volatility:s.motion,trendConsistency:1-s.motion,volumeRatio:1+s.volume*8};
+ const movement=labLandmarks.observe(s.cap*price,elapsed*1000,'lab:'+s.seed);
+ const features={movement,group:movement.group,capChangePct:movement.changePct,changePct:s.change,intensity:s.intensity,volatility:s.motion,trendConsistency:1-s.motion,volumeRatio:1+s.volume*8};
  const character=state.character==='auto'?chartCharacter(features):state.character;
  const music={...features,tempo:s.tempo,activity:s.activity,tonic:currentTonic(),character};
  music.harmony=pianoHarmony(s.seed,{chordStep:tradeIndex},music);
- return {activity:s.activity,volume:s.volume,motion:s.motion,texture:s.liquidity,balance:s.balance,fresh:s.fresh,tradeRate:s.activity*20,music,raw:{activity:s.activity,volume:s.volume,motion:s.motion},availability:{liquidity:true,balance:true,volume:true},context:{latestCap:s.cap,direction:Math.sign(s.change),pressure:s.pressure,shock:s.shock},replay:{sceneSeed:s.seed,at:0,volume:s.volume}};
+ return {activity:s.activity,volume:s.volume,motion:s.motion,texture:s.liquidity,balance:s.balance,fresh:s.fresh,tradeRate:s.activity*20,music,raw:{activity:s.activity,volume:s.volume,motion:s.motion},availability:{liquidity:true,balance:true,volume:true},context:{latestCap:s.cap*price,direction:Math.sign(s.change),pressure:s.pressure,shock:s.shock},replay:{sceneSeed:s.seed,at:0,volume:s.volume}};
 }
 function applyAudio(){
  if(!ctx)return;master.gain.setTargetAtTime(state.master,ctx.currentTime,.025);
@@ -126,10 +129,10 @@ function stop(){
 }
 function trigger(force=false){
  if(!running||!ctx||ctx.state!=='running')return;
- const m=market(),at=elapsed*1000;price=clamp(price*(1+state.market.change/100),1e-12,1e12);
+ const at=elapsed*1000;price=clamp(price*(1+state.market.change/100),1e-12,1e12);const m=market();
  const event={kind:'swap',id:'lab-'+tradeIndex,at,receivedAt:at,occurredAt:at,price,priceUsd:price,referencePrice:price/(1+state.market.change/100),chordStep:tradeIndex,music:m.music};
- if(force)piano?.replay(event,{reason:'movement',at,changePct:state.market.change},state.market.cap,m.music);
- else piano?.trade(event,state.market.cap,m.music);
+ if(force)piano?.replay(event,{reason:'movement',at,changePct:state.market.change},m.context.latestCap,m.music);
+ else piano?.trade(event,m.context.latestCap,m.music);
  data.event(event,{playing:true,clock:ctx.currentTime});tradeIndex++;
 }
 function tick(){
@@ -151,7 +154,7 @@ function changed(){
 }
 function addKnob(parent,spec,get,set,auto,manual){knob(parent,spec,get,set,{auto,manual,onChange:changed,paints});}
 function direct(parent,group,spec){addKnob(parent,spec,()=>group==='market'&&spec[0]==='tonic'?currentTonic():state[group][spec[0]],v=>{state[group][spec[0]]=v;if(spec[0]==='tonic')state.seedKey=false;if(spec[0]==='seed'){state.arp=seededArp(v);arpAI.setSeed(v,state.arp);clearTimeout(seedTimer);seedTimer=setTimeout(resetScore,180);}});}
-function select(parent,label,options,value,onChange,id){const row=document.createElement('label');row.className='select-row';row.append(document.createTextNode(label));const el=document.createElement('select');if(id)el.id=id;for(const [v,name] of options){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}el.value=String(value);el.onchange=()=>{onChange(el.value);changed();};row.append(el);parent.append(row);return el;}
+function select(parent,label,options,value,onChange,id){const row=document.createElement('label');row.className='select-row';row.append(document.createTextNode(label));const el=document.createElement('select');if(id)el.id=id;const groups=new Map();for(const [v,name,group] of options){const option=document.createElement('option');option.value=v;option.textContent=name;if(group){if(!groups.has(group)){const section=document.createElement('optgroup');section.label=group;el.append(section);groups.set(group,section);}groups.get(group).append(option);}else el.append(option);}el.value=String(value);el.onchange=()=>{onChange(el.value);changed();};row.append(el);parent.append(row);return el;}
 function action(parent,label,run){const b=document.createElement('button');b.textContent=label;b.className='action';b.onclick=run;parent.append(b);return b;}
 function switchButton(parent,label,get,set){const b=document.createElement('button');b.onclick=()=>{set(!get());changed();};paints.push(()=>{b.textContent=label+' · '+(get()?'on':'off');b.setAttribute('aria-pressed',get());});parent.append(b);return b;}
 function pianoAuto(key){
@@ -167,11 +170,11 @@ function build(){
  for(const spec of mixSpecs)direct(mixer,'mix',spec);
  const switches=document.createElement('div');switches.className='switches';mixer.append(switches);
  for(const [key,label] of mixSpecs){switchButton(switches,label,()=>state.enabled[key],v=>state.enabled[key]=v);const b=document.createElement('button');b.onclick=()=>{solo=solo===key?null:key;changed();};switches.append(b);paints.push(()=>{b.textContent='Solo '+label;b.setAttribute('aria-pressed',solo===key);});}
- const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades sound the held harmony every four beats; ≥5% movement advances it. Play chord auditions the next harmony immediately. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
+ const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades sound a phrase every four beats; ≥5% movement advances the chord. UP/DOWN follows the simulated market cap, with a directional phrase at each ±20% step. Price change compounds the simulated cap with each trade. Play chord auditions the next harmony immediately. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
  for(const spec of marketSpecs)direct(input,'market',spec);
  switchButton(input,'Key from seed',()=>state.seedKey,v=>state.seedKey=v);
- const keyInfo=document.createElement('p');keyInfo.className='lab-hint';input.append(keyInfo);paints.push(()=>keyInfo.textContent='KEY · '+keyName(currentTonic())+' · '+(state.seedKey&&!connectionBaselines.has('market.tonic')?'fixed by coin seed':'manual / cable')+' · mood keeps this tonic');
- select(input,'Harmonic character',[['auto','AUTO · chart direction, activity + volatility'],...Object.entries(HARMONIES).sort(([,a],[,b])=>a.name.localeCompare(b.name)).map(([k,v])=>[k,v.name])],state.character,v=>state.character=v);
+ const keyInfo=document.createElement('p');keyInfo.className='lab-hint';input.append(keyInfo);const directionInfo=document.createElement('p');directionInfo.className='lab-hint';input.append(directionInfo);paints.push(()=>{const m=market().music;directionInfo.textContent=m.group.toUpperCase()+' · '+HARMONIES[m.character].name+' · '+Math.abs(m.capChangePct).toFixed(1)+'% toward the 20% landmark';});paints.push(()=>keyInfo.textContent='KEY · '+keyName(currentTonic())+' · '+(state.seedKey&&!connectionBaselines.has('market.tonic')?'fixed by coin seed':'manual / cable')+' · mood keeps this tonic');
+ select(input,'Harmonic character',[['auto','AUTO · UP / DOWN from market cap'],...Object.entries(CHARACTER_GROUPS).flatMap(([group,keys])=>keys.map(k=>[k,HARMONIES[k].name,group.toUpperCase()]))],state.character,v=>state.character=v);
  const tradeSwitch=document.createElement('div');tradeSwitch.className='switches';input.append(tradeSwitch);switchButton(tradeSwitch,'Automatic trades',()=>state.autoTrades,v=>{state.autoTrades=v;nextTrade=elapsed;});
  const melodic=section('03 / EarthBound · chords + arpeggios','Choose the actual sampled instrument. AUTO follows its envelope and market-cap articulation. Chords and arpeggios always share the selected instrument.',true);
  select(melodic,'Instrument',[[-1,'Load audio to see instrument library']],state.instrument,v=>state.instrument=Number(v),'instrument-select');refreshInstruments();

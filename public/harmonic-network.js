@@ -1,4 +1,4 @@
-import {HARMONIES,resolveHarmonicCharacter} from './harmonic-characters.js?v=206';
+import {HARMONIES,resolveHarmonicCharacter} from './harmonic-characters.js?v=208';
 // Authored probability network inspired by GrundTon's knot/event architecture.
 // No upstream patch code is embedded. One step is consumed per audible note.
 export function createHarmonicNetwork(initialSeed=0){

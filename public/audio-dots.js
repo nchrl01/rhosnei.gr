@@ -23,7 +23,7 @@ export function fieldState(m={}){
  const depth=liquidity===null?.5:liquidity>0?unit((Math.log10(liquidity)-3)/4):0;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
- return {referenceCap:finite(context.impliedBaselineCap),relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {marketMovement:m.music?.movement,referenceCap:finite(context.impliedBaselineCap),relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Quiet activity leaves smaller, weaker dots;
@@ -45,6 +45,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
  let pixelPresence=0,referenceCap=null;
+ let landmarkCue=null,landmarkSeen=null;
  let appearance=null,formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
@@ -58,7 +59,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   Object.assign(canvas.dataset,{active:'false',visible:'false',overlay:'false',moving:'false',level:'0',density:'0'});
  }
  function clear(newCoin=false){
-  previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;pianoPulses=[];pianoEnergy=0;seen.clear();sourceClock=null;sourceAt=0;
+  landmarkCue=null;landmarkSeen=null;previous=null;smoothed=null;visualCursor=null;marketPulse=-Infinity;pianoPulses=[];pianoEnergy=0;seen.clear();sourceClock=null;sourceAt=0;
   displayClock=0;displayCursor=null;displayAt=0;displayRunning=false;
   audioEvent=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;lastEnvelope=-Infinity;hasMarket=false;lastPaint=0;dirty=true;
@@ -209,6 +210,15 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const visualParams=pixelBlastParameters(visualInputs);
   // Match the title’s green/red price-update signal exactly, then return to circles.
   visualParams.markDirection=Number(getState().markDirection)||0;
+  const cueAge=landmarkCue?audioTime-landmarkCue.at:Infinity;
+  const cueEnvelope=active&&cueAge>=0&&cueAge<3.2?Math.sin(Math.PI*cueAge/3.2):0;
+  const travel=(latest.marketMovement?.group==='down'?-1:1)*(latest.marketMovement?.progress||0);
+  const accent=cueEnvelope*(landmarkCue?.direction||0);
+  // Shape the existing field continuously; no flash or extra drawing layer.
+  visualParams.dotSize=Math.max(.5,Math.min(12,visualParams.dotSize*(1+.12*travel+.5*accent)));
+  visualParams.density=Math.max(.1,Math.min(3.5,visualParams.density*(1+.12*travel+.3*accent)));
+  visualParams.speed*=Math.max(.35,1+.12*travel+.4*accent);
+  if(cueEnvelope>.15)visualParams.markDirection=landmarkCue.direction;
   appearance??={dotSize:visualParams.dotSize,density:visualParams.density,capitalStage:visualParams.capitalStage};
   if(visualParams.capitalStage<0||appearance.capitalStage<0)appearance.capitalStage=visualParams.capitalStage;
   else appearance.capitalStage+=(visualParams.capitalStage-appearance.capitalStage)*(1-Math.exp(-dt/2.5));
@@ -258,6 +268,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
     blast?.reset(seed);
    }
    options=settings;latest=fieldState(next);dirty=true;
+   const landmark=next.music?.movement?.event,at=next.replay?.at??Date.now();
+   if(landmark&&landmark.id!==landmarkSeen){
+    landmarkSeen=landmark.id;
+    if(running()&&!seeking&&!backwards&&at-landmark.at>=-1000&&at-landmark.at<=8000)landmarkCue={direction:landmark.direction,at:getAudio()?.context?.currentTime??0};
+   }
    if(incoming!==null&&incoming!==sourceClock){sourceClock=incoming;sourceAt=performance.now();}
    const current={at:finite(next.replay?.at),price:finite(next.replay?.price??next.context?.latestPrice??next.context?.path?.at(-1)?.close),cap:finite(next.context?.latestCap),volume:finite(next.replay?.volume??next.observation?.volume),trades:next.observation?.trades?Number(next.observation.trades.buys||0)+Number(next.observation.trades.sells||0):null};
    const old=previous;previous=current;hasMarket=current.price>0;

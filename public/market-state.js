@@ -1,9 +1,9 @@
 // Musical context uses fixed historical data and the latest observation.
-import {musicContext} from './music-context.js?v=206';
+import {musicContext} from './music-context.js?v=208';
 // Chart viewport, drawing geometry and zoom never enter this calculation.
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 const median=values=>{const s=values.filter(Number.isFinite).sort((a,b)=>a-b);return s.length?s[Math.floor(s.length/2)]:null;};
-export function contextualizeMarket(raw,{price,marketCap,snapshotPrice,history=[],interval=300000,changes={},liquidity=0,volumeRate=0,observedAt,now=Date.now()}={}){
+export function contextualizeMarket(raw,{price,marketCap,snapshotPrice,history=[],interval=300000,changes={},liquidity=0,volumeRate=0,observedAt,moodMovement=null,now=Date.now()}={}){
  const rows=history.filter(b=>b.close>0&&b.open>0&&b.time<=now).sort((a,b)=>a.time-b.time);
  const points=rows.map(b=>({...b,through:Math.min(now,b.observedThrough??b.time+interval)}));
  const baselineRows=points.filter(b=>b.through<=now-1800000&&b.through>=now-86400000);
@@ -36,7 +36,7 @@ export function contextualizeMarket(raw,{price,marketCap,snapshotPrice,history=[
  const path=points.filter(b=>b.through>=now-21600000).slice(-180).map(b=>({time:b.through,close:b.close,volume:b.volume}));
  if(price>0){const time=Math.min(now,Math.max(observedAt||now,(path.at(-1)?.time||0)+1));path.push({time,close:price,volume:0});}
  const context={pressure,pace,shock,direction,winningWindow,ratio,baseline,latestCap,impliedBaselineCap,capEstimated:latestCap!==marketCap,volumeRatio,turnover,path,historyAvailable:!!points.length,historyInterval:interval};
- const music=musicContext({price,rows,interval,changes,cap:latestCap,fresh:raw.fresh,now});
+ const music=musicContext({price,rows,interval,changes,cap:latestCap,moodMovement,fresh:raw.fresh,now});
  return {...raw,music,raw:{motion:raw.motion,activity:raw.activity,volume:raw.volume},pressure,context,
   motion:Math.max(raw.motion,pressure),activity:Math.max(raw.activity,.85*pressure),volume:Math.max(raw.volume,.8*pressure)};
 }

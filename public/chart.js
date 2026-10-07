@@ -1,5 +1,5 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
-import {candleEnd} from './market-replay.js?v=206';
+import {candleEnd} from './market-replay.js?v=208';
 import {createChartTicks} from './chart-ticks.js?v=206';
 
 // One series per view, with provider candles and explicitly partial live observations.

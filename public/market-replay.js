@@ -1,4 +1,4 @@
-import {contextualizeMarket} from './market-state.js?v=206';
+import {contextualizeMarket} from './market-state.js?v=208';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,bar.observedThrough??bar.lastAt??bar.time+interval);
 

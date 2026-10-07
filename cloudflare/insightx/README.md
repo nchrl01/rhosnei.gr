@@ -20,3 +20,12 @@ or automatic billing changes are configured.
 
 Clusters are inferred wallet relationships, not people or verified ownership.
 These are current snapshots, not historical replay data or watcher counts.
+
+## Short take links
+
+`POST /takes` stores one public frozen candle score (up to 64 KiB and 256
+rows) and returns a 16-character content ID. `GET /takes/:id` restores it.
+Identical scores reuse the same ID. The independent SQLite TakeStore namespace
+keeps existing links; it limits new entries to 500/day and 10,000 in total,
+returning a capacity error instead of increasing storage indefinitely. It does
+not consume InsightX calls, store audio files, or change paid-plan settings.

@@ -9,11 +9,20 @@ export default {
  async fetch(request,env){
   const origin=request.headers.get('Origin'),allowed=env.ALLOWED_ORIGIN;
   if(origin&&origin!==allowed&&!/^http:\/\/(localhost|127\.0\.0\.1):4173$/.test(origin))return json({state:'forbidden'},403);
-  const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, OPTIONS'};
+  const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
-  if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
   const url=new URL(request.url);
-  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
+  if(url.pathname==='/takes'||/^\/takes\/[A-Za-z0-9_-]{16}$/.test(url.pathname)){
+   if(!['GET','POST'].includes(request.method))return json({state:'method-not-allowed'},405,headers);
+   try{
+    const store=env.TAKE_STORE.get(env.TAKE_STORE.idFromName('public-takes-v1'));
+    const result=await store.fetch(request),response=new Response(result.body,result);
+    for(const [key,value] of Object.entries(headers))response.headers.set(key,value);
+    return response;
+   }catch{return json({state:'sharing-unavailable'},503,headers);}
+  }
+  if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
+  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
   if(!['sol','eth','base'].includes(network))return json({state:'unsupported-network'},422,headers);
@@ -81,5 +90,45 @@ export class HolderCache extends DurableObject {
    this.sql.exec('INSERT OR REPLACE INTO snapshots VALUES (?,?,?,?)',key,cached?.payload||null,cached?.fetched||now,now+HOUR);
    return fallback('unavailable',now+HOUR);
   }
+ }
+}
+
+// Separate storage from the InsightX budget. Scores are public by link and
+// immutable; no audio files, API credentials or account data are stored here.
+export class TakeStore extends DurableObject {
+ constructor(ctx,env){
+  super(ctx,env);this.sql=ctx.storage.sql;
+  this.sql.exec('CREATE TABLE IF NOT EXISTS takes (id TEXT PRIMARY KEY, payload TEXT NOT NULL, created INTEGER NOT NULL)');
+  this.sql.exec('CREATE TABLE IF NOT EXISTS share_budget (day INTEGER PRIMARY KEY, used INTEGER NOT NULL)');
+ }
+ async fetch(request){
+  const url=new URL(request.url),id=url.pathname.split('/')[2];
+  if(request.method==='GET'&&/^[A-Za-z0-9_-]{16}$/.test(id||'')){
+   const row=this.sql.exec('SELECT payload FROM takes WHERE id=?',id).toArray()[0];
+   return row?new Response(row.payload,{headers:{'Content-Type':'application/json','Cache-Control':'public, max-age=300'}}):json({state:'take-not-found'},404);
+  }
+  if(request.method!=='POST'||url.pathname!=='/takes')return json({state:'not-found'},404);
+  if(!request.headers.get('Content-Type')?.startsWith('application/json'))return json({state:'invalid-format'},415);
+  if(Number(request.headers.get('Content-Length'))>65536)return json({state:'score-too-large'},413);
+  const reader=request.body?.getReader();if(!reader)return json({state:'empty-score'},400);
+  const chunks=[];let size=0;
+  while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>65536){await reader.cancel();return json({state:'score-too-large'},413);}chunks.push(value);}
+  const bytes=new Uint8Array(size);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+  let score;try{score=JSON.parse(new TextDecoder().decode(bytes));}catch{return json({state:'invalid-score'},400);}
+  if(score?.version!==1||!Array.isArray(score.rows)||!score.rows.length||score.rows.length>256||!score.market?.baseToken||!Number.isFinite(score.interval))return json({state:'invalid-score'},400);
+  const payload=JSON.stringify(score),digest=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload)));
+  const key=btoa(String.fromCharCode(...digest.slice(0,12))).replace(/\+/g,'-').replace(/\//g,'_');
+  const existing=this.sql.exec('SELECT id FROM takes WHERE id=?',key).toArray()[0];
+  if(existing)return json({id:key},200);
+  const day=Math.floor(Date.now()/DAY);
+  const result=this.ctx.storage.transactionSync(()=>{
+   const used=this.sql.exec('SELECT used FROM share_budget WHERE day=?',day).toArray()[0]?.used||0;
+   const total=this.sql.exec('SELECT COUNT(*) AS count FROM takes').toArray()[0].count;
+   if(used>=500||total>=10000)return false;
+   this.sql.exec('INSERT INTO takes VALUES (?,?,?)',key,payload,Date.now());
+   this.sql.exec('INSERT INTO share_budget VALUES (?,1) ON CONFLICT(day) DO UPDATE SET used=used+1',day);
+   this.sql.exec('DELETE FROM share_budget WHERE day<?',day-2);return true;
+  });
+  return result?json({id:key},201):json({state:'share-capacity-reached'},429,{'Retry-After':'3600'});
  }
 }

@@ -1,26 +1,27 @@
+import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
-import {buildReplayScore} from './replay-score.js?v=206';
+import {buildReplayScore} from './replay-score.js?v=208';
 import {createUIControls} from './ui-controls.js?v=133';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=206';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,decodeScore} from './take-share.js?v=76';
-import {harmonyPlan,pianoHarmony} from './music-context.js?v=206';
+import {createTakeShare,loadSharedScore} from './take-share.js?v=208';
+import {harmonyPlan,pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=206';
-import {createEngineView} from './engine-view.js?v=196';
+import {createEngineView} from './engine-view.js?v=208';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
-import {PIANO_MOVE_PCT} from './piano-policy.js?v=196';
-import {createAudioDots} from './audio-dots.js?v=192';
+import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
+import {createAudioDots} from './audio-dots.js?v=208';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
-import {createDataSonification} from './data-sonification.js?v=206';
+import {createDataSonification} from './data-sonification.js?v=208';
 import {createArpeggioAI} from './ai-instruments.js?v=190';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=206';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=208';
 import {createMilestoneSounds} from './milestone-sounds.js?v=8';
-import {contextualizeMarket} from './market-state.js?v=206';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=206';
+import {contextualizeMarket} from './market-state.js?v=208';
+import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=208';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=54';
 import {createPd} from './vendor/libpd-wasm.js?v=206';
@@ -30,7 +31,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=206';
 import {startTrending} from './trending.js?v=206';
-import {MarketChart} from './chart.js?v=206';
+import {MarketChart} from './chart.js?v=208';
 import {loadHistory} from './history.js?v=207';
 import {pollPoolTrades} from './trades.js?v=206';
 const $=id=>document.getElementById(id);
@@ -154,8 +155,11 @@ function pianoMusic(m,music=m.music){return {...music,activity:m.activity,tonic:
 
 function send(name,value){if(pd){pd.sendFloat(name,value);engineView.sent(name,value);}}
 function event(name){pd?.sendBang(name);}
+const liveLandmarks=createMarketLandmarks();
 function liveMetrics(){
  if(!market)return contextualizeMarket({motion:0,activity:0,balance:.5,texture:0,volume:0,fresh:0,snapshotFresh:0,snapshotAge:Infinity},{price:0,history:[],interval:1000});
+ const livePrice=currentPrice(),liveCap=Number(market.marketCap)>0&&Number(market.priceUsd)>0?Number(market.marketCap)*livePrice/Number(market.priceUsd):null;
+ const moodMovement=liveLandmarks.observe(liveCap,Date.now(),imageKey(market));
  const tx=market.txns?.m5||{};const total=(tx.buys||0)+(tx.sells||0);
  tradeEvents=tradeEvents.filter(e=>Date.now()-e.receivedAt<30000);
  poolEvents=poolEvents.filter(e=>Date.now()-e.receivedAt<10000);
@@ -168,13 +172,15 @@ function liveMetrics(){
  const rate=decoded?tradeEvents.length/30:streamConnected&&streamKind==='pool'?poolEvents.length/10:total/300;
  const volumeRate=decoded?observedVolume/30:(Number(market.volume?.m5)||0)/300;
  const raw={tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:book?.balance!=null?book.balance:decoded?(knownSides?buys/knownSides:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,liquidity||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
- return {...contextualizeMarket(raw,{price:currentPrice(),marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(liquidity),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:book?.balance!=null||(decoded?knownSides>0:total>0),liquidity:liquidity!=null&&Number.isFinite(Number(liquidity)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
+ return {...contextualizeMarket(raw,{price:livePrice,moodMovement,marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(liquidity),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:book?.balance!=null||(decoded?knownSides>0:total>0),liquidity:liquidity!=null&&Number.isFinite(Number(liquidity)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
 }
 function metrics(){
  const live=liveMetrics();live.observation={liquidity:isExchangeMarket(market)?(Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null):market?.liquidity?.usd,trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
  if(market)replay.record(live,currentPrice());
  const ended=replay.advance(chart.renderedBars||[],chart.interval,playing&&ctx?.state==='running');
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
+ const scored=historical&&replay.state.score?.frames.get(replay.state.bar?.time);
+ if(scored?.music)historical.music={...historical.music,...scored.music};
  if(ended&&playing){$('play').onclick();status('History replay finished');}
  return historical||live;
 }
@@ -198,7 +204,7 @@ function updateReplayUI(m){
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
  const phraseSeconds=(4*60/Math.max(40,Math.min(140,Number(m.music?.tempo)||40))).toFixed(1);
- $('replay-info').textContent=!active?'Live: the first trade starts an EarthBound phrase; later active trades can start one every 4 beats (about '+phraseSeconds+'s at this tempo). A ≥'+PIANO_MOVE_PCT+'% move can trigger sooner, with at least one beat between notes. The melodic passage starts with each active phrase; the seeded arpeggio can join every 4-beat window, at most once every 12 beats. Confirmed quiet can add a sparse single note after 30 seconds.':'Replay: positive-volume candles can trigger EarthBound phrases; ≥'+PIANO_MOVE_PCT+'% movement changes the harmony. Melodic passages follow selected phrases; the seeded arpeggio may join every 4-beat window, no more than once per 12 beats. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
+ $('replay-info').textContent=!active?'Live: the first trade starts an EarthBound phrase; later active trades can start one every 4 beats (about '+phraseSeconds+'s at this tempo). A ≥'+PIANO_MOVE_PCT+'% move can trigger sooner, with at least one beat between notes. UP/DOWN follows market cap; each ±20% step adds a directional phrase. The melodic passage starts with each active phrase; the seeded arpeggio can join every 4-beat window, at most once every 12 beats. Confirmed quiet can add a sparse single note after 30 seconds.':'Replay: positive-volume candles can trigger EarthBound phrases; ≥'+PIANO_MOVE_PCT+'% movement advances the chord. UP/DOWN follows market cap; each ±20% step adds a directional phrase. Melodic passages follow selected phrases; the seeded arpeggio may join every 4-beat window, no more than once per 12 beats. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Exchange history volume is estimated from base volume × close. Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
@@ -297,6 +303,7 @@ function replayPiano(m){
   // instruction to play. Large seeks reset without firing a note backlog.
   const frame=scoreCandle(bars,replay.state.frozen?.market||market,interval,bar);
   const score=replay.state.score?.frames.get(bar.time);
+  if(score?.music)frame.music={...frame.music,...score.music};
   const event={id:'candle:'+interval+':'+bar.time,at:candleEnd(bar,interval),priceUsd:bar.close,referencePrice:bar.open,historical:true,volume:bar.volume,chordStep:score?.index??Math.floor(bar.time/interval),music:frame.music};
   const sounded=piano.replay(event,score?.selection,frame.context?.latestCap,pianoMusic(frame));
   // Retry a selected phrase after an interrupted or unavailable instrument.
@@ -715,18 +722,18 @@ function updateCoinReadout(m){
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
  $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
  const harmony=harmonyPlan(seed,m.music?.character,m.music);
- $('coin-character').textContent=harmony.name.toUpperCase();$('coin-progression').textContent=harmony.progression;
+ $('coin-character').textContent=harmony.group.toUpperCase()+' · '+harmony.name.toUpperCase();$('coin-character').title=m.music?.movement?.available?'Market cap movement · '+Math.abs(m.music.capChangePct).toFixed(1)+'% toward a 20% landmark':'Price direction · market cap unavailable';$('coin-progression').textContent=harmony.progression;
 }
-function restoreSharedScore(){
+async function restoreSharedScore(){
  try{
-  const score=decodeScore(location.hash);if(!score)return false;
+  const score=await loadSharedScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
   chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval,score.market);replay.state.speed=['1','10','20','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
 display();
-if(!restoreSharedScore())startTrending((item,options={})=>{
+if(!await restoreSharedScore())startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchRevision++;searchBusy(false);searchFeedback('');
  // Resume in the coin click itself: market discovery completes asynchronously.

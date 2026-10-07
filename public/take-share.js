@@ -1,6 +1,16 @@
 import {validArp} from './ai-instruments.js?v=136';
 import {requestPlaybackMode} from './audio-unlock.js?v=55';
 const VERSION=1;
+const TAKE_API='https://upic-insightx.nchrl01.workers.dev/takes';
+export async function loadSharedScore(hash=location.hash){
+ const id=new URLSearchParams(hash.replace(/^#/,'' )).get('take');
+ if(!id)return decodeScore(hash);
+ if(!/^[A-Za-z0-9_-]{16}$/.test(id))throw Error('Invalid take link');
+ const response=await fetch(TAKE_API+'/'+id,{signal:AbortSignal.timeout(12000)});
+ if(!response.ok)throw Error(response.status===404?'This take was not found':'Shared take is temporarily unavailable');
+ return decodeScore('#score='+encodeScore(await response.json()));
+}
+
 export function encodeScore(score){
  const bytes=new TextEncoder().encode(JSON.stringify(score));let text='';for(const byte of bytes)text+=String.fromCharCode(byte);
  return btoa(text).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -46,15 +56,28 @@ export function createTakeShare({button,dialog,snapshot,onContinue=()=>{}}){
   button.disabled=true;
   try{
    const score=snapshot(),take=await finish();urls.forEach(URL.revokeObjectURL);urls=[];get('share-files').replaceChildren();
-   const base=location.href.split('#')[0],payload=score?encodeScore(score):null;
-   prepared={url:payload&&payload.length<18000?base+'#score='+payload:null,file:null};
+   const base=location.href.split('#')[0];
+   prepared={url:null,file:null};
    if(take?.blob?.size){const ext=take.blob.type.includes('mp4')?'m4a':'webm',name='UPIC-'+take.started+'.'+ext;prepared.file=new File([take.blob],name,{type:take.blob.type});link(take.blob,'Download exact audio take',name);}
    if(score)link(new Blob([JSON.stringify(score)],{type:'application/json'}),'Download frozen score','UPIC-score.json');
-   get('share-note').textContent='Audio preserves the exact take (up to five minutes). The replay link freezes the candle score and coin seed; arpeggio phrase is preserved; granular textures can vary. Video export and the sharing API are not connected yet.';
-   if(payload&&!prepared.url)get('share-note').textContent+=' This score is too long for a replay link; download the audio or score instead.';
+   get('share-note').textContent='Audio preserves the exact take (up to five minutes). The replay link freezes the candle score and coin seed; arpeggio phrase is preserved; granular textures can vary. Video export is not connected yet.';
+
    get('share-link').textContent='Copy replay link';get('share-link').disabled=!prepared.url;
    get('share-native').hidden=!prepared.file||!navigator.canShare?.({files:[prepared.file]});
    dialog.showModal();onContinue();
+   if(score){
+    const current=prepared;get('share-link').textContent='Preparing short link…';
+    try{
+     const response=await fetch(TAKE_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(score),signal:AbortSignal.timeout(12000)});
+     if(!response.ok)throw Error('Short link unavailable');
+     const result=await response.json();if(!/^[A-Za-z0-9_-]{16}$/.test(result.id))throw Error('Invalid short link');
+     if(prepared!==current)return;
+     const clean=new URL(base);clean.search='';clean.hash='take='+result.id;current.url=clean.href;
+     get('share-link').textContent='Copy replay link';get('share-link').disabled=false;
+    }catch{
+     if(prepared===current){get('share-link').textContent='Copy replay link';get('share-note').textContent+=' Short links are temporarily unavailable. Your audio and score downloads are still available.';}
+    }
+   }
   }catch(error){get('share-note').textContent=error.message;dialog.showModal();onContinue();}
   finally{button.disabled=false;}
  };

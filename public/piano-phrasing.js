@@ -1,4 +1,4 @@
-import {pianoHarmony,HARMONIES} from './music-context.js?v=206';
+import {pianoHarmony,HARMONIES} from './music-context.js?v=208';
 // Small timing/velocity differences are stable for a coin and phrase, so replay
 // has a human contour without drawing fresh random notes on each listen.
 export function pianoNuance(seed,step){
@@ -18,15 +18,15 @@ export function createPianoPhrasing(seed=0){
    const selectedStep=Number.isFinite(event.harmonyStep)?Math.max(0,Math.floor(event.harmonyStep)):
     harmonyStep===null?0:harmonyStep+(advanceHarmony&&!quiet?1:0);
    const root=Number.isFinite(music.tonic)?48+((Math.round(music.tonic)%12)+12)%12:48+(seed>>>0)%5;
-   if(!heldHarmony||selectedStep!==harmonyStep){
+   const requested=Object.hasOwn(HARMONIES,event.harmonyCharacter)?event.harmonyCharacter:music.character;
+   if(!heldHarmony||selectedStep!==harmonyStep||requested!==character){
     harmonyStep=selectedStep;
-    const requested=Object.hasOwn(HARMONIES,event.harmonyCharacter)?event.harmonyCharacter:music.character;
     character=Object.hasOwn(HARMONIES,requested)?requested:'serene';
     // harmonyStep zero is the first chord for both live playback and seeks.
-    heldHarmony=pianoHarmony(seed,{...event,chordStep:harmonyStep-seed%4},{...music,character});
+    heldHarmony=pianoHarmony(seed,{...event,previousNotes:event.historical?undefined:heldHarmony?.notes,chordStep:harmonyStep-seed%4},{...music,character});
    }else if(heldHarmony.root!==root){
     // A deliberate lab key change retunes the same chord without advancing it.
-    heldHarmony=pianoHarmony(seed,{...event,chordStep:harmonyStep-seed%4},{...music,character});
+    heldHarmony=pianoHarmony(seed,{...event,previousNotes:event.historical?undefined:heldHarmony?.notes,chordStep:harmonyStep-seed%4},{...music,character});
     previous=null;repeats=0;
    }
    const harmony=heldHarmony;

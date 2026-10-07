@@ -1,9 +1,9 @@
-import {HARMONIES,chartCharacter,chartHarmony,resolveHarmonicCharacter} from './harmonic-characters.js?v=206';
-export {HARMONIES,chartCharacter,resolveHarmonicCharacter} from './harmonic-characters.js?v=206';
+import {HARMONIES,chartCharacter,chartHarmony,resolveHarmonicCharacter} from './harmonic-characters.js?v=208';
+export {HARMONIES,CHARACTER_GROUPS,chartCharacter,resolveHarmonicCharacter} from './harmonic-characters.js?v=208';
 // Musical interpretation of percentage movement, not a trading recommendation.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const median=values=>{const s=values.filter(Number.isFinite).sort((a,b)=>a-b);return s.length?s[Math.floor(s.length/2)]:0;};
-export function musicContext({price,rows=[],interval=300000,changes={},cap,fresh=1,now=Date.now()}={}){
+export function musicContext({price,rows=[],interval=300000,changes={},cap,moodMovement=null,fresh=1,now=Date.now()}={}){
  const complete=rows.filter(b=>b.time+interval<=now&&b.open>0&&b.close>0);
  const recent=complete.at(-1),previous=complete.at(-2);
  const anchor=complete.filter(b=>b.time+interval<=now-300000).at(-1);
@@ -24,8 +24,10 @@ export function musicContext({price,rows=[],interval=300000,changes={},cap,fresh
  const typicalVolume=median(complete.slice(-25,-1).map(b=>b.volume).filter(v=>v>0));
  const volumeRatio=typicalVolume>0&&recent?.volume>=0?recent.volume/typicalVolume:1;
  const features={changePct:change,intensity,volatility,trendConsistency,lastMove,priorMove,volumeRatio};
- const character=chartCharacter(features);
- return {version:2,character,...features,tempo:Math.round(40+100*Math.sqrt(intensity)),typicalPct:typical,relativeMove:relative};
+ const capChangePct=moodMovement?.available?moodMovement.changePct:change;
+ const group=moodMovement?.available?moodMovement.group:capChangePct<0?'down':'up';
+ const character=chartCharacter({...features,group,capChangePct});
+ return {version:3,character,...features,group,capChangePct,movement:moodMovement,tempo:Math.round(40+100*Math.sqrt(intensity)),typicalPct:typical,relativeMove:relative};
 }
 
 export function pianoHarmony(seed,event={},music={}){
@@ -33,9 +35,9 @@ export function pianoHarmony(seed,event={},music={}){
  const at=Number(event.occurredAt??event.at??event.receivedAt)||0;
  const step=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(at/30000);
  const index=((step+(seed>>>0)%4)%4+4)%4,root=Number.isFinite(music.tonic)?48+((Math.round(music.tonic)%12)+12)%12:48+(seed>>>0)%5;
- const previous=compactVoicing(h.chords[(index+3)%4],root);
+ const previous=event.previousNotes?.length?event.previousNotes:compactVoicing(h.chords[(index+3)%4],root);
  const notes=compactVoicing(h.chords[index],root,previous);
- return {character,name:h.name,progression:h.progression,index,notes,root};
+ return {character,group:h.group,name:h.name,progression:h.progression,index,notes,root};
 }
 
 // Keep the call signature for existing score callers; chart data selects the

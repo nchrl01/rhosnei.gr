@@ -3,8 +3,8 @@
   "main": "worker.js",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
-  "durable_objects": { "bindings": [{ "name": "HOLDER_CACHE", "class_name": "HolderCache" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HolderCache"] }],
+  "durable_objects": { "bindings": [{ "name": "HOLDER_CACHE", "class_name": "HolderCache" }, { "name": "TAKE_STORE", "class_name": "TakeStore" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["HolderCache"] }, { "tag": "v2", "new_sqlite_classes": ["TakeStore"] }],
   "vars": { "ALLOWED_ORIGIN": "https://nchrl01.github.io" },
   "observability": { "enabled": false }
 }

@@ -1,7 +1,7 @@
 // Seeded EarthBound instruments following the existing piano composition engine.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=206';
+import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=208';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=189';
-import {createPianoPolicy} from './piano-policy.js?v=196';
+import {createPianoPolicy} from './piano-policy.js?v=208';
 import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=185';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 // The soundfont assets are already trimmed to ~0.13 RMS before their short
@@ -71,6 +71,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   }
  }
  room.buffer=impulse;instrumentFilter.connect(dry);instrumentFilter.connect(instrumentSend);instrumentSend.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
+ let lastMarketCue=null;
  let enabled=true,running=false,volume=.5,seed=1917,closed=false,arp=null,pattern=[],nextArp=0,lastArpBucket=null,roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
  const policy=createPianoPolicy(seed);
  const phrasing=createPianoPhrasing(seed);
@@ -187,28 +188,40 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    if(pitch===midi)continue;
    note(pitch,time,.052*(.6+.4*intensity)*phrase.velocity,1.6*phrase.duration,'chord',phrase.attack);
   }
+  const landmark=music.movement?.event;
+  const cueAge=landmark?selection.at-landmark.at:Infinity;
+  const cue=landmark&&landmark.id!==lastMarketCue&&cueAge>=-1000&&cueAge<=8000;
+  if(cue){
+   lastMarketCue=landmark.id;arp=null;interlock=null;
+   // A repeatable four-note signature: climb for +20%, descend for -20%.
+   const tones=[...new Set(harmony.notes)].sort((a,b)=>a-b);
+   const motif=[tones[0],tones[Math.min(1,tones.length-1)],tones.at(-1),tones[0]+12];
+   if(landmark.direction<0)motif.reverse();
+   const spacing=20/Math.max(40,Math.min(140,Number(music.tempo)||100));
+   motif.forEach((pitch,i)=>{const sounded=note(pitch,time+i*spacing,.09,.5,'arp',.008);onArpeggio({midi:instrumentPitch(pitch,profile),step:i,time:sounded,tempo:music.tempo,instrument:instrument.name,landmark:landmark.direction});});
+  }
   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/(4*60000/Math.max(40,Math.min(140,Number(music.tempo)||40))));
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%2;
-  if(selection.reason==='movement'&&arp){arp=null;} // Only a harmonic change replaces a phrase.
-  if(selection.reason==='movement'&&interlock){
+  if((selection.reason==='movement'||arp?.character!==harmony.character)&&arp){arp=null;} // Only a harmonic change replaces a phrase.
+  if((selection.reason==='movement'||interlock?.character!==harmony.character)&&interlock){
    for(let i=interlock.index;i<interlock.events.length;i++){
     const event=interlock.events[i];event.midi=interlockPitch(event,harmony);
    }
-   interlock.tonic=music.tonic;
+   interlock.tonic=music.tonic;interlock.character=harmony.character;
   }
-  if(lab.arpeggios!==false&&!quiet&&!arp&&!interlock&&!(pattern.length&&draw===0&&time>=nextArp&&bucket!==lastArpBucket)){
+  if(!cue&&lab.arpeggios!==false&&!quiet&&!arp&&!interlock&&!(pattern.length&&draw===0&&time>=nextArp&&bucket!==lastArpBucket)){
    const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony);
    if(events.length){
     const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40));
-    arp=null;interlock={events,index:0,start:time+30/tempo,step:30/tempo,tempo,pendingTempo:tempo,boundary:8,activity:intensity,initialActivity:Math.max(.04,intensity),tonic:music.tonic};
+    arp=null;interlock={character:harmony.character,events,index:0,start:time+30/tempo,step:30/tempo,tempo,pendingTempo:tempo,boundary:8,activity:intensity,initialActivity:Math.max(.04,intensity),tonic:music.tonic};
    }
   }
   // The optional phrase decorates measured activity in the same held harmony.
   // Quiet notes never start a phrase or a chord.
-  if(lab.arpeggios!==false&&!quiet&&!interlock&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
+  if(!cue&&lab.arpeggios!==false&&!quiet&&!interlock&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
    const notes=pattern.map(([tick,pitch])=>[tick,pitch]);
-   arp={notes,index:0,nextTime:time+beat+notes[0][0]*beat/4,step:beat/4,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],tonic:music.tonic,seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*12;lastArpBucket=bucket;
+   arp={character:harmony.character,notes,index:0,nextTime:time+beat+notes[0][0]*beat/4,step:beat/4,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],tonic:music.tonic,seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*12;lastArpBucket=bucket;
   }
   onVoice({time,id:event.id,notes:[...new Set([midi,...chordNotes])].map(pitch=>instrumentPitch(pitch,profile)),instrument:instrument.name,harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
   return true;
@@ -228,7 +241,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){running=Boolean(value);updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();seed=Number(value)>>>0;instrument=chooseInstrument(seed);profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
+  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;instrument=chooseInstrument(seed);profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=15/tempo;}if(interlock)interlock.pendingTempo=tempo;},
   resonance(cap){currentCap=cap;const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;instrumentFilter.frequency.setTargetAtTime(profile.cutoff,ctx.currentTime,.08);instrumentSend.gain.setTargetAtTime(profile.room,ctx.currentTime,.08);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}labRoom();return r;},
@@ -260,6 +273,10 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const shift=m.music.tonic-interlock.tonic;
     for(let i=interlock.index;i<interlock.events.length;i++){const event=interlock.events[i];event.midi+=shift;while(event.midi>93)event.midi-=12;while(event.midi<57)event.midi+=12;}
     interlock.tonic=m.music.tonic;
+   }
+   const landmark=m.music?.movement?.event;
+   if(!m.replay&&landmark&&landmark.id!==lastMarketCue&&at-landmark.at>=0&&at-landmark.at<2000){
+    return play({reason:'landmark',changePct:landmark.changePct,at,harmonyCharacter:m.music.character},{id:landmark.id,at},m.context?.latestCap,m.music);
    }
    if(interlock||arp)return false;
    if(m.replay)return false; // Quiet history notes are part of the frozen score.

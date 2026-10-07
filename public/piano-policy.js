@@ -15,7 +15,7 @@ export function createPianoPolicy(seed=0){
  }
  function select(price,at,music,reason,quietAt){
   const changePct=(price/anchor-1)*100;
-  if(!hasSounded||reason==='movement')harmonyCharacter=music.character||'serene';
+  if(!hasSounded||reason!=='quiet')harmonyCharacter=music.character||'serene';
   if(reason==='movement'){anchor=price;if(hasSounded)harmonyStep++;}
   if(reason!=='quiet')lastPhrase=quietAt;
   lastNote=quietAt;hasSounded=true;
