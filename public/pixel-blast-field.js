@@ -1,7 +1,7 @@
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=164';
-import {capitalGLSL} from './capital-field.js?v=164';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=164';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=164';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=165';
+import {capitalGLSL} from './capital-field.js?v=165';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=165';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=165';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -35,6 +35,7 @@ uniform float uEventTime;
 uniform float uSeed;
 uniform float uDotSize;
 uniform float uPixelPresence;
+uniform int uSeamPass;
 uniform float uEdgeFade;
 uniform float uDotStrength;
 uniform float uPixelSize;
@@ -178,8 +179,7 @@ void main(){
   float aspectRatio = viewSize.x / viewSize.y;
 
   vec2 pixelId = vPixelId;
-  vec2 scatter=vec2(hash11(pixelId.x*127.1+pixelId.y*311.7+3.1),hash11(pixelId.x*269.5+pixelId.y*183.3+9.2))-.5;
-  vec2 squarePoint=(pixelId+.5+scatter*.8*(1.-uIdentity))*pixelSize;
+  vec2 squarePoint=(pixelId+.5)*pixelSize;
   float cellPixelSize = uNoiseCellSize;
   vec2 cellId = floor(squarePoint / cellPixelSize);
   vec2 cellCoord = cellId * cellPixelSize;
@@ -236,8 +236,11 @@ void main(){
   float M = coverage * square * step(perimeterHash,edge*edge)*survival;
 
   if(M<.5)discard;
-  // White difference blending flips each covered pixel, including overlaps.
-  fragColor=vec4(1.);
+  if(uSeamPass==1){
+    float inset=min(min(point.x-start.x,point.y-start.y),min(start.x+dotSize-1.-point.x,start.y+dotSize-1.-point.y));
+    if(inset>=1.)discard;
+    fragColor=vec4(0.,0.,0.,1.);
+  }else fragColor=vec4(1.);
 
 }
 `;
@@ -252,7 +255,7 @@ export function createPixelBlastField(host){
  let gl,software=null,identityMask=null,identityTexture=null;
  const useSoftware=matchMedia('(max-width:760px), (pointer:coarse)').matches;
  function fallback(){if(!software){software=createPixelBlastCanvas(host);software.setImage(identityMask);}canvas.hidden=true;host.dataset.pixelBlast='canvas';}
- try{gl=useSoftware?null:canvas.getContext('webgl2',{alpha:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
+ try{gl=useSoftware?null:canvas.getContext('webgl2',{alpha:true,stencil:true,antialias:false,powerPreference:'low-power',premultipliedAlpha:false});}catch{gl=null;}
  let program=null,locations={},closed=false,lost=false,seed=0,ripples=[],lastPulse=-Infinity,lastParameters=null;
  function release(){if(program)gl?.deleteProgram(program);if(identityTexture)gl?.deleteTexture(identityTexture);program=null;identityTexture=null;}
  function uploadImage(){
@@ -277,6 +280,7 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.uSeamPass=gl.getUniformLocation(program,'uSeamPass');
    locations.uGridStart=gl.getUniformLocation(program,'uGridStart');
    locations.uGridColumns=gl.getUniformLocation(program,'uGridColumns');
    locations.uPixelPresence=gl.getUniformLocation(program,'uPixelPresence');
@@ -335,11 +339,15 @@ export function createPixelBlastField(host){
    const firstX=Math.floor(-Math.floor(w/2)/grid)-pad,firstY=Math.floor(-Math.floor(h/2)/grid)-pad;
    const columns=Math.ceil(w/grid)+pad*2+2,rows=Math.ceil(h/grid)+pad*2+2;
    gl.uniform2i(locations.uGridStart,firstX,firstY);gl.uniform1i(locations.uGridColumns,columns);
-   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
-   gl.enable(gl.BLEND);gl.blendEquation(gl.FUNC_ADD);
-   gl.blendFuncSeparate(gl.ONE_MINUS_DST_COLOR,gl.ZERO,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
-   gl.drawArraysInstanced(gl.TRIANGLES,0,6,columns*rows);
-   gl.disable(gl.BLEND);
+   gl.disable(gl.BLEND);gl.enable(gl.STENCIL_TEST);
+   gl.stencilMask(255);gl.clearStencil(0);gl.clearColor(0,0,0,0);
+   gl.clear(gl.COLOR_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);
+   gl.stencilFunc(gl.ALWAYS,0,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.INCR);
+   i('uSeamPass',0);gl.drawArraysInstanced(gl.TRIANGLES,0,6,columns*rows);
+   // Draw square-edge seams only where two or more squares overlap.
+   gl.stencilMask(0);gl.stencilFunc(gl.LEQUAL,2,255);gl.stencilOp(gl.KEEP,gl.KEEP,gl.KEEP);
+   i('uSeamPass',1);gl.drawArraysInstanced(gl.TRIANGLES,0,6,columns*rows);
+   gl.stencilMask(255);gl.disable(gl.STENCIL_TEST);
    canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(inputs.level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);
    Object.assign(canvas.dataset,{basePixelSize:params.pixelSize.toFixed(3),pixelSize:params.pixelSize.toFixed(3),cellSize:params.cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:String(params.edgeFade),rippleEnabled:String(params.ripples),identity:(identityMask?params.identity:0).toFixed(3),identityImage:String(!!identityMask)});
    Object.assign(canvas.dataset,{jitter:params.jitter.toFixed(3),liquid:String(params.liquid),liquidStrength:params.liquidStrength.toFixed(3),liquidRadius:params.liquidRadius.toFixed(3),liquidWobbleSpeed:params.liquidWobbleSpeed.toFixed(3),noiseAmount:params.noiseAmount.toFixed(3),ecosystem:params.ecosystem.toFixed(3),rippleSpeed:params.rippleSpeed.toFixed(3),rippleThickness:params.rippleThickness.toFixed(3),rippleIntensity:params.rippleIntensity.toFixed(3)});
