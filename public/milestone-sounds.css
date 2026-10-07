@@ -7,10 +7,14 @@
 .milestone-sound-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 .milestone-sound-card{min-width:0;border:1px solid #444;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
 .milestone-sound-card.is-unlocked{border-color:#aaa}
+.milestone-sound-card.is-active{border-color:#fff;box-shadow:inset 0 0 0 1px #fff}
 .milestone-sound-title{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .milestone-sound-title strong{font-size:15px;font-weight:400}
 .milestone-sound-title span{font-size:9px;color:#888;white-space:nowrap}
 .milestone-sound-card.is-unlocked .milestone-sound-title span{color:#f2f2f2}
+.milestone-sound-card.is-active .milestone-sound-title span{color:#fff}
+.milestone-sound-card>[data-range]{color:#777;font-size:10px}
+.milestone-sound-card.is-active>[data-range]{color:#ddd}
 .milestone-sound-card p{margin:0;min-height:32px;max-width:100%;overflow-wrap:anywhere;color:#aaa}
 .milestone-upload,.milestone-clear{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;border:1px solid #777;background:transparent;color:#f2f2f2;font:inherit;cursor:pointer}
 .milestone-upload:hover,.milestone-clear:hover{border-color:#fff}

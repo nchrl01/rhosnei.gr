@@ -51,14 +51,14 @@ async function compactAudio(file,getContext){
 
 export function createMilestoneSounds(container,{getAudioContext=()=>null,onActiveSample=()=>{}}={}){
  if(!container)throw new TypeError('A container is required for milestone sounds.');
- let marketKey='',cap=0,replay=false,rows=[],revision=0,activeId='',statusText='Choose a token to add its sounds.';
+ let marketKey='',cap=0,replay=false,rows=[],revision=0,activeId='',activeSlot=-1,statusText='Choose a token to add its sounds.';
  const unlocks=unlockMap();
  container.className='milestone-sounds';
- container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">COLLECTION SOUND MILESTONES</p><h3>Sounds unlocked by market cap</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Upload up to 8 seconds at each milestone. Envion turns the unlocked sample into granular sound. Files are saved in this browser for this token.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
+ container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">COLLECTION SOUND MILESTONES</p><h3>Sounds unlocked by market cap</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Each sound starts at its market-cap milestone and stays in Envion until the next uploaded milestone sound takes over. The $2M sound continues above $2M. Uploads are saved in this browser for this token.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
  const cards=THRESHOLDS.map((threshold,index)=>{
   const card=document.createElement('article');card.className='milestone-sound-card';
-  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock>LOCKED</span></div><p data-file>No sound assigned</p><label class="milestone-upload">Choose sound<input type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg"></label><button type="button" class="milestone-clear" data-clear>Remove sound</button>`;
+  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock>LOCKED</span></div><small data-range>Starts at ${money(threshold)}</small><p data-file>No sound assigned</p><label class="milestone-upload">Choose sound<input type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg"></label><button type="button" class="milestone-clear" data-clear>Remove sound</button>`;
   const input=card.querySelector('input'),name=card.querySelector('[data-file]');
   input.addEventListener('change',async()=>{
    const file=input.files?.[0];input.value='';if(!file||!marketKey)return;
@@ -81,15 +81,16 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  function updateActive(){
   const reached=unlockedCap();let row=null;
   for(let i=rows.length-1;i>=0;i--)if(rows[i]&&reached>=THRESHOLDS[i]){row=rows[i];break;}
-  const id=row?row.id:'';if(id===activeId)return;activeId=id;
+  const id=row?row.id:'';activeSlot=row?.slot??-1;if(id===activeId)return;activeId=id;
   if(!row){onActiveSample(null);return;}
   row.blob.arrayBuffer().then(data=>{if(activeId===id)onActiveSample({token:row.token,slot:row.slot,threshold:row.threshold,name:row.name,revision:row.revision,data:new Uint8Array(data)});}).catch(error=>{statusText=error.message;render();});
  }
  function render(){
   capLabel.textContent=money(cap);status.textContent=statusText;
   const reached=unlockedCap();cards.forEach((card,index)=>{
-   const row=rows[index],locked=reached<THRESHOLDS[index];card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);
-   card.querySelector('[data-lock]').textContent=locked?'LOCKED':row?'UNLOCKED · READY':'UNLOCKED';
+   const row=rows[index],locked=reached<THRESHOLDS[index],active=index===activeSlot&&!!row;card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);card.classList.toggle('is-active',active);
+   card.querySelector('[data-lock]').textContent=locked?'LOCKED':active?'PLAYING':row?'UNLOCKED · READY':'UNLOCKED';
+   const nextAssigned=rows.slice(index+1).find(Boolean);card.querySelector('[data-range]').textContent=row?`${money(THRESHOLDS[index])} → ${nextAssigned?money(nextAssigned.threshold):'and beyond'}`:`Starts at ${money(THRESHOLDS[index])}`;
    card.querySelector('[data-file]').textContent=row?`${row.name} · ${row.duration.toFixed(1)} sec`:'No sound assigned';
   card.querySelector('[data-clear]').hidden=!row;
    card.querySelector('input').disabled=!marketKey;
