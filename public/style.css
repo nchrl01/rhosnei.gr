@@ -507,3 +507,10 @@ body.visual-expanded{overflow:hidden}
  -webkit-mask-image:radial-gradient(ellipse farthest-corner at 50% 50%,#000 80%,transparent 100%);
  mask-image:radial-gradient(ellipse farthest-corner at 50% 50%,#000 80%,transparent 100%);
 }
+
+/* Keep the market readings in a compact, readable strip. */
+.readings{margin-top:8px;padding:5px 0;gap:4px 8px;align-items:center}
+.readings>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 5px}
+.readings small{font-size:10px;line-height:1.15;white-space:nowrap;color:#aaa}
+.readings strong{display:inline;margin:0;font-size:12px;line-height:1.15}
+@media(max-width:760px){.readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px}}
