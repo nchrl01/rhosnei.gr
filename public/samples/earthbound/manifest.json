@@ -5,36 +5,6 @@
   "license": "User-supplied soundfont; no open license asserted",
   "files": [
     {
-      "file": "preset-1.wav",
-      "midi": 60,
-      "trim": 0.780594,
-      "preset": 1,
-      "bank": 0,
-      "program": 1,
-      "peak": 0.528931,
-      "bodyRms": 0.16654,
-      "name": "Mellow Piano",
-      "correction": 15,
-      "loop": true,
-      "loopStart": 1.0314651874521805,
-      "loopEnd": 1.1237566947207345
-    },
-    {
-      "file": "preset-2.wav",
-      "midi": 38,
-      "trim": 0.243415,
-      "preset": 2,
-      "bank": 0,
-      "program": 2,
-      "peak": 0.800964,
-      "bodyRms": 0.534067,
-      "name": "Electric Piano",
-      "correction": 10,
-      "loop": true,
-      "loopStart": 0.005215419501133787,
-      "loopEnd": 0.032471655328798185
-    },
-    {
       "file": "preset-3.wav",
       "midi": 61,
       "trim": 0.449622,
@@ -95,81 +65,6 @@
       "loopEnd": 0.24325
     },
     {
-      "file": "preset-7.wav",
-      "midi": 60,
-      "trim": 0.42382,
-      "preset": 7,
-      "bank": 0,
-      "program": 7,
-      "peak": 0.673248,
-      "bodyRms": 0.306734,
-      "name": "Organ 1",
-      "correction": 0,
-      "loop": true,
-      "loopStart": 0.0017213446739570675,
-      "loopEnd": 0.005535304441744296
-    },
-    {
-      "file": "preset-8.wav",
-      "midi": 48,
-      "trim": 0.392526,
-      "preset": 8,
-      "bank": 0,
-      "program": 8,
-      "peak": 0.696411,
-      "bodyRms": 0.331189,
-      "name": "Organ 2",
-      "correction": 0,
-      "loop": true,
-      "loopStart": 0.007618751457669284,
-      "loopEnd": 0.011428127186503927
-    },
-    {
-      "file": "preset-9.wav",
-      "midi": 60,
-      "trim": 0.295905,
-      "preset": 9,
-      "bank": 0,
-      "program": 9,
-      "peak": 0.686584,
-      "bodyRms": 0.439331,
-      "name": "Organ 3",
-      "correction": -25,
-      "loop": true,
-      "loopStart": 0.009063208063129932,
-      "loopEnd": 0.012813501054769904
-    },
-    {
-      "file": "preset-10.wav",
-      "midi": 60,
-      "trim": 0.451683,
-      "preset": 10,
-      "bank": 0,
-      "program": 10,
-      "peak": 0.756653,
-      "bodyRms": 0.287813,
-      "name": "Organ 4",
-      "correction": 35,
-      "loop": true,
-      "loopStart": 0.019030939871570344,
-      "loopEnd": 0.026853473438412143
-    },
-    {
-      "file": "preset-11.wav",
-      "midi": 60,
-      "trim": 0.499791,
-      "preset": 11,
-      "bank": 0,
-      "program": 11,
-      "peak": 0.629181,
-      "bodyRms": 0.260109,
-      "name": "Organ 5",
-      "correction": 29,
-      "loop": true,
-      "loopStart": 0.013067594246498072,
-      "loopEnd": 0.02857948669737708
-    },
-    {
       "file": "preset-12.wav",
       "midi": 60,
       "trim": 0.687367,
@@ -228,21 +123,6 @@
       "loop": true,
       "loopStart": 0.0026790914385556204,
       "loopEnd": 0.010599883517763541
-    },
-    {
-      "file": "preset-178.wav",
-      "midi": 61,
-      "trim": 0.440526,
-      "preset": 178,
-      "bank": 1,
-      "program": 50,
-      "peak": 0.661163,
-      "bodyRms": 0.295102,
-      "name": "Welcome Home Organ",
-      "correction": 61,
-      "loop": true,
-      "loopStart": 0.030432461292044848,
-      "loopEnd": 0.03416978109983983
     },
     {
       "file": "preset-18.wav",
@@ -335,21 +215,6 @@
       "loopEnd": 0.09509316003783984
     },
     {
-      "file": "preset-29.wav",
-      "midi": 60,
-      "trim": 0.350621,
-      "preset": 29,
-      "bank": 0,
-      "program": 29,
-      "peak": 0.795807,
-      "bodyRms": 0.301966,
-      "name": "French Horn",
-      "correction": 22,
-      "loop": true,
-      "loopStart": 0.08131662905610458,
-      "loopEnd": 0.10824060384405883
-    },
-    {
       "file": "preset-30.wav",
       "midi": 59,
       "trim": 0.442193,
@@ -438,21 +303,6 @@
       "loop": true,
       "loopStart": 0.0025483669648429376,
       "loopEnd": 0.005876846265862284
-    },
-    {
-      "file": "preset-38.wav",
-      "midi": 62,
-      "trim": 0.495998,
-      "preset": 38,
-      "bank": 0,
-      "program": 38,
-      "peak": 0.390106,
-      "bodyRms": 0.262098,
-      "name": "Sub Sine",
-      "correction": -30,
-      "loop": true,
-      "loopStart": 0.016878516357574494,
-      "loopEnd": 0.0302146280475099
     },
     {
       "file": "preset-171.wav",
@@ -603,21 +453,6 @@
       "loop": true,
       "loopStart": 0.004189944134078212,
       "loopEnd": 0.006983240223463687
-    },
-    {
-      "file": "preset-0.wav",
-      "midi": 48,
-      "trim": 0.511108,
-      "preset": 0,
-      "bank": 0,
-      "program": 0,
-      "peak": 0.781311,
-      "bodyRms": 0.254349,
-      "name": "Piano",
-      "correction": -29,
-      "loop": true,
-      "loopStart": 0.9874686716791979,
-      "loopEnd": 1.0025062656641603
     }
   ]
 }

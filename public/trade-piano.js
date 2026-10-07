@@ -2,14 +2,14 @@
 import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=177';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=146';
 import {createPianoPolicy} from './piano-policy.js?v=61';
-import {earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=147';
+import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=178';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
 const sampleAssets=new Map();
 async function loadSampleAsset(path,format){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  try{
-  const response=await fetch('samples/earthbound/'+path+'?v=147',{signal:controller.signal});
+  const response=await fetch('samples/earthbound/'+path+'?v=178',{signal:controller.signal});
   if(!response.ok)throw Error('Cannot load instrument asset '+path);
   return await response[format]();
  }finally{clearTimeout(timeout);}
@@ -19,6 +19,7 @@ async function loadSampleAsset(path,format){
 export function preloadPianoSamples(){
  if(!sampleDownload)sampleDownload=(async()=>{
   const manifest=await loadSampleAsset('manifest.json','json');
+  manifest.files=manifest.files.filter(item=>EARTHBOUND_PRESETS.includes(item.preset));
   const results=await Promise.allSettled(manifest.files.map(async item=>{
    if(!sampleAssets.has(item.file))sampleAssets.set(item.file,loadSampleAsset(item.file,'arrayBuffer').catch(error=>{sampleAssets.delete(item.file);throw error;}));
    return {...item,bytes:await sampleAssets.get(item.file)};
@@ -72,7 +73,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  const voices=new Set();
  function chooseInstrument(value){
   const id=earthboundPreset(value);
-  return samples.find(sample=>sample.preset===id)||samples.find(sample=>sample.preset===1)||samples[0];
+  return samples.find(sample=>sample.preset===id)||samples[0];
  }
  let instrument=chooseInstrument(seed);
  let profile=instrumentProfile(instrument.preset),currentCap=null;

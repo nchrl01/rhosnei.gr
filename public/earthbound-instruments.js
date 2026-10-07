@@ -1,5 +1,5 @@
-// Preset IDs and seed mapping stay fixed so a coin keeps its instrument.
-export const EARTHBOUND_PRESETS=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,23,24,25,27,28,29,30,31,34,35,36,37,38,130,139,140,145,146,147,156,169,171,178];
+// Allowed presets; deterministic coin assignments use this active sound palette.
+export const EARTHBOUND_PRESETS=[3,4,5,6,12,13,14,15,16,18,23,24,25,27,28,30,31,34,35,36,37,130,139,140,145,146,147,156,169,171];
 const families={
  strings:{attack:.025,decay:.16,sustain:.58,release:.16,noteMax:1.8,phraseMax:.7,gate:.9,low:48,high:88,cutoff:5600,room:.2},
  bass:{attack:.008,decay:.12,sustain:.35,release:.08,noteMax:1,phraseMax:.4,gate:.85,low:36,high:69,cutoff:2800,room:.08},

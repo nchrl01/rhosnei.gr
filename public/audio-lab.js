@@ -1,8 +1,8 @@
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=3';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=177';
-import {instrumentProfile} from './earthbound-instruments.js?v=147';
+import {createTradePiano} from './trade-piano.js?v=178';
+import {EARTHBOUND_PRESETS,instrumentProfile} from './earthbound-instruments.js?v=178';
 import {createCyberneticDrums} from './cybernetic-drums.js?v=174';
 import {createEnvion} from './envion.js?v=152';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
@@ -29,7 +29,7 @@ function readPreset(data){
  for(let i=0;i<5;i++){if(typeof data.slots?.[i]==='boolean')next.slots[i]=data.slots[i];if(Number.isFinite(data.slotLevels?.[i]))next.slotLevels[i]=clamp(data.slotLevels[i],0,1);}
  for(const key of ['autoTrades','arpeggios'])if(typeof data[key]==='boolean')next[key]=data[key];
  if(Number.isFinite(data.master))next.master=clamp(data.master,0,1);
- if(Number.isInteger(data.instrument)&&data.instrument>=-1&&data.instrument<=1000)next.instrument=data.instrument;
+ if(Number.isInteger(data.instrument)&&(data.instrument===-1||EARTHBOUND_PRESETS.includes(data.instrument)))next.instrument=data.instrument;
  if(data.character==='auto'||Object.hasOwn(HARMONIES,data.character))next.character=data.character;
  if(typeof data.notes==='string')next.notes=data.notes.slice(0,10000);
  if(Array.isArray(data.arp)&&data.arp.length>=3&&data.arp.length<=16&&data.arp.every((p,i)=>Array.isArray(p)&&p.length===2&&Number.isInteger(p[0])&&p[0]>=0&&p[0]<16&&Number.isInteger(p[1])&&p[1]>=48&&p[1]<=83&&(!i||p[0]>data.arp[i-1][0])))next.arp=data.arp;
