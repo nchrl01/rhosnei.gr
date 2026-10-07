@@ -19,7 +19,7 @@ function shape(i,x,y,n,m,seed){
  if(i===4)return .72-Math.min(a,b)*3.; // Crossed mesh.
  if(i===5)return .62-Math.abs(fract(n*4.)-.5)*2.7; // Contour engraving.
  if(i===6)return .68-Math.max(Math.abs(fract(x*8+n*.4)-.5),Math.abs(fract(y*8+m*.4)-.5))*2.1;
- return .35+.5*n-.65*(hash(Math.floor(x*24)*127.1+Math.floor(y*24)*311.7+seed)<.3?1:0);
+ return 1.35-.65*Math.pow(1-n,4); // Near-white with moving dark channels.
 }
 export function capitalFeed(stage,x,y,n,m,seed,base){
  if(stage<0)return base;
@@ -37,7 +37,7 @@ float capitalShape(float i,vec2 p,float n,float m){
  if(i<4.5)return .72-min(a,b)*3.;
  if(i<5.5)return .62-abs(fract(n*4.)-.5)*2.7;
  if(i<6.5)return .68-max(abs(fract(p.x*8.+n*.4)-.5),abs(fract(p.y*8.+m*.4)-.5))*2.1;
- return .35+.5*n-.65*(1.-step(.3,hash11(dot(floor(p*24.),vec2(127.1,311.7))+uSeed)));
+ return 1.35-.65*pow(1.-n,4.);
 }
 float capitalFeed(vec2 p,float base){
  if(uCapitalStage<0.)return base;

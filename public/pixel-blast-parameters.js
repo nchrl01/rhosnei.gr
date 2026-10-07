@@ -1,4 +1,4 @@
-import {capitalStage} from './capital-field.js?v=160';
+import {capitalStage} from './capital-field.js?v=161';
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
 // These controls change the field inside a fixed 4 CSS-pixel square lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
@@ -31,7 +31,8 @@ export function pixelBlastParameters({marketCap=null,level=0,formation=0,drive=0
  const motionEnergy=unit(.45*movement+.2*flow+.15*sound+.12*notes+.08*attack);
  const eventEnergy=unit(.35*unit(surge)*current+.2*unit(imbalance)*current+.25*notes+.2*attack);
 
- const pixelSize=clamp(.6+1.05*sound+.55*valuation+1.05*notes+.3*attack,.5,3.5);
+ const capFill=unit((capitalStage(marketCap)-6));
+ const pixelSize=mix(clamp(.6+1.05*sound+.55*valuation+1.05*notes+.3*attack,.5,3.5),4,capFill);
  // Pattern scale changes only the noise sampled at existing square centres.
  // Cell spacing and scene framing stay fixed.
  const patternScale=reference.patternScale;
@@ -54,7 +55,7 @@ export function pixelBlastParameters({marketCap=null,level=0,formation=0,drive=0
   patternDensity,density:patternDensity,
   speed:reference.speed*(.2+.65*motionEnergy)*(.85+.3*pace)*response,
   edgeFade,pixelSizeJitter:0,jitter:0,
-  dotStrength:(mobile?.28:.2)+(mobile?.72:.8)*strength,
+  dotStrength:mix((mobile?.28:.2)+(mobile?.72:.8)*strength,1,capFill),
   // Retain the former image uniforms' API without forming a central image.
   identity:0,identityMotion:0,ecosystem:.28,
   enableRipples:false,ripples:false,waveformEnabled:active&&engagement>.002,

@@ -1,6 +1,7 @@
-import {capitalGLSL} from './capital-field.js?v=160';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=160';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=160';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=161';
+import {capitalGLSL} from './capital-field.js?v=161';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=161';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=161';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -96,6 +97,7 @@ float fbm2(vec2 uv, float t){
 }
 
 ${capitalGLSL}
+${battleGLSL}
 
 // Upstream liquid displacement, driven by finite market/audio touches. Warp
 // the sampled field before drawing squares so their edges remain orthogonal.
@@ -166,7 +168,7 @@ void main(){
   vec2 cellCoord = cellId * cellPixelSize;
   vec2 displacement=dataMotion(squarePoint)/viewSize.y;
   vec2 samplePoint=squarePoint+displacement*viewSize.y;
-  vec2 uv = squarePoint / viewSize * vec2(aspectRatio, 1.0)+displacement;
+  vec2 uv = battleWarp(squarePoint / viewSize * vec2(aspectRatio, 1.0)+displacement);
 
   float base = fbm2(uv, uTime * 0.05);
   base = base * 0.5 - 0.65;
@@ -207,7 +209,7 @@ void main(){
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
   float markSize=uDotSize*jitterScale*backgroundScale;
-  float dotSize = min(max(1.0,pixelSize*rasterScale-1.0),max(1.0,floor(min(pixelSize,markSize)*edge*rasterScale+.5)));
+  float dotSize = min(max(1.0,floor(pixelSize*rasterScale-(1.-clamp(uCapitalStage-6.,0.,1.))+.5)),max(1.0,floor(min(pixelSize,markSize)*edge*rasterScale+.5)));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
   float square = step(start.x,point.x)*step(start.y,point.y)
@@ -265,6 +267,8 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.uBattleA=gl.getUniformLocation(program,'uBattleA');
+   locations.uBattleB=gl.getUniformLocation(program,'uBattleB');
    locations.uCapitalStage=gl.getUniformLocation(program,'uCapitalStage');
    uploadImage();
    canvas.hidden=false;host.dataset.pixelBlast='ready';if(software)software.canvas.hidden=true;
@@ -305,6 +309,8 @@ export function createPixelBlastField(host){
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    f('uCapitalStage',params.capitalStage??-1);
+   const battle=battleMotion(seed,time||0,params.capitalStage);
+   gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uPixelSize',params.cellSize);f('uNoiseCellSize',16);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
