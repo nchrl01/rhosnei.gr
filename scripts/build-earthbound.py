@@ -19,8 +19,8 @@ headers=rows(b'shdr','<20sIIIIIBbHH')
 dest=Path(__file__).resolve().parents[1]/'public/samples/earthbound'
 dest.mkdir(parents=True,exist_ok=True)
 files=[]
-base_programs={3,12,13,14,15,23,24,25,30,31,34,35,36,37}
-extra_programs={11,12,17,18,19,28,41}
+base_programs={13,23,24,30,31,34,35,36,37}
+extra_programs={11,17,18,19,41}
 for name,program,bank,bag,*_ in ph:
  if not (bank==0 and program in base_programs or bank==1 and program in extra_programs):continue
  preset_id=bank*128+program

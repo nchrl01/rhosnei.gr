@@ -5,36 +5,6 @@
   "license": "User-supplied soundfont; no open license asserted",
   "files": [
     {
-      "file": "preset-3.wav",
-      "midi": 61,
-      "trim": 0.449622,
-      "preset": 3,
-      "bank": 0,
-      "program": 3,
-      "peak": 0.58075,
-      "bodyRms": 0.256504,
-      "name": "Rhodes",
-      "correction": -45,
-      "loop": true,
-      "loopStart": 0.007704879757179547,
-      "loopEnd": 0.011207097828624796
-    },
-    {
-      "file": "preset-12.wav",
-      "midi": 60,
-      "trim": 0.687367,
-      "preset": 12,
-      "bank": 0,
-      "program": 12,
-      "peak": 0.656708,
-      "bodyRms": 0.175057,
-      "name": "Rock Organ",
-      "correction": 4,
-      "loop": true,
-      "loopStart": 0.22413932766302147,
-      "loopEnd": 0.4641555285540705
-    },
-    {
       "file": "preset-13.wav",
       "midi": 60,
       "trim": 0.400719,
@@ -48,36 +18,6 @@
       "loop": true,
       "loopStart": 0.00576587070471753,
       "loopEnd": 0.00955154338963308
-    },
-    {
-      "file": "preset-14.wav",
-      "midi": 60,
-      "trim": 0.85,
-      "preset": 14,
-      "bank": 0,
-      "program": 14,
-      "peak": 0.598419,
-      "bodyRms": 0.125236,
-      "name": "Synth Lead 2",
-      "correction": 8,
-      "loop": true,
-      "loopStart": 0.018118102106992773,
-      "loopEnd": 0.025824838958281835
-    },
-    {
-      "file": "preset-15.wav",
-      "midi": 59,
-      "trim": 0.392541,
-      "preset": 15,
-      "bank": 0,
-      "program": 15,
-      "peak": 0.799652,
-      "bodyRms": 0.331175,
-      "name": "Synth Lead 3",
-      "correction": -40,
-      "loop": true,
-      "loopStart": 0.0026790914385556204,
-      "loopEnd": 0.010599883517763541
     },
     {
       "file": "preset-23.wav",
@@ -108,21 +48,6 @@
       "loop": true,
       "loopStart": 0.47105626370057646,
       "loopEnd": 0.7301290898757814
-    },
-    {
-      "file": "preset-25.wav",
-      "midi": 60,
-      "trim": 0.486854,
-      "preset": 25,
-      "bank": 0,
-      "program": 25,
-      "peak": 0.617798,
-      "bodyRms": 0.267021,
-      "name": "Strings 3",
-      "correction": -4,
-      "loop": true,
-      "loopStart": 0.1641803145775904,
-      "loopEnd": 0.5340522133938707
     },
     {
       "file": "preset-30.wav",
@@ -245,21 +170,6 @@
       "loopEnd": 0.041666666666666664
     },
     {
-      "file": "preset-140.wav",
-      "midi": 55,
-      "trim": 0.39233,
-      "preset": 140,
-      "bank": 1,
-      "program": 12,
-      "peak": 0.696686,
-      "bodyRms": 0.331354,
-      "name": "Enjoy Organ",
-      "correction": -39,
-      "loop": true,
-      "loopStart": 0.00997506234413965,
-      "loopEnd": 0.014962593516209476
-    },
-    {
       "file": "preset-145.wav",
       "midi": 60,
       "trim": 0.318373,
@@ -303,21 +213,6 @@
       "loop": true,
       "loopStart": 0.04477611940298507,
       "loopEnd": 0.1456133964324718
-    },
-    {
-      "file": "preset-156.wav",
-      "midi": 53,
-      "trim": 0.401077,
-      "preset": 156,
-      "bank": 1,
-      "program": 28,
-      "peak": 0.648834,
-      "bodyRms": 0.324127,
-      "name": "Onett Synth",
-      "correction": -43,
-      "loop": true,
-      "loopStart": 0.004189944134078212,
-      "loopEnd": 0.006983240223463687
     }
   ]
 }
