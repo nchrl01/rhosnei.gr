@@ -1,5 +1,5 @@
 import {ENVION_CONTROLS,envionFrame} from './envion-market.js?v=40';
-import {CHANCE_LABELS} from './envion-performance.js?v=209';
+import {CHANCE_LABELS} from './envion-performance.js?v=220';
 const text=(tag,className,value)=>{const node=document.createElement(tag);node.className=className||'';if(value!=null)node.textContent=value;return node;};
 const finite=v=>Number.isFinite(Number(v))?Number(v):null;
 const numberFormat=new Intl.NumberFormat('en-US',{maximumSignificantDigits:4});

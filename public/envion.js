@@ -1,5 +1,5 @@
-import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=209';
-import {createEnvionView} from './envion-view.js?v=209';
+import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=220';
+import {createEnvionView} from './envion-view.js?v=220';
 import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=41';
 export {applyEnvionMarket} from './envion-market.js?v=41';
 
@@ -88,14 +88,23 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   let pd, context, model, namespace, running = false, serial = 0, recordingPath = null;
   let activePicker = null, pendingDialog = null, generation = 0, initialized = false;
   let sampleWaveforms=[null,null],scopeOff=null,waveformSource=null,waveformLoading=null,waveformLoaded=null;
-  const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [];
+  const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [], guiSubscriptions = [];
   let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917,replayScene=null, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0, marketOverrides={}, milestoneSound=null, milestoneSoundIdentity='';
+  let materialRetryTimer=null,materialRetries=0;
   const marketWrites = new Map();
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
   let recordingOperation = Promise.resolve();
   const view = createEnvionView(container, {onControl:control, onFile:openFile, onCommand:command,onInspect:inspect});
 
+  function resetMaterialRetry(){clearTimeout(materialRetryTimer);materialRetryTimer=null;materialRetries=0;}
   function inspect(visible,detailed){
+    pd?.setGuiTelemetry?.(visible);
+    if(!visible||!pd){for(const off of guiSubscriptions.splice(0))off();}
+    else if(model&&!guiSubscriptions.length){
+      for(const receiver of model.receivers)guiSubscriptions.push(pd.subscribe(receiver,message=>view.receive(receiver,message.values)));
+      // Restore the held market values without resending controls to the DSP.
+      for(const [receiver,value] of marketWrites){const displayReceiver=nodes.get(receiver)?.receive;if(displayReceiver)view.receive(displayReceiver,[value]);}
+    }
     if(scopeOff&&(!visible||!pd)){scopeOff();scopeOff=null;}
     if(visible&&pd&&!scopeOff)scopeOff=pd.subscribeScopes(({channels})=>{const scopes={};for(const item of model.scopes)scopes[item.id]=item.channels.map(channel=>channels[channel-5]);view.setScopes(scopes);});
     if(detailed)void refreshWaveform().catch(report);
@@ -179,6 +188,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   function setMilestoneSound(sound) {
     const identity=sound?`${sound.token}|${sound.slot}|${sound.revision}|${sound.name}`:'';
     if(identity===milestoneSoundIdentity)return;
+    resetMaterialRetry();
     milestoneSoundIdentity=identity;milestoneSound=sound||null;
     if(!performancePlan)return;
     performancePlan=milestonePlan(performancePlan,sound);
@@ -410,40 +420,56 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   }
   async function loadPerformanceMaterial() {
     if(materialBusy)return;materialBusy=true;
+    clearTimeout(materialRetryTimer);materialRetryTimer=null;
     const target=pd,epoch=generation,operation=++materialOperation;
+    const current=()=>operation===materialOperation&&target===pd&&epoch===generation;
+    let attempt=null,failed=false;
+    const paused=()=>{if(running)return false;pendingMaterial??=performancePlan||attempt;return true;};
     try {
       while(pendingMaterial&&running&&target===pd&&epoch===generation&&operation===materialOperation){
-        const plan=pendingMaterial;pendingMaterial=null;
+        const plan=pendingMaterial;attempt=plan;pendingMaterial=null;
         const {preset,sample,bank,tape,ir}=plan.material;
         await Promise.all([...new Set([...preset.assets,tape,ir])].filter(Boolean).map(ensureAsset));
+        if(!current()||paused())return;
         await ensurePerformanceSample(sample);
-        if(operation!==materialOperation||target!==pd||epoch!==generation||!running)return;
+        if(!current()||paused())return;
         if(pendingMaterial)continue;
         // Let the supplied preset configure its own DSP, then populate its file
         // inputs from the local library. Cached assets avoid a network pause here.
         pd.sendFloat('av-envion-ready',0);
         pd.sendBang('av-envion-ui-c0-'+preset.index);
         await new Promise(resolve=>setTimeout(resolve,35));
-        if(operation!==materialOperation||target!==pd||epoch!==generation||!running)return;
+        if(!current()||paused())return;
         pd.sendSymbol('av-envion-file-c0-49',absolute(ROOT+sample));
         pd.sendSymbol('av-envion-file-c0-30',absolute(ROOT+bank.path));
         pd.sendSymbol(namespace+'-open',absolute(ROOT+tape));
         pd.sendSymbol(namespace+'-tape-IR',absolute(ROOT+ir));
         await new Promise(resolve=>setTimeout(resolve,35));
-        if(operation!==materialOperation||target!==pd||epoch!==generation)return;
+        if(!current()||paused())return;
         loadedBankRows=bank.rows;
         activeMaterial=preset.name+' · '+sample.split('/').pop();
+        resetMaterialRetry();
         marketWrites.clear();clocks();applyCurrent();
         pd.sendFloat('av-envion-ready',1);
         if(milestoneSound&&sample===milestonePath(milestoneSound))pd.sendBang('av-envion-ui-c0-'+(760+(Number(milestoneSound.slot)%7)));
         status();
       }
-    } catch(error){if(operation===materialOperation&&target===pd&&epoch===generation)report(error);}
-    finally{if(operation===materialOperation&&target===pd&&epoch===generation){materialBusy=false;pd.sendFloat('av-envion-ready',1);applyCurrent();if(pendingMaterial&&running)void loadPerformanceMaterial();}}
+    } catch(error){
+      if(current()){
+        failed=true;pendingMaterial??=performancePlan||attempt;report(error);
+        // Keep the selected sound retryable without spinning downloads or DSP
+        // reconfiguration after a failed asset request.
+        if(running&&pendingMaterial&&materialRetries<2){
+          const delay=[5000,15000][materialRetries++];
+          materialRetryTimer=setTimeout(()=>{materialRetryTimer=null;if(current()&&running&&pendingMaterial)void loadPerformanceMaterial();},delay);
+        }
+      }
+    }
+    finally{if(current()){materialBusy=false;pd.sendFloat('av-envion-ready',1);applyCurrent();if(!failed&&pendingMaterial&&running)void loadPerformanceMaterial();}}
   }
   return {
     view, get ready(){return loadModel();}, printed,
-    setSeed(value){replayScene=null;materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;view.reset?.();performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
+    setSeed(value){resetMaterialRetry();replayScene=null;materialOperation++;materialBusy=false;if(pd&&initialized)pd.sendFloat('av-envion-ready',1);performanceSeed=value;view.reset?.();performer?.reset(value);performancePlan=null;pendingMaterial=null;activeMaterial=null;marketWrites.clear();},
     async files() {
       await loadModel();
       const manifest=await loadAsset('manifest.json','json');
@@ -461,7 +487,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       pd=runtime;context=audioContext;generation++;staged.clear();loads.clear();requests.clear();
       const epoch=generation;
       for(const path of Object.keys(files))staged.add(path);
-      for(const receiver of model.receivers)subscriptions.push(pd.subscribe(receiver,message=>view.receive(receiver,message.values)));
       inspect(view.isVisible(),view.isDetailed());
       subscriptions.push(pd.subscribe('av-envion-sample-frames',()=>marketWrites.clear()));
       subscriptions.push(pd.subscribe('generation',message=>{if(!latestMarket?.m?.replay)decide(Number(message.values[0]));}));
@@ -482,13 +507,13 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       status();
       return true;
     },
-    setRunning(value){running=!!value;view.setRunning(running);clocks(true);if(!running){pd?.sendBang('av-envion-hard-stop');pd?.sendBang('av-envion-ui-c44-1');}else if(initialized&&pendingMaterial)void loadPerformanceMaterial();status();},
+    setRunning(value){const wasRunning=running;running=!!value;if(!running){clearTimeout(materialRetryTimer);materialRetryTimer=null;}else if(!wasRunning)resetMaterialRetry();view.setRunning(running);clocks(true);if(!running){pd?.sendBang('av-envion-hard-stop');pd?.sendBang('av-envion-ui-c44-1');}else if(!wasRunning&&initialized&&pendingMaterial)void loadPerformanceMaterial();status();},
     market(m,tempo){
       if(!pd||!namespace||!initialized)return;
       clocks();latestMarket={m,tempo};
       if(m.replay){
        const scene=m.replay.sceneSeed??Math.floor(m.replay.at||0);
-       if(scene!==replayScene){replayScene=scene;performer?.reset(scene);performancePlan=null;decide(0,true);}
+       if(scene!==replayScene){replayScene=scene;performer?.reset(scene,{preserveMaterial:true});performancePlan=null;decide(0,true);}
       }
       if(!performancePlan&&running)decide(0,true);
       applyCurrent();
@@ -498,6 +523,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       applyCurrent();
     },
     setMilestoneSound,
-    detach(){scopeOff?.();scopeOff=null;waveformSource=null;waveformLoaded=null;waveformLoading=null;materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;marketOverrides={};performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
+    detach(){resetMaterialRetry();pd?.setGuiTelemetry?.(false);scopeOff?.();scopeOff=null;waveformSource=null;waveformLoaded=null;waveformLoading=null;materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;marketOverrides={};performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of guiSubscriptions.splice(0))off();for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
   };
 }

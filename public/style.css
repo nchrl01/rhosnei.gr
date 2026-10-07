@@ -180,7 +180,7 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:12px;line-hei
 
 button,summary,a{font-variant-emoji:text}
 
-/* Original first-release image treatment with no edge mask or reveal. */
+/* Coin artwork retains its source proportions and pixel detail. */
 .coin-avatar{position:relative;border:0;background:transparent;overflow:hidden}
 .coin-avatar img,.coin-dither{grid-area:1/1;width:100%;height:100%;padding:0;image-rendering:pixelated}
 .coin-avatar #coin-image-fallback{grid-area:1/1}
@@ -501,3 +501,9 @@ body.visual-expanded{overflow:hidden}
 
 /* Replay clock uses the same pink as the chart playhead. */
 #coin-time[data-replay="true"]{color:var(--playhead)}
+
+/* Soften only the artwork corners; keep the central portrait fully visible. */
+.coin-avatar #coin-image,.coin-avatar .coin-dither{
+ -webkit-mask-image:radial-gradient(ellipse farthest-corner at 50% 50%,#000 80%,transparent 100%);
+ mask-image:radial-gradient(ellipse farthest-corner at 50% 50%,#000 80%,transparent 100%);
+}

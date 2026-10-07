@@ -22,44 +22,44 @@ export function createTransportIndicator(host) {
     if (replay) {
       if (ended) {
         text = 'REPLAY ENDED';
-        detail = 'The loaded historical score has finished.';
+        detail = 'Replay finished.';
       } else if (seeking) {
         text = 'SEEKING';
         kind = 'replay';
-        detail = 'Choosing a point in the loaded history; sound is held while seeking.';
+        detail = 'Choose where to replay.';
       } else if (running) {
         text = 'PLAYBACK';
         kind = 'replay';
         pulse = true;
-        detail = 'Playing the loaded historical score; this is not current market activity.';
+        detail = 'Replaying this market’s history.';
       } else {
         text = playing ? 'AUDIO PAUSED' : 'PAUSED';
-        detail = playing ? 'Audio is interrupted. Tap Listen to resume historical playback.' : 'Historical playback is paused.';
+        detail = playing ? 'Tap Resume to continue the replay.' : 'Replay paused.';
       }
     } else if (!running) {
       text = playing ? 'AUDIO PAUSED' : hasPlayed ? 'PAUSED' : 'READY';
-      detail = playing ? 'Audio is interrupted. Tap Listen to resume.' : hasPlayed ? 'Playback is paused. Tap Listen to resume the selected market.' : 'Tap Listen to hear the selected market.';
+      detail = playing ? 'Tap Resume to continue.' : hasPlayed ? 'Tap Listen to resume.' : 'Tap Listen to hear this market.';
     } else if (streamConnected && (streamKind === 'swap' || streamKind === 'rpc-poll' || streamKind === 'exchange')) {
       text = 'LIVE NOW';
       kind = 'live';
       pulse = true;
-      detail = streamKind === 'exchange' ? 'Receiving public exchange trades over WebSocket.' : streamKind === 'rpc-poll' ? 'Listening to directly observed chain activity with a polling delay; price conversion and liquidity use snapshots.' : 'Listening to the connected swap stream; price conversion and liquidity use snapshots.';
+      detail = streamKind === 'exchange' ? 'Following current trades.' : streamKind === 'rpc-poll' ? 'Following trades · updates may be delayed.' : 'Following current trades.';
     } else if (streamConnected && streamKind === 'pool') {
       text = 'ACTIVITY NOW';
       kind = 'live';
       pulse = true;
-      detail = 'Listening to connected pool activity. Price, volume and direction still come from market snapshots.';
+      detail = 'Following activity · prices update periodically.';
     } else if (streamConnected && streamKind === 'trade-poll') {
       text = 'CACHED TRADES';
       kind = 'delayed';
-      detail = 'Listening to cached trade polling. Provider trades may arrive after the market event.';
+      detail = 'Trade updates may be delayed.';
     } else if (fresh > 0) {
       text = 'SNAPSHOTS';
       kind = 'delayed';
-      detail = 'Listening to periodically refreshed market snapshots; an instant trade stream is not connected.';
+      detail = 'Prices update periodically.';
     } else {
       text = 'WAITING';
-      detail = 'No fresh market source is available. Waiting for the feed to reconnect.';
+      detail = 'Waiting for market updates.';
     }
     const signature = [text, kind, pulse, detail].join('|');
     if (signature === previous) return;

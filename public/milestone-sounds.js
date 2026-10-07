@@ -9,7 +9,7 @@ function openStore(){
  return new Promise((resolve,reject)=>{
   const request=indexedDB.open(DB_NAME,1);
   request.onupgradeneeded=()=>{if(!request.result.objectStoreNames.contains(STORE))request.result.createObjectStore(STORE,{keyPath:'id'});};
-  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||Error('Could not open local sound storage'));
+  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||Error('Could not save sounds on this device.'));
  });
 }
 async function storeRequest(mode,callback){
@@ -23,9 +23,9 @@ async function compactAudio(file,getContext){
  if(file.size>25*1024*1024)throw Error('Choose a file under 25 MB.');
  const raw=await file.arrayBuffer();
  let ctx=getContext();let ownsContext=false;
- if(!ctx){const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)throw Error('Audio decoding is unavailable in this browser.');ctx=new AudioContextClass();ownsContext=true;}
+ if(!ctx){const AudioContextClass=window.AudioContext||window.webkitAudioContext;if(!AudioContextClass)throw Error('Audio is unavailable here. Try another browser.');ctx=new AudioContextClass();ownsContext=true;}
  let decoded;
- try{decoded=await ctx.decodeAudioData(raw.slice(0));}catch{throw Error('This audio format is not supported by the browser. Try WAV, MP3, or M4A.');}
+ try{decoded=await ctx.decodeAudioData(raw.slice(0));}catch{throw Error('Try a WAV, MP3, or M4A file.');}
  try{
   const frames=Math.max(1,Math.min(decoded.length,Math.floor(Math.min(decoded.duration,8)*decoded.sampleRate)));
   const rate=Math.min(decoded.sampleRate,48000),channels=decoded.numberOfChannels>1?2:1;
@@ -53,9 +53,9 @@ async function compactAudio(file,getContext){
 
 export function createMilestoneSounds(container,{getAudioContext=()=>null,onActiveSample=()=>{}}={}){
  if(!container)throw new TypeError('A container is required for milestone sounds.');
- let marketKey='',cap=0,replay=false,rows=[],revision=0,activeId='',activeSlot=-1,statusText='Choose a token to add its sounds.';
+ let marketKey='',cap=0,replay=false,rows=[],revision=0,activeId='',activeSlot=-1,statusText='Choose a coin to customize its sound.';
  container.className='milestone-sounds';
- container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">COLLECTION SOUND MILESTONES</p><h3>Sounds unlocked by market cap</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Each sound starts at its market-cap milestone and stays in Envion until the next uploaded milestone sound takes over. The $2M sound continues above $2M. Uploads are saved in this browser for this token.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
+ container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">SOUND MILESTONES</p><h3>Sounds unlocked by market cap</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Drop audio into an unlocked slot · up to 8 sec.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
  const cards=THRESHOLDS.map((threshold,index)=>{
   const card=document.createElement('article');card.className='milestone-sound-card';
@@ -68,7 +68,7 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
     const compact=await compactAudio(file,getAudioContext);if(token!==marketKey||version!==revision||unlockedCap()<threshold)return;
     const record={id:token+'|'+index,token,slot:index,threshold,name:file.name.replace(/[<>]/g,''),blob:compact.blob,duration:compact.duration,sampleRate:compact.sampleRate,waveform:compact.waveform,revision:Date.now()};
     await storeRequest('readwrite',store=>store.put(record));if(token!==marketKey)return;
-    rows[index]=record;statusText=`Saved ${record.name} · ${record.duration.toFixed(1)} sec · ${Math.round(record.sampleRate/1000)} kHz`;
+    rows[index]=record;statusText=`${record.name} · ${record.duration.toFixed(1)} sec · saved on this device`;
     updateActive();render();
    }catch(error){statusText=error.message||'Could not load this sound.';render();}
   }
@@ -105,9 +105,9 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  return {
   async setMarket(key,nextCap=0,isReplay=false){
    key=safeKey(key);const newMarket=key!==marketKey,wasReplay=replay;marketKey=key;cap=Number.isFinite(Number(nextCap))?Math.max(0,Number(nextCap)):0;replay=!!isReplay;
-   if(newMarket){const current=++revision;rows=Array(THRESHOLDS.length).fill(null);activeId='';onActiveSample(null);statusText='Loading this token’s saved sounds…';render();
-    try{const loaded=await storeRequest('readonly',store=>store.getAll());if(current!==revision)return;for(let row of loaded||[])if(row.token===key&&row.slot>=0&&row.slot<rows.length){if(!Array.isArray(row.waveform)){try{const compact=await compactAudio(row.blob,getAudioContext);if(current!==revision)return;row={...row,...compact};void storeRequest('readwrite',store=>store.put(row)).catch(()=>{});}catch{}}rows[row.slot]=row;}statusText='Sounds are saved locally to this token in this browser.';}
-    catch(error){statusText='Local sound storage unavailable: '+(error.message||'');}
+   if(newMarket){const current=++revision;rows=Array(THRESHOLDS.length).fill(null);activeId='';onActiveSample(null);statusText='Loading saved sounds…';render();
+    try{const loaded=await storeRequest('readonly',store=>store.getAll());if(current!==revision)return;for(let row of loaded||[])if(row.token===key&&row.slot>=0&&row.slot<rows.length){if(!Array.isArray(row.waveform)){try{const compact=await compactAudio(row.blob,getAudioContext);if(current!==revision)return;row={...row,...compact};void storeRequest('readwrite',store=>store.put(row)).catch(()=>{});}catch{}}rows[row.slot]=row;}statusText='Saved on this device';}
+    catch(error){statusText='Could not load saved sounds on this device.';}
    }
    if(wasReplay!==replay)activeId='\u0000';updateActive();render();
   },

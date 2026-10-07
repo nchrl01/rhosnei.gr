@@ -7,10 +7,11 @@ const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const mix=(a,b,t)=>a+(b-a)*unit(t);
 
 // Higher-cap marks retain sound history longer; no energy is created at rest.
-// Token artwork gradually takes over the existing marks from $10M to $1B.
+// Token artwork increasingly attracts the living field from $10M to $50M.
+// This strength saturates, not the animation: there is no high-cap handover.
 export function marketCapIdentity(marketCap){
  const cap=Number(marketCap);
- const t=cap>0&&Number.isFinite(cap)?unit((Math.log10(cap)-7)/2):0;
+ const t=cap>0&&Number.isFinite(cap)?unit(Math.log10(cap/1e7)/Math.log10(5)):0;
  return t*t*(3-2*t);
 }
 export function marketCapReleaseSeconds(marketCap){
@@ -68,8 +69,8 @@ export function pixelBlastParameters({seed=0,coinKey=null,referenceCap=null,wall
  const noiseAmount=.2*unit(.35*flow+.25*movement+.2*sound+.12*notes+.08*attack)*response;
 
  return {
-  // Shape, colour, transparency and crisp rasterization are intentional
-  // structural settings, independent of changing market or audio signals.
+  // Shape, transparency and crisp rasterization stay fixed. Artwork colours
+  // are introduced only after their market-cap milestone.
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
   patternKey:coinKey??seed,capitalStage:coinVisualPreset(coinKey??seed).patternStage,patternStage:coinVisualPreset(coinKey??seed).patternStage,pixelSize,cellSize:mix(16,4,liquidity),dotSize:pixelSize,
@@ -80,8 +81,8 @@ export function pixelBlastParameters({seed=0,coinKey=null,referenceCap=null,wall
   speed:animated?reference.speed*clamp(Number(tempo)||40,10,240)/100:0,
   edgeFade,pixelSizeJitter:unit(walletVariation),jitter:unit(walletVariation),
   dotStrength:mix((mobile?.28:.2)+(mobile?.72:.8)*strength,1,capFill),
-  // The same mark field resolves into token artwork as valuation approaches $1B.
-  identity:marketCapIdentity(marketCap),identityMotion:reducedMotion?0:.3*(1-marketCapIdentity(marketCap)),ecosystem:.28,
+  // Artwork attracts the moving field towards $50M; its colours arrive at $100M.
+  identity:marketCapIdentity(marketCap),artworkColor:Number.isFinite(Number(marketCap))&&Number(marketCap)>=1e8?1:0,identityMotion:reducedMotion?0:.3,ecosystem:.28,
   enableRipples:false,ripples:false,waveformEnabled:active&&engagement>.002,
   rippleSpeed:.12+.45*unit(.55*movement+.2*pace*response+.15*notes+.1*attack),
   rippleThickness:.02+.055*unit(.55*flow+.2*sound+.15*notes+.1*attack),

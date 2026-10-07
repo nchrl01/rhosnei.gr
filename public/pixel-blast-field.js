@@ -3,8 +3,9 @@ import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=214';
 import {battleGLSL} from './earthbound-motion.js?v=214';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=217';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=214';
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=220';
+import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=220';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=220';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -31,6 +32,9 @@ precision highp float;
 flat in vec2 vPixelId;
 
 uniform vec3  uColor;
+uniform vec3 uArtworkColorA;
+uniform vec3 uArtworkColorB;
+uniform float uArtworkColor;
 uniform vec2  uResolution;
 uniform vec2  uCanvasScale;
 uniform float uTime;
@@ -143,19 +147,7 @@ vec2 liquidOffset(vec2 point){
   return result;
 }
 
-float identityInk(vec2 point){
-  vec2 viewSize=uResolution/uCanvasScale;
-  float side=.82*min(viewSize.x,viewSize.y);
-  vec2 p=point/side;
-  float flow=((1.0-uIdentity)*.1+.012)*uIdentityMotion;
-  float phase=uTime*.65+uSeed*.013;
-  vec2 uv=vec2(.5+p.x,.5-p.y)+vec2(
-    sin(p.y*9.0+phase)+.35*sin(p.x*5.0-phase*.7),
-    sin(p.x*8.0-phase*.85)+.3*sin(p.y*5.0+phase*.6)
-  )*flow;
-  if(any(lessThan(uv,vec2(0.0)))||any(greaterThanEqual(uv,vec2(1.0))))return 0.0;
-  return texture(uIdentityImage,uv).r;
-}
+${pixelIdentityGLSL}
 
 // Sound injects local motion into the same noise coordinates. There is no
 // second ink mask, brightness overlay, or independently drawn sound shape.
@@ -191,6 +183,14 @@ void main(){
   vec2 displacement=dataMotion(squarePoint)/viewSize.y;
   vec2 samplePoint=squarePoint+displacement*viewSize.y;
   vec2 uv = squarePoint / viewSize * vec2(aspectRatio, 1.0)+displacement;
+  vec4 imageGuide=vec4(0.);
+  float imagePalette=-1.;
+  if(uIdentity>0.||uArtworkColor>0.){
+    imageGuide=identityGuide(samplePoint,imagePalette);
+    // Bend only the pattern coordinates towards artwork contours. The
+    // established lattice, frame size and source-clock flow stay intact.
+    uv+=imageGuide.ba*uIdentity*.045*.82*min(viewSize.x,viewSize.y)/viewSize.y;
+  }
 
   float base = fbm2(uv, uTime * 0.05);
   base = base * 0.5 - 0.65;
@@ -207,15 +207,10 @@ void main(){
   const float dampR     = 10.0;
 
 
-  // The coin is a target for the same dot field, not a pasted image layer.
-  // Its coordinates flow only with the existing market/audio clock. The
-  // low-cap field is scattered; a high-cap field settles into recognizable ink.
-  float imageInk=0.0;
-  if(uIdentity>0.0){
-    imageInk=identityInk(mix(samplePoint,squarePoint,uIdentity));
-    float imageFeed=mix(-.05,1.05,imageInk);
-    feed=mix(feed,imageFeed,uIdentity);
-  }
+  // Keep at least 76% of the live pattern contrast, even above $50M.
+  // Artwork biases occupancy and local size; it never becomes a replacement
+  // frame or overrides the sound-driven survival of the existing marks.
+  feed=feed*(1.-.24*uIdentity)+uIdentity*(.52*imageGuide.r+.16*imageGuide.g-.16);
 
   float bayer = Bayer8(pixelId) - 0.5;
   float bw = step(0.5, feed + bayer);
@@ -225,7 +220,7 @@ void main(){
   float coverage = bw;
   // The reference edge envelope shrinks individual marks. Their alpha
   // remains binary, including when quiet activity makes them smaller.
-  float backgroundScale=mix(1.0,.7+.3*imageInk,uIdentity);
+  float backgroundScale=mix(1.0,.76+.24*imageGuide.g,uIdentity);
   vec2 centrePhysical=origin+squarePoint*uCanvasScale;
   vec2 screenUV=centrePhysical/uResolution;
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
@@ -256,7 +251,12 @@ void main(){
   float M = coverage * mark * step(perimeterHash,edge*edge)*survival;
 
   if(M<.5)discard;
-  fragColor=vec4(uColor,1.);
+  // Reuse the artwork lookup: original two-colour regions travel with the
+  // attraction guide. Outside it, stable cell ownership keeps colour alive
+  // across the whole pattern without flickering between frames.
+  float colorIndex=imagePalette<0.?step(.5,h):imagePalette;
+  vec3 artworkInk=mix(uArtworkColorA,uArtworkColorB,colorIndex);
+  fragColor=vec4(uColor*mix(vec3(1.),artworkInk,uArtworkColor),1.);
 
 }
 `;
@@ -282,7 +282,7 @@ export function createPixelBlastField(host,{generations=true}={}){
   gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,identityMask?.width||1,identityMask?.height||1,0,gl.RED,gl.UNSIGNED_BYTE,identityMask?.data||new Uint8Array(1));
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,identityMask?.width||1,identityMask?.height||1,0,gl.RGBA,gl.UNSIGNED_BYTE,identityMask?.texture||new Uint8Array([0,0,128,128]));
  }
  function initialize(){
   if(!gl)return;
@@ -295,7 +295,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    candidate=gl.createProgram();for(const shader of shaders)gl.attachShader(candidate,shader);gl.linkProgram(candidate);
    if(!gl.getProgramParameter(candidate,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(candidate));
    program=candidate;
-   const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uMarkDirection','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
+   const names=['uColor','uArtworkColorA','uArtworkColorB','uArtworkColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uMarkDirection','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
    for(const name of ['uBattlePatternA','uBattlePatternB','uBattleStyleA','uBattleStyleB','uBattleMix','uBattleFlowA','uBattleFlowB'])locations[name]=gl.getUniformLocation(program,name);
    locations.holderGroups=gl.getUniformLocation(program,'uHolderGroups[0]');
@@ -360,6 +360,10 @@ export function createPixelBlastField(host,{generations=true}={}){
    const pattern=battlePattern(params.patternKey??seed,time||0),battle=pattern.motions;
    for(let layer=0;layer<2;layer++){const suffix=layer===0?'A':'B';gl.uniform4fv(locations['uBattlePattern'+suffix],pattern.shapes[layer]);gl.uniform4fv(locations['uBattleStyle'+suffix],pattern.styles[layer]);gl.uniform4fv(locations['uBattle'+suffix],battle[layer].slice(0,4));gl.uniform4fv(locations['uBattleFlow'+suffix],battle[layer].slice(4,8));}
    gl.uniform4fv(locations.uBattleMix,pattern.mix);
+   const palette=identityMask?.palette;
+   gl.uniform3f(locations.uArtworkColorA,...(palette?.[0]??[1,1,1]));
+   gl.uniform3f(locations.uArtworkColorB,...(palette?.[1]??[1,1,1]));
+   f('uArtworkColor',palette?.some(rgb=>Math.max(...rgb)-Math.min(...rgb)>.08)?unit(params.artworkColor):0);
    const ink=params.inkColor??1;gl.uniform3f(locations.uColor,ink,ink,ink);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uMarkDirection',Math.sign(Number(params.markDirection)||0));
@@ -376,7 +380,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    if(!preserve){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}
    gl.drawArraysInstanced(gl.TRIANGLES,0,6,columns*rows);
    canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(inputs.level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);
-   Object.assign(canvas.dataset,{basePixelSize:params.pixelSize.toFixed(3),pixelSize:params.pixelSize.toFixed(3),cellSize:params.cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:String(params.edgeFade),rippleEnabled:String(params.ripples),identity:(identityMask?params.identity:0).toFixed(3),identityImage:String(!!identityMask)});
+   Object.assign(canvas.dataset,{basePixelSize:params.pixelSize.toFixed(3),pixelSize:params.pixelSize.toFixed(3),cellSize:params.cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:String(params.edgeFade),rippleEnabled:String(params.ripples),identity:(identityMask?params.identity:0).toFixed(3),identityImage:String(!!identityMask),artworkColor:(identityMask?.palette?unit(params.artworkColor):0).toFixed(3)});
    Object.assign(canvas.dataset,{jitter:params.jitter.toFixed(3),liquid:String(params.liquid),liquidStrength:params.liquidStrength.toFixed(3),liquidRadius:params.liquidRadius.toFixed(3),liquidWobbleSpeed:params.liquidWobbleSpeed.toFixed(3),noiseAmount:params.noiseAmount.toFixed(3),ecosystem:params.ecosystem.toFixed(3),rippleSpeed:params.rippleSpeed.toFixed(3),rippleThickness:params.rippleThickness.toFixed(3),rippleIntensity:params.rippleIntensity.toFixed(3)});
   },
   clear(){software?.clear();if(gl&&!lost){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ripples=[];},

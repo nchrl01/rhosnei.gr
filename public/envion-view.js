@@ -1,4 +1,4 @@
-import {createEnvionSimpleView} from './envion-simple-view.js?v=209';
+import {createEnvionSimpleView} from './envion-simple-view.js?v=220';
 // Envion's own Pd object positions and GUI arguments drive this view.
 // The browser renders the controls; it does not invent a parallel patch graph.
 const NS = 'http://www.w3.org/2000/svg';

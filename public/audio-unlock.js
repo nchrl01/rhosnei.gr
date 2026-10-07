@@ -10,7 +10,8 @@ export function createMusicContext(){
  const Context=globalThis.AudioContext||globalThis.webkitAudioContext;
  if(!Context)throw Error('Audio is unavailable in this browser');
  // Let the browser use the speaker/headphone route's native sample rate.
- return new Context();
+ // A playback buffer gives the synthesis graph more headroom during rendering.
+ return new Context({latencyHint:'playback'});
 }
 function unlockError(){const error=Error('Audio is blocked or interrupted · tap Listen again');error.name='AudioUnlockError';return error;}
 export function unlockPlayback(context){

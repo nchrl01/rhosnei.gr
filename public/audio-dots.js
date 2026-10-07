@@ -1,7 +1,7 @@
-import {advancePixelSurvival,marketCapReleaseSeconds,marketCapIdentity} from './pixel-blast-parameters.js?v=214';
+import {advancePixelSurvival,marketCapReleaseSeconds,marketCapIdentity} from './pixel-blast-parameters.js?v=220';
 import {walletSizeVariation} from './visual-context.js?v=214';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=217';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=220';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -238,14 +238,15 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(replaying&&sourceClock!==null){clock=eventTime*.8;liquidClock=clock*visualParams.liquidWobbleSpeed;}else{clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;}
    dirty=true;
   }
-  // Market-cap proximity controls formation, rather than a periodic timer.
-  // Preserve the same dots, with finer sampling as the dither becomes legible.
+  // Artwork attracts the established field without taking over its spacing,
+  // mark sizes or movement. Ease cap crossings into the same living pattern.
   appearance.identity??=smoothed.identity;
   appearance.identity+=(smoothed.identity-appearance.identity)*(1-Math.exp(-dt/1.4));
+  appearance.artworkColor??=0;
+  appearance.artworkColor+=(visualParams.artworkColor-appearance.artworkColor)*(1-Math.exp(-dt/1.4));
   visualParams.identity=hasIdentityImage?appearance.identity:0;
-  visualParams.identityMotion=reduced.matches?0:.3*(1-visualParams.identity);
-  visualParams.cellSize+=(Math.min(visualParams.cellSize,3)-visualParams.cellSize)*visualParams.identity;
-  visualParams.dotSize+=(Math.min(visualParams.dotSize,visualParams.cellSize*.85)-visualParams.dotSize)*visualParams.identity;
+  visualParams.artworkColor=hasIdentityImage?appearance.artworkColor:0;
+  visualParams.identityMotion=reduced.matches?0:.3;
   visualParams.pixelSize=visualParams.dotSize;
   visualCursor=replaying?eventTime:null;
   visualParams.pixelPresence=Math.max(.32,pixelPresence);

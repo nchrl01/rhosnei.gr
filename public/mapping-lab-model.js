@@ -1,5 +1,5 @@
 import {ENVION_CONTROLS} from './envion-market.js?v=61';
-import {PIXEL_BLAST_REFERENCE} from './pixel-blast-parameters.js?v=214';
+import {PIXEL_BLAST_REFERENCE} from './pixel-blast-parameters.js?v=220';
 export const SOURCES=['activity','motion','volume','liquidity','balance','direction','pressure','shock','tempo','activity + volume','price change','market cap','audio energy','note events','seed','custom'];
 export const ROUTES=[
  ['price','Price / % movement','Latest observed price + historical prices; chart viewport is not an input.','Compare 5-minute change with typical historical movement. Derive direction, pace, musical character and intensity.','Harmony / note selection. A ≥5% move from the note anchor can trigger a note. Contextual intensity controls tempo, currently 40–140 BPM.','Field speed, flow direction and pattern variation.'],

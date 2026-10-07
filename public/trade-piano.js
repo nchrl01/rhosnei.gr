@@ -93,7 +93,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   finally{if(token===bankEpoch)bankLoading=false;}
  }
  let lab={};
- let timeline=null,timelineSegments=[],replayAnchor=null,lastObservedPrice=null,activityOpen=false,liveBeat=0,liveAt=ctx.currentTime,liveTempo=100,pendingContext={music:{},cap:0,active:false},liveUntil=-Infinity;
+ let timeline=null,timelineSegments=[],replayAnchor=null,lastObservedPrice=null,liveBeat=0,liveAt=ctx.currentTime,liveTempo=100,pendingContext={music:{},cap:0,active:false},liveUntil=-Infinity;
  let scheduled=new Set(),barCache=new Map(),resumeNotes=true,lastHarmonyBar=null,transportHeld=false;
  function labRoom(){for(const [key,param] of [['cutoff',instrumentFilter.frequency],['q',instrumentFilter.Q],['roomSend',instrumentSend.gain],['dry',dry.gain],['wet',wet.gain]])if(Number.isFinite(lab[key]))param.setTargetAtTime(lab[key],ctx.currentTime,.05);}
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.025);}
@@ -163,24 +163,27 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  // Stable score clock: no pattern restarts when a new chart frame arrives.
  function queueContext(selection,event,cap,music){
   pendingContext={music:{...music},cap,active:selection?.reason!=='quiet',harmonyStep:selection?.harmonyStep??pendingContext.harmonyStep??0};
-  liveUntil=ctx.currentTime+Math.min(3,Math.max(.6,120/scoreTempo(music)));
+  // Cached trades arrive in batches at least eight seconds apart. Keep a
+  // bounded phrase window between those batches without inventing new trades.
+  const activityWindow=event?.source==='gecko'?10:Math.min(3,Math.max(.6,120/scoreTempo(music)));
+  liveUntil=Math.max(liveUntil,ctx.currentTime+activityWindow);
   return true;
  }
  function scoreNow(){return replayAnchor?replayAnchor.at+(ctx.currentTime-replayAnchor.clock)*1000*replayAnchor.rate:null;}
  function livePosition(){const now=ctx.currentTime;liveBeat+=(now-liveAt)*liveTempo/60;liveAt=now;return liveBeat;}
+ const lookAhead=.25;
  const scheduler=setInterval(()=>{
   if(closed||bankLoading||bankError||!running||!enabled||transportHeld||ctx.state!=='running')return;
   const now=ctx.currentTime,position=scoreNow(),replaying=timeline&&position!==null;
   const beat=replaying?timeline.beatAt(position):livePosition();
   const activeContext=replaying?timeline.contextAtBeat(beat):pendingContext;
   const active=replaying?!!activeContext&&position>=activeContext.start&&position<activeContext.end&&activeContext.active!==false:pendingContext.active&&now<liveUntil;
-  // Gate cached phrases too: a bar composed during activity must not keep
-  // issuing notes after that activity ends. Release voices, retaining the room.
-  if(!active){if(activityOpen)for(const voice of voices)stopVoice(voice);activityOpen=false;resumeNotes=false;return;}
-  activityOpen=true;
+  // Quiet periods stop new attacks; already sounding notes and room tails
+  // finish their scored envelopes instead of being chopped at the gate.
+  if(!active){resumeNotes=false;return;}
   const rate=replaying?replayAnchor.rate:1;
   const atBeat=b=>replaying?now+(timeline.atBeat(b)-position)/1000/rate:now+(b-beat)*60/liveTempo;
-  const lastBeat=replaying?timeline.beatAt(position+120*rate):beat+.12*liveTempo/60;
+  const lastBeat=replaying?timeline.beatAt(position+lookAhead*1000*rate):beat+lookAhead*liveTempo/60;
   const currentBar=Math.floor(beat/4);
   if(!replaying&&lastHarmonyBar!==currentBar)liveTempo=scoreTempo(pendingContext.music);
   for(let bar=currentBar;bar<=Math.min(currentBar+24,Math.floor(lastBeat/4));bar++){
@@ -197,7 +200,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const e=plan.events[index],id=bar+':'+index;
     if(replaying&&timeline.contextAtBeat(bar*4+e.beat)?.active===false)continue;
     const begin=atBeat(bar*4+e.beat),end=atBeat(bar*4+e.beat+e.duration);
-    if(scheduled.has(id)||begin>=now+.12||end<=now+.015)continue;
+    if(scheduled.has(id)||begin>=now+lookAhead||end<=now+.015||(!replaying&&begin>=liveUntil))continue;
     if(begin<now-.06&&!resumeNotes)continue;
     // Only sustain a note that spans the chosen timestamp. Do not re-fire
     // an earlier attack or walk through a backlog on a seek.
@@ -232,7 +235,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){transportHeld=!value;if(!value&&running&&!replayAnchor)livePosition();running=Boolean(value);liveAt=ctx.currentTime;updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;timelineSegments=[];replayAnchor=null;lastObservedPrice=null;activityOpen=false;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
+  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;timelineSegments=[];replayAnchor=null;lastObservedPrice=null;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){pendingContext.music={...pendingContext.music,tempo:scoreTempo({tempo:value})};},
   resonance(cap){currentCap=cap;const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;const clarity=unit((Math.log10(Math.max(1000,Number(cap)||1000))-4)/3);instrumentFilter.frequency.setTargetAtTime(profile.cutoff*(.7+.3*clarity),ctx.currentTime,.2);instrumentSend.gain.setTargetAtTime(.7-.46*clarity,ctx.currentTime,.4);dry.gain.setTargetAtTime(.3+.55*clarity,ctx.currentTime,.4);wet.gain.setTargetAtTime(1.1-.45*clarity,ctx.currentTime,.4);}labRoom();return r;},

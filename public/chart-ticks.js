@@ -13,7 +13,7 @@ export function createChartTicks(chart){
   return best;
  }
  function paint(){
-  if(!samples.length){position.textContent='LATEST FRAME';reading.textContent='Waiting for market history';row.setAttribute('aria-disabled','true');row.setAttribute('aria-valuenow','100');row.setAttribute('aria-valuetext','No market history');return;}
+  if(!samples.length){position.textContent='LATEST';reading.textContent='Waiting for market history';row.setAttribute('aria-disabled','true');row.setAttribute('aria-valuenow','100');row.setAttribute('aria-valuetext','No market history');return;}
   const playback=selected(),index=hover??playback,bar=samples[index],percent=samples.length===1?100:Math.round(playback/(samples.length-1)*100);
   const latest=samples.at(-1).close,delta=(bar.close/latest-1)*100,date=new Date(bar.time).toLocaleString();
   position.textContent=percent+'% OF LOADED HISTORY';

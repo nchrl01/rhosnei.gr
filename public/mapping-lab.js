@@ -1,4 +1,4 @@
-import {ROUTES,TIMING,PIXELS,FEEDBACK,COLLECTIBLE,VISUAL_RULES,SOURCES,baseline,hydrate,validate,changes,changeNote} from './mapping-lab-model.js?v=214';
+import {ROUTES,TIMING,PIXELS,FEEDBACK,COLLECTIBLE,VISUAL_RULES,SOURCES,baseline,hydrate,validate,changes,changeNote} from './mapping-lab-model.js?v=220';
 import {ENVION_CONTROLS} from './envion-market.js?v=61';
 const $=id=>document.getElementById(id),key='upic-mapping-lab-v1',original=baseline();
 let draft=baseline(),storageAvailable=true,saveTimer;

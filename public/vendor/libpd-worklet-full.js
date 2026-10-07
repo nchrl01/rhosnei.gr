@@ -5213,6 +5213,7 @@
       this.printBuf = "";
       this.recording = null;
       this.scopesEnabled = false;
+      this.guiTelemetry = false;
       this.scopeBuffers = Array.from({length:7}, () => new Float32Array(512));
       this.scopePosition = 0;
       this.scopeElapsed = 0;
@@ -5231,6 +5232,9 @@
         while ((nl = this.printBuf.indexOf("\n")) >= 0) {
           const line = this.printBuf.slice(0, nl);
           this.printBuf = this.printBuf.slice(nl + 1);
+          // GUI-only state does not need to cross the audio-thread boundary
+          // while the inspector is hidden. File/loading messages still pass.
+          if (!this.guiTelemetry && (line.startsWith("av-envion-ui-bytes:") || line.startsWith("av-envion-canvas-bytes:"))) continue;
           this.port.postMessage({ type: "print", text: line });
         }
       }, "vi");
@@ -5266,6 +5270,10 @@
       const lib = this.lib;
       if (!lib) return;
       switch (msg.type) {
+        case "enable-gui-telemetry": {
+          this.guiTelemetry = Boolean(msg.enabled);
+          break;
+        }
         case "enable-scopes": {
           this.scopesEnabled = Boolean(msg.enabled);
           break;

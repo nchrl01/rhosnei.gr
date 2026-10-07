@@ -1186,6 +1186,9 @@ var PdRuntime = class {
       }
     };
   }
+  setGuiTelemetry(enabled) {
+    if (!this.closed) this.node.port.postMessage({type:"enable-gui-telemetry",enabled:Boolean(enabled)});
+  }
   onError(callback) {
     this.errorHandlers.add(callback);
     return () => {

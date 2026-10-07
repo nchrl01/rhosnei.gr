@@ -4,35 +4,35 @@ import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=213';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=206';
-import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
+import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,loadSharedScore} from './take-share.js?v=216';
+import {createTakeShare,loadSharedScore} from './take-share.js?v=220';
 import {pianoHarmony} from './music-context.js?v=208';
-import {createEnvion} from './envion.js?v=209';
+import {createEnvion} from './envion.js?v=220';
 import {createEngineView} from './engine-view.js?v=209';
 import {createCoinDither} from './coin-dither.js?v=217';
 import {createUpicBrand} from './upic-brand.js?v=115';
-import {createTransportIndicator} from './transport-indicator.js?v=112';
+import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createAudioDots} from './audio-dots.js?v=217';
+import {createAudioDots} from './audio-dots.js?v=220';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=211';
-import {createMilestoneSounds} from './milestone-sounds.js?v=8';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
+import {createMilestoneSounds} from './milestone-sounds.js?v=220';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=208';
+import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=220';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=54';
-import {createPd} from './vendor/libpd-wasm.js?v=206';
+import {createPd} from './vendor/libpd-wasm.js?v=220';
 import {subscribePool} from './realtime.js?v=4';
 import {subscribeEvm} from './evm.js?v=39';
 import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=206';
 import {startTrending,geckoPoolMarket} from './trending.js?v=219';
-import {MarketChart} from './chart.js?v=208';
+import {MarketChart} from './chart.js?v=220';
 import {loadHistory} from './history.js?v=207';
 import {pollPoolTrades} from './trades.js?v=206';
 const $=id=>document.getElementById(id);
@@ -40,7 +40,7 @@ const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let envionLoading=null;
 let sharedHarmony=null;
-let pd,ctx,gain,listeningGain,outputTap,outputMeters,instrumentTap,instrumentSamples,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
+let pd,ctx,gain,listeningGain,outputTap,outputMeters,instrumentTap,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let requestedNetwork=null,requestedAutoplay=false;
 let snapshotController,searchController;
 const providerCooldowns=new Map();
@@ -169,7 +169,14 @@ function marketRoot(m){
 }
 function pianoMusic(m,music=m.music){return {...music,activity:m.activity,tonic:marketRoot(m)};}
 
-function send(name,value){if(pd){pd.sendFloat(name,value);engineView.sent(name,value);}}
+const sentControls=new Map(),repeatedSignals=new Set(['seed','heartbeat','data-enabled']);
+function send(name,value){
+ if(!pd||!Number.isFinite(value))return;
+ // Parameter values can be held on the audio thread. Keep actual triggers
+ // and watchdog refreshes repeatable, without resending every static control.
+ if(!repeatedSignals.has(name)&&!/^math-.*-gate$/.test(name)&&sentControls.get(name)===value)return;
+ sentControls.set(name,value);pd.sendFloat(name,value);engineView.sent(name,value);
+}
 function event(name){pd?.sendBang(name);}
 const liveLandmarks=createMarketLandmarks();
 function liveMetrics(){
@@ -215,13 +222,13 @@ function updateReplayUI(m){
  $('replay-live').setAttribute('aria-pressed',String(!active));
  $('replay-play').setAttribute('aria-pressed',String(active));
  const hint=$('replay-hint');
- if(hint){const text=!(chart.renderedBars?.length)?'History is loading. You can listen live while it arrives.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the history strip to move through the recording. '+(replay.state.speed==='1'?'Real time: one recorded second per second.':replay.state.speed+'× playback.')):'Listen live, or choose a point on the history strip to replay.';if(hint.textContent!==text)hint.textContent=text;}
+ if(hint){const text=!(chart.renderedBars?.length)?'Loading history · live playback is available.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the strip to move through the replay.'):'Choose a point on the strip to replay.';if(hint.textContent!==text)hint.textContent=text;}
 
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
 
- $('replay-info').textContent='One shared musical clock: chart context shapes the next bar, without restarting the phrase. Fast replay folds the musical subdivision below 200 BPM while the chart keeps its selected speed. Fresh trades or changed prices open live phrases briefly; empty historical candles stay silent. Low-cap chords bloom in reverb; markets above $1M add syncopated patterns. Kraken follows the chord as a separate bassline. Replay resumes the frozen score at the selected timestamp. Historical candles describe aggregate activity, not individual trades.';
- if(isExchangeMarket(market))$('replay-info').textContent+=' Exchange history volume is estimated from base volume × close. Historical market cap is unavailable.';
+ $('replay-info').textContent='Choose a point to replay. Market changes shape the sound.';
+ if(isExchangeMarket(market))$('replay-info').textContent+=' Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
 }
@@ -323,26 +330,8 @@ function replayPiano(m){
  }else piano.syncTimeline(cursor,rate);
  pianoReplayCursor=cursor;
 }
-let instrumentWasAudible=false;
-function otherInstrumentsAudible(){
- if(!playing||ctx?.state!=='running'){instrumentWasAudible=false;return false;}
- let power=0,count=0;
- for(const bus of audioScopes)for(const meter of bus.channels){
-  meter.musicSamples??=new Float32Array(meter.fftSize);
-  meter.getFloatTimeDomainData(meter.musicSamples);
-  for(const sample of meter.musicSamples){power+=sample*sample;count++;}
- }
- const rms=count?Math.sqrt(power/count):0;
- instrumentWasAudible=rms>(instrumentWasAudible?.0002:.0005);return instrumentWasAudible;
-}
-
 function tick(){
  const m=metrics(),music=musicalFrame(m),energy=music.volume*m.fresh;
- const audible=otherInstrumentsAudible();
-
-
-
-
  if(!replay.state.active)arpeggioAI.setContext(m.music);
  syncLevels(m);envion.market(music,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
@@ -370,7 +359,7 @@ async function initialize(){
   const splitter=ctx.createChannelSplitter(2);vinyl.node.connect(splitter);
   outputMeters=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;splitter.connect(meter,channel);return meter;});
   // Piano and Pd share the instrument-analysis tap.
-  instrumentTap=ctx.createAnalyser();instrumentTap.fftSize=2048;instrumentSamples=new Float32Array(instrumentTap.fftSize);instrumentTap.connect(gain);
+  instrumentTap=ctx.createGain();instrumentTap.connect(gain);
   function scope(name,out){const input=ctx.createGain();input.connect(out);const split=ctx.createChannelSplitter(2);input.connect(split);const channels=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;split.connect(meter,channel);return meter;});audioScopes.push({name,input,channels});return input;}
   scope('EarthBound',instrumentTap).gain.value=2;scope('Pure Data',instrumentTap);
 
@@ -395,9 +384,9 @@ async function initialize(){
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');
    const {manifest,files}=orchestra;Object.assign(files,envionFiles);
-   const runtime=await createPd({audioContext:context,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>{if(epoch===audioEpoch&&!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log(error.message);audioStatus();}}});
+   const runtime=await createPd({audioContext:context,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=220',onPrint:text=>{if(epoch===audioEpoch&&!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log(error.message);audioStatus();}}});
    if(epoch!==audioEpoch){await runtime.close();throw Error('Audio loading cancelled');}
-   pd=runtime;replayPhrase=null;runtime.connect(audioScopes[1]?.input||destination);engineView.setFiles(files,manifest,true);bindSignalMap();dataSonification.reset(seed);
+   pd=runtime;sentControls.clear();replayPhrase=null;runtime.connect(audioScopes[1]?.input||destination);engineView.setFiles(files,manifest,true);bindSignalMap();dataSonification.reset(seed);
    send('seed',seed%16777216);send('master',playing?engineMaster():0);if(playing)tick();send('run',playing?1:0);
    // Math and beat voices can start as soon as Pd is ready. Envion's sample
    // handshake has its own outcome and cannot close the other instruments.
@@ -413,7 +402,7 @@ async function initialize(){
 async function closeAudio(){
  clearTimeout(idleAudioTimer);vinylStopping=false;vinyl?.close();vinyl=null;
  arpeggioAI.close();stopLegacyPlayback();audioEpoch++;pianoLoading=null;pdLoading=null;pendingPianoTrade=null;
- piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;ctx=null;gain=null;listeningGain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;instrumentSamples=null;audioScopes=[];
+ piano?.close();piano=null;envion.detach();const runtime=pd,context=ctx;pd=null;sentControls.clear();ctx=null;gain=null;listeningGain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;audioScopes=[];
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
  if(runtime)await runtime.close();await context?.close();
 }
@@ -459,7 +448,7 @@ $('play').onclick=async()=>{
   if(vinyl)vinyl.pause(stopped);else stopped();
   status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;
  }
- vinylStopping=false;audioBusy(true);status('Loading sounds · playback starts as soon as an instrument is ready');
+ vinylStopping=false;audioBusy(true);status('Loading sounds…');
  try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);vinyl?.play();setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
@@ -654,7 +643,7 @@ function chooseMarket(pair,{shared=false}={}){
  const gen=generation;
  if(isExchangeMarket(pair)){
   const refresh=async()=>{if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,30000);return;}try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('chart-source').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
-  poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Listen');return;
+  poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Play');return;
  }
  const refresh=async()=>{
   if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,10000);return;}
@@ -662,7 +651,7 @@ function chooseMarket(pair,{shared=false}={}){
   try{const updated=await freshMarketSnapshot(market,{signal:request.signal});if(gen!==generation)return;applySnapshot(updated);
   }catch(e){if(gen===generation)$('chart-source').textContent='Snapshot delayed: '+e.message;}finally{clearTimeout(timeout);}
   if(gen===generation)poll=setTimeout(refresh,market.snapshotProvider==='gecko'?30000:streamConnected&&['swap','rpc-poll'].includes(streamKind)?15000:5000);
- };poll=setTimeout(refresh,pair.snapshotProvider==='gecko'?30000:5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Listen');
+ };poll=setTimeout(refresh,pair.snapshotProvider==='gecko'?30000:5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Play');
 }
 const addressField=$('address').closest('.address-field');
 const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
@@ -803,7 +792,7 @@ async function restoreSharedScore(){
   const score=await loadSharedScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
   chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval,score.market);replay.state.speed=['1','10','20','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
-  replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Shared candle score · press Listen');return true;
+  replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Replay ready · press Play');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
 display();
@@ -892,7 +881,7 @@ $('replay-live').onclick=async()=>{
  chart.tickView?.live();chart.goLive();$('chart-range').value='live';
  session?.controls.push({at:Date.now(),name:'history-live'});
  if(playing)tick();else{const m=metrics();syncLevels(m);envion.market(musicalFrame(m),orchestraTempo(m));}
- status(playing?'Listening live · waiting for trades':'Live market · press Listen');return true;
+ status(playing?'Listening live · waiting for trades':'Live market · press Play');return true;
 };
 function updateSpeedButtons(){
  for(const button of $('replay-speed').querySelectorAll('[data-rate]'))button.setAttribute('aria-pressed',String(button.dataset.rate===replay.state.speed));

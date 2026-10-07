@@ -12,7 +12,7 @@ export function buildPerformanceCatalog(model,banks){
 // Decisions are held between musical boundaries. Equal market readings can
 // produce different phrases; market intensity controls the probability and range.
 export function createEnvionPerformance(catalog,seed=1917){
- let state=seed>>>0,last=-1,turn=0,current=null;
+ let state=seed>>>0,last=-1,turn=0,current=null,heldMaterial=null;
  const random=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
  const pick=(items,previous,weight=()=>1)=>{
   const pool=items.filter(x=>items.length===1||x!==previous),weights=pool.map(x=>Math.max(.02,weight(x)));
@@ -23,20 +23,22 @@ export function createEnvionPerformance(catalog,seed=1917){
   if(!force&&boundary===last)return null;last=boundary;turn++;
   const chance=p=>random()<clamp(p,0,1),signed=()=>random()*2-1;
   const intensity=clamp(.4*m.activity+.35*m.motion+.25*m.pressure,0,1);
-  const changeMaterial=!current||turn%2===0&&chance(.3+.65*intensity);
-  const material={...(current?.material||{})};
+  // File and convolution changes run on Pd's audio thread. Choose these once
+  // for this seed; musical boundaries continue to vary the existing material.
+  const changeMaterial=!heldMaterial;
+  const material={...(heldMaterial||{})};
   if(changeMaterial){
    const preset=pick(catalog.presets,current?.material.preset,p=>{
     const percussive=/kick|bongo|percuss|ddr|autechre|gesti|buchla/.test(p.name);
     return percussive?.3+2*m.activity:.4+1.4*(1-m.activity);
    });
    material.preset=preset;
-   // Half the transitions use the preset's authored sound; the rest explore
-   // the entire bundled library, so file-loading buttons no longer wait for input.
+   // Each seed chooses either the preset's authored sound or a library sample.
    material.sample=(chance(.5)&&preset.assets.find(p=>p.startsWith('audio/')))||pick(catalog.samples,current?.material.sample,p=>/tape|ambience|Soundscapes|love/.test(p)?.2+1.8*(1-intensity):.5+intensity);
    material.bank=pick(catalog.banks,current?.material.bank,b=>/perc|kick|poly|triplet|sharpy/.test(b.path)?.2+2*intensity:.4+1.5*(1-intensity));
    material.tape=pick(catalog.samples.filter(p=>p.includes('___tape-audio/')),current?.material.tape);
    material.ir=pick(catalog.irs,current?.material.ir);
+   heldMaterial=material;
   }
   const gates={filter:chance(.15+.75*m.motion),pan:chance(.25+.6*Math.abs(m.balance-.5)*2),echo:chance(.12+.75*m.volume),reverb:m.liquidity>0&&chance(.2+.7*m.liquidity),grains:chance(.2+.7*m.activity),burst:chance(.1+.6*m.shock),autopan:chance(.15+.55*m.motion),grainMotion:chance(.2+.65*intensity),tape:chance(.15+.45*(1-intensity)),pingpong:chance(.2+.5*m.volume),distortion:chance(.1+.55*m.motion)};
   // Bounded numeric gestures; values follow the market and vary within its range.
@@ -62,7 +64,7 @@ export function createEnvionPerformance(catalog,seed=1917){
   current={actions,turn,material,changeMaterial,values,extra,effects,row:Math.floor(random()*material.bank.rows),density:clamp(Math.round(1+(1-m.activity)*5+signed()*2),1,8),summary:material.preset.name+' · '+named(material.sample)+' · '+named(material.bank.path)+' · '+effects.join(' / ')};
   return current;
  }
- return {next,get current(){return current;},reset(value=seed){state=value>>>0;last=-1;turn=0;current=null;}};
+ return {next,get current(){return current;},reset(value=seed,{preserveMaterial=false}={}){state=value>>>0;last=-1;turn=0;current=null;if(!preserveMaterial)heldMaterial=null;}};
 }
 
 export const CHANCE_LABELS={

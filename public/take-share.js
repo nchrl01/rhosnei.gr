@@ -1,5 +1,5 @@
 import {validArp} from './ai-instruments.js?v=209';
-import {requestPlaybackMode} from './audio-unlock.js?v=55';
+import {requestPlaybackMode} from './audio-unlock.js?v=220';
 const VERSION=1;
 const TAKE_API='https://upic-insightx.nchrl01.workers.dev/takes';
 export async function loadSharedScore(hash=location.hash){
@@ -63,9 +63,9 @@ export function createTakeShare({button,dialog,snapshot,onContinue=()=>{}}){
    const score=snapshot(),take=await finish();urls.forEach(URL.revokeObjectURL);urls=[];get('share-files').replaceChildren();
    const base=location.href.split('#')[0];
    prepared={url:null,file:null};
-   if(take?.blob?.size){const ext=take.blob.type.includes('mp4')?'m4a':'webm',name='UPIC-'+take.started+'.'+ext;prepared.file=new File([take.blob],name,{type:take.blob.type});link(take.blob,'Download exact audio take',name);}
-   if(score)link(new Blob([JSON.stringify(score)],{type:'application/json'}),'Download frozen score','UPIC-score.json');
-   get('share-note').textContent='Audio preserves the exact take (up to five minutes). The replay link freezes the candle score and coin seed; arpeggio phrase is preserved; granular textures can vary. Video export is not connected yet.';
+   if(take?.blob?.size){const ext=take.blob.type.includes('mp4')?'m4a':'webm',name='UPIC-'+take.started+'.'+ext;prepared.file=new File([take.blob],name,{type:take.blob.type});link(take.blob,'Download audio',name);}
+   if(score)link(new Blob([JSON.stringify(score)],{type:'application/json'}),'Download replay data','UPIC-score.json');
+   get('share-note').textContent=(prepared.file?'Download the recording or share a replay link. ':'Share a replay link. ')+'Replays may sound different; uploaded sounds stay on this device.';
 
    get('share-link').textContent='Copy replay link';get('share-link').disabled=!prepared.url;
    get('share-native').hidden=!prepared.file||!navigator.canShare?.({files:[prepared.file]});
@@ -80,13 +80,13 @@ export function createTakeShare({button,dialog,snapshot,onContinue=()=>{}}){
      const clean=new URL(base);clean.search='';clean.hash='take='+result.id;current.url=clean.href;
      get('share-link').textContent='Copy replay link';get('share-link').disabled=false;
     }catch{
-     if(prepared===current){get('share-link').textContent='Copy replay link';get('share-note').textContent+=' Short links are temporarily unavailable. Your audio and score downloads are still available.';}
+     if(prepared===current){get('share-link').textContent='Copy replay link';get('share-note').textContent+=' Link unavailable. Downloads are ready.';}
     }
    }
   }catch(error){get('share-note').textContent=error.message;dialog.showModal();onContinue();}
   finally{button.disabled=false;}
  };
- get('share-link').onclick=async()=>{try{await navigator.clipboard.writeText(prepared.url);get('share-link').textContent='Copied';}catch{get('share-note').textContent='Clipboard unavailable. Download the frozen score or copy this link: '+prepared.url;}};
- get('share-native').onclick=async()=>{try{await navigator.share({files:[prepared.file],title:'$UPIC · market take'});}catch(error){if(error.name!=='AbortError')get('share-note').textContent='Sharing unavailable here. Use Download exact audio take.';}};
+ get('share-link').onclick=async()=>{try{await navigator.clipboard.writeText(prepared.url);get('share-link').textContent='Copied';}catch{get('share-note').textContent='Could not copy. Copy this link: '+prepared.url;}};
+ get('share-native').onclick=async()=>{try{await navigator.share({files:[prepared.file],title:'$UPIC · market take'});}catch(error){if(error.name!=='AbortError')get('share-note').textContent='Download the audio to share it.';}};
  return {start,finish,reset(){epoch++;lastTake=null;pending=null;button.disabled=true;}};
 }

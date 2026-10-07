@@ -2,11 +2,11 @@ import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=188';
-import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=211';
+import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
+import {createTradePiano} from './trade-piano.js?v=220';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=209';
-import {createEnvion} from './envion.js?v=209';
-import {createPd} from './vendor/libpd-wasm.js?v=206';
+import {createEnvion} from './envion.js?v=220';
+import {createPd} from './vendor/libpd-wasm.js?v=220';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=208';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=209';
@@ -93,7 +93,7 @@ async function loadEngines(){
   if(!pd){setStatus('Pure Data','Loading patches…');setStatus('ENVION','Loading samples…');jobs.push((async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=214','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=214')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
    if(closed)return;const files={...orchestra.files,...envionFiles};
-   const result=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+orchestra.manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>envion.printed(text),onError:error=>setStatus('Pure Data',String(error?.message||error))});
+   const result=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+orchestra.manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=220',onPrint:text=>envion.printed(text),onError:error=>setStatus('Pure Data',String(error?.message||error))});
    if(closed){await result.close();return;}pd=result;pd.connect(musicMeter);send('master',1);send('seed',state.market.seed);send('run',running?1:0);setStatus('Pure Data','Ready');
    // Intercept only numeric controls; all other runtime methods retain their binding.
    const proxy=new Proxy(pd,{get(target,key){if(key==='sendFloat')return send;const value=target[key];return typeof value==='function'?value.bind(target):value;}});
