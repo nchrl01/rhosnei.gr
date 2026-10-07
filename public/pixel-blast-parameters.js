@@ -1,4 +1,4 @@
-import {capitalStage} from './capital-field.js?v=166';
+import {capitalStage} from './capital-field.js?v=167';
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
 // These controls change the field inside a fixed 4 CSS-pixel square lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
@@ -32,7 +32,9 @@ export function pixelBlastParameters({marketCap=null,level=0,formation=0,drive=0
  const eventEnergy=unit(.35*unit(surge)*current+.2*unit(imbalance)*current+.25*notes+.2*attack);
 
  const capFill=unit((capitalStage(marketCap)-6));
- const pixelSize=mix(clamp(.6+2.8*sound+1.6*valuation+3.2*notes+1.5*attack,.5,10),7,capFill);
+ // Both renderers rasterize the minimum to exactly one physical pixel.
+ const audibleGrowth=unit(sound/.35);
+ const pixelSize=mix(clamp(.5+(2.8*sound+1.6*valuation+3.2*notes+1.5*attack)*audibleGrowth,.5,10),.5+6.5*audibleGrowth,capFill);
  // Pattern scale changes only the noise sampled at existing square centres.
  // Cell spacing and scene framing stay fixed.
  const patternScale=reference.patternScale;

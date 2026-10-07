@@ -1,8 +1,8 @@
-import {withPixelGenerations} from './pixel-generations.js?v=166';
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=166';
-import {capitalGLSL} from './capital-field.js?v=166';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=166';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=166';
+import {withPixelGenerations} from './pixel-generations.js?v=167';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=167';
+import {capitalGLSL} from './capital-field.js?v=167';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=167';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=167';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -225,7 +225,8 @@ void main(){
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
-  float markSize=uDotSize*jitterScale*backgroundScale*sqrt(uPixelPresence);
+  float localSize=mix(.55+hash11(pixelId.x*43.17+pixelId.y*97.41)*.9,1.,uIdentity);
+  float markSize=uDotSize*localSize*jitterScale*backgroundScale*sqrt(uPixelPresence);
   float dotSize=max(1.,floor(markSize*edge*rasterScale+.5));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
