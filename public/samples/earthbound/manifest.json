@@ -125,21 +125,6 @@
       "loopEnd": 0.010599883517763541
     },
     {
-      "file": "preset-18.wav",
-      "midi": 60,
-      "trim": 0.85,
-      "preset": 18,
-      "bank": 0,
-      "program": 18,
-      "peak": 0.681671,
-      "bodyRms": 0.125123,
-      "name": "Steel Guitar",
-      "correction": 0,
-      "loop": true,
-      "loopStart": 0.2611055980386434,
-      "loopEnd": 0.27645788336933047
-    },
-    {
       "file": "preset-23.wav",
       "midi": 60,
       "trim": 0.85,
@@ -183,36 +168,6 @@
       "loop": true,
       "loopStart": 0.1641803145775904,
       "loopEnd": 0.5340522133938707
-    },
-    {
-      "file": "preset-27.wav",
-      "midi": 56,
-      "trim": 0.722505,
-      "preset": 27,
-      "bank": 0,
-      "program": 27,
-      "peak": 0.539703,
-      "bodyRms": 0.17993,
-      "name": "Trumpet",
-      "correction": 66,
-      "loop": true,
-      "loopStart": 0.025526225787395454,
-      "loopEnd": 0.03553772968939464
-    },
-    {
-      "file": "preset-28.wav",
-      "midi": 60,
-      "trim": 0.496205,
-      "preset": 28,
-      "bank": 0,
-      "program": 28,
-      "peak": 0.733521,
-      "bodyRms": 0.252356,
-      "name": "Saxophone",
-      "correction": 59,
-      "loop": true,
-      "loopStart": 0.07530950520297783,
-      "loopEnd": 0.09509316003783984
     },
     {
       "file": "preset-30.wav",

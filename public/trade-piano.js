@@ -2,14 +2,14 @@
 import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=177';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=146';
 import {createPianoPolicy} from './piano-policy.js?v=61';
-import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=178';
+import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=180';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
 const sampleAssets=new Map();
 async function loadSampleAsset(path,format){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
  try{
-  const response=await fetch('samples/earthbound/'+path+'?v=178',{signal:controller.signal});
+  const response=await fetch('samples/earthbound/'+path+'?v=180',{signal:controller.signal});
   if(!response.ok)throw Error('Cannot load instrument asset '+path);
   return await response[format]();
  }finally{clearTimeout(timeout);}
