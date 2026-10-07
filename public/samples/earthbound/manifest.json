@@ -20,21 +20,6 @@
       "loopEnd": 0.011207097828624796
     },
     {
-      "file": "preset-6.wav",
-      "midi": 55,
-      "trim": 0.437783,
-      "preset": 6,
-      "bank": 0,
-      "program": 6,
-      "peak": 0.715637,
-      "bodyRms": 0.296951,
-      "name": "Xylophone",
-      "correction": -25,
-      "loop": true,
-      "loopStart": 0.23325,
-      "loopEnd": 0.24325
-    },
-    {
       "file": "preset-12.wav",
       "midi": 60,
       "trim": 0.687367,
@@ -258,21 +243,6 @@
       "loop": true,
       "loopStart": 0.005277044854881266,
       "loopEnd": 0.0079155672823219
-    },
-    {
-      "file": "preset-16.wav",
-      "midi": 57,
-      "trim": 0.646957,
-      "preset": 16,
-      "bank": 0,
-      "program": 16,
-      "peak": 0.667206,
-      "bodyRms": 0.200941,
-      "name": "Accordion",
-      "correction": -20,
-      "loop": true,
-      "loopStart": 0.004379562043795621,
-      "loopEnd": 0.41751824817518246
     },
     {
       "file": "preset-130.wav",

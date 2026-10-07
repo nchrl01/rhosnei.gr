@@ -1,6 +1,6 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=1';
 import {createLabConnections} from './lab-connections.js?v=3';
-import {audioLab} from './audio-lab.js?v=11';
+import {audioLab} from './audio-lab.js?v=12';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),KEY='upic-av-lab-v1';
