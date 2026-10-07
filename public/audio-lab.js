@@ -2,11 +2,11 @@ import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=188';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=196';
+import {createTradePiano} from './trade-piano.js?v=197';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
 import {createEnvion} from './envion.js?v=198';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
-import {createDataSonification} from './data-sonification.js?v=187';
+import {createDataSonification} from './data-sonification.js?v=188';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=190';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=177';
@@ -165,7 +165,7 @@ function build(){
  for(const spec of mixSpecs)direct(mixer,'mix',spec);
  const switches=document.createElement('div');switches.className='switches';mixer.append(switches);
  for(const [key,label] of mixSpecs){switchButton(switches,label,()=>state.enabled[key],v=>state.enabled[key]=v);const b=document.createElement('button');b.onclick=()=>{solo=solo===key?null:key;changed();};switches.append(b);paints.push(()=>{b.textContent='Solo '+label;b.setAttribute('aria-pressed',solo===key);});}
- const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades sound the held harmony every eight beats; ≥5% movement advances it. Play chord auditions the next harmony immediately. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
+ const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades sound the held harmony every four beats; ≥5% movement advances it. Play chord auditions the next harmony immediately. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
  for(const spec of marketSpecs)direct(input,'market',spec);
  switchButton(input,'Key from seed',()=>state.seedKey,v=>state.seedKey=v);
  const keyInfo=document.createElement('p');keyInfo.className='lab-hint';input.append(keyInfo);paints.push(()=>keyInfo.textContent='KEY · '+keyName(currentTonic())+' · '+(state.seedKey&&!connectionBaselines.has('market.tonic')?'fixed by coin seed':'manual / cable')+' · mood keeps this tonic');

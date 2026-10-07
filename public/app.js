@@ -12,18 +12,18 @@ import {createEngineView} from './engine-view.js?v=196';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
-import {PIANO_MOVE_PCT} from './piano-policy.js?v=195';
+import {PIANO_MOVE_PCT} from './piano-policy.js?v=196';
 import {createAudioDots} from './audio-dots.js?v=192';
 import {createHolderMetadata} from './holder-metadata.js?v=168';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
-import {createDataSonification} from './data-sonification.js?v=187';
+import {createDataSonification} from './data-sonification.js?v=188';
 import {createArpeggioAI} from './ai-instruments.js?v=190';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=196';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=197';
 import {createMilestoneSounds} from './milestone-sounds.js?v=2';
 import {contextualizeMarket} from './market-state.js?v=53';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=79';
 import {signalFreshness} from './market-controls.js?v=18';
-import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=53';
+import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=54';
 import {createNativePd} from './native-pd.js?v=18';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {subscribePool} from './realtime.js?v=4';
@@ -200,7 +200,8 @@ function updateReplayUI(m){
 
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
- $('replay-info').textContent=!active?'Active trades play EarthBound phrases, spaced by eight beats. Price moves of ≥'+PIANO_MOVE_PCT+'% change the harmony; market cap and activity shape its layers. Known quiet intervals allow sparse notes.':'Positive-volume candles play EarthBound phrases; ≥'+PIANO_MOVE_PCT+'% movement changes the harmony. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
+ const phraseSeconds=(4*60/Math.max(40,Math.min(140,Number(m.music?.tempo)||40))).toFixed(1);
+ $('replay-info').textContent=!active?'Live: the first trade starts an EarthBound phrase; later active trades can start one every 4 beats (about '+phraseSeconds+'s at this tempo). A ≥'+PIANO_MOVE_PCT+'% move can trigger sooner, with at least one beat between notes. The melodic passage starts with each active phrase; the seeded arpeggio can join every 4-beat window, at most once every 12 beats. Confirmed quiet can add a sparse single note after 30 seconds.':'Replay: positive-volume candles can trigger EarthBound phrases; ≥'+PIANO_MOVE_PCT+'% movement changes the harmony. Melodic passages follow selected phrases; the seeded arpeggio may join every 4-beat window, no more than once per 12 beats. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Exchange history volume is estimated from base volume × close. Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}

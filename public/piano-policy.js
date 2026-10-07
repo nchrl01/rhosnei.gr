@@ -2,7 +2,7 @@
 // Compressed history must not accelerate the quiet piano into a repetitive loop.
 export const PIANO_MOVE_PCT=5;
 export const PIANO_QUIET_MS=30000;
-export const phraseSpacingMs=tempo=>8*60000/Math.max(40,Math.min(140,Number(tempo)||100));
+export const phraseSpacingMs=tempo=>4*60000/Math.max(40,Math.min(140,Number(tempo)||100));
 const priceOf=event=>Number(event.priceUsd??event.price);
 export function createPianoPolicy(seed=0){
  let anchor=null,lastTrade=null,started=null,lastNote=null,lastPhrase=null,harmonyStep=0,harmonyCharacter='serene',hasSounded=false;
@@ -49,7 +49,7 @@ export function createPianoPolicy(seed=0){
    // A cached burst or overdue replay batch cannot strike many notes at once.
    // Suppressed observations leave the price anchor intact for the next move.
    const selected=movement(price,at,music,quietAt);if(selected)return selected;
-   // New real trades may retrigger the current harmony every eight beats.
+   // New real trades may retrigger the current harmony every four beats.
    // Activity and quiet notes never move the five-percent price anchor.
    if(!event.historical&&(lastPhrase===null||quietAt-lastPhrase>=phraseSpacingMs(music.tempo)))return select(price,at,music,'activity',quietAt);
    return null;

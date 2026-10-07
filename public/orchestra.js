@@ -10,7 +10,7 @@ export function createOrchestraConductor(){
   setBundle(name,value){if(name==='envion')enabled=Boolean(value);},
   update(m,connected,now=performance.now()){
    const activity=unit(m.activity)*(connected?1:unit(m.fresh));
-   const target=enabled ? .6*unit(m.music?.intensity)*unit(m.fresh):0;
+   const target=enabled ? .38*unit(m.music?.intensity)*unit(m.fresh):0;
    const elapsed=lastTime===null?150:Math.max(0,Math.min(1000,now-lastTime));lastTime=now;
    level+=(target-level)*(1-Math.exp(-elapsed/650));
    return {levels:{melody:level},parameters:{},phrase:Math.floor(ticks/32)%4,state:unit(m.fresh)<.1?'SIGNAL FADING':unit(m.music?.intensity)>.65?'INTENSE':unit(m.music?.intensity)>.35?'ACTIVE':'SPARSE'};

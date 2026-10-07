@@ -1,4 +1,4 @@
-import {PIANO_MOVE_PCT} from './piano-policy.js?v=195';
+import {PIANO_MOVE_PCT} from './piano-policy.js?v=196';
 // Read-only inspection of the same Pd sources and messages used for playback.
 const NS='http://www.w3.org/2000/svg';
 const pretty=value=>Number.isFinite(value)?Number(value.toFixed(4)).toString():String(value);

@@ -1,5 +1,5 @@
 // Versioned score decisions are indexed by frozen candles, never listening time.
-import {PIANO_MOVE_PCT,phraseSpacingMs} from './piano-policy.js?v=195';
+import {PIANO_MOVE_PCT,phraseSpacingMs} from './piano-policy.js?v=196';
 import {musicContext} from './music-context.js?v=177';
 const hash=text=>{let h=2166136261;for(const c of String(text))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
 export function buildReplayScore(bars,seed,interval=60000,market={}){

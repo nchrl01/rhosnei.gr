@@ -12,13 +12,14 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
   // Historic candle volume is a labelled activity proxy, never a trade count.
   const excitation=fresh*Math.max(intensity*unit(activity*10),.5*Math.sqrt(activity*volume));
   const density=active?unit(excitation*(.15+.85*Math.sqrt(activity||volume))):0;
-  const level=active?.095*Math.sqrt(excitation):0;
+  const level=active?.14*Math.sqrt(excitation):0;
+  const reverb=active?.2+.32*liquidity:0;
   const noise=unit(.08+.46*motion+.24*pressure);
   const tonic=m.music?.tonic??48+seed%12;
   const pitch=harmoniousPitch(tonic+21+Math.round(14*intensity+3*motion),tonic,m.music?.character,m.music?.harmony?.notes||[]);
-  const params={'data-reverb':0,'data-enabled':active?1:0,'data-density':density,'data-level':level,'data-noise':noise,'data-pitch':pitch,'data-root':tonic-12,'data-duration':.7+.8*liquidity,'data-drive':1+2.5*intensity,'data-filter':1200+6500*Math.max(motion,volume),'data-pan-left':Math.sqrt(1-balance),'data-pan-right':Math.sqrt(balance)};
+  const params={'data-reverb':reverb,'data-enabled':active?1:0,'data-density':density,'data-level':level,'data-noise':noise,'data-pitch':pitch,'data-root':tonic-12,'data-duration':.7+.8*liquidity,'data-drive':1+2.5*intensity,'data-filter':1200+6500*Math.max(motion,volume),'data-pan-left':Math.sqrt(1-balance),'data-pan-right':Math.sqrt(balance)};
   for(const [name,value] of Object.entries(params))send(name,value);
-  signals={density,drive:params['data-drive'],pitch,noise,level,liquidity,duration:params['data-duration'],enabled,active,clock};
+  signals={density,drive:params['data-drive'],pitch,noise,level,reverb,liquidity,duration:params['data-duration'],enabled,active,clock};
   return signals;
  }
  return {
