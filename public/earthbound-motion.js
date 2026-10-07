@@ -4,7 +4,7 @@ export {suggestedLayers};
 // and deformation depth; the two source motions bend one shared pixel field.
 export function battleMotion(seed,time,stage){
  const preset=suggestedLayers[(seed>>>0)%suggestedLayers.length];
- const amount=.35+.65*Math.max(0,Math.min(1,(stage??0)/7));
+ const amount=.8; // Stable preset depth; market cap never chooses or morphs it.
  return preset.layers.map(id=>{
   const effects=layerMotion[id];if(!effects)return [0,0,0,0];
   const duration=effects.reduce((s,e)=>s+e.duration,0);

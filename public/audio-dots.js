@@ -1,6 +1,6 @@
-import {createHolderClusterField} from './holder-cluster-field.js?v=169';
+import {walletSizeVariation} from './visual-context.js?v=171';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=169';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=171';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -22,7 +22,7 @@ export function fieldState(m={}){
  const depth=liquidity===null?.5:liquidity>0?unit((Math.log10(liquidity)-3)/4):0;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
- return {relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {referenceCap:finite(context.impliedBaselineCap),relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Quiet activity leaves smaller, weaker dots;
@@ -35,7 +35,6 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  const blast=host?createPixelBlastField(host):null;
  const fullscreen=host?createVisualFullscreen(host):null;
  if(host){host.after(anchor);host.dataset.audible='false';host.dataset.visible='true';}
- const holderField=createHolderClusterField();
  const buffers=new WeakMap();let notationBands=new WeakMap();
  let latest=fieldState(),smoothed=null,options={},seed=1917,clock=0,liquidClock=0,audioEvent=0;
  let sourceClock=null,sourceAt=0,previous=null,seen=new Set(),lastEvent=-Infinity;
@@ -44,11 +43,11 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
- let pixelPresence=0;
+ let pixelPresence=0,referenceCap=null;
  let appearance=null,formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
-  return Boolean(state.playing&&state.master!==0&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
+  return Boolean(state.playing&&options.playing!==false&&!options.seeking&&!options.ended&&getAudio()?.context?.state==='running');
  };
  function hide(){
   audible=false;level=0;previousLevel=0;lastSound=-Infinity;
@@ -63,7 +62,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   audioEvent=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;lastEnvelope=-Infinity;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
-  if(newCoin){pixelPresence=0;clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;notationBands=new WeakMap();}
+  if(newCoin){referenceCap=null;pixelPresence=0;clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;notationBands=new WeakMap();}
   blast?.reset(seed);
  }
  function fitHeight(){
@@ -204,9 +203,9 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!smoothed||replaying)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
-  const visualInputs={...smoothed,marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
+  referenceCap??=latest.referenceCap>0?latest.referenceCap:latest.marketCap>0?latest.marketCap:null;
+  const visualInputs={...smoothed,seed,referenceCap,walletVariation:walletSizeVariation(latest.relationships?.clusters)*unit(latest.relationships?.weight),marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
-  visualParams.holderGroups=holderField.update(latest.relationships,seed,dt,{replay:replaying,reduced:reduced.matches});
   appearance??={dotSize:visualParams.dotSize,density:visualParams.density,capitalStage:visualParams.capitalStage};
   if(visualParams.capitalStage<0||appearance.capitalStage<0)appearance.capitalStage=visualParams.capitalStage;
   else appearance.capitalStage+=(visualParams.capitalStage-appearance.capitalStage)*(1-Math.exp(-dt/2.5));

@@ -1,9 +1,9 @@
 import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=167';
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=167';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=171';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=169';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=167';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=171';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=171';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -21,7 +21,7 @@ void main(){
  vPixelId=vec2(uGridStart+ivec2(gl_InstanceID%uGridColumns,gl_InstanceID/uGridColumns));
  vec2 corner=vec2(float(gl_VertexID==1||gl_VertexID==2||gl_VertexID==4),float(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5));
  vec2 center=floor(uResolution*.5)+(vPixelId+.5)*uPixelSize*uCanvasScale;
- vec2 extent=(max(uDotSize,uPixelSize)*.5+uPixelSize*.5+2.)*uCanvasScale;
+ vec2 extent=(max(uDotSize*1.5,uPixelSize)*.5+uPixelSize*.5+2.)*uCanvasScale;
  gl_Position=vec4((center+(corner*2.-1.)*extent)/uResolution*2.-1.,0.,1.);
 }`;
 const fragment = `#version 300 es
@@ -228,7 +228,7 @@ void main(){
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
-  float localSize=mix(.55+hash11(pixelId.x*43.17+pixelId.y*97.41)*.9,1.,uIdentity);
+  float localSize=1.0; // Wallet-driven uPixelJitter owns size variation.
   float markSize=uDotSize*localSize*jitterScale*backgroundScale*sqrt(uPixelPresence);
   float dotSize=max(1.,floor(markSize*edge*rasterScale+.5));
   vec2 point=rasterPoint;
@@ -339,7 +339,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    gl.uniform4fv(locations.holderGroups,params.holderGroups||emptyHolderGroups);
-   f('uCapitalStage',params.capitalStage??-1);f('uPixelPresence',params.pixelPresence??1);
+   f('uCapitalStage',params.patternStage??params.capitalStage??-1);f('uPixelPresence',params.pixelPresence??1);
    const battle=battleMotion(seed,time||0,params.capitalStage);
    gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
    const ink=params.inkColor??1;gl.uniform3f(locations.uColor,ink,ink,ink);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
@@ -349,7 +349,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);
    i('uLiquid',params.liquid?1:0);f('uLiquidStrength',params.liquidStrength);f('uLiquidRadius',params.liquidRadius);f('uLiquidTime',Number.isFinite(liquidTime)?liquidTime:(Number(time)||0)*params.liquidWobbleSpeed);f('uNoiseAmount',params.noiseAmount);f('uEcosystem',params.ecosystem);
    gl.uniform2fv(locations['uClickPos[0]'],positions);gl.uniform1fv(locations['uClickTimes[0]'],times);gl.uniform1fv(locations['uClickStrengths[0]'],strengths);gl.uniform2fv(locations['uClickDirections[0]'],directions);
-   const pad=Math.ceil(params.dotSize/params.cellSize)+1;
+   const pad=Math.ceil(params.dotSize*1.5/params.cellSize)+1;
    const firstX=Math.floor(-Math.floor(w/2)/grid)-pad,firstY=Math.floor(-Math.floor(h/2)/grid)-pad;
    const columns=Math.ceil(w/grid)+pad*2+2,rows=Math.ceil(h/grid)+pad*2+2;
    gl.uniform2i(locations.uGridStart,firstX,firstY);gl.uniform1i(locations.uGridColumns,columns);

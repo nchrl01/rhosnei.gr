@@ -1,5 +1,5 @@
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=167';
+import {battleMotion,battleWarp} from './earthbound-motion.js?v=171';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
@@ -91,7 +91,7 @@ export function createPixelBlastCanvas(host){
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
      feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
-     feed=capitalFeed(params.capitalStage??-1,u,v,.5+.5*noise(u*4+offset,v*4+offset,time*.055),.5+.5*noise(u*3-offset,v*3-offset,time*.04),offset,feed);
+     feed=capitalFeed(params.patternStage??params.capitalStage??-1,u,v,.5+.5*noise(u*4+offset,v*4+offset,time*.055),.5+.5*noise(u*3-offset,v*3-offset,time*.04),offset,feed);
      feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
      sample={feed,warpX,warpY};cache.set(key,sample);
     }
@@ -129,7 +129,7 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const localSize=mix(.55+hash(px*43.17+py*97.41)*.9,1,identity);
+    const localSize=1; // Wallet-driven jitter owns size variation.
     const dotSize=(params.dotSize*localSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
     const diameter=Math.max(1,Math.round(dotSize*ratio));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;

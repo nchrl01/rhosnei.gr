@@ -1,24 +1,26 @@
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=170';
-import {createHolderClusterField} from './holder-cluster-field.js?v=169';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=171';
+import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=171';
+import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
 const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
-const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['level','Audio level',0,1,.01,.5],['formation','Audio presence',0,1,.01,.65],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity · normalized',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
-const visualSpecs=[['dotSize','Square size · px',.5,24,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['capitalStage','Capital pattern stage',-1,7,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
-const stage=$('preview'),holderField=createHolderClusterField();
+const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity → spacing',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
+const visualSpecs=[['dotSize','Square size · px',.5,24,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
+const stage=$('preview');
 let renderer=createPixelBlastField(stage,{generations:false}),seed=1917,inputs={},overrides={},knobs=[],groups=[],notes='',running=true,time=0,eventTime=0,last=0,lastReadout=0,saveTimer,image=null,cycles=false,dirty=true;
 const initial=()=>Object.fromEntries(inputSpecs.map(s=>[s[0],s[5]]));
 inputs=initial();
 const defaultGroups=()=>Array.from({length:4},(_,i)=>({percentage:[20,10,5,2][i],wallets:[{address:'lab-wallet-'+i,percentage:[15,6,3,1][i]}]}));
 groups=defaultGroups();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function mapped(){return {...pixelBlastParameters({...inputs,capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),pixelPresence:Math.min(1,inputs.level/.02)};}
+function mapped(){return {...pixelBlastParameters({...inputs,seed,walletVariation:walletSizeVariation(groups),capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),pixelPresence:Math.min(1,inputs.level/.02)};}
 function params(){const p={...mapped(),...overrides};p.pixelSize=p.dotSize;p.patternScale=p.scale;p.patternDensity=p.density;p.pixelSizeJitter=p.jitter;return p;}
-function draft(){return {schema:'upic-visual-lab',version:1,rendererVersion:170,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
+function draft(){return {schema:'upic-visual-lab',version:2,rendererVersion:171,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
 function save(){dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(draft()));}catch{$('status').textContent='Storage unavailable — export your preset to keep it.';}},250);}
 function apply(data){
- if(data.schema!=='upic-visual-lab'||data.version!==1)throw Error('Not a Visual Lab preset');
+ if(data.schema!=='upic-visual-lab'||![1,2].includes(data.version))throw Error('Not a Visual Lab preset');
  inputs=initial();overrides={};
  for(const [key,,min,max] of inputSpecs)if(Number.isFinite(data.inputs?.[key]))inputs[key]=clamp(data.inputs[key],min,max);
  for(const [key,,min,max] of visualSpecs)if(Number.isFinite(data.overrides?.[key]))overrides[key]=clamp(data.overrides[key],min,max);
+ if(data.version===1)for(const key of ['edgeFade','cellSize','density','jitter'])delete overrides[key];
  seed=Number.isFinite(data.seed)?clamp(Math.round(data.seed),0,999999):1917;
  groups=defaultGroups();if(Array.isArray(data.groups))data.groups.slice(0,4).forEach((g,i)=>{if(Number.isFinite(g.percentage))groups[i].percentage=clamp(g.percentage,0,25);if(Number.isFinite(g.wallets?.[0]?.percentage))groups[i].wallets[0].percentage=clamp(g.wallets[0].percentage,0,groups[i].percentage);});
  notes=typeof data.notes==='string'?data.notes.slice(0,10000):'';cycles=data.cycles===true;
@@ -47,14 +49,15 @@ function knob(parent,spec,get,set,auto){
 }
 function buildControls(){
  $('controls').replaceChildren();knobs=[];$('notes').value=notes;
- const global=section('01 / Scene','Seed gives a repeatable composition. Ink cycles restart in opposite ink once coverage reaches 90%.',true);
- knob(global,['seed','Coin seed',0,999999,1],()=>seed,v=>{seed=v;resetMotion();});
+ const global=section('01 / EarthBound scene','Coin seed selects the EarthBound Suggested Layers motion preset and a fixed graphic family. Market cap never changes the pattern. These adapt the original motion data, not game artwork.',true);
+ knob(global,['seed','EarthBound coin seed',0,suggestedLayers.length-1,1],()=>seed%suggestedLayers.length,v=>{seed=v;resetMotion();});
+ const presetName=document.createElement('p');presetName.className='group-note wide';global.append(presetName);knobs.push(()=>{presetName.textContent=coinVisualPreset(seed).name;});
  const toggle=document.createElement('button');toggle.textContent='Ink cycles: '+(cycles?'on':'off');toggle.onclick=()=>{cycles=!cycles;toggle.textContent='Ink cycles: '+(cycles?'on':'off');rebuild();save();};global.append(toggle);
- const a=section('02 / Market + sound','These are simulated inputs, not live trading data. Level represents measured audio; this app is silent.',true);
+ const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. Lower relative cap shrinks the edges more; higher liquidity tightens grid spacing. Reference cap stays fixed until you turn it.',true);
  for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;});
  const b=section('03 / Renderer','Turning a knob overrides its mapping. Image knobs need a loaded image. Grid spacing changes the hidden lattice.',true);
  for(const spec of visualSpecs)knob(b,spec,()=>params()[spec[0]],v=>{overrides[spec[0]]=v;},()=>{delete overrides[spec[0]];});
- const c=section('04 / Holder gatherings','Four synthetic groups, each capped at 25% of supply. This is a sandbox, not InsightX data. Group size sets radius; the largest wallet sets concentration.');
+ const c=section('04 / Wallet size variation','Synthetic wallet sizes, not InsightX data. More unequal wallet sizes produce more pixel-size variation. Wallets no longer add bubble shapes. Each group is capped at 25% of supply.');
  groups.forEach((_,i)=>{
   knob(c,['group'+i,'Group '+(i+1)+' · supply %',0,25,.1],()=>groups[i].percentage,v=>{groups=groups.map((g,j)=>j===i?{...g,percentage:v,wallets:[{...g.wallets[0],percentage:Math.min(v,g.wallets[0].percentage)}]}:g);});
   knob(c,['wallet'+i,'Largest wallet '+(i+1)+' · %',0,25,.1],()=>groups[i].wallets[0].percentage,v=>{groups=groups.map((g,j)=>j===i?{...g,wallets:[{...g.wallets[0],percentage:Math.min(v,g.percentage)}]}:g);});
@@ -75,7 +78,7 @@ $('image').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(fi
 let width=1,height=1;new ResizeObserver(entries=>{width=entries[0].contentRect.width;height=entries[0].contentRect.height;dirty=true;}).observe(stage);
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-(last||now))/1000);last=now;if(document.hidden)return;
  if(running){const p=params();time+=dt*p.speed;eventTime+=dt;dirty=true;}
- if(dirty){const p=params();p.holderGroups=holderField.update({clusters:groups,weight:1},seed,dt);renderer.render({width,height,time,eventTime,liquidTime:time,active:true,parameters:p});dirty=false;}
+ if(dirty){const p=params();renderer.render({width,height,time,eventTime,liquidTime:time,active:true,parameters:p});dirty=false;}
  if(now-lastReadout>120){lastReadout=now;knobs.forEach(p=>p());$('clock').textContent=Math.floor(eventTime/60).toString().padStart(2,'0')+':'+Math.floor(eventTime%60).toString().padStart(2,'0');$('renderer').textContent=(stage.dataset.pixelBlast||'pixel')+' · '+Math.round(width)+' × '+Math.round(height);}
 }
 requestAnimationFrame(frame);window.addEventListener('pagehide',()=>{try{localStorage.setItem(KEY,JSON.stringify(draft()));}catch{}});
