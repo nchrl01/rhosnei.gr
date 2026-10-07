@@ -25,7 +25,6 @@
 .milestone-upload{width:100%;min-height:62px;flex-direction:column;gap:2px;padding:5px 8px}
 .milestone-upload-wave{width:100%;max-width:180px}
 .milestone-upload-wave .milestone-wave{height:30px;color:#888}
-.milestone-upload-label{color:#999;font-size:9px;letter-spacing:.08em}
 .milestone-upload:hover,.milestone-clear:hover{border-color:#fff}
 .milestone-upload.is-disabled{opacity:.45;cursor:not-allowed}
 .milestone-upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}

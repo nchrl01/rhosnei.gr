@@ -62,7 +62,7 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
  const cards=THRESHOLDS.map((threshold,index)=>{
   const card=document.createElement('article');card.className='milestone-sound-card';
-  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock aria-label="Locked until ${money(threshold)}">${lockIcon}</span></div><small data-range>Starts at ${money(threshold)}</small><div data-file>${waveSvg()}</div><label class="milestone-upload" aria-label="Upload a sound for ${money(threshold)}"><span class="milestone-upload-wave">${waveSvg()}</span><span class="milestone-upload-label">ADD SAMPLE</span><input type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg"></label><button type="button" class="milestone-clear" data-clear>Remove sound</button>`;
+  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock aria-label="Locked until ${money(threshold)}">${lockIcon}</span></div><small data-range>Starts at ${money(threshold)}</small><div data-file>${waveSvg()}</div><label class="milestone-upload" aria-label="Upload a sound for ${money(threshold)}"><span class="milestone-upload-wave">${waveSvg()}</span><input type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg"></label><button type="button" class="milestone-clear" data-clear>Remove sound</button>`;
   const input=card.querySelector('input'),name=card.querySelector('[data-file]');
   input.addEventListener('change',async()=>{
    const file=input.files?.[0];input.value='';if(!file||!marketKey)return;
