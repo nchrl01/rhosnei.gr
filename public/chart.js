@@ -8,7 +8,7 @@ export class MarketChart{
   this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
-   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'"Andale Mono", AndaleMono, monospace',attributionLogo:true},
+   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'NDS12, sans-serif',attributionLogo:true},
    grid:{vertLines:{visible:false},horzLines:{color:'#222222'}},
    rightPriceScale:{borderColor:'#3a3a3a',scaleMargins:{top:.1,bottom:.25}},
    timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},

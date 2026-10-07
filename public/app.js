@@ -7,7 +7,7 @@ import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.j
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,decodeScore} from './take-share.js?v=76';
 import {harmonyPlan,pianoHarmony} from './music-context.js?v=177';
-import {createEnvion} from './envion.js?v=196';
+import {createEnvion} from './envion.js?v=197';
 import {createEngineView} from './engine-view.js?v=195';
 import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
@@ -33,7 +33,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=99';
-import {MarketChart} from './chart.js?v=196';
+import {MarketChart} from './chart.js?v=197';
 import {loadHistory} from './history.js?v=136';
 import {pollPoolTrades} from './trades.js?v=194';
 const $=id=>document.getElementById(id);
@@ -820,6 +820,6 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },500);
 const playerScreen=window.matchMedia('(max-width:760px)');
-function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'"Andale Mono", AndaleMono, monospace',fontSize:12}});}
+function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'NDS12, sans-serif',fontSize:12}});}
 playerScreen.addEventListener('change',syncChartTypography);
 document.fonts.ready.then(syncChartTypography);
