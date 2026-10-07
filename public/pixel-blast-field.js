@@ -4,7 +4,7 @@ import {withPixelGenerations} from './pixel-generations.js?v=167';
 import {battleMotion,battleGLSL} from './earthbound-motion.js?v=171';
 import {capitalGLSL} from './capital-field.js?v=167';
 import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=172';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=171';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=173';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.

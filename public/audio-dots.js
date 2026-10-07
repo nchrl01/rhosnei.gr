@@ -1,6 +1,6 @@
 import {walletSizeVariation} from './visual-context.js?v=171';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=172';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -222,7 +222,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(replaying&&sourceClock!==null){
     if(active&&!resumedPaint&&visualCursor!==null)advance=Math.max(0,eventTime-visualCursor)*visualParams.speed;
    }else advance=dt*visualParams.speed;
-   if(replaying){clock=eventTime*1.35;liquidClock=eventTime*.6;}else{clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;}
+   clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;
    dirty=true;
   }
   // Recurring, seed-stable image phrase on the same field clock. The image

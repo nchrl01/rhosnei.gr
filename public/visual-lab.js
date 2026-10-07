@@ -1,5 +1,5 @@
 import {battlePatternNames} from './earthbound-pattern.js?v=172';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=172';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
 import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=171';
 import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
 const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
@@ -14,7 +14,7 @@ groups=defaultGroups();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 function mapped(){return {...pixelBlastParameters({...inputs,seed,walletVariation:walletSizeVariation(groups),capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),pixelPresence:Math.min(1,inputs.level/.02)};}
 function params(){const p={...mapped(),...overrides};p.pixelSize=p.dotSize;p.patternScale=p.scale;p.patternDensity=p.density;p.pixelSizeJitter=p.jitter;return p;}
-function draft(){return {schema:'upic-visual-lab',version:2,rendererVersion:172,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
+function draft(){return {schema:'upic-visual-lab',version:2,rendererVersion:173,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
 function save(){dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(draft()));}catch{$('status').textContent='Storage unavailable — export your preset to keep it.';}},250);}
 function apply(data){
  if(data.schema!=='upic-visual-lab'||![1,2].includes(data.version))throw Error('Not a Visual Lab preset');
@@ -54,8 +54,8 @@ function buildControls(){
  knob(global,['seed','EarthBound coin seed',0,suggestedLayers.length-1,1],()=>seed%suggestedLayers.length,v=>{seed=v;resetMotion();});
  const presetName=document.createElement('p');presetName.className='group-note wide';global.append(presetName);knobs.push(()=>{presetName.textContent=coinVisualPreset(seed).name+' · '+battlePatternNames[coinVisualPreset(seed).index%8];});
  const toggle=document.createElement('button');toggle.textContent='Ink cycles: '+(cycles?'on':'off');toggle.onclick=()=>{cycles=!cycles;toggle.textContent='Ink cycles: '+(cycles?'on':'off');rebuild();save();};global.append(toggle);
- const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. Lower relative cap shrinks the edges more; higher liquidity tightens grid spacing. Reference cap stays fixed until you turn it.',true);
- for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;});
+ const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. Lower relative cap shrinks the edges more; higher liquidity tightens grid spacing. Reference cap stays fixed until you turn it. Tempo controls flow speed: 100 BPM = 1.35; 200 BPM = 2.7. Turning tempo restores automatic flow speed.',true);
+ for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;if(spec[0]==='tempo')delete overrides.speed;});
  const b=section('03 / Renderer','Turning a knob overrides its mapping. Image knobs need a loaded image. Grid spacing changes the hidden lattice.',true);
  for(const spec of visualSpecs)knob(b,spec,()=>params()[spec[0]],v=>{overrides[spec[0]]=v;},()=>{delete overrides[spec[0]];});
  const c=section('04 / Wallet size variation','Synthetic wallet sizes, not InsightX data. More unequal wallet sizes produce more pixel-size variation. Wallets no longer add bubble shapes. Each group is capped at 25% of supply.');

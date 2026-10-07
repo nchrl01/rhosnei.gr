@@ -56,7 +56,8 @@ export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0
   capitalStage:coinVisualPreset(seed).patternStage,patternStage:coinVisualPreset(seed).patternStage,pixelSize,cellSize:mix(16,4,liquidity),dotSize:pixelSize,
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
-  speed:reference.speed*(.2+.65*motionEnergy)*(.85+.3*pace)*response,
+  // One tempo ratio drives flow: 100 BPM = reference speed, 200 = twice it.
+  speed:animated?reference.speed*clamp(Number(tempo)||40,10,240)/100:0,
   edgeFade,pixelSizeJitter:unit(walletVariation),jitter:unit(walletVariation),
   dotStrength:mix((mobile?.28:.2)+(mobile?.72:.8)*strength,1,capFill),
   // Retain the former image uniforms' API without forming a central image.

@@ -72,7 +72,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Pattern scale',pretty(v.patternScale)+' · market structure + notes'],
    ['Grid spacing',pretty(v.cellSize)+' px · liquidity'],
    ['Density',pretty(v.patternDensity)+' · activity + melody'],
-   ['Speed',pretty(v.speed)+' · movement + sound + tempo'],
+   ['Speed',pretty(v.speed)+' · tempo / 100 × 1.35'],
    ['Size variation',pretty(v.pixelSizeJitter)+' · observed wallet-size inequality'],
    ['Edge taper',pretty(v.edgeFade)+' · market cap / fixed reference'],
    ['Local populations',pretty(v.ecosystem)+' · distributed across the field'],
