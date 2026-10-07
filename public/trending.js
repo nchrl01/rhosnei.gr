@@ -18,6 +18,14 @@ function tokenIdentity(attributes){
 export function geckoPoolMarket(pool,included,networkID=pool?.relationships?.network?.data?.id){
  const resources=included instanceof Map?included:new Map((included||[]).map(item=>[item.id,item]));
  const attributes=pool?.attributes,relationships=pool?.relationships;
+ // Search results omit the network relationship. Strip the exact pool-address
+ // suffix so network names such as polygon_pos remain intact.
+ if(networkID==null&&typeof pool?.id==='string'&&typeof attributes?.address==='string'&&attributes.address.length>0&&attributes.address.length<256){
+  const suffix='_'+attributes.address,ending=pool.id.slice(-suffix.length),evm=/^0x(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(attributes.address);
+  const matches=evm?ending.toLowerCase()===suffix.toLowerCase():ending===suffix;
+  const network=matches?pool.id.slice(0,-suffix.length):'';
+  if(/^[a-z0-9][a-z0-9_-]*$/.test(network))networkID=network;
+ }
  const baseToken=tokenIdentity(resources.get(relationships?.base_token?.data?.id)?.attributes),quoteToken=tokenIdentity(resources.get(relationships?.quote_token?.data?.id)?.attributes);
  const dexId=relationships?.dex?.data?.id,priceUsd=number(attributes?.base_token_price_usd),priceNative=number(attributes?.base_token_price_quote_token);
  if(!attributes||![networkID,dexId,attributes.address].every(value=>typeof value==='string'&&value.trim()&&value.length<256)||!baseToken||!quoteToken||!(priceUsd>0)||!(priceNative>0))return null;

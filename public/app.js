@@ -31,7 +31,7 @@ import {subscribeEvm} from './evm.js?v=39';
 import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=206';
-import {startTrending,geckoPoolMarket} from './trending.js?v=218';
+import {startTrending,geckoPoolMarket} from './trending.js?v=219';
 import {MarketChart} from './chart.js?v=208';
 import {loadHistory} from './history.js?v=207';
 import {pollPoolTrades} from './trades.js?v=206';
@@ -601,6 +601,36 @@ async function freshMarketSnapshot(pair,{signal}={}){
  if(!updated||!(Number(updated.priceUsd)>0))throw Error('Selected live pool is unavailable');
  return updated;
 }
+async function findOnchainMarkets(query,{network,signal}={}){
+ const priced=pair=>Number(pair?.priceUsd)>0&&Number.isFinite(Number(pair.priceUsd));
+ const rank=pairs=>rankCoinMatches(pairs.filter(priced),query,{orientPair,network}).filter(priced);
+ // Keep the fast search path, but an empty index or provider cooldown does
+ // not mean the contract has no market. The second source must match it too.
+ try{
+  const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(query),{signal});
+  const pairs=rank(data.pairs||[]);if(pairs.length)return pairs;
+ }catch(error){if(signal?.aborted)throw error;}
+ const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
+ const geckoNetwork=network&&(aliases[network]||network),specific=geckoNetwork&&isTokenIdentifier(query);
+ const params=new URLSearchParams({include:'base_token,quote_token,dex,network',page:'1'});
+ if(!specific){params.set('query',query);if(geckoNetwork)params.set('network',geckoNetwork);}
+ const path=specific?'/networks/'+encodeURIComponent(geckoNetwork)+'/tokens/'+encodeURIComponent(query)+'/pools':'/search/pools';
+ const controller=new AbortController(),cancel=()=>controller.abort();
+ signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
+ // Allow one provider-requested cooldown; still cancel promptly when the
+ // user edits the address, selects another coin, or dismisses the search.
+ const timeout=setTimeout(cancel,75000);
+ try{
+  for(let attempt=0;attempt<2;attempt++){
+   const response=await fetchGecko('https://api.geckoterminal.com/api/v2'+path+'?'+params,{signal:controller.signal,priority:200});
+   if(response.status===429&&attempt===0)continue;
+   if(!response.ok)throw Error('Market search provider returned '+response.status);
+   const data=await response.json();if(!Array.isArray(data.data))throw Error('Unexpected market search response');
+   const included=new Map((data.included||[]).map(item=>[item.id,item]));
+   return rank(data.data.map(pool=>geckoPoolMarket(pool,included,geckoNetwork||undefined)).filter(Boolean));
+  }
+ }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
+}
 function applySnapshot(pair){
  const previous=currentPrice();
  market=isExchangeMarket(pair)?{...pair,exchangeBook:market?.pairAddress===pair.pairAddress?market.exchangeBook:null}:pair;lastSnapshot=Date.now();
@@ -675,14 +705,15 @@ $('address').addEventListener('input',()=>{
  searchRevision++;searchBusy(false);searchFeedback('');
  $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
 });
-$('coin-search-results').addEventListener('keydown',event=>{if(event.key==='Escape'){searchRevision++;searchBusy(false);searchFeedback('');}},true);
+$('coin-search-results').addEventListener('keydown',event=>{if(event.key==='Escape'){searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');}},true);
 $('address').addEventListener('keydown',event=>{
  const results=$('coin-search-results');
  if(event.key==='ArrowDown'&&!results.hidden){const first=results.querySelector('button');if(first){event.preventDefault();first.focus();}}
- if(event.key==='Escape'){searchRevision++;searchBusy(false);results.hidden=true;$('address').setAttribute('aria-expanded','false');searchFeedback('');}
+ if(event.key==='Escape'){searchController?.abort();searchRevision++;searchBusy(false);results.hidden=true;$('address').setAttribute('aria-expanded','false');searchFeedback('');}
 });
 async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}={}){
  try{
+  searchController?.abort();
   searchFeedback('Opening '+pair.baseToken.symbol+'…','loading');
   if(isExchangeMarket(pair)){status('Loading '+pair.exchangeName+' market…');pair=await prepareExchangeMarket(pair);}
   if(revision!==searchRevision)return;
@@ -715,7 +746,7 @@ $('coin-form').onsubmit=async e=>{
  try{
   await Promise.allSettled([
    (async()=>{try{
-    if(!exchangeOnly){const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(address),{signal:searchAbort.signal});dexPairs=rankCoinMatches(data.pairs||[],address,{orientPair,network:wantedNetwork});}
+    if(!exchangeOnly)dexPairs=await findOnchainMarkets(address,{network:wantedNetwork,signal:searchAbort.signal});
    }catch(error){errors.push(error.message);}finally{remaining--;publish();}})(),
    (async()=>{try{
     if(!tokenAddress&&!wantedNetwork){const data=await searchExchangeMarkets(address);exchangePairs=data.pairs;errors.push(...data.errors);}
@@ -779,7 +810,7 @@ display();
 await restoreSharedScore();
 startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
- searchRevision++;searchBusy(false);searchFeedback('');
+ searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
  // Resume in the coin click itself: market discovery completes asynchronously.
  // The unlocked context stays silent until Listen opens the selected coin engine.
  if(!playing)primeAudio();
