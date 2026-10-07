@@ -16,7 +16,9 @@ export function interlockingPiano(seed,cap,intensity,harmony){
  const amount=pianoArticulation(cap);
  if(amount<=0||intensity<.04||!harmony?.notes?.length)return [];
  const cycles=4+Math.floor(amount*2),parts=amount>=.7&&intensity>=.55?2:1;
- const motifs=[[0,1,2,4,5,7],[0,2,3,4,6,7],[0,1,3,4,5,6]];
+ const motifs=[[0,1,2,4,5,7],[0,2,3,4,6,7],[0,1,3,4,5,6],[0,3,4,7],[0,2,5,6],[0,1,4,6]];
+ const contours=[[-2,-1,0,1,2,1],[2,1,0,-1,-2,-1],[-2,0,-1,2,1,0],[0,-2,1,-1,2,0],[-1,1,0,2,-2,0],[0,1,0,-1,0,2]];
+ const contour=contours[((seed>>>0)>>>12)%contours.length];
  const motif=motifs[((seed>>>0)>>>8)%motifs.length],rotation=(seed>>>0)%8,events=[];
  for(let cycle=0;cycle<cycles;cycle++){
   for(let part=0;part<parts;part++){
@@ -27,7 +29,7 @@ export function interlockingPiano(seed,cap,intensity,harmony){
     const tick=cycle*8+(motif[n]+rotation+part*2)%8;
     const hash=(Math.imul((seed^tick^part)>>>0,2654435761)>>>0)/4294967296;
     const foreground=cycle%parts===part;
-    const event={tick,part,degree:((n*2+part+seed)%5)-2,
+    const event={tick,part,degree:contour[(n+part+(cycle%3===2?1:0))%contour.length]*(cycle%4===3?-1:1),
      target:53+part*5+Math.round(amount*4),chordTone:n%3!==1,
      duration:.22+hash*.16,gain:(foreground?.082:.059)*(.9+hash*.2)/Math.sqrt(parts)};
     event.midi=interlockPitch(event,harmony);events.push(event);

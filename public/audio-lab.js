@@ -2,13 +2,13 @@ import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=188';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=185';
+import {createTradePiano} from './trade-piano.js?v=189';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
 import {createEnvion} from './envion.js?v=152';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {createDataSonification} from './data-sonification.js?v=187';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
-import {createArpeggioAI,seededArp} from './ai-instruments.js?v=175';
+import {createArpeggioAI,seededArp} from './ai-instruments.js?v=189';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=177';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
@@ -34,6 +34,7 @@ function readPreset(data){
  if(typeof data.notes==='string')next.notes=data.notes.slice(0,10000);
  if(Array.isArray(data.arp)&&data.arp.length>=3&&data.arp.length<=16&&data.arp.every((p,i)=>Array.isArray(p)&&p.length===2&&Number.isInteger(p[0])&&p[0]>=0&&p[0]<16&&Number.isInteger(p[1])&&p[1]>=48&&p[1]<=83&&(!i||p[0]>data.arp[i-1][0])))next.arp=data.arp;
  else next.arp=seededArp(next.market.seed);
+ if([[60,67,63,72,67,63,60,67],[60,64,67,72,67,64,60,67]].some(notes=>JSON.stringify(next.arp)===JSON.stringify(notes.map((n,i)=>[i,n]))))next.arp=seededArp(next.market.seed);
  return next;
 }
 try{const saved=localStorage.getItem(KEY);if(saved)state=readPreset(JSON.parse(saved));}catch{}

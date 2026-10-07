@@ -1,6 +1,6 @@
 // Seeded EarthBound instruments following the existing piano composition engine.
 import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=177';
-import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=146';
+import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=189';
 import {createPianoPolicy} from './piano-policy.js?v=61';
 import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=185';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -152,7 +152,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   }
   if(!arp||closed||!running||!enabled||ctx.state!=='running')return;
   while(arp.index<arp.notes.length&&arp.nextTime<ctx.currentTime+.12){
-   const [step,pitch]=arp.notes[arp.index++],time=arp.nextTime;arp.nextTime+=arp.step;if(time<ctx.currentTime-.08)continue;
+   const [step,pitch]=arp.notes[arp.index++],time=arp.nextTime;arp.nextTime+=((arp.notes[arp.index]?.[0]??step+1)-step)*arp.step;if(time<ctx.currentTime-.08)continue;
    const notes=arp.harmony;if(!notes?.length)break;
    const target=notes.reduce((sum,n)=>sum+n,0)/notes.length+9+(pitch-66)*.5;
    const candidates=notes.flatMap(n=>[n,n+12,n+24]).filter(n=>n>=48&&n<=81);
@@ -194,8 +194,8 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   // Quiet notes never start a phrase or a chord.
   if(lab.arpeggios!==false&&!quiet&&!interlock&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
-   const notes=pattern.filter((_,i)=>i%2===0||pattern.length<=8).slice(0,8).map(([,pitch],i)=>[i,pitch]);
-   arp={notes,index:0,nextTime:time+beat,step:beat/2,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],tonic:music.tonic,seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*24;lastArpBucket=bucket;
+   const notes=pattern.map(([tick,pitch])=>[tick,pitch]);
+   arp={notes,index:0,nextTime:time+beat+notes[0][0]*beat/4,step:beat/4,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],tonic:music.tonic,seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*24;lastArpBucket=bucket;
   }
   onVoice({time,id:event.id,notes:[...new Set([midi,...chordNotes])].map(pitch=>instrumentPitch(pitch,profile)),instrument:instrument.name,harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
   return true;

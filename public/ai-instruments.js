@@ -1,6 +1,14 @@
 const KEY='av.ai-arps.v2';
 export function validArp(pattern){return Array.isArray(pattern)&&pattern.length>=3&&pattern.length<=16&&pattern.every(row=>Array.isArray(row)&&row.length===2&&Number.isInteger(row[0])&&row[0]>=0&&row[0]<16&&Number.isInteger(row[1])&&row[1]>=48&&row[1]<=83)&&pattern.every((row,i)=>!i||row[0]>pattern[i-1][0]);}
-export function seededArp(seed){const notes=seed%2?[60,67,63,72,67,63,60,67]:[60,64,67,72,67,64,60,67];return notes.map((n,i)=>[i,n]);}
+export function seededArp(seed){
+ let state=(Number(seed)^0x9e3779b9)>>>0;
+ const rand=()=>{state=(Math.imul(state,1664525)+1013904223)>>>0;return state/4294967296;};
+ const rhythms=[[0,2,4,6,8,10,12,14],[0,3,6,8,11,14],[0,1,4,6,8,9,12,15],[0,2,5,7,10,12,14],[0,4,7,8,12,15],[0,2,3,6,8,10,11,14]];
+ const contours=[[0,1,2,3,2,1,0,2],[3,2,1,0,1,2,3,1],[0,2,1,3,1,2,0,1],[0,1,0,2,0,3,2,1],[1,3,2,0,2,1,3,0],[0,3,1,2,3,0,2,1]];
+ const rhythm=rhythms[Math.floor(rand()*rhythms.length)],shape=contours[Math.floor(rand()*contours.length)],rotation=Math.floor(rand()*8),tones=[60,64,67,72,76],lift=rand()>.6?1:0;
+ return rhythm.map((tick,i)=>[tick,tones[Math.min(4,shape[(i+rotation)%8]+lift)]]);
+}
+
 function backgroundModel(path,onStatus,timeout){
  let worker,id=0,job,timer;
  function stop(reason){worker?.terminate();worker=null;clearTimeout(timer);const pending=job;job=null;pending?.reject(reason||new DOMException('Model cancelled','AbortError'));}
