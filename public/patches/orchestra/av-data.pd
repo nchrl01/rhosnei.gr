@@ -39,6 +39,7 @@
 #X obj 685 175 +~;
 #X obj 685 215 *~;
 #X obj 685 255 outlet~;
+#X obj 1000 400 av-data-reverb;
 #X connect 1 0 2 0;
 #X connect 2 0 3 0;
 #X connect 3 0 6 0;
@@ -76,7 +77,8 @@
 #X connect 17 0 30 1;
 #X connect 30 0 31 0;
 #X connect 18 0 31 1;
-#X connect 31 0 32 0;
+#X connect 31 0 40 0;
+#X connect 40 0 32 0;
 #X connect 27 0 32 1;
 #X connect 32 0 33 0;
 #X connect 14 1 34 0;
@@ -87,6 +89,7 @@
 #X connect 17 1 36 1;
 #X connect 36 0 37 0;
 #X connect 18 1 37 1;
-#X connect 37 0 38 0;
+#X connect 37 0 40 1;
+#X connect 40 1 38 0;
 #X connect 27 0 38 1;
 #X connect 38 0 39 0;

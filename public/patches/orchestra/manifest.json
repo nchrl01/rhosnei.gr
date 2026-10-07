@@ -1,5 +1,5 @@
 {
-  "version": 22,
+  "version": 23,
   "entry": "market.pd",
   "files": [
     "av-conductor.pd",
@@ -10,7 +10,8 @@
     "av-math-voice.pd",
     "av-math.pd",
     "av-random.pd",
-    "market.pd"
+    "market.pd",
+    "av-data-reverb.pd"
   ],
   "layers": [
     "melody",

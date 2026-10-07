@@ -1,24 +1,23 @@
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=3';
+import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=4';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {createTradePiano} from './trade-piano.js?v=185';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
-import {createCyberneticDrums} from './cybernetic-drums.js?v=174';
 import {createEnvion} from './envion.js?v=152';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
-import {createDataSonification} from './data-sonification.js?v=146';
+import {createDataSonification} from './data-sonification.js?v=187';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=175';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=177';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
-const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs,drums:drumSpecs};
+const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs};
 const pdSpecs=[...envionSpecs,...dataSpecs,...phraseSpecs.flat()];
-const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},drums:Object.fromEntries(drumSpecs.map(s=>[s[0],s[5]])),pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
-let state=defaults(),ctx,piano,drums,pd,envionReady=false,running=false,starting=false,closed=false,timer,saveTimer;
+const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
+let state=defaults(),ctx,piano,pd,envionReady=false,running=false,starting=false,closed=false,timer,saveTimer;
 let transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,phraseViews=[],paints=[],pdValues={},lastUI=0;
 let idleSuspend=null,seedTimer=null;
-let solo=null,buses={},engineStatus={EarthBound:'Not loaded',Drums:'Not loaded','Pure Data':'Not loaded',ENVION:'Not loaded',Arpeggio:'Seeded phrase'},statuses={};
+let solo=null,buses={},engineStatus={EarthBound:'Not loaded','Pure Data':'Not loaded',ENVION:'Not loaded',Arpeggio:'Seeded phrase'},statuses={};
 const report=text=>{$('status').textContent=text;};
 function readPreset(data){
  if(data?.schema!=='upic-audio-lab'||data.version!==1)throw Error('Not an Audio Lab preset');
@@ -60,16 +59,16 @@ function market(){
 }
 function applyAudio(){
  if(!ctx)return;master.gain.setTargetAtTime(state.master,ctx.currentTime,.025);
- for(const key of ['earthbound','drums'])buses[key]?.gain.setTargetAtTime(level(key),ctx.currentTime,.025);
+ for(const key of ['earthbound'])buses[key]?.gain.setTargetAtTime(level(key),ctx.currentTime,.025);
  piano?.configure({...state.piano,preset:state.instrument,arpeggios:state.arpeggios});piano?.setEnabled(level('earthbound')>0);piano?.setArpeggioPattern(state.arp);
- drums?.configure(state.drums);drums?.setEnabled(level('drums')>0);
+ 
  data.setEnabled(level('data')>0);math.setEnabled(level('math')>0);state.slots.forEach((v,i)=>math.setSlot(i,v));
  // ENVION caches automatic writes. Reapply explicit overrides immediately.
  for(const [name,value] of Object.entries(state.pd))send(name,pdValues[name]??value);
 }
 function resetScore(){
  clearTimeout(seedTimer);elapsed=0;lastTime=ctx?.currentTime??null;nextTrade=0;tradeIndex=0;price=1;pdValues={};
- piano?.reset(state.market.seed);drums?.reset(state.market.seed);math.setSeed(state.market.seed);data.reset(state.market.seed);envion.setSeed(state.market.seed);send('seed',state.market.seed);applyAudio();
+ piano?.reset(state.market.seed);math.setSeed(state.market.seed);data.reset(state.market.seed);envion.setSeed(state.market.seed);send('seed',state.market.seed);applyAudio();
 }
 async function asset(path,type='text'){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),25000);
@@ -81,9 +80,8 @@ async function loadEngines(){
  loadJob=(async()=>{
   const jobs=[];
   if(!piano){setStatus('EarthBound','Loading samples…');jobs.push(createTradePiano(ctx,buses.earthbound,{onVoice:event=>{$('last-note').textContent=event.instrument+' · '+event.notes.join(' / ')+' · '+event.reason;},onArpeggio:event=>{$('last-note').textContent='Arpeggio · MIDI '+event.midi;}}).then(result=>{if(closed){result.close();return;}piano=result;piano.reset(state.market.seed);piano.setMaster(1);piano.setRunning(running);applyAudio();refreshInstruments();setStatus('EarthBound','Ready');}).catch(error=>setStatus('EarthBound',error.message)));}
-  if(!drums){drums=createCyberneticDrums(ctx,buses.drums,{onError:text=>setStatus('Drums',text)});drums.reset(state.market.seed);drums.setMaster(1);drums.setRunning(running);setStatus('Drums','Loading samples…');jobs.push(drums.ready().then(()=>{if(engineStatus.Drums==='Loading samples…')setStatus('Drums','Ready');applyAudio();}));}
   if(!pd){setStatus('Pure Data','Loading patches…');setStatus('ENVION','Loading samples…');jobs.push((async()=>{
-   const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=112','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=112')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
+   const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=187','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=187')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
    if(closed)return;const files={...orchestra.files,...envionFiles};
    const result=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+orchestra.manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>envion.printed(text),onError:error=>setStatus('Pure Data',String(error?.message||error))});
    if(closed){await result.close();return;}pd=result;pd.connect(musicMeter);send('master',1);send('seed',state.market.seed);send('run',running?1:0);setStatus('Pure Data','Ready');
@@ -100,7 +98,7 @@ function setup(){
  const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-3;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;
  musicMeter=ctx.createAnalyser();musicMeter.fftSize=1024;musicData=new Float32Array(1024);musicMeter.connect(transport);
  transport.connect(limiter);limiter.connect(master);meter=ctx.createAnalyser();meter.fftSize=1024;master.connect(meter);meter.connect(ctx.destination);meterData=new Float32Array(1024);
- for(const key of ['earthbound','drums']){const bus=ctx.createGain();bus.gain.value=level(key);bus.connect(musicMeter);buses[key]=bus;}
+ for(const key of ['earthbound']){const bus=ctx.createGain();bus.gain.value=level(key);bus.connect(musicMeter);buses[key]=bus;}
  ctx.addEventListener('statechange',()=>{if(ctx.state==='interrupted'||ctx.state==='suspended'){if(running)stop();report('Audio paused. Tap Start audio to resume.');}});
  timer=setInterval(tick,50);
 }
@@ -109,14 +107,14 @@ async function start(){
  starting=true;$('play').disabled=true;
  try{
   if(!ctx)setup();await unlockPlayback(ctx);running=true;lastTime=ctx.currentTime;nextTrade=elapsed;transport.gain.setTargetAtTime(1,ctx.currentTime,.04);
-  piano?.setRunning(true);drums?.setRunning(true);envion.setRunning(true);send('run',1);
+  piano?.setRunning(true);envion.setRunning(true);send('run',1);
   $('play').textContent='Pause audio';$('chord').disabled=false;$('trade').disabled=false;
   void loadEngines().then(()=>{if(!closed&&running){nextTrade=elapsed;report(piano||pd?'Loading finished. Check the engine statuses, then audition a chord.':'Audio engines could not load. Pause and start to retry.');}});
   applyAudio();
  }catch(error){stop();report(error.message);}finally{starting=false;$('play').disabled=false;}
 }
 function stop(){
- running=false;lastTime=null;transport?.gain.setTargetAtTime(0,ctx.currentTime,.025);piano?.setRunning(false);drums?.setRunning(false);envion.setRunning(false);math.stop();send('run',0);stopLegacyPlayback();arpAI.suspend();
+ running=false;lastTime=null;transport?.gain.setTargetAtTime(0,ctx.currentTime,.025);piano?.setRunning(false);envion.setRunning(false);math.stop();send('run',0);stopLegacyPlayback();arpAI.suspend();
  $('play').textContent='Start audio';$('chord').disabled=true;$('trade').disabled=true;clearTimeout(idleSuspend);if(ctx&&!closed&&!loadJob)idleSuspend=setTimeout(()=>{if(!running)void ctx.suspend().catch(()=>{});},120);paint();
 }
 function trigger(force=false){
@@ -125,7 +123,7 @@ function trigger(force=false){
  const event={kind:'swap',id:'lab-'+tradeIndex,at,receivedAt:at,occurredAt:at,price,priceUsd:price,referencePrice:price/(1+state.market.change/100),chordStep:tradeIndex,music:m.music};
  if(force)piano?.replay(event,{reason:'movement',at,changePct:state.market.change},state.market.cap,m.music);
  else piano?.trade(event,state.market.cap,m.music);
- data.event(event,{playing:true,clock:ctx.currentTime});drums?.frame(m,{playing:true,event:event.id});tradeIndex++;
+ data.event(event,{playing:true,clock:ctx.currentTime});tradeIndex++;
 }
 function tick(){
  if(!ctx||closed||!running)return;
@@ -134,7 +132,7 @@ function tick(){
   if(state.autoTrades&&state.market.activity>0&&state.market.fresh>0&&elapsed>=nextTrade){trigger();nextTrade=elapsed+60/state.market.tempo*state.market.tradeBeats;}
   const m=market();send('tempo',state.market.tempo);send('activity',m.activity);send('motion',m.motion);send('energy',m.music.intensity);send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',state.market.tonic);send('cutoff',900+m.texture*3100+m.music.intensity*1800);
   send('melody',.6*m.music.intensity*m.fresh);if(envionReady)envion.market(m,state.market.tempo);
-  data.frame(m,{playing:true,clock:now});math.frame(m,{playing:true,ready:!!pd,clock:now,event:tradeIndex?'lab-'+(tradeIndex-1):null});drums?.frame(m,{playing:true});
+  data.frame(m,{playing:true,clock:now});math.frame(m,{playing:true,ready:!!pd,clock:now,event:tradeIndex?'lab-'+(tradeIndex-1):null});
   piano?.frame({...m,replay:null},{playing:true,at:elapsed*1000,price,known:true,quiet:state.market.activity===0});
  }
  if(now-lastUI>.15||!running){lastUI=now;paint();}
@@ -173,13 +171,11 @@ function build(){
  action(melodic,'Generate AI phrase · download model',()=>{arpAI.setSeed(state.market.seed);void arpAI.prepare();});
  action(melodic,'Restore seeded phrase',()=>{arpAI.suspend();state.arp=seededArp(state.market.seed);arpAI.setSeed(state.market.seed,state.arp);changed();});
  const arpInfo=document.createElement('p');arpInfo.className='lab-hint';melodic.append(arpInfo);paints.push(()=>arpInfo.textContent='Phrase pitches: '+state.arp.map(x=>x[1]).join(' · ')+' · interlocking layers remain market-cap gated');
- const drumGrid=section('04 / Cybernetic drums','The actual 17-node drum network: kick, snare, hat and ride. Fresh activity and a qualifying cap start finite phrases. Lower the unlock cap to audition drums on smaller markets.');
- for(const spec of drumSpecs)direct(drumGrid,'drums',spec);
- const env=section('05 / ENVION · granular + tape + effects','Every market-mapped ENVION parameter. AUTO shows the current performer value after audio loads. Overrides stay fixed while the market conductor keeps running. Original samples remain loaded.');pdKnobs(env,envionSpecs);
- const signals=section('06 / Data sonification','Pure Data pulses, noise and low tones. AUTO follows market excitation; manual pitch overrides can intentionally leave the current key. Mute this layer in the mixer.');pdKnobs(signals,dataSpecs);
+ const env=section('04 / ENVION · granular + tape + effects','Every market-mapped ENVION parameter. AUTO shows the current performer value after audio loads. Overrides stay fixed while the market conductor keeps running. Original samples remain loaded.');pdKnobs(env,envionSpecs);
+ const signals=section('05 / Data sonification','Pure Data pulses, noise and low tones. AUTO follows market excitation; manual pitch overrides can intentionally leave the current key. Mute this layer in the mixer.');pdKnobs(signals,dataSpecs);
  const identities=mathIdentity(state.market.seed);
  for(let i=0;i<5;i++){
-  const grid=section('07.'+(i+1)+' / Market phrase','Seeded function with a finite eight-beat passage. Pitch is tuned to the shared harmony unless overridden. Sawtooth synthesis is fixed.');
+  const grid=section('06.'+(i+1)+' / Market phrase','Seeded function with a finite eight-beat passage. Pitch is tuned to the shared harmony unless overridden. Sawtooth synthesis is fixed.');
   const name=document.createElement('p');name.className='lab-hint';grid.append(name);paints.push(()=>{const view=phraseViews[i];name.textContent=(view?.name||identities[i].name)+' · ≥ $'+(view?.threshold||identities[i].threshold).toLocaleString()+' · '+(view?.status||'Start audio');});
   const sw=document.createElement('div');sw.className='switches';grid.append(sw);switchButton(sw,'Phrase '+(i+1),()=>state.slots[i],v=>state.slots[i]=v);
   addKnob(grid,['slot'+i,'Phrase level',0,1,.01],()=>state.slotLevels[i],v=>state.slotLevels[i]=v);pdKnobs(grid,phraseSpecs[i]);
@@ -211,7 +207,7 @@ $('load').onchange=async event=>{const file=event.target.files?.[0];if(!file)ret
 $('reset').onclick=()=>{connectionBaselines.clear();stop();arpAI.suspend();state=defaults();solo=null;resetScore();build();save();report('Default settings restored. Press Start audio.');};
 // Hidden pages stop expensive DSP and sequencing; return requires a deliberate tap.
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();void ctx?.suspend().catch(()=>{});}});
-window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);piano?.close();drums?.close();arpAI.close();envion.detach();void pd?.close();void ctx?.close();});
+window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);piano?.close();arpAI.close();envion.detach();void pd?.close();void ctx?.close();});
 math.setSeed(state.market.seed);data.reset(state.market.seed);build();
 
 window.addEventListener('pageshow',event=>{if(event.persisted&&closed)location.reload();});
