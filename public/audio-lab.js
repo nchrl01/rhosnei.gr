@@ -2,7 +2,7 @@ import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=3';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {createTradePiano} from './trade-piano.js?v=178';
-import {EARTHBOUND_PRESETS,instrumentProfile} from './earthbound-instruments.js?v=178';
+import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=179';
 import {createCyberneticDrums} from './cybernetic-drums.js?v=174';
 import {createEnvion} from './envion.js?v=152';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
@@ -154,7 +154,7 @@ function pianoAuto(key){
  return ({roomSend:profile.room,cutoff:profile.cutoff,dry:.34+.5*a,wet:1.45-1.15*a,q:.55,noteGain:1,chordGain:1,arpGain:1,...profile})[key]??pianoSpecs.find(s=>s[0]===key)?.[5]??0;
 }
 function pdKnobs(parent,specs){for(const spec of specs){const key=spec[0];addKnob(parent,spec,()=>state.pd[key]??pdValues[key]??spec[5],v=>state.pd[key]=v,()=>{delete state.pd[key];if(Number.isFinite(pdValues[key]))send(key,pdValues[key]);},()=>Object.hasOwn(state.pd,key));}}
-function refreshInstruments(){const el=$('instrument-select');if(!el)return;el.replaceChildren();for(const [v,name] of [[-1,'AUTO · instrument from coin seed'],...(piano?.instruments()||[]).map(x=>[x.preset,x.name])]){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}if(![...el.options].some(o=>Number(o.value)===state.instrument)){state.instrument=-1;piano?.configure({...state.piano,arpeggios:state.arpeggios});}el.value=String(state.instrument);}
+function refreshInstruments(){const el=$('instrument-select');if(!el)return;el.replaceChildren();for(const [v,name] of [[-1,'AUTO · instrument from coin seed'],...(piano?.instruments()||EARTHBOUND_INSTRUMENTS).map(x=>[x.preset,x.name])]){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}if(![...el.options].some(o=>Number(o.value)===state.instrument)){state.instrument=-1;piano?.configure({...state.piano,preset:-1,arpeggios:state.arpeggios});}el.value=String(state.instrument);}
 function build(){
  $('controls').replaceChildren();paints=[];$('notes').value=state.notes;
  const mixer=section('01 / Mixer','Mute or solo any layer. Listening volume is applied after the engines. The waveform shows what you hear.',true);
