@@ -1,7 +1,7 @@
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=161';
-import {capitalGLSL} from './capital-field.js?v=161';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=161';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=161';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=162';
+import {capitalGLSL} from './capital-field.js?v=162';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=162';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=162';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -189,8 +189,8 @@ void main(){
   // low-cap field is scattered; a high-cap field settles into recognizable ink.
   float imageInk=0.0;
   if(uIdentity>0.0){
-    imageInk=identityInk(samplePoint);
-    float imageFeed=mix(feed-.25,.68+.16*min(3.0,uDensity)+.13*feed,imageInk);
+    imageInk=identityInk(mix(samplePoint,squarePoint,uIdentity));
+    float imageFeed=mix(-.05,1.05,imageInk);
     feed=mix(feed,imageFeed,uIdentity);
   }
 

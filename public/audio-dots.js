@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=161';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=162';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -218,6 +218,13 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(replaying){clock=eventTime*1.35;liquidClock=eventTime*.6;}else{clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;}
    dirty=true;
   }
+  // Recurring, seed-stable image phrase on the same field clock. The image
+  // resolves through pixel occupancy, never a separate fading image layer.
+  const imagePeriod=24+(seed>>>0)%13;
+  const imagePhase=((clock+((seed>>>0)%7))%imagePeriod+imagePeriod)%imagePeriod;
+  const easeImage=x=>{const t=unit(x);return t*t*t*(t*(t*6-15)+10);};
+  visualParams.identity=reduced.matches?0:easeImage((imagePhase-10)/4)*(1-easeImage((imagePhase-17)/5));
+  visualParams.identityMotion=.3*(1-visualParams.identity);
   visualCursor=replaying?eventTime:null;
   if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
   if(!dirty)return;dirty=false;

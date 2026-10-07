@@ -1,4 +1,4 @@
-import {suggestedLayers,layerMotion} from './earthbound-motion-presets.js?v=161';
+import {suggestedLayers,layerMotion} from './earthbound-motion-presets.js?v=162';
 export {suggestedLayers};
 // A coin always keeps its preset. Market and audio control its continuous clock
 // and deformation depth; the two source motions bend one shared pixel field.

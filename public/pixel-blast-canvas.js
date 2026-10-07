@@ -1,5 +1,5 @@
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=161';
-import {capitalFeed} from './capital-field.js?v=161';
+import {battleMotion,battleWarp} from './earthbound-motion.js?v=162';
+import {capitalFeed} from './capital-field.js?v=162';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
@@ -114,8 +114,8 @@ export function createPixelBlastCanvas(host){
     let feed=sample.feed;
     let maskInk=0;
     if(identity>0){
-     maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,cssWidth,cssHeight,time,offset,params);
-     const imageFeed=mix(feed-.25,.68+.16*Math.min(3,params.density)+.13*feed,maskInk);
+     maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight*(1-identity),fy+sample.warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
+     const imageFeed=mix(-.05,1.05,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
     if(feed+b8(px,py)-.5<.5)continue;

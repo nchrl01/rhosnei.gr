@@ -1,4 +1,4 @@
-import {capitalStage} from './capital-field.js?v=161';
+import {capitalStage} from './capital-field.js?v=162';
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
 // These controls change the field inside a fixed 4 CSS-pixel square lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
