@@ -230,21 +230,6 @@
       "loopEnd": 0.0079155672823219
     },
     {
-      "file": "preset-130.wav",
-      "midi": 54,
-      "trim": 0.694085,
-      "preset": 130,
-      "bank": 1,
-      "program": 2,
-      "peak": 0.616699,
-      "bodyRms": 0.186243,
-      "name": "Bazaar Oboe",
-      "correction": -39,
-      "loop": true,
-      "loopStart": 0.016512549537648614,
-      "loopEnd": 0.01915455746367239
-    },
-    {
       "file": "preset-139.wav",
       "midi": 52,
       "trim": 0.391922,
