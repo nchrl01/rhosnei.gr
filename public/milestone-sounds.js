@@ -1,5 +1,5 @@
 const THRESHOLDS=[100000,500000,1000000,2000000];
-const DB_NAME='upic-envion-samples-v1',STORE='samples',UNLOCK_KEY='upic-envion-unlocks-v1';
+const DB_NAME='upic-envion-samples-v1',STORE='samples';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const money=value=>value>=1e6?'$'+(value/1e6).toFixed(value%1e6?1:0)+'M':value>0?'$'+Math.round(value/1000)+'K':'—';
 function waveSvg(values){if(!Array.isArray(values)||!values.length)return '';const bars=Array.from({length:32},(_,i)=>{const magnitude=Math.max(0,Math.min(1,Number(values[Math.floor(i*values.length/32)])||0));const height=Math.max(2,Math.round(magnitude*14)*2),y=16-height/2;return `<rect x="${i*2}" y="${y}" width="1" height="${height}"/>`;}).join('');return `<svg class="milestone-wave" viewBox="0 0 64 32" role="img" aria-label="Pixelated audio waveform" focusable="false" shape-rendering="crispEdges"><g fill="currentColor">${bars}</g></svg>`;}
@@ -17,7 +17,6 @@ async function storeRequest(mode,callback){
  try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,mode),request=callback(tx.objectStore(STORE));request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);tx.onabort=()=>reject(tx.error);});}
  finally{db.close();}
 }
-function unlockMap(){try{return JSON.parse(localStorage.getItem(UNLOCK_KEY)||'{}');}catch{return {};}}
 function safeKey(value){return String(value||'market').replace(/[^a-z0-9:_-]/gi,'_').slice(0,180);}
 
 async function compactAudio(file,getContext){
@@ -55,7 +54,6 @@ async function compactAudio(file,getContext){
 export function createMilestoneSounds(container,{getAudioContext=()=>null,onActiveSample=()=>{}}={}){
  if(!container)throw new TypeError('A container is required for milestone sounds.');
  let marketKey='',cap=0,replay=false,rows=[],revision=0,activeId='',activeSlot=-1,statusText='Choose a token to add its sounds.';
- const unlocks=unlockMap();
  container.className='milestone-sounds';
  container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">COLLECTION SOUND MILESTONES</p><h3>Sounds unlocked by market cap</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Each sound starts at its market-cap milestone and stays in Envion until the next uploaded milestone sound takes over. The $2M sound continues above $2M. Uploads are saved in this browser for this token.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
@@ -85,8 +83,7 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
   });
   slots.append(card);return card;
  });
- function unlockedCap(){if(replay)return cap;return Math.max(cap,Number(unlocks[marketKey])||0);}
- function updateUnlock(){if(!marketKey||replay)return;const reached=THRESHOLDS.filter(value=>cap>=value).at(-1)||0;if(reached>(Number(unlocks[marketKey])||0)){unlocks[marketKey]=reached;try{localStorage.setItem(UNLOCK_KEY,JSON.stringify(unlocks));}catch{}}}
+ function unlockedCap(){return cap;}
  function updateActive(){
   const reached=unlockedCap();let row=null;
   for(let i=rows.length-1;i>=0;i--)if(rows[i]&&reached>=THRESHOLDS[i]){row=rows[i];break;}
@@ -108,7 +105,6 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  return {
   async setMarket(key,nextCap=0,isReplay=false){
    key=safeKey(key);const newMarket=key!==marketKey,wasReplay=replay;marketKey=key;cap=Number.isFinite(Number(nextCap))?Math.max(0,Number(nextCap)):0;replay=!!isReplay;
-   updateUnlock();
    if(newMarket){const current=++revision;rows=Array(THRESHOLDS.length).fill(null);activeId='';onActiveSample(null);statusText='Loading this token’s saved sounds…';render();
     try{const loaded=await storeRequest('readonly',store=>store.getAll());if(current!==revision)return;for(let row of loaded||[])if(row.token===key&&row.slot>=0&&row.slot<rows.length){if(!Array.isArray(row.waveform)){try{const compact=await compactAudio(row.blob,getAudioContext);if(current!==revision)return;row={...row,...compact};void storeRequest('readwrite',store=>store.put(row)).catch(()=>{});}catch{}}rows[row.slot]=row;}statusText='Sounds are saved locally to this token in this browser.';}
     catch(error){statusText='Local sound storage unavailable: '+(error.message||'');}
