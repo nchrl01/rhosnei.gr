@@ -1,0 +1,32 @@
+UPIC arrangement engine — release 209
+
+Market observations -> mood group, harmonic character, intensity, tempo.
+Coin seed -> stable key, melodic voice, motif identity, Kraken bass voice.
+All roles share a beat timeline and the same chord at a bar boundary.
+
+Below $10k: 0.70 melodic reverb send, 0.30 direct level.
+From $10k to $10m: logarithmic increase in directness, decrease in send.
+Above $1m: offbeat chord stabs, sixteenth-note syncopation, octave bass figures.
+These changes do not add drums.
+
+Two public-domain Bach MIDI editions train a second-order interval-count
+model. It suggests melodic movement. Chord tones own accented beats;
+diatonic connectors may fill weak beats. Eight-bar call/answer variation
+and cadences are composed rules. This is not a large neural model.
+The optional existing MusicRNN receives the chart's chord progression;
+its output is revoiced to the coin's current key and frozen for a replay.
+
+GeneralUser 2.0.3 stereo multisamples: four key centres, two velocities.
+FluidSynth renders its programmed timbre offline; the browser only loads
+the selected bank. Kraken 1/2 remain EarthBound bass samples.
+
+Replay integrates tempo across frozen candle observations. Seeking restores
+musical phase and sustained sample position instead of invoking a new phrase.
+The renderer's motion phase likewise follows source time. This is a score
+transport, not a decoded video/audio recording: reverb history and the
+separate granular Envion patch are not sample-exact across arbitrary seeks.
+Use an audio recording when bit-identical playback of the whole mix matters.
+
+Data Pd voices receive observation bangs only. The master metronome no longer
+feeds their trigger. Density changes event probability, not autonomous timing.
+Reverb send remains at 0.65–0.80 and its feedback decay is longer.

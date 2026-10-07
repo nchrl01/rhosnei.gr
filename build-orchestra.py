@@ -11,7 +11,7 @@ pd_patch.ROOT=ROOT
 Patch=pd_patch.Patch
 
 # Browser host patches; the Envion source and math abstractions are separate.
-active={'av-random.pd','av-conductor.pd','av-envion.pd','av-math.pd','av-math-voice.pd','av-data.pd','av-data-pulse.pd','av-data-low.pd','market.pd'}
+active={'av-random.pd','av-conductor.pd','av-envion.pd','av-math.pd','av-math-voice.pd','av-data.pd','av-data-reverb.pd','av-data-pulse.pd','av-data-low.pd','market.pd'}
 for path in ROOT.glob('*.pd'):
     if path.name not in active: path.unlink()
 
@@ -118,9 +118,9 @@ for osc in oscillators:p.link(phase,osc,inp=1)
 p.write('av-data-low')
 
 p=Patch('Original market data set / Ikeda and Sound Simulator principles / seeded microtones, sine clusters, noise',width=1800,height=1100)
-tick=p.obj('r av-tick');probability=p.obj('av-random 10000');threshold=p.obj('<');density=p.obj('r data-density');percent=p.obj('* 10000');hit=p.obj('sel 1');gate=p.obj('spigot 0');enabled=p.obj('r data-enabled')
-p.chain(tick,probability,threshold,hit,gate);p.chain(density,percent);p.link(percent,threshold,inp=1);p.link(enabled,gate,inp=1)
-trade=p.obj('r data-trade');p.chain(trade,gate)
+tick=p.obj('r data-observation-disabled');probability=p.obj('av-random 10000');threshold=p.obj('<');density=p.obj('r data-density');percent=p.obj('expr 3500 + 6500 * $f1');hit=p.obj('sel 1');gate=p.obj('spigot 0');enabled=p.obj('r data-enabled')
+p.chain(probability,threshold,hit,gate);p.chain(density,percent);p.link(percent,threshold,inp=1);p.link(enabled,gate,inp=1)
+trade=p.obj('r data-trade');p.chain(trade,probability)
 choice=p.obj('av-random 5');reported=p.obj('t f f');routes=p.obj('sel 0 1 2 3 4');onset=p.obj('s data-onset');p.chain(gate,choice,reported);p.link(reported,routes,out=1);p.chain(reported,onset)
 voices=[p.obj('av-data-pulse 4 12 0.05 0.8'),p.obj('av-data-pulse 0.5 170 0.05 0.7'),p.obj('av-data-pulse 2 26 2.5 0.05'),p.obj('av-data-pulse 1 70 0.08 0.8'),p.obj('av-data-low')]
 for i,voice in enumerate(voices):p.link(routes,voice,out=i)
@@ -130,11 +130,13 @@ seed=p.obj('r seed');seed_msg=p.msg(r'seed \$1');p.chain(seed,seed_msg);p.link(s
 # cannot leave this set running indefinitely.
 split=p.obj('t f b');heartbeat=p.obj('t b b');cancel=p.msg('stop');watchdog=p.obj('delay 2500');timeout=p.msg('0');pack=p.obj('pack f 120');safety=p.obj('line~')
 p.chain(enabled,split);p.chain(split,pack,safety);p.link(split,heartbeat,out=1);p.link(heartbeat,cancel,out=1);p.chain(cancel,watchdog);p.chain(heartbeat,watchdog,timeout,pack)
+reverb=p.obj('av-data-reverb')
 for channel in range(2):
  mixed=voices[0];source_out=channel
  for voice in voices[1:]:
   addition=p.obj('+~');p.link(mixed,addition,out=source_out);p.link(voice,addition,out=channel,inp=1);mixed=addition;source_out=0
- output=p.obj('*~');p.link(mixed,output,out=source_out);p.link(safety,output,inp=1);p.chain(output,p.obj('outlet~'))
+ p.link(mixed,reverb,out=source_out,inp=channel)
+ output=p.obj('*~');p.link(reverb,output,out=channel);p.link(safety,output,inp=1);p.chain(output,p.obj('outlet~'))
 p.write('av-data')
 
 p=Patch('AV / Envion + seeded math + market data set / stereo master')

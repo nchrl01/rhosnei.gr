@@ -118,6 +118,14 @@ rootcanvas=canvases[root]
 def nodeat(x,y):return next(n['index'] for n in rootcanvas['nodes'] if n['x']==x and n['y']==y)
 aliases={'main-preset':nodeat(2901,652),'row-random':nodeat(1913,668),'random-speed':nodeat(1820,682),'strike':nodeat(1668,1088),'hard-stop':nodeat(1869,1207)}
 rootcanvas['aliases']=aliases
+# Retired recording presets stay out of the website and automatic pool.
+retired_presets=[342, 345, 425, 491, 515, 518, 488, 546, 549, 563, 600, 610, 670, 677, 805]
+by_index={n['index']:n for n in rootcanvas['nodes']}
+for index in retired_presets:
+ by_index[index]['retired']=True
+ for wire in rootcanvas['wires']:
+  if wire[0]==index and by_index[wire[2]].get('child'):by_index[wire[2]]['retired']=True
+
 
 # Observe the signals already entering the original scopes. Control messages
 # sharing a scope inlet are deliberately excluded (notably nodes 1100/1102).

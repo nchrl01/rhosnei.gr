@@ -3,13 +3,13 @@ import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=188';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
-import {createTradePiano} from './trade-piano.js?v=208';
-import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
-import {createEnvion} from './envion.js?v=206';
+import {createTradePiano} from './trade-piano.js?v=209';
+import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=209';
+import {createEnvion} from './envion.js?v=209';
 import {createPd} from './vendor/libpd-wasm.js?v=206';
-import {createDataSonification} from './data-sonification.js?v=208';
+import {createDataSonification} from './data-sonification.js?v=209';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=208';
-import {createArpeggioAI,seededArp} from './ai-instruments.js?v=190';
+import {createArpeggioAI,seededArp} from './ai-instruments.js?v=209';
 import {HARMONIES,CHARACTER_GROUPS,pianoHarmony,chartCharacter,resolveHarmonicCharacter} from './music-context.js?v=208';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),combinedLab=Boolean(document.getElementById('patch-workspace'));
 const connectionBaselines=new Map();
@@ -19,7 +19,7 @@ const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries
 let state=defaults(),ctx,piano,pd,envionReady=false,running=false,starting=false,closed=false,timer,saveTimer;
 let transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,phraseViews=[],paints=[],pdValues={},lastUI=0;
 let idleSuspend=null,seedTimer=null;
-let solo=null,buses={},engineStatus={EarthBound:'Not loaded','Pure Data':'Not loaded',ENVION:'Not loaded',Arpeggio:'Seeded phrase'},statuses={};
+let solo=null,buses={},engineStatus={GeneralUser:'Not loaded','Pure Data':'Not loaded',ENVION:'Not loaded',Arpeggio:'Seeded phrase'},statuses={};
 const report=text=>{$('status').textContent=text;};
 function readPreset(data){
  if(data?.schema!=='upic-audio-lab'||data.version!==1)throw Error('Not an Audio Lab preset');
@@ -89,9 +89,9 @@ async function loadEngines(){
  if(loadJob)return loadJob;
  loadJob=(async()=>{
   const jobs=[];
-  if(!piano){setStatus('EarthBound','Loading samples…');jobs.push(createTradePiano(ctx,buses.earthbound,{onVoice:event=>{$('last-note').textContent=event.instrument+' · '+event.notes.join(' / ')+' · '+event.reason;},onArpeggio:event=>{$('last-note').textContent='Arpeggio · MIDI '+event.midi;}}).then(result=>{if(closed){result.close();return;}piano=result;piano.reset(state.market.seed);piano.setMaster(1);piano.setRunning(running);applyAudio();refreshInstruments();setStatus('EarthBound','Ready');}).catch(error=>setStatus('EarthBound',error.message)));}
+  if(!piano){setStatus('GeneralUser','Loading samples…');jobs.push(createTradePiano(ctx,buses.earthbound,{initialSeed:state.market.seed,onVoice:event=>{$('last-note').textContent=event.instrument+' · '+event.notes.join(' / ')+' · '+event.reason;},onArpeggio:event=>{$('last-note').textContent='Arpeggio · MIDI '+event.midi;}}).then(result=>{if(closed){result.close();return;}piano=result;piano.reset(state.market.seed);piano.setMaster(1);piano.setRunning(running);applyAudio();refreshInstruments();setStatus('GeneralUser','Ready');}).catch(error=>setStatus('GeneralUser',error.message)));}
   if(!pd){setStatus('Pure Data','Loading patches…');setStatus('ENVION','Loading samples…');jobs.push((async()=>{
-   const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=187','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=187')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
+   const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=209','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=209')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
    if(closed)return;const files={...orchestra.files,...envionFiles};
    const result=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+orchestra.manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>envion.printed(text),onError:error=>setStatus('Pure Data',String(error?.message||error))});
    if(closed){await result.close();return;}pd=result;pd.connect(musicMeter);send('master',1);send('seed',state.market.seed);send('run',running?1:0);setStatus('Pure Data','Ready');
@@ -158,11 +158,11 @@ function select(parent,label,options,value,onChange,id){const row=document.creat
 function action(parent,label,run){const b=document.createElement('button');b.textContent=label;b.className='action';b.onclick=run;parent.append(b);return b;}
 function switchButton(parent,label,get,set){const b=document.createElement('button');b.onclick=()=>{set(!get());changed();};paints.push(()=>{b.textContent=label+' · '+(get()?'on':'off');b.setAttribute('aria-pressed',get());});parent.append(b);return b;}
 function pianoAuto(key){
- const snapshot=piano?.snapshot(),profile=instrumentProfile(snapshot?.preset??1),a=clamp((Math.log10(state.market.cap)-5)/2,0,1);
- return ({roomSend:profile.room,cutoff:profile.cutoff,dry:.34+.5*a,wet:1.45-1.15*a,q:.55,noteGain:1,chordGain:1,arpGain:1,...profile})[key]??pianoSpecs.find(s=>s[0]===key)?.[5]??0;
+ const snapshot=piano?.snapshot(),profile=instrumentProfile(snapshot?.preset??1),a=clamp((Math.log10(Math.max(1000,state.market.cap))-4)/3,0,1);
+ return ({roomSend:.7-.46*a,cutoff:profile.cutoff*(.7+.3*a),dry:.3+.55*a,wet:1.1-.45*a,q:.55,noteGain:1,chordGain:1,arpGain:1,...profile})[key]??pianoSpecs.find(s=>s[0]===key)?.[5]??0;
 }
 function pdKnobs(parent,specs){for(const spec of specs){const key=spec[0];addKnob(parent,spec,()=>state.pd[key]??pdValues[key]??spec[5],v=>state.pd[key]=v,()=>{delete state.pd[key];if(Number.isFinite(pdValues[key]))send(key,pdValues[key]);},()=>Object.hasOwn(state.pd,key));}}
-function refreshInstruments(){const el=$('instrument-select');if(!el)return;el.replaceChildren();for(const [v,name] of [[-1,'AUTO · instrument from coin seed'],...(piano?.instruments()||EARTHBOUND_INSTRUMENTS).map(x=>[x.preset,x.name])]){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}if(![...el.options].some(o=>Number(o.value)===state.instrument)){state.instrument=-1;piano?.configure({...state.piano,preset:-1,arpeggios:state.arpeggios});}el.value=String(state.instrument);}
+function refreshInstruments(){const el=$('instrument-select');if(!el)return;el.replaceChildren();for(const [v,name] of [[-1,'AUTO · instrument from coin seed'],...(piano?.instruments()||EARTHBOUND_INSTRUMENTS).filter(x=>![145,146].includes(x.preset)).map(x=>[x.preset,x.name])]){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}if(![...el.options].some(o=>Number(o.value)===state.instrument)){state.instrument=-1;piano?.configure({...state.piano,preset:-1,arpeggios:state.arpeggios});}el.value=String(state.instrument);}
 function build(){
  $('controls').replaceChildren();paints=[];$('notes').value=state.notes;
  const mixer=section('01 / Mixer','Mute or solo any layer. Listening volume is applied after the engines. The waveform shows what you hear.',true);
@@ -176,11 +176,11 @@ function build(){
  const keyInfo=document.createElement('p');keyInfo.className='lab-hint';input.append(keyInfo);const directionInfo=document.createElement('p');directionInfo.className='lab-hint';input.append(directionInfo);paints.push(()=>{const m=market().music;directionInfo.textContent=m.group.toUpperCase()+' · '+HARMONIES[m.character].name+' · '+Math.abs(m.capChangePct).toFixed(1)+'% toward the 20% landmark';});paints.push(()=>keyInfo.textContent='KEY · '+keyName(currentTonic())+' · '+(state.seedKey&&!connectionBaselines.has('market.tonic')?'fixed by coin seed':'manual / cable')+' · mood keeps this tonic');
  select(input,'Harmonic character',[['auto','AUTO · UP / DOWN from market cap'],...Object.entries(CHARACTER_GROUPS).flatMap(([group,keys])=>keys.map(k=>[k,HARMONIES[k].name,group.toUpperCase()]))],state.character,v=>state.character=v);
  const tradeSwitch=document.createElement('div');tradeSwitch.className='switches';input.append(tradeSwitch);switchButton(tradeSwitch,'Automatic trades',()=>state.autoTrades,v=>{state.autoTrades=v;nextTrade=elapsed;});
- const melodic=section('03 / EarthBound · chords + arpeggios','Choose the actual sampled instrument. AUTO follows its envelope and market-cap articulation. Chords and arpeggios always share the selected instrument.',true);
+ const melodic=section('03 / GeneralUser · chords + arpeggios','Choose the actual sampled instrument. AUTO follows its envelope and market-cap articulation. Chords and arpeggios always share the selected instrument.',true);
  select(melodic,'Instrument',[[-1,'Load audio to see instrument library']],state.instrument,v=>state.instrument=Number(v),'instrument-select');refreshInstruments();
  for(const spec of pianoSpecs){const key=spec[0];addKnob(melodic,spec,()=>state.piano[key]??pianoAuto(key),v=>state.piano[key]=v,()=>delete state.piano[key],()=>Object.hasOwn(state.piano,key));}
  const arpSwitch=document.createElement('div');arpSwitch.className='switches';melodic.append(arpSwitch);switchButton(arpSwitch,'Arpeggios',()=>state.arpeggios,v=>state.arpeggios=v);
- action(melodic,'Generate AI phrase · download model',()=>{arpAI.setSeed(state.market.seed);void arpAI.prepare();});
+ action(melodic,'Generate AI phrase · download model',()=>{arpAI.setSeed(state.market.seed);arpAI.setContext(market().music);void arpAI.prepare();});
  action(melodic,'Restore seeded phrase',()=>{arpAI.suspend();state.arp=seededArp(state.market.seed);arpAI.setSeed(state.market.seed,state.arp);changed();});
  const arpInfo=document.createElement('p');arpInfo.className='lab-hint';melodic.append(arpInfo);paints.push(()=>arpInfo.textContent='Phrase pitches: '+state.arp.map(x=>x[1]).join(' · ')+' · interlocking layers remain market-cap gated');
  const env=section('04 / ENVION · granular + tape + effects','Every market-mapped ENVION parameter. AUTO shows the current performer value after audio loads. Overrides stay fixed while the market conductor keeps running. Original samples remain loaded.');pdKnobs(env,envionSpecs);

@@ -1,51 +1,47 @@
-// Seeded EarthBound instruments following the existing piano composition engine.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=208';
-import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=189';
+import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=209';
+// Seeded GeneralUser melodic voices and a dedicated EarthBound Kraken bass.
 import {createPianoPolicy} from './piano-policy.js?v=208';
-import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=185';
+import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=209';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 // The soundfont assets are already trimmed to ~0.13 RMS before their short
 // envelopes. Calibrate this shared engine so chord bodies survive the mix;
 // keep the listening slider and instrument-specific dynamics independent.
 export const EARTHBOUND_OUTPUT_GAIN=6;
-let sampleDownload;
+let sampleManifest;
 const sampleAssets=new Map();
 async function loadSampleAsset(path,format){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
- try{
-  const response=await fetch('samples/earthbound/'+path+'?v=185',{signal:controller.signal});
-  if(!response.ok)throw Error('Cannot load instrument asset '+path);
-  return await response[format]();
- }finally{clearTimeout(timeout);}
+ try{const response=await fetch('samples/'+path+'?v=209',{signal:controller.signal});if(!response.ok)throw Error('Cannot load instrument '+path);return await response[format]();}finally{clearTimeout(timeout);}
 }
-// Start downloading when a market is selected, before the audio gesture. A
-// missing sample must not silence all the other, successfully loaded notes.
-export function preloadPianoSamples(){
- if(!sampleDownload)sampleDownload=(async()=>{
-  const manifest=await loadSampleAsset('manifest.json','json');
-  manifest.files=manifest.files.filter(item=>EARTHBOUND_PRESETS.includes(item.preset));
-  const results=await Promise.allSettled(manifest.files.map(async item=>{
-   if(!sampleAssets.has(item.file))sampleAssets.set(item.file,loadSampleAsset(item.file,'arrayBuffer').catch(error=>{sampleAssets.delete(item.file);throw error;}));
-   return {...item,bytes:await sampleAssets.get(item.file)};
-  }));
-  const samples=results.filter(result=>result.status==='fulfilled').map(result=>result.value);
-  if(!samples.length)throw Error('Piano samples unavailable');
-  if(samples.length<manifest.files.length)sampleDownload=null;
-  return samples;
- })().catch(error=>{sampleDownload=null;throw error;});
- return sampleDownload;
+function instrumentManifest(){
+ return sampleManifest??=Promise.all([loadSampleAsset('generaluser/manifest.json','json'),loadSampleAsset('earthbound/manifest.json','json')]).then(([general,bass])=>[
+  ...general.files.map(item=>({...item,file:'generaluser/'+item.file})),
+  ...bass.files.filter(item=>[145,146].includes(item.preset)).map(item=>({...item,file:'earthbound/'+item.file})),
+ ]).catch(error=>{sampleManifest=null;throw error;});
+}
+export async function preloadPianoSamples(seed=1917,preset=earthboundPreset(seed)){
+ const manifest=await instrumentManifest(),wanted=manifest.filter(item=>item.preset===preset||item.preset===145||item.preset===146);
+ const results=await Promise.allSettled(wanted.map(async item=>{
+  if(!sampleAssets.has(item.file))sampleAssets.set(item.file,loadSampleAsset(item.file,'arrayBuffer').catch(error=>{sampleAssets.delete(item.file);throw error;}));
+  return {...item,bytes:await sampleAssets.get(item.file)};
+ }));
+ const samples=results.filter(r=>r.status==='fulfilled').map(r=>r.value);
+ if(!samples.some(s=>s.preset===preset))throw Error('Selected instrument samples unavailable');
+ // Keep at most three banks worth of downloaded samples between coin changes.
+ while(sampleAssets.size>26)sampleAssets.delete(sampleAssets.keys().next().value);
+ return samples;
 }
 export function marketResonance(cap){
  const value=Number(cap);
  return value>0&&Number.isFinite(value)?unit((Math.log10(value)-4)/4):0;
 }
-export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{}}={}){
- const downloaded=await preloadPianoSamples();
- // Mono, short assets are normalized offline. Startup no longer scans every
+export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},initialSeed=1917}={}){
+ const downloaded=await preloadPianoSamples(initialSeed);
+ // Stereo melodic assets and mono Kraken samples are normalized offline. Startup no longer scans every
  // decoded sample on the main thread while the Pd engine is already sounding.
  const decoded=await Promise.allSettled(downloaded.map(async item=>({...item,trim:Number(item.trim)||1,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
- const samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
- if(!samples.length)throw Error('This browser could not decode the EarthBound samples');
+ let samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
+ if(!samples.some(s=>s.preset===earthboundPreset(initialSeed)))throw Error('This browser could not decode the instrument samples');
  const instrumentFilter=ctx.createBiquadFilter(),instrumentSend=ctx.createGain(),roomInput=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
  // Harmony notes and arpeggios share one instrument and its dry/room balance.
  // One fixed convolution is shared by all notes; seeking/pause clears its tail.
@@ -71,18 +67,34 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   }
  }
  room.buffer=impulse;instrumentFilter.connect(dry);instrumentFilter.connect(instrumentSend);instrumentSend.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
+ const bassFilter=ctx.createBiquadFilter(),bassGain=ctx.createGain();bassFilter.type='lowpass';bassFilter.frequency.value=900;bassGain.gain.value=.7;bassFilter.connect(bassGain);bassGain.connect(tailGate);
+ const reflections=[];for(const [delaySeconds,pan] of [[.019,-.6],[.031,.6]]){const delay=ctx.createDelay(.1),gain=ctx.createGain(),panner=ctx.createStereoPanner();delay.delayTime.value=delaySeconds;gain.gain.value=.1;panner.pan.value=pan;instrumentFilter.connect(delay);delay.connect(gain);gain.connect(panner);panner.connect(dry);reflections.push(delay,gain,panner);}
  let lastMarketCue=null;
- let enabled=true,running=false,volume=.5,seed=1917,closed=false,arp=null,pattern=[],nextArp=0,lastArpBucket=null,roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
+ let enabled=true,running=false,volume=.5,seed=initialSeed>>>0,closed=false,pattern=[],roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
  const policy=createPianoPolicy(seed);
- const phrasing=createPianoPhrasing(seed);
+
  const voices=new Set();
  function chooseInstrument(value){
   const id=earthboundPreset(value);
-  return samples.find(sample=>sample.preset===id)||samples[0];
+  return samples.find(sample=>sample.preset===id)||samples.find(sample=>![145,146].includes(sample.preset))||samples[0];
  }
  let instrument=chooseInstrument(seed);
- let profile=instrumentProfile(instrument.preset),currentCap=null;
- let interlock=null,lab={};
+ let profile=instrumentProfile(instrument.preset),currentCap=null,desiredPreset=instrument.preset,bankLoading=false,bankEpoch=0,bankError='';
+ async function selectBank(preset){
+  if(preset===desiredPreset&&!bankError)return;
+  desiredPreset=preset;bankLoading=true;bankError='';const token=++bankEpoch;
+  clear();barCache.clear();
+  try{
+   const source=await preloadPianoSamples(seed,preset);
+   const decoded=await Promise.all(source.map(async item=>({...item,buffer:await ctx.decodeAudioData(item.bytes.slice(0))})));
+   if(closed||token!==bankEpoch)return;
+   samples=decoded;instrument=samples.find(s=>s.preset===preset);profile={...instrumentProfile(preset),...Object.fromEntries(['attack','decay','sustain','release','phraseMax'].filter(key=>key in lab).map(key=>[key,lab[key]]))};lastResonance=-1;
+  }catch(error){if(token===bankEpoch)bankError=error.message;}
+  finally{if(token===bankEpoch)bankLoading=false;}
+ }
+ let lab={};
+ let timeline=null,replayAnchor=null,liveBeat=0,liveAt=ctx.currentTime,liveTempo=100,pendingContext={music:{},cap:0,active:false},liveUntil=-Infinity;
+ let scheduled=new Set(),barCache=new Map(),resumeNotes=true,lastHarmonyBar=null,transportHeld=false;
  function labRoom(){for(const [key,param] of [['cutoff',instrumentFilter.frequency],['q',instrumentFilter.Q],['roomSend',instrumentSend.gain],['dry',dry.gain],['wet',wet.gain]])if(Number.isFinite(lab[key]))param.setTargetAtTime(lab[key],ctx.currentTime,.05);}
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.025);}
  function hold(param,time){
@@ -103,7 +115,8 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   try{voice.source.stop(time+.04);}catch{}
  }
  function clear(){
-  arp=null;interlock=null;for(const voice of voices)stopVoice(voice);
+  scheduled.clear();resumeNotes=true;
+  for(const voice of voices)stopVoice(voice);
   if(!roomDirty||roomTimer!==null)return;
   clearTimeout(roomTimer);const time=ctx.currentTime;reopenAt=time+.075;
   hold(tailGate.gain,time);tailGate.gain.linearRampToValueAtTime(0,time+.035);
@@ -113,176 +126,139 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const now=ctx.currentTime;hold(tailGate.gain,now);tailGate.gain.linearRampToValueAtTime(1,now+.02);
   },55);
  }
- function note(midi,time,dynamics,duration=3.5,kind='note',attack=.018){
+ function note(midi,time,dynamics,duration=3.5,kind='note',attack=.018,elapsed=0){
   time=Math.max(time,reopenAt,ctx.currentTime+.012);
   // Reserve voices at their audible onset, not when the lookahead schedules
   // them. Expired voices must not steal a note that has not sounded yet.
   const active=[...voices].filter(voice=>!voice.fading&&voice.end>time).sort((a,b)=>a.end-b.end);
-  while(active.length>=8)stopVoice(active.shift(),time-.035);
-  midi=instrumentPitch(midi,profile);
-  // Use the arpeggiator's articulation for the harmonic layer as well, so
-  // held sample loops do not build a second, competing pad around the phrase.
-  duration=Math.min(duration*profile.gate,profile.phraseMax);
+  while(active.length>=18)stopVoice(active.shift(),time-.035);
+  const voiceProfile=kind==='bass'?instrumentProfile(145):profile;
+  midi=instrumentPitch(midi,voiceProfile);
+  // Chords retain their scored body; articulation belongs to each role.
+  duration=Math.max(.025,duration);
+  if(kind!=='chord'&&kind!=='bass')duration=Math.min(duration,lab.phraseMax??1.2);
   dynamics*=kind==='chord'?(lab.chordGain??1):kind==='arp'||kind==='interlock'?(lab.arpGain??1):(lab.noteGain??1);
-  const sample=instrument;
+  const preset=kind==='bass'?145+seed%2:instrument.preset;
+  const velocity=preset===34?64:preset===35?104:kind==='chord'||dynamics<.05?64:104;
+  const candidates=samples.filter(s=>s.preset===preset);
+  if(!candidates.length)return time;
+  const sample=candidates.reduce((a,b)=>Math.abs(a.midi-midi)*8+Math.abs((a.velocity??velocity)-velocity)<=Math.abs(b.midi-midi)*8+Math.abs((b.velocity??velocity)-velocity)?a:b);
   const source=ctx.createBufferSource(),gain=ctx.createGain();gain.gain.value=0;source.buffer=sample.buffer;source.playbackRate.value=2**((midi-sample.midi+(sample.correction||0)/100)/12);
   const loopEnd=Math.min(sample.loopEnd,source.buffer.duration);
   source.loop=Boolean(sample.loop&&sample.loopStart>=0&&loopEnd>sample.loopStart);
   if(source.loop){source.loopStart=sample.loopStart;source.loopEnd=loopEnd;}
   else duration=Math.min(duration,source.buffer.duration/source.playbackRate.value);
-  const end=time+duration,peak=dynamics*sample.trim,release=Math.min(profile.release,duration*.3);
-  const onset=Math.min(Math.max(.003,Math.min(lab.attack??attack,profile.attack)),duration*.15);
-  const decay=Math.min(profile.decay,duration*.35),body=peak*profile.sustain;
-  gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(peak,time+onset);
+  const end=time+duration,peak=dynamics*sample.trim,release=Math.min(kind==='chord'?.22:voiceProfile.release,duration*.3);
+  const onset=Math.min(Math.max(.003,Math.min(lab.attack??attack,voiceProfile.attack)),duration*.15);
+  const decay=Math.min(voiceProfile.decay,duration*.25),body=peak*voiceProfile.sustain;
+  gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(elapsed>0?body:peak,time+onset);
   gain.gain.exponentialRampToValueAtTime(Math.max(.000001,body),time+onset+decay);
   gain.gain.setValueAtTime(body,end-release);gain.gain.linearRampToValueAtTime(0,end);
-  source.connect(gain);gain.connect(instrumentFilter);const voice={source,gain,kind,start:time,end,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};source.start(time);source.stop(end);
+  source.connect(gain);gain.connect(kind==='bass'?bassFilter:instrumentFilter);const voice={source,gain,kind,start:time,end,fading:false};voices.add(voice);roomDirty=true;source.onended=()=>{source.disconnect();gain.disconnect();voices.delete(voice);};let offset=Math.max(0,elapsed)*source.playbackRate.value;
+  if(source.loop&&offset>=source.loopEnd)offset=source.loopStart+(offset-source.loopStart)%(source.loopEnd-source.loopStart);
+  if(!source.loop&&offset>=source.buffer.duration){source.disconnect();gain.disconnect();voices.delete(voice);return time;}
+  source.start(time,offset);source.stop(end);
   return time;
  }
- // Audio-clock lookahead keeps attacks independent of the drawing frame rate.
- // Finite triggered passages use a fixed pulse within each four-beat bar.
- const scheduler=setInterval(()=>{
-  if(interlock&&!closed&&running&&enabled&&ctx.state==='running'){
-   while(interlock.index<interlock.events.length){
-    const event=interlock.events[interlock.index];
-    if(event.tick>=interlock.boundary){
-     const boundaryTime=interlock.start+interlock.boundary*interlock.step;
-     if(boundaryTime>=ctx.currentTime+.12)break;
-     if(interlock.activity<.025){interlock=null;break;}
-     interlock.tempo=interlock.pendingTempo;interlock.step=30/interlock.tempo;
-     interlock.start=boundaryTime-interlock.boundary*interlock.step;interlock.boundary+=8;
-    }
-    const time=interlock.start+event.tick*interlock.step;
-    if(time>=ctx.currentTime+.12)break;
-    interlock.index++;
-    if(time<ctx.currentTime-.08)continue;
-    const dynamics=Math.max(.25,Math.min(1,interlock.activity/interlock.initialActivity));
-    const sounded=note(event.midi,time,event.gain*dynamics,event.duration,'interlock',profile.attack);
-    onArpeggio({midi:instrumentPitch(event.midi,profile),step:event.tick,time:sounded,tempo:interlock.tempo,instrument:instrument.name});
-   }
-   if(interlock&&interlock.index>=interlock.events.length)interlock=null;
-  }
-  if(!arp||closed||!running||!enabled||ctx.state!=='running')return;
-  while(arp.index<arp.notes.length&&arp.nextTime<ctx.currentTime+.12){
-   const [step,pitch]=arp.notes[arp.index++],time=arp.nextTime;arp.nextTime+=((arp.notes[arp.index]?.[0]??step+1)-step)*arp.step;if(time<ctx.currentTime-.08)continue;
-   const notes=arp.harmony;if(!notes?.length)break;
-   const target=notes.reduce((sum,n)=>sum+n,0)/notes.length+9+(pitch-66)*.5;
-   const candidates=notes.flatMap(n=>[n,n+12,n+24]).filter(n=>n>=48&&n<=81);
-   const cost=n=>Math.abs(n-target)+(arp.previous===null?0:Math.abs(n-arp.previous)*.45);
-   const midi=candidates.reduce((a,b)=>cost(a)<=cost(b)?a:b),nuance=pianoNuance(arp.seed,step);
-   arp.previous=midi;
-   const sounded=note(midi,time+nuance.delay,arp.gain*nuance.velocity,1.1*nuance.duration,'arp',nuance.attack);onArpeggio({midi:instrumentPitch(midi,profile),step,time:sounded,tempo:arp.tempo,instrument:instrument.name});
-  }
-  if(arp.index>=arp.notes.length)arp=null;
- },25);
- function play(selection,event,cap,music){
-  const quiet=selection.reason==='quiet',scoredEvent={...event,harmonyStep:selection.harmonyStep??event.harmonyStep,harmonyCharacter:selection.harmonyCharacter??event.harmonyCharacter};
-  const phrase=phrasing.next(scoredEvent,music,{quiet,changePct:selection.changePct,advanceHarmony:selection.reason==='movement'});
-  // Trading sustains the phrases even when price stays inside the current
-  // 5% harmonic band. Quiet notes remain sparse and never launch arpeggios.
-  const {midi,harmony}=phrase,intensity=unit(Math.max(Number(music.intensity)||0,quiet?0:.15+.65*unit(music.activity)));
-  const time=note(midi,ctx.currentTime+phrase.delay,.075*(quiet?.6:.6+.4*intensity)*phrase.velocity,(quiet?2.4:1.6)*phrase.duration,'note',phrase.attack);
-  // Trade activity repeats the held harmony; a 5% move selects the next one.
-  const chordNotes=quiet?[]:[...new Set(harmony.notes)].slice(0,3);
-  for(const pitch of chordNotes){
-   if(pitch===midi)continue;
-   note(pitch,time,.052*(.6+.4*intensity)*phrase.velocity,1.6*phrase.duration,'chord',phrase.attack);
-  }
-  const landmark=music.movement?.event;
-  const cueAge=landmark?selection.at-landmark.at:Infinity;
-  const cue=landmark&&landmark.id!==lastMarketCue&&cueAge>=-1000&&cueAge<=8000;
-  if(cue){
-   lastMarketCue=landmark.id;arp=null;interlock=null;
-   // A repeatable four-note signature: climb for +20%, descend for -20%.
-   const tones=[...new Set(harmony.notes)].sort((a,b)=>a-b);
-   const motif=[tones[0],tones[Math.min(1,tones.length-1)],tones.at(-1),tones[0]+12];
-   if(landmark.direction<0)motif.reverse();
-   const spacing=20/Math.max(40,Math.min(140,Number(music.tempo)||100));
-   motif.forEach((pitch,i)=>{const sounded=note(pitch,time+i*spacing,.09,.5,'arp',.008);onArpeggio({midi:instrumentPitch(pitch,profile),step:i,time:sounded,tempo:music.tempo,instrument:instrument.name,landmark:landmark.direction});});
-  }
-  const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/(4*60000/Math.max(40,Math.min(140,Number(music.tempo)||40))));
-  const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%2;
-  if((selection.reason==='movement'||arp?.character!==harmony.character)&&arp){arp=null;} // Only a harmonic change replaces a phrase.
-  if((selection.reason==='movement'||interlock?.character!==harmony.character)&&interlock){
-   for(let i=interlock.index;i<interlock.events.length;i++){
-    const event=interlock.events[i];event.midi=interlockPitch(event,harmony);
-   }
-   interlock.tonic=music.tonic;interlock.character=harmony.character;
-  }
-  if(!cue&&lab.arpeggios!==false&&!quiet&&!arp&&!interlock&&!(pattern.length&&draw===0&&time>=nextArp&&bucket!==lastArpBucket)){
-   const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony);
-   if(events.length){
-    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40));
-    arp=null;interlock={character:harmony.character,events,index:0,start:time+30/tempo,step:30/tempo,tempo,pendingTempo:tempo,boundary:8,activity:intensity,initialActivity:Math.max(.04,intensity),tonic:music.tonic};
-   }
-  }
-  // The optional phrase decorates measured activity in the same held harmony.
-  // Quiet notes never start a phrase or a chord.
-  if(!cue&&lab.arpeggios!==false&&!quiet&&!interlock&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
-   const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
-   const notes=pattern.map(([tick,pitch])=>[tick,pitch]);
-   arp={character:harmony.character,notes,index:0,nextTime:time+beat+notes[0][0]*beat/4,step:beat/4,tempo,gain:.075*(.6+.4*intensity),harmony:[...harmony.notes],tonic:music.tonic,seed:(seed^bucket)>>>0,previous:null};nextArp=time+beat*12;lastArpBucket=bucket;
-  }
-  onVoice({time,id:event.id,notes:[...new Set([midi,...chordNotes])].map(pitch=>instrumentPitch(pitch,profile)),instrument:instrument.name,harmony,resonance:marketResonance(cap),reason:selection.reason,changePct:selection.changePct,at:selection.at});
+ // Stable score clock: no pattern restarts when a new chart frame arrives.
+ function queueContext(selection,event,cap,music){
+  pendingContext={music:{...music},cap,active:selection?.reason!=='quiet',harmonyStep:selection?.harmonyStep??pendingContext.harmonyStep??0};
+  liveUntil=ctx.currentTime+Math.max(6,480/scoreTempo(music));
   return true;
  }
+ function scoreNow(){return replayAnchor?replayAnchor.at+(ctx.currentTime-replayAnchor.clock)*1000*replayAnchor.rate:null;}
+ function livePosition(){const now=ctx.currentTime;liveBeat+=(now-liveAt)*liveTempo/60;liveAt=now;return liveBeat;}
+ const scheduler=setInterval(()=>{
+  if(closed||bankLoading||bankError||!running||!enabled||transportHeld||ctx.state!=='running')return;
+  const now=ctx.currentTime,position=scoreNow(),replaying=timeline&&position!==null;
+  const beat=replaying?timeline.beatAt(position):livePosition();
+  const rate=replaying?replayAnchor.rate:1;
+  const atBeat=b=>replaying?now+(timeline.atBeat(b)-position)/1000/rate:now+(b-beat)*60/liveTempo;
+  const lastBeat=replaying?timeline.beatAt(position+120*rate):beat+.12*liveTempo/60;
+  const currentBar=Math.floor(beat/4);
+  if(!replaying&&lastHarmonyBar!==currentBar)liveTempo=scoreTempo(pendingContext.music);
+  for(let bar=currentBar;bar<=Math.min(currentBar+24,Math.floor(lastBeat/4));bar++){
+   let plan=barCache.get(bar);
+   if(!plan){
+    const context=replaying?timeline.contextAtBeat(bar*4):{...pendingContext,active:pendingContext.active&&now<liveUntil};
+    if(!context)continue;
+    if(!replaying&&bar===currentBar){liveTempo=scoreTempo(context.music);}
+    plan=composeMarketBar(seed,bar,{...context,arpeggios:lab.arpeggios,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
+    if(context.music?.movement?.event)lastMarketCue=context.music.movement.event.id;
+    barCache.set(bar,plan);
+   }
+   for(let index=0;index<plan.events.length;index++){
+    const e=plan.events[index],id=bar+':'+index;
+    const begin=atBeat(bar*4+e.beat),end=atBeat(bar*4+e.beat+e.duration);
+    if(scheduled.has(id)||begin>=now+.12||end<=now+.015)continue;
+    if(begin<now-.06&&!resumeNotes)continue;
+    // Only sustain a note that spans the chosen timestamp. Do not re-fire
+    // an earlier attack or walk through a backlog on a seek.
+    const elapsed=Math.max(0,now-begin),start=Math.max(now+.012,begin);
+    scheduled.add(id);
+    note(e.midi,start,e.gain,end-start,e.kind,.012,elapsed);
+    if(e.kind==='arp')onArpeggio({midi:instrumentPitch(e.midi,profile),step:bar*16+e.beat*4,time:start,tempo:replaying?timeline.contextAtBeat(bar*4).tempo:liveTempo,instrument:instrument.name});
+   }
+   if(bar===currentBar&&lastHarmonyBar!==bar){
+    lastHarmonyBar=bar;
+    const context=replaying?timeline.contextAtBeat(bar*4):pendingContext;
+    onVoice({audible:plan.events.length>0,time:now,id:'bar:'+bar,notes:plan.harmony.notes,instrument:instrument.name,harmony:plan.harmony,resonance:marketResonance(context.cap),reason:'score',at:position??Date.now()});
+   }
+  }
+  resumeNotes=false;
+  // Bounded memory on long sessions. The score itself can always reconstruct a bar.
+  for(const key of barCache.keys())if(key<currentBar-2||key>currentBar+26)barCache.delete(key);
+  for(const key of scheduled)if(Number(key.split(':')[0])<currentBar-2)scheduled.delete(key);
+ },25);
  return {
   // Optional audition controls. No overrides are installed by the main site.
   configure(options={}){
    lab={};const bounds={cutoff:[100,16000],q:[.1,5],roomSend:[0,1],dry:[0,1.5],wet:[0,2],attack:[.003,.3],decay:[.02,.6],sustain:[.01,.95],release:[.02,.5],phraseMax:[.15,3],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
    for(const [key,[min,max]] of Object.entries(bounds))if(Number.isFinite(options[key]))lab[key]=Math.max(min,Math.min(max,options[key]));
-   if(options.arpeggios===false){lab.arpeggios=false;arp=null;interlock=null;}
-   const selected=samples.find(sample=>sample.preset===options.preset)||chooseInstrument(seed);
-   if(selected!==instrument){clear();instrument=selected;}
+   if(options.arpeggios===false){lab.arpeggios=false;}
+   const target=EARTHBOUND_PRESETS.includes(options.preset)&&![145,146].includes(options.preset)?options.preset:earthboundPreset(seed);
+   void selectBank(target);
    profile={...instrumentProfile(instrument.preset),...Object.fromEntries(['attack','decay','sustain','release','phraseMax'].filter(key=>key in lab).map(key=>[key,lab[key]]))};
    lastResonance=-1;this.resonance(currentCap);
   },
-  instruments(){return samples.map(({preset,name})=>({preset,name}));},
+  instruments(){return EARTHBOUND_INSTRUMENTS.filter(s=>![145,146].includes(s.preset));},
   setMaster(value){volume=unit(value);updateGain();},
-  setRunning(value){running=Boolean(value);updateGain();if(!running)clear();},
+  setRunning(value){transportHeld=!value;if(!value&&running&&!replayAnchor)livePosition();running=Boolean(value);liveAt=ctx.currentTime;updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;instrument=chooseInstrument(seed);profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
+  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;replayAnchor=null;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
-  setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=15/tempo;}if(interlock)interlock.pendingTempo=tempo;},
-  resonance(cap){currentCap=cap;const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;instrumentFilter.frequency.setTargetAtTime(profile.cutoff,ctx.currentTime,.08);instrumentSend.gain.setTargetAtTime(profile.room,ctx.currentTime,.08);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}labRoom();return r;},
-  snapshot(){return {name:instrument.name,family:profile.family,preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:Boolean(interlock||arp),tempo:interlock?.tempo??arp?.tempo??null,roomSend:profile.room,wetReturn:1.45-1.15*pianoArticulation(currentCap)};},
-  replay(event,selection,cap,music){if(closed||!enabled||!running||ctx.state!=='running'||!selection)return false;this.resonance(cap);this.setTempo(music.tempo);return play(selection,event,cap,music);},
+  setTempo(value){pendingContext.music={...pendingContext.music,tempo:scoreTempo({tempo:value})};},
+  resonance(cap){currentCap=cap;const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;const clarity=unit((Math.log10(Math.max(1000,Number(cap)||1000))-4)/3);instrumentFilter.frequency.setTargetAtTime(profile.cutoff*(.7+.3*clarity),ctx.currentTime,.2);instrumentSend.gain.setTargetAtTime(.7-.46*clarity,ctx.currentTime,.4);dry.gain.setTargetAtTime(.3+.55*clarity,ctx.currentTime,.4);wet.gain.setTargetAtTime(1.1-.45*clarity,ctx.currentTime,.4);}labRoom();return r;},
+  snapshot(){return {name:bankLoading?'Loading GeneralUser…':bankError?'Instrument unavailable':instrument.name,error:bankError,loading:bankLoading,family:profile.family,preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:running,tempo:liveTempo,bass:'Kraken Sine '+(1+seed%2),roomSend:instrumentSend.gain.value,wetReturn:wet.gain.value};},
+  setTimeline(segments){timeline=createCompositionTimeline(segments);barCache.clear();scheduled.clear();lastHarmonyBar=null;},
+  seekTimeline(at,rate=1){transportHeld=false;clear();barCache.clear();lastHarmonyBar=null;replayAnchor={at,clock:ctx.currentTime,rate:Math.max(.1,Number(rate)||1)};},
+  syncTimeline(at,rate=1){if(!replayAnchor||rate!==replayAnchor.rate||Math.abs(scoreNow()-at)>250*Math.max(1,rate))this.seekTimeline(at,rate);},
+  replay(event,selection,cap,music){if(!selection)return false;return queueContext(selection,event,cap,music);},
   observePrice(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);this.setTempo(music.tempo);
    const selection=policy.observe({...event,quietAt:ctx.currentTime*1000},music);
-   return selection?play(selection,event,cap,music):false;
+   return selection?queueContext(selection,event,cap,music):false;
   },
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
    this.setTempo(music.tempo);
    const selection=policy.trade({...event,quietAt:ctx.currentTime*1000},music);
-   return selection?play(selection,event,cap,music):false;
+   return selection?queueContext(selection,event,cap,music):false;
   },
   frame(m,{playing=false,seeking=false,ended=false,at,price,known=false,quiet=false,referencePrice}={}){
    if(closed)return false;
-   if(seeking||ended||!playing){if(arp||interlock||roomDirty)clear();return false;}
+   transportHeld=seeking||ended||!playing;
+   if(seeking||ended||!playing){if(voices.size||roomDirty)clear();return false;}
    if(!enabled||!running||ctx.state!=='running')return false;
    this.resonance(m.context?.latestCap);this.setTempo(m.music?.tempo);
-   if(interlock)interlock.activity=unit(Math.max(Number(m.music?.intensity)||0,(Number(m.activity)>0&&Number(m.fresh)>0)?.15+.65*unit(m.activity):0));
-   if(arp&&Number.isFinite(m.music?.tonic)&&Number.isFinite(arp.tonic)&&m.music.tonic!==arp.tonic){
-    const shift=m.music.tonic-arp.tonic;arp.harmony=arp.harmony.map(n=>n+shift);arp.tonic=m.music.tonic;
-   }
-   if(interlock&&Number.isFinite(m.music?.tonic)&&Number.isFinite(interlock.tonic)&&m.music.tonic!==interlock.tonic){
-    const shift=m.music.tonic-interlock.tonic;
-    for(let i=interlock.index;i<interlock.events.length;i++){const event=interlock.events[i];event.midi+=shift;while(event.midi>93)event.midi-=12;while(event.midi<57)event.midi+=12;}
-    interlock.tonic=m.music.tonic;
-   }
-   const landmark=m.music?.movement?.event;
-   if(!m.replay&&landmark&&landmark.id!==lastMarketCue&&at-landmark.at>=0&&at-landmark.at<2000){
-    return play({reason:'landmark',changePct:landmark.changePct,at,harmonyCharacter:m.music.character},{id:landmark.id,at},m.context?.latestCap,m.music);
-   }
-   if(interlock||arp)return false;
-   if(m.replay)return false; // Quiet history notes are part of the frozen score.
-   const selection=policy.idle({at,quietAt:ctx.currentTime*1000,price,music:m.music,known,quiet,referencePrice});
-   return selection?play(selection,{id:'quiet:'+selection.at,at:selection.at},m.context?.latestCap,m.music||{}):false;
+   if(m.replay)return false;
+   const active=Number(m.fresh)>0&&Number(m.activity)>0;
+   pendingContext={...pendingContext,music:{...m.music,activity:m.activity},cap:m.context?.latestCap,active};
+   if(active)liveUntil=ctx.currentTime+Math.max(2,240/scoreTempo(m.music));
+   return false;
   },
-  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);arp=null;master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [instrumentFilter,instrumentSend,roomInput,dry,wet,room,tailGate,master])node.disconnect();},50);},
+  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [instrumentFilter,instrumentSend,roomInput,dry,wet,room,tailGate,master,bassFilter,bassGain,...reflections])node.disconnect();},50);},
  };
 }

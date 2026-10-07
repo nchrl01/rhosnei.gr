@@ -1,0 +1,18 @@
+UPIC compact interval model training sources
+
+J. S. Bach: Inventions 10 (BWV 781) and 11 (BWV 782).
+MIDI editions typeset by Allen Garvin, Mutopia Project.
+Both source LilyPond headers explicitly state "Public Domain" and the
+public-domain dedication by the typesetter. Retrieved 2026-10-07.
+
+https://www.mutopiaproject.org/ftp/BachJS/BWV781/bach-invention-10/
+https://www.mutopiaproject.org/ftp/BachJS/BWV782/bach-invention-11/
+
+The browser uses aggregate second-order interval counts, not a recording
+or direct playback of these pieces. Rhythm, form, harmony, instruments and
+market mappings are UPIC's composition rules. This small model is not a
+large neural music model and is not a claim of musical intelligence.
+
+Rebuild: python3 scripts/train-motif-model.py
+Additional licensed MIDI inputs can be passed as arguments. Keep each
+voice monophonic for meaningful interval transitions.

@@ -1,5 +1,5 @@
-import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=41';
-import {createEnvionView} from './envion-view.js?v=197';
+import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=209';
+import {createEnvionView} from './envion-view.js?v=209';
 import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=41';
 export {applyEnvionMarket} from './envion-market.js?v=41';
 
@@ -14,7 +14,7 @@ async function loadAsset(path, format = 'text', timeoutMs = 20000) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=41', {signal:controller.signal});
+    const response = await fetch(BASE+path.split('/').map(encodeURIComponent).join('/')+'?v=209', {signal:controller.signal});
     if (!response.ok) throw Error('Cannot load Envion asset: '+path);
     return await response[format]();
   } catch (error) {

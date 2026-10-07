@@ -1,6 +1,6 @@
 import {battlePattern,battlePatternGLSL} from './earthbound-pattern.js?v=172';
 import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
-import {withPixelGenerations} from './pixel-generations.js?v=167';
+import {withPixelGenerations} from './pixel-generations.js?v=209';
 import {battleMotion,battleGLSL} from './earthbound-motion.js?v=171';
 import {capitalGLSL} from './capital-field.js?v=167';
 import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=191';

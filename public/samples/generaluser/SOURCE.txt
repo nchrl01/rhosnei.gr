@@ -1,0 +1,13 @@
+GeneralUser GS 2.0.3 by S. Christian Collins
+https://github.com/mrbumpy409/GeneralUser-GS
+https://schristiancollins.com/generaluser.php
+
+Selected presets rendered offline through FluidSynth 2.4.6 using
+js-synthesizer 1.13.0. Stereo WAV, 32 kHz, two velocity layers,
+four key centres, normalized with crossfaded sustain loops.
+The bank's programmed filters, modulation and stereo layers are baked in.
+UPIC applies its own scored note envelopes and market-controlled reverb.
+These are sampled approximations of the presets, not the full live SF2 synth.
+
+Build: scripts/render-generaluser.cjs <js-synthesizer package> <GeneralUser-GS.sf2>
+The rendering dependency is only needed to rebuild assets, not to run UPIC.

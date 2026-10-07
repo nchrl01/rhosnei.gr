@@ -3,7 +3,7 @@ const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const named=(file)=>file.split('/').pop().replace(/\.[^.]+$/,'');
 export function buildPerformanceCatalog(model,banks){
  const root=model.canvases[model.root],byIndex=new Map(root.nodes.map(n=>[n.index,n]));
- const presets=root.nodes.filter(n=>n.kind==='obj'&&n.args[0]==='bng'&&(n.assets?.some(p=>p.startsWith('audio/'))||[552,557,561,674,684,703,707,729,872].includes(n.index))).map(n=>{
+ const presets=root.nodes.filter(n=>!n.retired&&n.kind==='obj'&&n.args[0]==='bng'&&(n.assets?.some(p=>p.startsWith('audio/'))||[552,557,561,674,684,703,707,729,872].includes(n.index))).map(n=>{
   const child=root.wires.filter(w=>w[0]===n.index).map(w=>byIndex.get(w[2])).find(n=>n?.child);
   return {index:n.index,name:child?.text.replace(/^pd /,'')||'Preset '+n.index,assets:n.assets||[]};
  });

@@ -38,7 +38,7 @@ export function buildReplayScore(bars,seed,interval=60000,market={}){
    if(selection.reason!=='quiet')lastPhrase=at;
    lastNote=at;hasSounded=true;Object.assign(selection,{harmonyStep,harmonyCharacter});
   }
-  frames.set(bar.time,{music,index,harmonyStep,harmonyCharacter,tempo:music.tempo,sceneSeed:hash(seed+':score-v1:'+bar.time),selection});
+  frames.set(bar.time,{cap,activity:Number(bar.volume)>0?Math.min(1,Math.log1p(Number(bar.volume))/14):0,music,index,harmonyStep,harmonyCharacter,tempo:music.tempo,sceneSeed:hash(seed+':score-v1:'+bar.time),selection});
  }
  return {version:2,seed,frames};
 }

@@ -1,10 +1,10 @@
 #N canvas 50 50 1800 1100 12;
 #X text 25 15 Original market data set / Ikeda and Sound Simulator principles / seeded microtones\, sine clusters\, noise;
-#X obj 25 95 r av-tick;
+#X obj 25 95 r data-observation-disabled;
 #X obj 25 135 av-random 10000;
 #X obj 25 175 <;
 #X obj 25 215 r data-density;
-#X obj 25 255 * 10000;
+#X obj 25 255 expr 3500 + 6500 * $f1;
 #X obj 25 295 sel 1;
 #X obj 25 335 spigot 0;
 #X obj 25 375 r data-enabled;
@@ -40,14 +40,13 @@
 #X obj 685 215 *~;
 #X obj 685 255 outlet~;
 #X obj 1000 400 av-data-reverb;
-#X connect 1 0 2 0;
 #X connect 2 0 3 0;
 #X connect 3 0 6 0;
 #X connect 6 0 7 0;
 #X connect 4 0 5 0;
 #X connect 5 0 3 1;
 #X connect 8 0 7 1;
-#X connect 9 0 7 0;
+#X connect 9 0 2 0;
 #X connect 7 0 10 0;
 #X connect 10 0 11 0;
 #X connect 11 1 12 0;

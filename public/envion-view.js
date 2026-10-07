@@ -1,4 +1,4 @@
-import {createEnvionSimpleView} from './envion-simple-view.js?v=114';
+import {createEnvionSimpleView} from './envion-simple-view.js?v=209';
 // Envion's own Pd object positions and GUI arguments drive this view.
 // The browser renders the controls; it does not invent a parallel patch graph.
 const NS = 'http://www.w3.org/2000/svg';
@@ -354,7 +354,7 @@ export function createEnvionView(container, {onControl = () => {}, onFile = () =
   function render() {
     const canvas = model?.canvases?.[current]; if (!canvas || !original.open) return;
     controls.clear();scopeViews.clear();canvasViews.clear(); drawings.length = 0; surface.replaceChildren();
-    const nodes = (canvas.nodes || []).filter(n => !['declare', 'scalar'].includes(n.kind)), descriptions = new Map(nodes.map(n => [n.index, describe(n)]));
+    const nodes = (canvas.nodes || []).filter(n => !n.retired&&!['declare', 'scalar'].includes(n.kind)), descriptions = new Map(nodes.map(n => [n.index, describe(n)]));
     for (const node of nodes) {
       const d = descriptions.get(node.index), child = model.canvases[node.child];
       if (child?.coords && numeric(child.coords[6]) > 0) { d.width = numeric(child.coords[4], d.width); d.height = numeric(child.coords[5], d.height); }

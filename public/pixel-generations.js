@@ -9,10 +9,10 @@ export function withPixelGenerations(renderer,parametersFor){
   render(args={}){
    const params=args.parameters||parametersFor(args),now=Number(args.eventTime)||0;
    if(lastTime!==null&&now<lastTime)reset();lastTime=now;
-   const presence=unit(params.pixelPresence??1);
+   const presence=unit(params.pixelPresence??1),whiteInk=unit(params.inkColor??1);
    if(!presence){reset();renderer.clear();return;}
    const ramp=born===null?1:unit((now-born)/8);
-   const current={...params,capitalStage:layers.length?Math.max(0,params.capitalStage??0)*ramp:params.capitalStage,dotSize:layers.length?.5+(params.dotSize-.5)*ramp:params.dotSize,inkColor:layers.length%2?0:1};
+   const current={...params,capitalStage:layers.length?Math.max(0,params.capitalStage??0)*ramp:params.capitalStage,dotSize:layers.length?.5+(params.dotSize-.5)*ramp:params.dotSize,inkColor:layers.length%2?0:whiteInk};
    const fade=layers.length?unit(presence/referencePresence):1;
    const depth=layers.length+1;
    current.pixelPresence=presence*unit(fade*depth-layers.length);
@@ -26,11 +26,11 @@ export function withPixelGenerations(renderer,parametersFor){
      if(!layers.length)referencePresence=presence;
      layers.push({extent,parameters:{...current,pixelPresence:current.pixelPresence,identity:0,frozen:true},time:args.time,liquidTime:args.liquidTime});
      born=now;
-     current.dotSize=.5;current.pixelPresence=0;current.inkColor=layers.length%2?0:1;
+     current.dotSize=.5;current.pixelPresence=0;current.inkColor=layers.length%2?0:whiteInk;
     }
    }
    const count=layers.length+1;
-   layers.forEach((layer,index)=>renderer.render({...args,...layer,preserve:index>0,parameters:{...layer.parameters,pixelPresence:layer.parameters.pixelPresence*unit(unit(presence/referencePresence)*count-index)}}));
+   layers.forEach((layer,index)=>renderer.render({...args,...layer,preserve:index>0,parameters:{...layer.parameters,inkColor:index%2?0:whiteInk,pixelPresence:layer.parameters.pixelPresence*unit(unit(presence/referencePresence)*count-index)}}));
    current.pixelPresence=presence*unit(unit(presence/referencePresence)*count-layers.length)*(born===null?1:unit((now-born)/2));
    renderer.render({...args,preserve:layers.length>0,parameters:current});
   },

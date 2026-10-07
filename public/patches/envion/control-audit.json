@@ -11,20 +11,6 @@
         ]
       },
       {
-        "index": 342,
-        "name": "bowed-piano",
-        "assets": [
-          "audio/file_master_profile.wav"
-        ]
-      },
-      {
-        "index": 345,
-        "name": "buchla-lpg",
-        "assets": [
-          "audio/env_0002.wav"
-        ]
-      },
-      {
         "index": 365,
         "name": "random-gesture",
         "assets": [
@@ -67,13 +53,6 @@
         ]
       },
       {
-        "index": 425,
-        "name": "lamina-reso",
-        "assets": [
-          "audio/env_0011.wav"
-        ]
-      },
-      {
         "index": 429,
         "name": "cyber-kick",
         "assets": [
@@ -102,48 +81,6 @@
         ]
       },
       {
-        "index": 488,
-        "name": "web-socket",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
-        "index": 491,
-        "name": "d_a",
-        "assets": [
-          "audio/env_0003.wav"
-        ]
-      },
-      {
-        "index": 515,
-        "name": "p_l",
-        "assets": [
-          "audio/env_0011.wav"
-        ]
-      },
-      {
-        "index": 518,
-        "name": "c_b",
-        "assets": [
-          "audio/env_0004.wav"
-        ]
-      },
-      {
-        "index": 546,
-        "name": "p_l_o",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
-        "index": 549,
-        "name": "p_l_o",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
         "index": 552,
         "name": "p_l_o",
         "assets": []
@@ -159,44 +96,9 @@
         "assets": []
       },
       {
-        "index": 563,
-        "name": "ddr",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
-        "index": 600,
-        "name": "vcr",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
-        "index": 610,
-        "name": "autechre",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
-        "index": 670,
-        "name": "lowercase",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
-      },
-      {
         "index": 674,
         "name": "xenaxis",
         "assets": []
-      },
-      {
-        "index": 677,
-        "name": "gesti",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
       },
       {
         "index": 684,
@@ -224,13 +126,6 @@
         "index": 729,
         "name": "p_l_o",
         "assets": []
-      },
-      {
-        "index": 805,
-        "name": "fll",
-        "assets": [
-          "audio/FFT-ethet_1.wav"
-        ]
       },
       {
         "index": 872,
@@ -1240,8 +1135,7 @@
       "index": 342,
       "receiver": "av-envion-ui-c0-342",
       "original": "bng 32 250 50 0 $0-r-copy empty empty 0 -8 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "bowed-piano"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -1249,8 +1143,7 @@
       "index": 345,
       "receiver": "av-envion-ui-c0-345",
       "original": "bng 32 250 50 0 $0-r-copy empty empty 0 -8 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "buchla-lpg"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -1612,8 +1505,7 @@
       "index": 425,
       "receiver": "av-envion-ui-c0-425",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "lamina-reso"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -1889,8 +1781,7 @@
       "index": 488,
       "receiver": "av-envion-ui-c0-488",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "web-socket"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -1898,8 +1789,7 @@
       "index": 491,
       "receiver": "av-envion-ui-c0-491",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "d_a"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -1957,8 +1847,7 @@
       "index": 515,
       "receiver": "av-envion-ui-c0-515",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "p_l"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -1974,8 +1863,7 @@
       "index": 518,
       "receiver": "av-envion-ui-c0-518",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "c_b"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2017,8 +1905,7 @@
       "index": 546,
       "receiver": "av-envion-ui-c0-546",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "p_l_o"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2026,8 +1913,7 @@
       "index": 549,
       "receiver": "av-envion-ui-c0-549",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "p_l_o"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2062,8 +1948,7 @@
       "index": 563,
       "receiver": "av-envion-ui-c0-563",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "ddr"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2187,8 +2072,7 @@
       "index": 600,
       "receiver": "av-envion-ui-c0-600",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "vcr"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2204,8 +2088,7 @@
       "index": 610,
       "receiver": "av-envion-ui-c0-610",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "autechre"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2465,8 +2348,7 @@
       "index": 670,
       "receiver": "av-envion-ui-c0-670",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "lowercase"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2483,8 +2365,7 @@
       "index": 677,
       "receiver": "av-envion-ui-c0-677",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "gesti"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",
@@ -2943,8 +2824,7 @@
       "index": 805,
       "receiver": "av-envion-ui-c0-805",
       "original": "bng 32 250 50 0 empty empty empty 0 -7 0 10 #fcfcfc #000000 #000000",
-      "category": "market-weighted preset chance",
-      "name": "fll"
+      "category": "authored DSP / preset internals; not independently randomized"
     },
     {
       "canvas": "c0",

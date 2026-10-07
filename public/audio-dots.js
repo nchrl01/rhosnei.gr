@@ -1,7 +1,7 @@
 import {advancePixelSurvival,marketCapReleaseSeconds} from './pixel-blast-parameters.js?v=192';
 import {walletSizeVariation} from './visual-context.js?v=171';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=192';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=209';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -170,6 +170,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!audible&&pixelPresence<.001&&now-lastPaint<1000/15)return;
   const resumedPaint=lastPaint===0;
   const dt=lastPaint?Math.min(.1,(now-lastPaint)/1000):1/30;lastPaint=now;
+  if(!hasMarket){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);return;}
   const active=running()&&hasMarket;
   const eventTime=presentationTime(now,active);
   if(!active){pulseStrength=0;pulseAt=-Infinity;}
@@ -235,7 +236,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(replaying&&sourceClock!==null){
     if(active&&!resumedPaint&&visualCursor!==null)advance=Math.max(0,eventTime-visualCursor)*visualParams.speed;
    }else advance=dt*visualParams.speed;
-   clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;
+   if(replaying&&sourceClock!==null){clock=eventTime*.8;liquidClock=clock*visualParams.liquidWobbleSpeed;}else{clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;}
    dirty=true;
   }
   // Recurring, seed-stable image phrase on the same field clock. The image
@@ -247,8 +248,10 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   visualParams.identityMotion=.3*(1-visualParams.identity);
   visualParams.dotSize+=(Math.min(visualParams.dotSize,3.5)-visualParams.dotSize)*visualParams.identity;
   visualCursor=replaying?eventTime:null;
-  visualParams.pixelPresence=pixelPresence;
-  if(!audible&&pixelPresence===0){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
+  visualParams.pixelPresence=Math.max(.32,pixelPresence);
+  visualParams.inkColor=.18+.82*pixelPresence;
+  visualParams.dotSize=Math.max(1.1,visualParams.dotSize);
+
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
   blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime:audioTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});
