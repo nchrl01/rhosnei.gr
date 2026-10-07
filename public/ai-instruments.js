@@ -1,4 +1,4 @@
-import {createVoiceReverb} from './voice-space.js?v=57';
+import {createVoiceReverb} from './voice-space.js?v=174';
 const KEY='av.ai-arps.v2';
 export function validArp(pattern){return Array.isArray(pattern)&&pattern.length>=3&&pattern.length<=16&&pattern.every(row=>Array.isArray(row)&&row.length===2&&Number.isInteger(row[0])&&row[0]>=0&&row[0]<16&&Number.isInteger(row[1])&&row[1]>=48&&row[1]<=83)&&pattern.every((row,i)=>!i||row[0]>pattern[i-1][0]);}
 export function seededArp(seed){const notes=seed%2?[60,67,63,72,67,63,60,67]:[60,64,67,72,67,64,60,67];return notes.map((n,i)=>[i,n]);}
@@ -51,6 +51,7 @@ export function createCoinVoice({onStatus=()=>{}}={}){
  function update(){if(master&&ctx)master.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.03);}
  return {
   attach(context,out){if(ctx===context)return;ctx=context;destination=out;master=ctx.createGain();master.gain.value=0;master.connect(destination);speechGate=ctx.createGain();speechGate.gain.value=0;speechGate.connect(master);space=createVoiceReverb(ctx,speechGate);input=space.input;update();},
+  configureSpace(options){space?.configure(options);},
   setCoin(text,value){hush();epoch++;retryAt=0;name=String(text||'').replace(/[\p{C}<>]/gu,'').trim().slice(0,80);seed=value>>>0;buffer=null;elapsed=0;lastClock=null;next=1+seed%3;musicSince=null;lastMusicAt=-Infinity;onStatus('Coin whisper · loads with Listen');},
   setMaster(value){volume=Math.max(0,Math.min(1,Number(value)||0));update();},
   setEnabled(value){enabled=Boolean(value);update();if(!enabled)hush();else if(running)void this.prepare();},

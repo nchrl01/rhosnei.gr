@@ -9,6 +9,7 @@ export function createCyberneticDrums(ctx,destination,{onHit=()=>{},onError=()=>
  let samples=new Map(),loading=null,retryAt=0,closed=false,enabled=true,running=false,volume=.5,seed=0,randomState=0;
  let phrase=null,lastEvent=null,restUntil=0,intensity=0,tempo=60;
  const voices=new Set();
+ let lab={};
  function random(){randomState=(Math.imul(randomState,1664525)+1013904223)>>>0;return randomState/4294967296;}
  function update(){output.gain.setTargetAtTime(enabled&&running?volume:0,ctx.currentTime,.02);}
  function clear(){phrase=null;for(const v of voices){v.gain.gain.cancelScheduledValues(ctx.currentTime);v.gain.gain.setTargetAtTime(0,ctx.currentTime,.008);try{v.source.stop(ctx.currentTime+.04);}catch{}}}
@@ -31,7 +32,7 @@ export function createCyberneticDrums(ctx,destination,{onHit=()=>{},onError=()=>
   const sample=samples.get(kind);if(!sample||voices.size>=8)return;
   const source=ctx.createBufferSource(),gain=ctx.createGain();source.buffer=sample.buffer;source.loop=false;
   const duration=Math.min(sample.buffer.duration,kind==='hat'?.11:kind==='ride'?.3:.48);
-  const level=(kind==='hat'?.13:kind==='ride'?.1:.22)*(.4+.6*intensity)*sample.trim;
+  const level=(kind==='hat'?.13:kind==='ride'?.1:.22)*(.4+.6*intensity)*sample.trim*(lab[kind]??1);
   gain.gain.setValueAtTime(0,time);gain.gain.linearRampToValueAtTime(level,time+.003);
   gain.gain.setValueAtTime(level,Math.max(time+.003,time+duration-.025));gain.gain.linearRampToValueAtTime(0,time+duration);
   source.connect(gain);gain.connect(output);const voice={source,gain};voices.add(voice);
@@ -46,11 +47,12 @@ export function createCyberneticDrums(ctx,destination,{onHit=()=>{},onError=()=>
    if(time>=ctx.currentTime-.03&&kind!=='rest'&&(kind==='kick'||kind==='snare'||random()<.25+.65*intensity))hit(kind,Math.max(ctx.currentTime+.003,time));
    const jump=random()<.04+.2*intensity;
    phrase.node=jump?Math.floor(random()*EVENTS.length):(phrase.node+1)%EVENTS.length;
-   if(++phrase.step>=32){restUntil=phrase.next+60/tempo*8;phrase=null;}
+   if(++phrase.step>=(lab.steps??32)){restUntil=phrase.next+60/tempo*(lab.rest??8);phrase=null;}
   }
  }
  void prepare();
  return {
+  configure(options={}){lab={};for(const [key,min,max] of [['kick',0,2],['snare',0,2],['hat',0,2],['ride',0,2],['steps',4,64],['rest',0,32],['threshold',0,1e9]])if(Number.isFinite(options[key]))lab[key]=Math.max(min,Math.min(max,options[key]));},
   ready:prepare,
   reset(value=seed){clear();seed=value>>>0;randomState=seed;lastEvent=null;restUntil=0;},
   setEnabled(value){enabled=!!value;if(!enabled)clear();update();},
@@ -59,7 +61,7 @@ export function createCyberneticDrums(ctx,destination,{onHit=()=>{},onError=()=>
   frame(m,{playing=false,seeking=false,ended=false,event=null}={}){
    const active=playing&&running&&enabled&&!seeking&&!ended&&ctx.state==='running';
    const cap=Number(m.context?.latestCap)||0;intensity=unit(m.music?.intensity);tempo=Math.max(40,Math.min(140,Number(m.music?.tempo)||40));
-   if(!active||cap<1e6||unit(m.fresh)===0||intensity<.04){clear();return;}
+   if(!active||cap<(lab.threshold??1e6)||unit(m.fresh)===0||intensity<.04){clear();return;}
    if(!samples.size){if(!loading)void prepare();return;}
    if(!phrase&&event!==null&&event!==lastEvent&&ctx.currentTime>=restUntil){lastEvent=event;randomState=(seed^hash(event))>>>0;phrase={node:seed%2?8:0,step:0,next:ctx.currentTime+.025};}
   },

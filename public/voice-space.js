@@ -17,5 +17,5 @@ export function createVoiceReverb(ctx,destination){
  room.buffer=impulse;
  input.connect(filter);filter.connect(dry);dry.connect(destination);
  filter.connect(predelay);predelay.connect(room);room.connect(tone);tone.connect(wet);wet.connect(destination);
- return {input,clear(){room.buffer=null;room.buffer=impulse;},close(){for(const node of [input,filter,dry,predelay,room,tone,wet])node.disconnect();}};
+ return {input,configure(options={}){for(const [key,param,min,max] of [['dry',dry.gain,0,1.5],['wet',wet.gain,0,1.5],['predelay',predelay.delayTime,0,.2],['cutoff',filter.frequency,500,12000],['tone',tone.frequency,500,12000]]){const value=Number(options[key]);if(Number.isFinite(value))param.setTargetAtTime(Math.max(min,Math.min(max,value)),ctx.currentTime,.05);}},clear(){room.buffer=null;room.buffer=impulse;},close(){for(const node of [input,filter,dry,predelay,room,tone,wet])node.disconnect();}};
 }
