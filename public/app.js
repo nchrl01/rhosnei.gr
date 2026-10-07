@@ -1,3 +1,4 @@
+import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=152';
 import {createUIControls} from './ui-controls.js?v=133';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=136';
@@ -148,7 +149,7 @@ function flushPianoTrade(){
 function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
 function marketRoot(m){
  // Market movement changes phrases and energy, never detunes a ringing ensemble.
- return 48+seed%12;
+ return seedTonic(seed);
 }
 
 function send(name,value){if(pd){pd.sendFloat(name,value);engineView.sent(name,value);}}
@@ -320,7 +321,7 @@ function tick(){
 
  if(audible&&!replay.state.active)void arpeggioAI.prepare();
 
- 
+
  syncLevels(m);envion.market(music,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
  if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}

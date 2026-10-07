@@ -1,5 +1,6 @@
+import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=4';
+import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=188';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {createTradePiano} from './trade-piano.js?v=185';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
@@ -13,7 +14,7 @@ const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n))
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs};
 const pdSpecs=[...envionSpecs,...dataSpecs,...phraseSpecs.flat()];
-const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
+const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',seedKey:true,autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
 let state=defaults(),ctx,piano,pd,envionReady=false,running=false,starting=false,closed=false,timer,saveTimer;
 let transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,phraseViews=[],paints=[],pdValues={},lastUI=0;
 let idleSuspend=null,seedTimer=null;
@@ -26,7 +27,7 @@ function readPreset(data){
  for(const [key,,min,max,step] of pdSpecs)if(Number.isFinite(data.pd?.[key]))next.pd[key]=clamp(Math.round(data.pd[key]/step)*step,min,max);
  for(const [key] of mixSpecs)if(typeof data.enabled?.[key]==='boolean')next.enabled[key]=data.enabled[key];
  for(let i=0;i<5;i++){if(typeof data.slots?.[i]==='boolean')next.slots[i]=data.slots[i];if(Number.isFinite(data.slotLevels?.[i]))next.slotLevels[i]=clamp(data.slotLevels[i],0,1);}
- for(const key of ['autoTrades','arpeggios'])if(typeof data[key]==='boolean')next[key]=data[key];
+ for(const key of ['autoTrades','arpeggios','seedKey'])if(typeof data[key]==='boolean')next[key]=data[key];
  if(Number.isFinite(data.master))next.master=clamp(data.master,0,1);
  if(Number.isInteger(data.instrument)&&(data.instrument===-1||EARTHBOUND_PRESETS.includes(data.instrument)))next.instrument=data.instrument;
  if(data.character==='auto'||Object.hasOwn(HARMONIES,data.character))next.character=data.character;
@@ -51,9 +52,10 @@ const envion=createEnvion($('envion-host'));
 const arpAI=createArpeggioAI({onStatus:text=>setStatus('Arpeggio',text),onPattern:pattern=>{state.arp=pattern;piano?.setArpeggioPattern(pattern);save();}});
 function setStatus(name,text){engineStatus[name]=text;if(statuses[name])statuses[name].textContent=text;}
 for(const [name,text] of Object.entries(engineStatus)){const row=document.createElement('div');row.className='engine-line';const a=document.createElement('span'),b=document.createElement('span');a.textContent=name;b.textContent=text;statuses[name]=b;row.append(a,b);$('engines').append(row);}
+function currentTonic(){return state.seedKey&&!connectionBaselines.has('market.tonic')?seedTonic(state.market.seed):state.market.tonic;}
 function market(){
  const s=state.market,character=state.character==='auto'?(Math.abs(s.change)<.3?'serene':s.change>0?s.intensity>.6?'confident':'hopeful':s.intensity>.5?'tense':'bittersweet'):state.character;
- const music={tempo:s.tempo,intensity:s.intensity,changePct:s.change,tonic:s.tonic,character};
+ const music={tempo:s.tempo,intensity:s.intensity,changePct:s.change,tonic:currentTonic(),character};
  music.harmony=pianoHarmony(s.seed,{chordStep:tradeIndex},music);
  return {activity:s.activity,volume:s.volume,motion:s.motion,texture:s.liquidity,balance:s.balance,fresh:s.fresh,tradeRate:s.activity*20,music,raw:{activity:s.activity,volume:s.volume,motion:s.motion},availability:{liquidity:true,balance:true,volume:true},context:{latestCap:s.cap,direction:Math.sign(s.change),pressure:s.pressure,shock:s.shock},replay:{sceneSeed:s.seed,at:0,volume:s.volume}};
 }
@@ -61,7 +63,7 @@ function applyAudio(){
  if(!ctx)return;master.gain.setTargetAtTime(state.master,ctx.currentTime,.025);
  for(const key of ['earthbound'])buses[key]?.gain.setTargetAtTime(level(key),ctx.currentTime,.025);
  piano?.configure({...state.piano,preset:state.instrument,arpeggios:state.arpeggios});piano?.setEnabled(level('earthbound')>0);piano?.setArpeggioPattern(state.arp);
- 
+
  data.setEnabled(level('data')>0);math.setEnabled(level('math')>0);state.slots.forEach((v,i)=>math.setSlot(i,v));
  // ENVION caches automatic writes. Reapply explicit overrides immediately.
  for(const [name,value] of Object.entries(state.pd))send(name,pdValues[name]??value);
@@ -130,7 +132,7 @@ function tick(){
  const now=ctx.currentTime;if(running&&ctx.state==='running'){
   elapsed+=Math.min(.25,Math.max(0,now-(lastTime??now)));lastTime=now;
   if(state.autoTrades&&state.market.activity>0&&state.market.fresh>0&&elapsed>=nextTrade){trigger();nextTrade=elapsed+60/state.market.tempo*state.market.tradeBeats;}
-  const m=market();send('tempo',state.market.tempo);send('activity',m.activity);send('motion',m.motion);send('energy',m.music.intensity);send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',state.market.tonic);send('cutoff',900+m.texture*3100+m.music.intensity*1800);
+  const m=market();send('tempo',state.market.tempo);send('activity',m.activity);send('motion',m.motion);send('energy',m.music.intensity);send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',currentTonic());send('cutoff',900+m.texture*3100+m.music.intensity*1800);
   send('melody',.6*m.music.intensity*m.fresh);if(envionReady)envion.market(m,state.market.tempo);
   data.frame(m,{playing:true,clock:now});math.frame(m,{playing:true,ready:!!pd,clock:now,event:tradeIndex?'lab-'+(tradeIndex-1):null});
   piano?.frame({...m,replay:null},{playing:true,at:elapsed*1000,price,known:true,quiet:state.market.activity===0});
@@ -143,7 +145,7 @@ function changed(){
  applyAudio();save();paint();
 }
 function addKnob(parent,spec,get,set,auto,manual){knob(parent,spec,get,set,{auto,manual,onChange:changed,paints});}
-function direct(parent,group,spec){addKnob(parent,spec,()=>state[group][spec[0]],v=>{state[group][spec[0]]=v;if(spec[0]==='seed'){state.arp=seededArp(v);arpAI.setSeed(v,state.arp);clearTimeout(seedTimer);seedTimer=setTimeout(resetScore,180);}});}
+function direct(parent,group,spec){addKnob(parent,spec,()=>group==='market'&&spec[0]==='tonic'?currentTonic():state[group][spec[0]],v=>{state[group][spec[0]]=v;if(spec[0]==='tonic')state.seedKey=false;if(spec[0]==='seed'){state.arp=seededArp(v);arpAI.setSeed(v,state.arp);clearTimeout(seedTimer);seedTimer=setTimeout(resetScore,180);}});}
 function select(parent,label,options,value,onChange,id){const row=document.createElement('label');row.className='select-row';row.append(document.createTextNode(label));const el=document.createElement('select');if(id)el.id=id;for(const [v,name] of options){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}el.value=String(value);el.onchange=()=>{onChange(el.value);changed();};row.append(el);parent.append(row);return el;}
 function action(parent,label,run){const b=document.createElement('button');b.textContent=label;b.className='action';b.onclick=run;parent.append(b);return b;}
 function switchButton(parent,label,get,set){const b=document.createElement('button');b.onclick=()=>{set(!get());changed();};paints.push(()=>{b.textContent=label+' · '+(get()?'on':'off');b.setAttribute('aria-pressed',get());});parent.append(b);return b;}
@@ -162,6 +164,8 @@ function build(){
  for(const [key,label] of mixSpecs){switchButton(switches,label,()=>state.enabled[key],v=>state.enabled[key]=v);const b=document.createElement('button');b.onclick=()=>{solo=solo===key?null:key;changed();};switches.append(b);paints.push(()=>{b.textContent='Solo '+label;b.setAttribute('aria-pressed',solo===key);});}
  const input=section('02 / Market + musical context','Simulated normalized inputs (0–1). Regular trades use the live ≥5% movement policy; Play chord bypasses that policy for audition. Tempo is shared by the engines. No tokens are fetched. Trade interval sets the audition cadence; activity and freshness gate it. USD liquidity, USD volume, trade rate, holder count and concentration are raw routing inputs; connect them in the combined lab to drive normalized engine controls.',true);
  for(const spec of marketSpecs)direct(input,'market',spec);
+ switchButton(input,'Key from seed',()=>state.seedKey,v=>state.seedKey=v);
+ const keyInfo=document.createElement('p');keyInfo.className='lab-hint';input.append(keyInfo);paints.push(()=>keyInfo.textContent='KEY · '+keyName(currentTonic())+' · '+(state.seedKey&&!connectionBaselines.has('market.tonic')?'fixed by coin seed':'manual / cable')+' · mood keeps this tonic');
  select(input,'Harmonic character',[['auto','AUTO · price direction + intensity'],...Object.entries(HARMONIES).filter(([,v])=>v.exact).map(([k,v])=>[k,`${v.mode} · ${v.name} — ${v.progression}`]),...Object.entries(HARMONIES).filter(([,v])=>!v.exact).map(([k,v])=>[k,`UPIC · ${v.name}`])],state.character,v=>state.character=v);
  const tradeSwitch=document.createElement('div');tradeSwitch.className='switches';input.append(tradeSwitch);switchButton(tradeSwitch,'Automatic trades',()=>state.autoTrades,v=>{state.autoTrades=v;nextTrade=elapsed;});
  const melodic=section('03 / EarthBound · chords + arpeggios','Choose the actual sampled instrument. AUTO follows its envelope and market-cap articulation. Chords and arpeggios always share the selected instrument.',true);
@@ -218,13 +222,13 @@ function unpatchedState(){
  return result;
 }
 const connectionSpecs={...Object.fromEntries(Object.entries(groups).flatMap(([group,specs])=>specs.filter(s=>s[0]!=='seed').map(spec=>[group+'.'+spec[0],spec]))),...Object.fromEntries(pdSpecs.map(spec=>['pd.'+spec[0],spec]))};
-function readControl(id){const [group,key]=id.split('.');return state[group]?.[key]??(group==='piano'?pianoAuto(key):group==='pd'?pdValues[key]:undefined)??connectionSpecs[id]?.[5]??0;}
+function readControl(id){if(id==='market.tonic')return currentTonic();const [group,key]=id.split('.');return state[group]?.[key]??(group==='piano'?pianoAuto(key):group==='pd'?pdValues[key]:undefined)??connectionSpecs[id]?.[5]??0;}
 function connectionValue(id,value){const spec=connectionSpecs[id];if(!spec||!Number.isFinite(value))return null;return clamp(Math.round(value/spec[4])*spec[4],spec[2],spec[3]);}
 // Shared-engine interface for the combined audiovisual workspace.
 export const audioLab={
  descriptors(){return Object.entries(connectionSpecs).map(([id,s])=>({id,label:s[1],min:s[2],max:s[3],step:s[4],category:id.startsWith('market.')?'Market':'Audio'}));},
  controls(){return Object.fromEntries(Object.keys(connectionSpecs).map(id=>[id,readControl(id)]));},
- setControl(id,value){const v=connectionValue(id,value);if(v===null)return;const [group,key]=id.split('.');if(connectionBaselines.has(id))connectionBaselines.get(id).base=v;else state[group][key]=v;changed();},
+ setControl(id,value){if(id==='market.tonic')state.seedKey=false;const v=connectionValue(id,value);if(v===null)return;const [group,key]=id.split('.');if(connectionBaselines.has(id))connectionBaselines.get(id).base=v;else state[group][key]=v;changed();},
  connect(patch={}){
   let dirty=false;
   for(const [id,held] of connectionBaselines)if(!Object.hasOwn(patch,id)){const [group,key]=id.split('.');if(held.base===undefined)delete state[group][key];else state[group][key]=held.base;if(group==='pd'&&Number.isFinite(pdValues[key]))send(key,pdValues[key]);connectionBaselines.delete(id);dirty=true;}
@@ -233,7 +237,7 @@ export const audioLab={
  },
  snapshot(){
   let rms=0;if(running&&musicMeter){musicMeter.getFloatTimeDomainData(musicData);for(const v of musicData)rms+=v*v;rms=Math.sqrt(rms/musicData.length);}
-  return {running,elapsed:elapsed+(running&&ctx?Math.max(0,ctx.currentTime-(lastTime??ctx.currentTime)):0),market:{...state.market},music:market().music,audioLevel:clamp(rms*8,0,1),rms,seed:state.market.seed};
+  return {running,elapsed:elapsed+(running&&ctx?Math.max(0,ctx.currentTime-(lastTime??ctx.currentTime)):0),market:{...state.market,tonic:currentTonic()},music:market().music,audioLevel:clamp(rms*8,0,1),rms,seed:state.market.seed};
  },
  preset(){return unpatchedState();},
  load(value){const next=readPreset(value);connectionBaselines.clear();stop();arpAI.suspend();state=next;solo=null;resetScore();build();save();},
