@@ -1,7 +1,7 @@
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=162';
-import {capitalGLSL} from './capital-field.js?v=162';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=162';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=162';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=163';
+import {capitalGLSL} from './capital-field.js?v=163';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=163';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=163';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -19,6 +19,7 @@ uniform float uTime;
 uniform float uEventTime;
 uniform float uSeed;
 uniform float uDotSize;
+uniform float uPixelPresence;
 uniform float uEdgeFade;
 uniform float uDotStrength;
 uniform float uPixelSize;
@@ -208,14 +209,15 @@ void main(){
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
-  float markSize=uDotSize*jitterScale*backgroundScale;
+  float markSize=uDotSize*jitterScale*backgroundScale*sqrt(uPixelPresence);
   float dotSize = min(max(1.0,floor(pixelSize*rasterScale-(1.-clamp(uCapitalStage-6.,0.,1.))+.5)),max(1.0,floor(min(pixelSize,markSize)*edge*rasterScale+.5)));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
   float square = step(start.x,point.x)*step(start.y,point.y)
     *(1.0-step(start.x+dotSize,point.x))*(1.0-step(start.y+dotSize,point.y))*step(.015,edge);
   float perimeterHash=hash11(pixelId.x*127.1+pixelId.y*311.7+19.7);
-  float M = coverage * square * step(perimeterHash,edge*edge);
+  float survival=step(hash11(pixelId.x*73.17+pixelId.y*193.41+7.3),uPixelPresence)*step(.0001,uPixelPresence);
+  float M = coverage * square * step(perimeterHash,edge*edge)*survival;
 
   vec3 color = uColor;
 
@@ -267,6 +269,7 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.uPixelPresence=gl.getUniformLocation(program,'uPixelPresence');
    locations.uBattleA=gl.getUniformLocation(program,'uBattleA');
    locations.uBattleB=gl.getUniformLocation(program,'uBattleB');
    locations.uCapitalStage=gl.getUniformLocation(program,'uCapitalStage');
@@ -308,7 +311,7 @@ export function createPixelBlastField(host){
    gl.viewport(0,0,w,h);gl.useProgram(program);
    gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,identityTexture);
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
-   f('uCapitalStage',params.capitalStage??-1);
+   f('uCapitalStage',params.capitalStage??-1);f('uPixelPresence',params.pixelPresence??1);
    const battle=battleMotion(seed,time||0,params.capitalStage);
    gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
    gl.uniform3f(locations.uColor,1,1,1);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);

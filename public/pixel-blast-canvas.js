@@ -1,5 +1,5 @@
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=162';
-import {capitalFeed} from './capital-field.js?v=162';
+import {battleMotion,battleWarp} from './earthbound-motion.js?v=163';
+import {capitalFeed} from './capital-field.js?v=163';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
@@ -92,12 +92,14 @@ export function createPixelBlastCanvas(host){
     return sample;
    }
    const identity=identityMask?params.identity:0;
+   const pixelPresence=clamp(params.pixelPresence??1);
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
    let previousInk=-1;
    // Share the shader's integer lattice and bottom-up origin. Cell ownership
    // and square bounds agree even when either canvas dimension is odd.
    for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
+    if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
     const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
     const centerX=originX+(px+.5)*grid,centerY=originY+(py+.5)*grid;
     const edge=Math.min(centerX/w,1-centerX/w,centerY/h,1-centerY/h);
@@ -121,7 +123,7 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale)*taper;
+    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
     const diameter=Math.min(Math.max(1,Math.round(grid-(1-clamp((params.capitalStage??0)-6)))),Math.max(1,Math.round(dotSize*ratio)));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);

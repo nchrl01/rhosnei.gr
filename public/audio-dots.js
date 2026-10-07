@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=162';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=163';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -42,6 +42,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
+ let pixelPresence=0;
  let appearance=null,formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
   const state=getState();
@@ -60,7 +61,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   audioEvent=0;
   lastEvent=-Infinity;pulseAt=-Infinity;pulseStrength=0;lastEnvelope=-Infinity;hasMarket=false;lastPaint=0;dirty=true;
   audible=false;previousLevel=level;lastSound=-Infinity;
-  if(newCoin){clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;notationBands=new WeakMap();}
+  if(newCoin){pixelPresence=0;clock=0;liquidClock=0;level=0;previousLevel=0;formation=0;appearance=null;notationBands=new WeakMap();}
   blast?.reset(seed);
  }
  function fitHeight(){
@@ -163,7 +164,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(closed)return;frameID=requestAnimationFrame(draw);
   if(layoutPending){layoutPending=false;size();}
   if(document.hidden||!visible||width<1||height<1){lastPaint=0;return;}
-  if(!audible&&now-lastPaint<1000/15)return;
+  if(!audible&&pixelPresence<.001&&now-lastPaint<1000/15)return;
   const resumedPaint=lastPaint===0;
   const dt=lastPaint?Math.min(.1,(now-lastPaint)/1000):1/30;lastPaint=now;
   const active=running()&&hasMarket;
@@ -175,6 +176,10 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(host){host.dataset.audible=String(audible);host.dataset.visible='true';}
   const target=audible?unit((20*Math.log10(Math.max(1e-8,rms))+70)/52):0;
   level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:1.4)));
+  const presenceTarget=audible?unit(target/.45):0;
+  pixelPresence+=(presenceTarget-pixelPresence)*(1-Math.exp(-dt/(presenceTarget>pixelPresence?.08:.5)));
+  if(!audible&&pixelPresence<.001)pixelPresence=0;
+  if(pixelPresence>0)dirty=true;
   const audioTime=getAudio()?.context?.currentTime??0;
   if(!active)pianoPulses=[];
   pianoPulses=pianoPulses.filter(p=>audioTime-p.at<3);
@@ -226,7 +231,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   visualParams.identity=reduced.matches?0:easeImage((imagePhase-10)/4)*(1-easeImage((imagePhase-17)/5));
   visualParams.identityMotion=.3*(1-visualParams.identity);
   visualCursor=replaying?eventTime:null;
-  if(!audible){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
+  visualParams.pixelPresence=pixelPresence;
+  if(!audible&&pixelPresence===0){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
   if(!dirty)return;dirty=false;
   c.clearRect(0,0,canvas.width,canvas.height);
   blast?.render({width,height,time:clock,liquidTime:liquidClock,eventTime:audioTime,...visualInputs,parameters:visualParams,dither:getState().dither===true});
