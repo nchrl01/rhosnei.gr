@@ -1,4 +1,4 @@
-import {createCablePanel} from './lab-cables.js?v=1';
+import {createCablePanel} from './lab-cables.js?v=2';
 // Bounded, one-update-delayed routing. No evaluation of code from presets.
 export function createLabConnections({audio,visualSpecs,onChange=()=>{}}){
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));

@@ -1,4 +1,4 @@
-import {createLabConnections} from './lab-connections.js?v=2';
+import {createLabConnections} from './lab-connections.js?v=3';
 import {audioLab} from './audio-lab.js?v=4';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
