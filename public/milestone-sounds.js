@@ -61,13 +61,13 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
  const cards=THRESHOLDS.map((threshold,index)=>{
   const card=document.createElement('article');card.className='milestone-sound-card';
-  card.tabIndex=0;card.setAttribute('role','group');card.setAttribute('aria-label',`Sound slot at ${money(threshold)}. Click to choose a sample or drop an audio file here.`);
+  card.tabIndex=-1;card.setAttribute('role','group');card.setAttribute('aria-label',`Sound slot at ${money(threshold)}.`);
   card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock aria-label="Locked until ${money(threshold)}">${lockIcon}</span></div><small data-range>Starts at ${money(threshold)}</small><div data-file><button type="button" class="milestone-clear" data-clear>Remove sound</button></div><input data-upload type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg">`;
   const input=card.querySelector('[data-upload]');
-  async function loadFile(file){if(!file||!marketKey)return;
+  async function loadFile(file){if(!file||!marketKey||unlockedCap()<threshold)return;
    const token=marketKey,version=revision;statusText='Preparing '+file.name+'…';render();
    try{
-    const compact=await compactAudio(file,getAudioContext);if(token!==marketKey||version!==revision)return;
+    const compact=await compactAudio(file,getAudioContext);if(token!==marketKey||version!==revision||unlockedCap()<threshold)return;
     const record={id:token+'|'+index,token,slot:index,threshold,name:file.name.replace(/[<>]/g,''),blob:compact.blob,duration:compact.duration,sampleRate:compact.sampleRate,waveform:compact.waveform,revision:Date.now()};
     await storeRequest('readwrite',store=>store.put(record));if(token!==marketKey)return;
     rows[index]=record;statusText=`Saved ${record.name} · ${record.duration.toFixed(1)} sec · ${Math.round(record.sampleRate/1000)} kHz`;
@@ -75,13 +75,13 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
    }catch(error){statusText=error.message||'Could not load this sound.';render();}
   }
   input.addEventListener('change',()=>{const file=input.files?.[0];input.value='';void loadFile(file);});
-  card.addEventListener('click',event=>{if(event.target.closest('[data-clear]')||!marketKey)return;input.click();});
-  card.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target===card){event.preventDefault();if(marketKey)input.click();}});
-  card.addEventListener('dragover',event=>{if(marketKey&&Array.from(event.dataTransfer?.types||[]).includes('Files')){event.preventDefault();card.classList.add('is-dragging');}});
+  card.addEventListener('click',event=>{if(event.target.closest('[data-clear]')||!marketKey||unlockedCap()<threshold)return;input.click();});
+  card.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target===card){event.preventDefault();if(marketKey&&unlockedCap()>=threshold)input.click();}});
+  card.addEventListener('dragover',event=>{if(marketKey&&unlockedCap()>=threshold&&Array.from(event.dataTransfer?.types||[]).includes('Files')){event.preventDefault();card.classList.add('is-dragging');}});
   card.addEventListener('dragleave',event=>{if(!card.contains(event.relatedTarget))card.classList.remove('is-dragging');});
-  card.addEventListener('drop',event=>{event.preventDefault();card.classList.remove('is-dragging');if(marketKey)void loadFile(event.dataTransfer?.files?.[0]);});
+  card.addEventListener('drop',event=>{event.preventDefault();card.classList.remove('is-dragging');if(marketKey&&unlockedCap()>=threshold)void loadFile(event.dataTransfer?.files?.[0]);});
   card.querySelector('[data-clear]').addEventListener('click',async()=>{
-   if(!marketKey)return;const token=marketKey;try{await storeRequest('readwrite',store=>store.delete(token+'|'+index));if(token!==marketKey)return;rows[index]=null;statusText=`Removed ${money(threshold)} sound.`;updateActive();render();}catch(error){statusText=error.message||'Could not remove this sound.';render();}
+   if(!marketKey||unlockedCap()<threshold)return;const token=marketKey;try{await storeRequest('readwrite',store=>store.delete(token+'|'+index));if(token!==marketKey)return;rows[index]=null;statusText=`Removed ${money(threshold)} sound.`;updateActive();render();}catch(error){statusText=error.message||'Could not remove this sound.';render();}
   });
   slots.append(card);return card;
  });
@@ -97,11 +97,11 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  function render(){
   capLabel.textContent=money(cap);status.textContent=statusText;
   const reached=unlockedCap();cards.forEach((card,index)=>{
-   const row=rows[index],locked=reached<THRESHOLDS[index],active=index===activeSlot&&!!row;card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);card.classList.toggle('is-active',active);
+   const row=rows[index],locked=!marketKey||reached<THRESHOLDS[index],active=index===activeSlot&&!!row;card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);card.classList.toggle('is-active',active);card.tabIndex=locked?-1:0;card.setAttribute('aria-disabled',String(locked));card.setAttribute('aria-label',locked?`Sound slot locked until ${money(THRESHOLDS[index])}.`:`Sound slot at ${money(THRESHOLDS[index])}. Click to choose a sample or drop an audio file here.`);
    const lock=card.querySelector('[data-lock]');lock.innerHTML=locked?lockIcon:active?'PLAYING':row?'READY':'UNLOCKED';lock.setAttribute('aria-label',locked?`Locked until ${money(THRESHOLDS[index])}`:active?'Currently playing':row?'Sound ready':'Unlocked');
    const nextAssigned=rows.slice(index+1).find(Boolean);card.querySelector('[data-range]').textContent=row?`${money(THRESHOLDS[index])} → ${nextAssigned?money(nextAssigned.threshold):'and beyond'}`:`Starts at ${money(THRESHOLDS[index])}`;
-   const fileLabel=card.querySelector('[data-file]'),clear=card.querySelector('[data-clear]');fileLabel.replaceChildren();if(row){fileLabel.insertAdjacentHTML('afterbegin',waveSvg(row.waveform));const name=document.createElement('span');name.className='milestone-sample-name';name.textContent=`${row.name} · ${row.duration.toFixed(1)} sec`;fileLabel.append(name);}fileLabel.append(clear);clear.hidden=!row;
-   card.querySelector('[data-upload]').disabled=!marketKey;card.classList.toggle('is-disabled',!marketKey);
+   const fileLabel=card.querySelector('[data-file]'),clear=card.querySelector('[data-clear]');fileLabel.replaceChildren();if(row&&!locked){fileLabel.insertAdjacentHTML('afterbegin',waveSvg(row.waveform));const name=document.createElement('span');name.className='milestone-sample-name';name.textContent=`${row.name} · ${row.duration.toFixed(1)} sec`;fileLabel.append(name);}fileLabel.append(clear);clear.hidden=!row||locked;
+   card.querySelector('[data-upload]').disabled=locked;card.classList.toggle('is-disabled',locked);
   });
  }
  render();
