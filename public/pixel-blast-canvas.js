@@ -100,11 +100,12 @@ export function createPixelBlastCanvas(host){
    }
    const identity=identityMask?params.identity:0;
    const pixelPresence=clamp(params.pixelPresence??1);
+   const markDirection=Number(params.markDirection)||0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
    let previousInk=-1;
    // Share the shader's integer lattice and bottom-up origin. Cell ownership
-   // and square bounds agree even when either canvas dimension is odd.
+   // and mark bounds agree even when either canvas dimension is odd.
    for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
     if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
     const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
@@ -136,9 +137,15 @@ export function createPixelBlastCanvas(host){
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
+    const radius=diameter*.5,halfStroke=Math.max(1,Math.round(diameter*.23))*.5;
+    const directed=diameter>=3&&markDirection!==0;
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
+     const dx=x-left+.5-radius,dy=y-top+.5-radius;
+     const inside=!directed?dx*dx+dy*dy<=radius*radius
+      :markDirection>0?Math.min(Math.abs(dx),Math.abs(dy))<=halfStroke
+      :Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678<=halfStroke;
+     if(!inside)continue;
      const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);
-
     }
    }
    let occupied=0;

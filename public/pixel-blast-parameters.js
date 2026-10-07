@@ -1,7 +1,7 @@
 import {coinVisualPreset,contextualEdgeShrink} from './visual-context.js?v=171';
 import {capitalStage} from './capital-field.js?v=167';
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
-// Coin seed fixes the pattern; liquidity spaces the square lattice.
+// Coin seed fixes the pattern; liquidity spaces the mark lattice.
 const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const mix=(a,b,t)=>a+(b-a)*unit(t);
@@ -9,7 +9,7 @@ const mix=(a,b,t)=>a+(b-a)*unit(t);
 // The user's standalone React Bits reference, before market/audio modulation.
 export const PIXEL_BLAST_REFERENCE=Object.freeze({
  pixelSize:2,patternScale:.25,patternDensity:1.65,speed:1.35,edgeFade:.5,
- variant:'square',color:'#ffffff',transparent:true,antialias:false,autoPauseOffscreen:true,
+ variant:'circle',color:'#ffffff',transparent:true,antialias:false,autoPauseOffscreen:true,
 });
 
 export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0,marketCap=null,level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
@@ -71,6 +71,8 @@ export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0
   liquidWobbleSpeed:mix(1,8,unit(.35*pace+.35*movement+.15*notes+.15*attack)),
   noiseAmount:0,
   balance:side,
+  // Price sign controls notation independently of buy/sell balance or flow.
+  markDirection:current>0?Math.sign(changePct):0,
   direction:clamp((.65*signedChange+.35*(2*side-1))*current,-1,1),
  };
 }

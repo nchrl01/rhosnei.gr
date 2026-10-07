@@ -2,9 +2,9 @@ import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visua
 import {createLabConnections} from './lab-connections.js?v=3';
 import {audioLab} from './audio-lab.js?v=190';
 import {knob} from './lab-knob.js?v=1';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=191';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),KEY='upic-av-lab-v1';
-const specs=[['dotSize','Square size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Coin image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
+const specs=[['dotSize','Mark size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Coin image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
 const sources=[['auto','AUTO · existing mapping'],['manual','MANUAL · fixed value'],['audio','Engine audio level'],['tempo','Tempo · 40–140 BPM'],['cap','Market cap · logarithmic'],['relativeCap','Cap / reference · logarithmic'],['liquidity','Liquidity depth'],['activity','Trade activity'],['volume','Trade volume'],['motion','Price motion'],['intensity','Musical intensity'],['change','Price direction · −90% to +100%'],['balance','Buy share'],['wallet','Wallet inequality'],['fresh','Data freshness']];
 const initial=()=>({referenceCap:100000,wallet:.3,cycles:false,mappingVersion:LAB_MAPPING_VERSION,routes:{},imageName:null});
 let connections=null,pendingConnections=null;

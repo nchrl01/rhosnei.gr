@@ -3,8 +3,8 @@ import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=167';
 import {battleMotion,battleGLSL} from './earthbound-motion.js?v=171';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=172';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=173';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=191';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=191';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -37,6 +37,7 @@ uniform float uTime;
 uniform float uEventTime;
 uniform float uSeed;
 uniform float uDotSize;
+uniform float uMarkDirection;
 uniform float uPixelPresence;
 uniform float uEdgeFade;
 uniform float uDotStrength;
@@ -121,7 +122,7 @@ ${holderClusterGLSL}
 ${battleGLSL}
 
 // Upstream liquid displacement, driven by finite market/audio touches. Warp
-// the sampled field before drawing squares so their edges remain orthogonal.
+// the sampled field before drawing marks so their raster stays on the grid.
 vec2 liquidOffset(vec2 point){
   vec2 result=vec2(0.0);
   if(uLiquid==0||uLiquidStrength<=0.0)return result;
@@ -222,7 +223,7 @@ void main(){
   float h = fract(sin(dot(pixelId, vec2(127.1, 311.7))) * 43758.5453);
   float jitterScale = 1.0 + (h - 0.5) * uPixelJitter;
   float coverage = bw;
-  // The reference edge envelope shrinks individual squares. Their alpha
+  // The reference edge envelope shrinks individual marks. Their alpha
   // remains binary, including when quiet activity makes them smaller.
   float backgroundScale=mix(1.0,.7+.3*imageInk,uIdentity);
   vec2 centrePhysical=origin+squarePoint*uCanvasScale;
@@ -235,11 +236,24 @@ void main(){
   float dotSize=max(1.,floor(markSize*edge*rasterScale+.5));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
-  float square = step(start.x,point.x)*step(start.y,point.y)
-    *(1.0-step(start.x+dotSize,point.x))*(1.0-step(start.y+dotSize,point.y))*step(.015,edge);
+  float bounds = step(start.x,point.x)*step(start.y,point.y)
+    *(1.0-step(start.x+dotSize,point.x))*(1.0-step(start.y+dotSize,point.y));
+  vec2 local=point-start+vec2(.5)-vec2(dotSize*.5);
+  float radius=dotSize*.5;
+  float mark=step(dot(local,local),radius*radius);
+  // Sample binary shapes at pixel centres. Tiny marks remain single visible
+  // disks; larger marks use the same price direction as the market text.
+  if(dotSize>=3.0&&uMarkDirection!=0.0){
+    float halfStroke=max(1.0,floor(dotSize*.23+.5))*.5;
+    float distanceToStroke=uMarkDirection>0.0
+      ?min(abs(local.x),abs(local.y))
+      :abs(abs(local.x)-abs(local.y))*.70710678;
+    mark=step(distanceToStroke,halfStroke);
+  }
+  mark*=bounds*step(.015,edge);
   float perimeterHash=hash11(pixelId.x*127.1+pixelId.y*311.7+19.7);
   float survival=step(hash11(pixelId.x*73.17+pixelId.y*193.41+7.3),uPixelPresence)*step(.0001,uPixelPresence);
-  float M = coverage * square * step(perimeterHash,edge*edge)*survival;
+  float M = coverage * mark * step(perimeterHash,edge*edge)*survival;
 
   if(M<.5)discard;
   fragColor=vec4(uColor,1.);
@@ -281,7 +295,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    candidate=gl.createProgram();for(const shader of shaders)gl.attachShader(candidate,shader);gl.linkProgram(candidate);
    if(!gl.getProgramParameter(candidate,gl.LINK_STATUS))throw Error(gl.getProgramInfoLog(candidate));
    program=candidate;
-   const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
+   const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uMarkDirection','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
    locations.battlePattern=gl.getUniformLocation(program,'uBattlePattern');
    locations.holderGroups=gl.getUniformLocation(program,'uHolderGroups[0]');
@@ -333,7 +347,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    ripples=ripples.filter(p=>eventTime>=p.time&&eventTime-p.time<3);
    const params=parameters||pixelBlastParameters({...inputs,mobile:mobile||useSoftware});lastParameters={...params};
    if(lost||!program){fallback();software.render({width,height,time,liquidTime,eventTime,seed,params,dither,ripples:params.frozen?[]:ripples,preserve});return;}
-   // Integer cell boundaries keep a square's complete width and height even
+   // Integer cell boundaries keep each mark's complete width and height even
    // on odd viewport dimensions or fractional device pixel ratios.
    const grid=Math.max(2,Math.round(params.cellSize*scale)),rasterScale=grid/params.cellSize;
    const positions=new Float32Array(12).fill(-1),times=new Float32Array(6),strengths=new Float32Array(6),directions=new Float32Array(12);
@@ -348,6 +362,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
    const ink=params.inkColor??1;gl.uniform3f(locations.uColor,ink,ink,ink);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
+   f('uMarkDirection',Math.sign(Number(params.markDirection)||0));
    f('uPixelSize',params.cellSize);f('uNoiseCellSize',16);f('uScale',params.scale);f('uDensity',params.density);f('uPixelJitter',params.jitter);
    i('uIdentityImage',0);f('uIdentity',identityMask?params.identity:0);f('uIdentityMotion',params.identityMotion);
    i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);

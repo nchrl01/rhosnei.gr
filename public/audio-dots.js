@@ -1,6 +1,6 @@
 import {walletSizeVariation} from './visual-context.js?v=171';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=191';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -206,6 +206,8 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   referenceCap??=latest.referenceCap>0?latest.referenceCap:latest.marketCap>0?latest.marketCap:null;
   const visualInputs={...smoothed,seed,referenceCap,walletVariation:walletSizeVariation(latest.relationships?.clusters)*unit(latest.relationships?.weight),marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
+  // Match the title’s green/red price-update signal exactly, then return to circles.
+  visualParams.markDirection=Number(getState().markDirection)||0;
   appearance??={dotSize:visualParams.dotSize,density:visualParams.density,capitalStage:visualParams.capitalStage};
   if(visualParams.capitalStage<0||appearance.capitalStage<0)appearance.capitalStage=visualParams.capitalStage;
   else appearance.capitalStage+=(visualParams.capitalStage-appearance.capitalStage)*(1-Math.exp(-dt/2.5));
