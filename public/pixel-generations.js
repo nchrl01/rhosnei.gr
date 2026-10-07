@@ -20,8 +20,11 @@ export function withPixelGenerations(renderer,parametersFor){
     lastProbe=now;
     renderer.render({...args,parameters:current,preserve:false});
     const coverage=renderer.coverage();
-    if(coverage>=.9){
-     layers.push({parameters:{...current,pixelPresence:1,identity:0,frozen:true},time:args.time,liquidTime:args.liquidTime});
+    const extent=Math.max(0,params.capitalStage??0)+Math.log2(1+params.dotSize);
+    const previous=layers.at(-1);
+    // Further generations require further market/audio expansion, not time alone.
+    if(coverage>=.9&&(!previous||extent>=previous.extent+.5)){
+     layers.push({extent,parameters:{...current,pixelPresence:1,identity:0,frozen:true},time:args.time,liquidTime:args.liquidTime});
      born=now;
      current.dotSize=.5;current.pixelPresence=0;current.inkColor=layers.length%2?0:1;
     }
