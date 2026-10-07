@@ -1,16 +1,31 @@
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=163';
-import {capitalGLSL} from './capital-field.js?v=163';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=163';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=163';
+import {battleMotion,battleGLSL} from './earthbound-motion.js?v=164';
+import {capitalGLSL} from './capital-field.js?v=164';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=164';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=164';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
 // One shared frame clock; no autonomous animation or pointer-triggered effects.
 const vertex = `#version 300 es
-void main(){vec2 p=vec2(float((gl_VertexID<<1)&2),float(gl_VertexID&2));gl_Position=vec4(p*2.0-1.0,0.0,1.0);}`;
+precision highp float;
+uniform vec2 uResolution;
+uniform vec2 uCanvasScale;
+uniform float uPixelSize;
+uniform float uDotSize;
+uniform ivec2 uGridStart;
+uniform int uGridColumns;
+flat out vec2 vPixelId;
+void main(){
+ vPixelId=vec2(uGridStart+ivec2(gl_InstanceID%uGridColumns,gl_InstanceID/uGridColumns));
+ vec2 corner=vec2(float(gl_VertexID==1||gl_VertexID==2||gl_VertexID==4),float(gl_VertexID==2||gl_VertexID==4||gl_VertexID==5));
+ vec2 center=floor(uResolution*.5)+(vPixelId+.5)*uPixelSize*uCanvasScale;
+ vec2 extent=(max(uDotSize,uPixelSize)*.5+uPixelSize*.5+2.)*uCanvasScale;
+ gl_Position=vec4((center+(corner*2.-1.)*extent)/uResolution*2.-1.,0.,1.);
+}`;
 const fragment = `#version 300 es
 
 precision highp float;
+flat in vec2 vPixelId;
 
 uniform vec3  uColor;
 uniform vec2  uResolution;
@@ -162,8 +177,9 @@ void main(){
   vec2 fragCoord = (rasterPoint-origin)/uCanvasScale;
   float aspectRatio = viewSize.x / viewSize.y;
 
-  vec2 pixelId = floor(fragCoord / pixelSize);
-  vec2 squarePoint=(pixelId+.5)*pixelSize;
+  vec2 pixelId = vPixelId;
+  vec2 scatter=vec2(hash11(pixelId.x*127.1+pixelId.y*311.7+3.1),hash11(pixelId.x*269.5+pixelId.y*183.3+9.2))-.5;
+  vec2 squarePoint=(pixelId+.5+scatter*.8*(1.-uIdentity))*pixelSize;
   float cellPixelSize = uNoiseCellSize;
   vec2 cellId = floor(squarePoint / cellPixelSize);
   vec2 cellCoord = cellId * cellPixelSize;
@@ -195,22 +211,22 @@ void main(){
     feed=mix(feed,imageFeed,uIdentity);
   }
 
-  float bayer = Bayer8(fragCoord / uPixelSize) - 0.5;
+  float bayer = Bayer8(pixelId) - 0.5;
   float bw = step(0.5, feed + bayer);
 
-  float h = fract(sin(dot(floor(fragCoord / uPixelSize), vec2(127.1, 311.7))) * 43758.5453);
+  float h = fract(sin(dot(pixelId, vec2(127.1, 311.7))) * 43758.5453);
   float jitterScale = 1.0 + (h - 0.5) * uPixelJitter;
   float coverage = bw;
   // The reference edge envelope shrinks individual squares. Their alpha
   // remains binary, including when quiet activity makes them smaller.
   float backgroundScale=mix(1.0,.7+.3*imageInk,uIdentity);
-  vec2 centrePhysical=origin+(pixelId+.5)*pixelSize*uCanvasScale;
+  vec2 centrePhysical=origin+squarePoint*uCanvasScale;
   vec2 screenUV=centrePhysical/uResolution;
   float edgeDistance=min(min(screenUV.x,1.0-screenUV.x),min(screenUV.y,1.0-screenUV.y));
   float edge=uEdgeFade>0.0?smoothstep(0.0,uEdgeFade,edgeDistance):1.0;
   float rasterScale=min(uCanvasScale.x,uCanvasScale.y);
   float markSize=uDotSize*jitterScale*backgroundScale*sqrt(uPixelPresence);
-  float dotSize = min(max(1.0,floor(pixelSize*rasterScale-(1.-clamp(uCapitalStage-6.,0.,1.))+.5)),max(1.0,floor(min(pixelSize,markSize)*edge*rasterScale+.5)));
+  float dotSize=max(1.,floor(markSize*edge*rasterScale+.5));
   vec2 point=rasterPoint;
   vec2 start=floor(centrePhysical-dotSize*.5+.5);
   float square = step(start.x,point.x)*step(start.y,point.y)
@@ -219,18 +235,10 @@ void main(){
   float survival=step(hash11(pixelId.x*73.17+pixelId.y*193.41+7.3),uPixelPresence)*step(.0001,uPixelPresence);
   float M = coverage * square * step(perimeterHash,edge*edge)*survival;
 
-  vec3 color = uColor;
+  if(M<.5)discard;
+  // White difference blending flips each covered pixel, including overlaps.
+  fragColor=vec4(1.);
 
-  // sRGB gamma correction - convert linear to sRGB for accurate color output
-  vec3 srgbColor = mix(
-    color * 12.92,
-    1.055 * pow(color, vec3(1.0 / 2.4)) - 0.055,
-    step(0.0031308, color)
-  );
-
-  float inkStrength=mix(1.0,.45+.55*imageInk,uIdentity);
-  float grain=(hash11(dot(pixelId,vec2(127.1,311.7))+floor(uTime*12.0)*74.7+uSeed)-.5)*uNoiseAmount;
-  fragColor = vec4(srgbColor * clamp(uDotStrength * inkStrength+grain,0.0,1.0), clamp(M, 0.0, 1.0));
 }
 `;
 
@@ -269,6 +277,8 @@ export function createPixelBlastField(host){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
+   locations.uGridStart=gl.getUniformLocation(program,'uGridStart');
+   locations.uGridColumns=gl.getUniformLocation(program,'uGridColumns');
    locations.uPixelPresence=gl.getUniformLocation(program,'uPixelPresence');
    locations.uBattleA=gl.getUniformLocation(program,'uBattleA');
    locations.uBattleB=gl.getUniformLocation(program,'uBattleB');
@@ -321,7 +331,15 @@ export function createPixelBlastField(host){
    i('uEnableRipples',params.ripples?1:0);f('uRippleSpeed',params.rippleSpeed);f('uRippleThickness',params.rippleThickness);f('uRippleIntensity',params.rippleIntensity);
    i('uLiquid',params.liquid?1:0);f('uLiquidStrength',params.liquidStrength);f('uLiquidRadius',params.liquidRadius);f('uLiquidTime',Number.isFinite(liquidTime)?liquidTime:(Number(time)||0)*params.liquidWobbleSpeed);f('uNoiseAmount',params.noiseAmount);f('uEcosystem',params.ecosystem);
    gl.uniform2fv(locations['uClickPos[0]'],positions);gl.uniform1fv(locations['uClickTimes[0]'],times);gl.uniform1fv(locations['uClickStrengths[0]'],strengths);gl.uniform2fv(locations['uClickDirections[0]'],directions);
-   gl.drawArrays(gl.TRIANGLES,0,3);
+   const pad=Math.ceil(params.dotSize/params.cellSize)+1;
+   const firstX=Math.floor(-Math.floor(w/2)/grid)-pad,firstY=Math.floor(-Math.floor(h/2)/grid)-pad;
+   const columns=Math.ceil(w/grid)+pad*2+2,rows=Math.ceil(h/grid)+pad*2+2;
+   gl.uniform2i(locations.uGridStart,firstX,firstY);gl.uniform1i(locations.uGridColumns,columns);
+   gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+   gl.enable(gl.BLEND);gl.blendEquation(gl.FUNC_ADD);
+   gl.blendFuncSeparate(gl.ONE_MINUS_DST_COLOR,gl.ZERO,gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+   gl.drawArraysInstanced(gl.TRIANGLES,0,6,columns*rows);
+   gl.disable(gl.BLEND);
    canvas.dataset.density=params.density.toFixed(3);canvas.dataset.level=unit(inputs.level).toFixed(3);canvas.dataset.ripples=String(params.ripples?ripples.length:0);
    Object.assign(canvas.dataset,{basePixelSize:params.pixelSize.toFixed(3),pixelSize:params.pixelSize.toFixed(3),cellSize:params.cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:String(params.edgeFade),rippleEnabled:String(params.ripples),identity:(identityMask?params.identity:0).toFixed(3),identityImage:String(!!identityMask)});
    Object.assign(canvas.dataset,{jitter:params.jitter.toFixed(3),liquid:String(params.liquid),liquidStrength:params.liquidStrength.toFixed(3),liquidRadius:params.liquidRadius.toFixed(3),liquidWobbleSpeed:params.liquidWobbleSpeed.toFixed(3),noiseAmount:params.noiseAmount.toFixed(3),ecosystem:params.ecosystem.toFixed(3),rippleSpeed:params.rippleSpeed.toFixed(3),rippleThickness:params.rippleThickness.toFixed(3),rippleIntensity:params.rippleIntensity.toFixed(3)});

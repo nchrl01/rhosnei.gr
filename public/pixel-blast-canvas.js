@@ -1,5 +1,5 @@
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=163';
-import {capitalFeed} from './capital-field.js?v=163';
+import {battleMotion,battleWarp} from './earthbound-motion.js?v=164';
+import {capitalFeed} from './capital-field.js?v=164';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
@@ -55,7 +55,7 @@ export function createPixelBlastCanvas(host){
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-   ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
+   ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="xor";
    const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const battle=battleMotion(seed,time,params.capitalStage);
@@ -100,8 +100,8 @@ export function createPixelBlastCanvas(host){
    // and square bounds agree even when either canvas dimension is odd.
    for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
     if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
-    const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
-    const centerX=originX+(px+.5)*grid,centerY=originY+(py+.5)*grid;
+    const fx=(px+.5+(hash(px*127.1+py*311.7+3.1)-.5)*.8*(1-identity))*cellSize,fy=(py+.5+(hash(px*269.5+py*183.3+9.2)-.5)*.8*(1-identity))*cellSize;
+    const centerX=originX+fx*ratio,centerY=originY+fy*ratio;
     const edge=Math.min(centerX/w,1-centerX/w,centerY/h,1-centerY/h);
     const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
     const taper=edgeT*edgeT*(3-2*edgeT);
@@ -123,14 +123,12 @@ export function createPixelBlastCanvas(host){
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const dotSize=Math.min(cellSize,params.dotSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
-    const diameter=Math.min(Math.max(1,Math.round(grid-(1-clamp((params.capitalStage??0)-6)))),Math.max(1,Math.round(dotSize*ratio)));
+    const dotSize=(params.dotSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
+    const diameter=Math.max(1,Math.round(dotSize*ratio));
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
-    const grain=(hash(px*127.1+py*311.7+grainFrame*74.7+offset)-.5)*params.noiseAmount;
-    const ink=Math.round(255*clamp(params.dotStrength*mix(1,.45+.55*maskInk,identity)+grain));
-    if(ink!==previousInk){ctx.fillStyle=`rgb(${ink},${ink},${ink})`;previousInk=ink;}
+    ctx.fillStyle="#fff";
     ctx.fillRect(x0,y0,x1-x0,y1-y0);
    }
    canvas.hidden=false;

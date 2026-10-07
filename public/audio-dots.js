@@ -1,5 +1,5 @@
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=163';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=164';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -230,6 +230,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const easeImage=x=>{const t=unit(x);return t*t*t*(t*(t*6-15)+10);};
   visualParams.identity=reduced.matches?0:easeImage((imagePhase-10)/4)*(1-easeImage((imagePhase-17)/5));
   visualParams.identityMotion=.3*(1-visualParams.identity);
+  visualParams.dotSize+=(Math.min(visualParams.dotSize,3.5)-visualParams.dotSize)*visualParams.identity;
   visualCursor=replaying?eventTime:null;
   visualParams.pixelPresence=pixelPresence;
   if(!audible&&pixelPresence===0){blast?.clear();c.clearRect(0,0,canvas.width,canvas.height);canvas.dataset.scopeInputs='0';dirty=true;return;}
