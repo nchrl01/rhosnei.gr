@@ -20,36 +20,6 @@
       "loopEnd": 0.011207097828624796
     },
     {
-      "file": "preset-4.wav",
-      "midi": 60,
-      "trim": 0.79397,
-      "preset": 4,
-      "bank": 0,
-      "program": 4,
-      "peak": 0.67453,
-      "bodyRms": 0.163734,
-      "name": "Marimba 1",
-      "correction": 0,
-      "loop": false,
-      "loopStart": 0.0,
-      "loopEnd": 0.0
-    },
-    {
-      "file": "preset-5.wav",
-      "midi": 60,
-      "trim": 0.407252,
-      "preset": 5,
-      "bank": 0,
-      "program": 5,
-      "peak": 0.792755,
-      "bodyRms": 0.319212,
-      "name": "Marimba 2",
-      "correction": 0,
-      "loop": true,
-      "loopStart": 0.25360130111524165,
-      "loopEnd": 0.25743494423791824
-    },
-    {
       "file": "preset-6.wav",
       "midi": 55,
       "trim": 0.437783,
