@@ -11,11 +11,11 @@ import {createTakeShare,loadSharedScore} from './take-share.js?v=216';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=209';
 import {createEngineView} from './engine-view.js?v=209';
-import {createCoinDither} from './coin-dither.js?v=216';
+import {createCoinDither} from './coin-dither.js?v=217';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createAudioDots} from './audio-dots.js?v=216';
+import {createAudioDots} from './audio-dots.js?v=217';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -81,7 +81,7 @@ const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent
 const displaySettings={dither:false};
 const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-name').dataset.direction]||0})});
 $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>event.preventDefault());
-const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image)});
+const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image),onUnavailable:()=>{if(market)void loadCoinImage(market,{fallback:true});}});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
 const dataSonification=createDataSonification({send,event});
 const holderMetadata=createHolderMetadata({onInfo:(info,pair)=>{
@@ -94,10 +94,10 @@ const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.
 function safeCoinImage(value){
  try{const url=new URL(value);return url.protocol==='https:'&&url.href.length<=2048&&!url.username&&!url.password?url.href:'';}catch{return '';}
 }
-async function loadCoinImage(pair){
+async function loadCoinImage(pair,{fallback=false}={}){
  if(isExchangeMarket(pair))return;
- const key=imageKey(pair);if(imageToken===key)return;imageToken=key;imageController?.abort();
- if(safeCoinImage(pair.baseToken?.imageUrl)||safeCoinImage(tokenImages.get(key))||pair.historyTokenSide!=='quote'&&safeCoinImage(pair.info?.imageUrl))return;
+ const key=imageKey(pair),requestKey=key+(fallback?':pixels':'');if(imageToken===requestKey)return;imageToken=requestKey;imageController?.abort();
+ if(!fallback&&(safeCoinImage(pair.baseToken?.imageUrl)||safeCoinImage(tokenImages.get(key))||pair.historyTokenSide!=='quote'&&safeCoinImage(pair.info?.imageUrl)))return;
  const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
  const controller=new AbortController();imageController=controller;const timeout=setTimeout(()=>controller.abort(),45000);
  const accept=value=>{
@@ -107,7 +107,7 @@ async function loadCoinImage(pair){
  try{
   // Old shared scores contain no image. Fetch artwork metadata only: their
   // saved prices, market cap and candles must remain exactly as shared.
-  try{
+  if(!fallback)try{
    const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(pair.chainId)+'/'+encodeURIComponent(pair.pairAddress),{signal:controller.signal});
    const match=data.pairs?.find(item=>item.chainId===pair.chainId&&sameToken(item.baseToken?.address,pair.baseToken.address));
    if(accept(match?.info?.imageUrl))return;
@@ -122,7 +122,7 @@ function displayCoinImage(){
  else if(!$('coin-image-fallback').querySelector('img'))$('coin-image-fallback').innerHTML='<img src="upic-logo-transparent.svg?v=115" alt="UPIC" class="coin-placeholder-logo" draggable="false">';
  const candidates=market?[market,...discovered.filter(p=>p.chainId===market.chainId&&sameToken(p.baseToken?.address,token.address))]:[];
  const image=candidates.find(p=>p.historyTokenSide!=='quote'&&p.info?.imageUrl)?.info?.imageUrl;
- const url=safeCoinImage(token?.imageUrl)||safeCoinImage(image)||safeCoinImage(market&&tokenImages.get(imageKey(market)));
+ const url=safeCoinImage(market&&tokenImages.get(imageKey(market)))||safeCoinImage(token?.imageUrl)||safeCoinImage(image);
  if(url===coinImageURL)return;coinImageURL=url;
  coinDither.set(url);
 }

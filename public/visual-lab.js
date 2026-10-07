@@ -1,10 +1,10 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=3';
 import {battlePatternNames} from './earthbound-pattern.js?v=214';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=216';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=217';
 import {advancePixelSurvival} from './pixel-blast-parameters.js?v=214';
 import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=214';
 import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
-import {coinImagePixels} from './coin-dither.js?v=216';
+import {coinImagePixels} from './coin-dither.js?v=217';
 const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
 const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity depth',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
 const visualSpecs=[['dotSize','Mark size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];

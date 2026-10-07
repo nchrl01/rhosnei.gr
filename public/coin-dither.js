@@ -39,7 +39,7 @@ export function coinImagePixels(image,size=256){
  return {pixels:context.getImageData(0,0,size,size).data,width:size,height:size};
 }
 let filterSerial=0;
-export function createCoinDither(img,fallback,{onPixels=()=>{}}={}){
+export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=>{}}={}){
  const filterId=`coin-bayer-filter-${++filterSerial}`;
  const host=img.parentElement,canvas=document.createElement('canvas');canvas.className='coin-dither';canvas.setAttribute('aria-hidden','true');canvas.hidden=true;host.append(canvas);
  // SVG can threshold SourceGraphic without exposing cross-origin image bytes
@@ -77,6 +77,8 @@ export function createCoinDither(img,fallback,{onPixels=()=>{}}={}){
  }
  // Retain the original SVG dithering for restricted hosts, without its fade mask.
  function original(url,token){
+  if(token!==serial)return;
+  try{onUnavailable(url);}catch{}
   img.removeAttribute('crossorigin');img.onload=()=>{if(token!==serial)return;img.hidden=false;fallback.hidden=true;host.dataset.dither='mask';img.style.filter=`url(#${filterId}) invert(1)`;};img.onerror=()=>{if(token!==serial)return;img.hidden=true;fallback.hidden=false;};img.src=url;
  }
  return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;canvas.remove();defs.remove();}};
