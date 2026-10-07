@@ -31,7 +31,7 @@
 #X obj 355 535 hip~ 80;
 #X obj 355 575 *~;
 #X obj 355 615 r data-level;
-#X obj 355 655 pack f 80;
+#X obj 355 655 pack f 12;
 #X obj 355 695 line~;
 #X obj 685 55 *~;
 #X obj 685 95 r data-pan-left;

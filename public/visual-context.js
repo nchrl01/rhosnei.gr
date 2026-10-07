@@ -1,9 +1,7 @@
-import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
+import {earthboundVisualSeed} from './earthbound-visual-seed.js?v=214';
 export function coinVisualPreset(seed=0){
- const index=(Number(seed)>>>0)%suggestedLayers.length,preset=suggestedLayers[index];
- // EarthBound layer selection and graphic family both belong to the coin.
- const [a,b]=preset.layers;
- return {index,name:preset.name,layers:preset.layers,patternStage:((a*31+b*17)>>>0)%7};
+ const profile=earthboundVisualSeed(seed),layers=profile.layers.map(layer=>layer.id);
+ return {index:profile.layers[0].kind,name:'Address composition '+layers.join(' / '),layers,patternStage:profile.patternStage};
 }
 export function walletSizeVariation(groups=[]){
  const shares=groups.flatMap(g=>g.wallets||[]).map(w=>Number(w.percentage)).filter(n=>Number.isFinite(n)&&n>0);

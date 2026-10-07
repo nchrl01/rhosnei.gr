@@ -1,4 +1,4 @@
-import {coinVisualPreset,contextualEdgeShrink} from './visual-context.js?v=171';
+import {coinVisualPreset,contextualEdgeShrink} from './visual-context.js?v=214';
 import {capitalStage} from './capital-field.js?v=167';
 // Shared market/audio mapping for the WebGL and Canvas PixelBlast renderers.
 // Coin seed fixes the pattern; liquidity spaces the mark lattice.
@@ -7,6 +7,12 @@ const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const mix=(a,b,t)=>a+(b-a)*unit(t);
 
 // Higher-cap marks retain sound history longer; no energy is created at rest.
+// Token artwork gradually takes over the existing marks from $10M to $1B.
+export function marketCapIdentity(marketCap){
+ const cap=Number(marketCap);
+ const t=cap>0&&Number.isFinite(cap)?unit((Math.log10(cap)-7)/2):0;
+ return t*t*(3-2*t);
+}
 export function marketCapReleaseSeconds(marketCap){
  const cap=Number(marketCap);
  const size=Number.isFinite(cap)&&cap>0?unit((Math.log10(cap)-4)/5):.5;
@@ -25,7 +31,7 @@ export const PIXEL_BLAST_REFERENCE=Object.freeze({
  variant:'circle',color:'#ffffff',transparent:true,antialias:false,autoPauseOffscreen:true,
 });
 
-export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0,marketCap=null,level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
+export function pixelBlastParameters({seed=0,coinKey=null,referenceCap=null,walletVariation=0,marketCap=null,level=0,formation=0,drive=0,pressure=0,activity=0,volume=0,motion=0,fresh=0,capital=.5,depth=.5,surge=0,imbalance=0,identity=0,active=false,reducedMotion=false,mobile=false,piano=0,transient=0,balance=.5,change=null,tempo=40}={}){
  const reference=PIXEL_BLAST_REFERENCE;
  const sound=unit(level),presence=unit(level),current=active?unit(fresh):0;
  const animated=active&&!reducedMotion;
@@ -66,7 +72,7 @@ export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0
   // structural settings, independent of changing market or audio signals.
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
-  capitalStage:coinVisualPreset(seed).patternStage,patternStage:coinVisualPreset(seed).patternStage,pixelSize,cellSize:mix(16,4,liquidity),dotSize:pixelSize,
+  patternKey:coinKey??seed,capitalStage:coinVisualPreset(coinKey??seed).patternStage,patternStage:coinVisualPreset(coinKey??seed).patternStage,pixelSize,cellSize:mix(16,4,liquidity),dotSize:pixelSize,
   pixelPresence:active?unit(level/.02):0,survivalRelease:marketCapReleaseSeconds(marketCap),
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
@@ -74,8 +80,8 @@ export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0
   speed:animated?reference.speed*clamp(Number(tempo)||40,10,240)/100:0,
   edgeFade,pixelSizeJitter:unit(walletVariation),jitter:unit(walletVariation),
   dotStrength:mix((mobile?.28:.2)+(mobile?.72:.8)*strength,1,capFill),
-  // Retain the former image uniforms' API without forming a central image.
-  identity:0,identityMotion:0,ecosystem:.28,
+  // The same mark field resolves into token artwork as valuation approaches $1B.
+  identity:marketCapIdentity(marketCap),identityMotion:reducedMotion?0:.3*(1-marketCapIdentity(marketCap)),ecosystem:.28,
   enableRipples:false,ripples:false,waveformEnabled:active&&engagement>.002,
   rippleSpeed:.12+.45*unit(.55*movement+.2*pace*response+.15*notes+.1*attack),
   rippleThickness:.02+.055*unit(.55*flow+.2*sound+.15*notes+.1*attack),

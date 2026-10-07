@@ -3,6 +3,12 @@ import {harmoniousPitch} from './harmonic-network.js?v=208';
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
 export function createDataSonification({send=()=>{},event=()=>{}}={}){
  let enabled=true,seed=1917,lastTradeAt=-Infinity,lastObservation=null,lastPrice=null,signals={};
+ function strike(clock){
+  if(!enabled||!signals.active||clock-lastTradeAt<.125)return false;
+  lastTradeAt=clock;signals.level=Math.max(.18,signals.level||0);
+  // Set the audible gain before the onset, even when USD volume is unknown.
+  send('data-level',signals.level);event('data-trade');return true;
+ }
  function frame(m,{playing=false,seeking=false,ended=false,clock=0}={}){
   const active=enabled&&playing&&!seeking&&!ended;
   const fresh=unit(m.fresh),intensity=unit(m.music?.intensity),raw=m.raw||m;
@@ -12,20 +18,25 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
   // Historic candle volume is a labelled activity proxy, never a trade count.
   const excitation=fresh*Math.max(intensity*unit(activity*10),.5*Math.sqrt(activity*volume));
   const density=active?unit(excitation*(.15+.85*Math.sqrt(activity||volume))):0;
-  const level=active?.14*Math.sqrt(excitation):0;
+  // Hold enough gain for the short voice to speak; only actual observations
+  // refresh this envelope. The reverb receives the complete pulse.
+  const age=Math.max(0,clock-lastTradeAt);
+  const eventTail=age<.35?1:age<1.5?Math.exp(-(age-.35)*5):0;
+  const level=active?Math.max(.24*Math.sqrt(excitation),.18*eventTail):0;
   const reverb=.65+.15*liquidity;
   const noise=unit(.08+.46*motion+.24*pressure);
   const tonic=m.music?.tonic??48+seed%12;
   const pitch=harmoniousPitch(tonic+21+Math.round(14*intensity+3*motion),tonic,m.music?.character,m.music?.harmony?.notes||[]);
   const params={'data-reverb':reverb,'data-enabled':active?1:0,'data-density':density,'data-level':level,'data-noise':noise,'data-pitch':pitch,'data-root':tonic-12,'data-duration':.7+.8*liquidity,'data-drive':1+2.5*intensity,'data-filter':1200+6500*Math.max(motion,volume),'data-pan-left':Math.sqrt(1-balance),'data-pan-right':Math.sqrt(balance)};
   for(const [name,value] of Object.entries(params))send(name,value);
+  signals={density,drive:params['data-drive'],pitch,noise,level,reverb,liquidity,duration:params['data-duration'],enabled,active,clock};
   const observation=m.replay?.at;
   if(observation!=null&&observation!==lastObservation){
    const prior=lastObservation;lastObservation=observation;
-   // One aggregate observation, never pretend the candle is individual swaps.
-   if(active&&prior!==null&&observation>prior&&Number(m.replay.volume)>0&&clock-lastTradeAt>=.125){lastTradeAt=clock;event('data-trade');}
+   // The initial loaded candle is a real aggregate observation as well.
+   // Repeated UI frames and backwards seeks cannot invent additional trades.
+   if(active&&(prior===null||observation>prior)&&Number(m.replay.volume)>0)strike(clock);
   }
-  signals={density,drive:params['data-drive'],pitch,noise,level,reverb,liquidity,duration:params['data-duration'],enabled,active,clock};
   return signals;
  }
  return {
@@ -33,11 +44,11 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
   event(trade,{playing=false,replay=false,clock=0}={}){
    // One short event at most every 125 ms; backlog and snapshots never bang.
    if(!enabled||!playing||replay||trade.kind!=='swap'||clock-lastTradeAt<.125)return false;
-   lastTradeAt=clock;event('data-trade');return true;
+   return strike(clock);
   },
-  observePrice(price,{playing=false,clock=0}={}){const previous=lastPrice;lastPrice=Number(price);if(enabled&&playing&&previous>0&&lastPrice>0&&Math.abs(lastPrice/previous-1)>1e-7&&clock-lastTradeAt>=.125){lastTradeAt=clock;event('data-trade');return true;}return false;},
+  observePrice(price,{playing=false,clock=0}={}){const previous=lastPrice;lastPrice=Number(price);if(enabled&&playing&&previous>0&&lastPrice>0&&Math.abs(lastPrice/previous-1)>1e-7&&clock-lastTradeAt>=.125){return strike(clock);}return false;},
   setEnabled(value){enabled=Boolean(value);if(!enabled){send('data-enabled',0);send('data-level',0);}},
-  reset(value=seed){seed=Number(value)>>>0;lastTradeAt=-Infinity;lastObservation=null;lastPrice=null;send('data-enabled',0);send('data-level',0);},
+  reset(value=seed){seed=Number(value)>>>0;lastTradeAt=-Infinity;lastObservation=null;lastPrice=null;signals={...signals,active:false,level:0};send('data-enabled',0);send('data-level',0);},
   snapshot(){return signals;},
  };
 }

@@ -1,6 +1,5 @@
-import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=172';
+import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=214';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=171';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
@@ -64,7 +63,7 @@ export function createPixelBlastCanvas(host){
    counts.fill(0);output.data.fill(0);
    const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
-   const battle=battleMotion(seed,time,params.capitalStage),pattern=battlePattern(seed);
+   const pattern=battlePattern(params.patternKey??seed,time);
    const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
    const liquidRadius=Math.max(.001,.12*params.liquidRadius),grainFrame=Math.floor(time*12);
    const touches=params.liquid?ripples.filter(p=>eventTime-p.time>=0&&eventTime-p.time<3).map(p=>{
@@ -87,7 +86,7 @@ export function createPixelBlastCanvas(host){
       const weight=Math.exp(-(dx*dx+dy*dy)*1.5)*p.envelope*p.strength*70/cssHeight;
       warpX+=((p.dx??1)-dy*.35)*weight;warpY+=((p.dy??0)+dx*.35)*weight;
      }
-     const [u,v]=battleWarp(u0+warpX,v0+warpY,battle);let sum=1,freq=1;
+     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
      for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);

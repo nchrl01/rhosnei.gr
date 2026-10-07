@@ -1,10 +1,10 @@
-import {battlePattern,battlePatternGLSL} from './earthbound-pattern.js?v=172';
+import {battlePattern,battlePatternGLSL} from './earthbound-pattern.js?v=214';
 import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
-import {withPixelGenerations} from './pixel-generations.js?v=209';
-import {battleMotion,battleGLSL} from './earthbound-motion.js?v=171';
+import {withPixelGenerations} from './pixel-generations.js?v=214';
+import {battleGLSL} from './earthbound-motion.js?v=214';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=191';
-import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=192';
+import {createPixelBlastCanvas,preparePixelIdentity} from './pixel-blast-canvas.js?v=214';
+import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=214';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
 // Full license: vendor/ui/REACT-BITS-LICENSE.md. Market/audio adapter by $UPIC.
@@ -117,9 +117,9 @@ float fbm2(vec2 uv, float t){
 }
 
 ${capitalGLSL}
+${battleGLSL}
 ${battlePatternGLSL}
 ${holderClusterGLSL}
-${battleGLSL}
 
 // Upstream liquid displacement, driven by finite market/audio touches. Warp
 // the sampled field before drawing marks so their raster stays on the grid.
@@ -190,7 +190,7 @@ void main(){
   vec2 cellCoord = cellId * cellPixelSize;
   vec2 displacement=dataMotion(squarePoint)/viewSize.y;
   vec2 samplePoint=squarePoint+displacement*viewSize.y;
-  vec2 uv = battleWarp(squarePoint / viewSize * vec2(aspectRatio, 1.0)+displacement);
+  vec2 uv = squarePoint / viewSize * vec2(aspectRatio, 1.0)+displacement;
 
   float base = fbm2(uv, uTime * 0.05);
   base = base * 0.5 - 0.65;
@@ -297,7 +297,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    program=candidate;
    const names=['uColor','uResolution','uCanvasScale','uTime','uEventTime','uSeed','uDotSize','uMarkDirection','uEdgeFade','uDotStrength','uPixelSize','uNoiseCellSize','uScale','uDensity','uIdentityImage','uIdentity','uIdentityMotion','uPixelJitter','uEnableRipples','uRippleSpeed','uRippleThickness','uRippleIntensity','uLiquid','uLiquidStrength','uLiquidRadius','uLiquidTime','uNoiseAmount','uEcosystem','uClickPos[0]','uClickTimes[0]','uClickStrengths[0]','uClickDirections[0]'];
    locations=Object.fromEntries(names.map(name=>[name,gl.getUniformLocation(program,name)]));
-   locations.battlePattern=gl.getUniformLocation(program,'uBattlePattern');
+   for(const name of ['uBattlePatternA','uBattlePatternB','uBattleStyleA','uBattleStyleB','uBattleMix','uBattleFlowA','uBattleFlowB'])locations[name]=gl.getUniformLocation(program,name);
    locations.holderGroups=gl.getUniformLocation(program,'uHolderGroups[0]');
    locations.uGridStart=gl.getUniformLocation(program,'uGridStart');
    locations.uGridColumns=gl.getUniformLocation(program,'uGridColumns');
@@ -357,9 +357,9 @@ export function createPixelBlastField(host,{generations=true}={}){
    const f=(name,value)=>gl.uniform1f(locations[name],value),i=(name,value)=>gl.uniform1i(locations[name],value);
    gl.uniform4fv(locations.holderGroups,params.holderGroups||emptyHolderGroups);
    f('uCapitalStage',params.patternStage??params.capitalStage??-1);f('uPixelPresence',params.pixelPresence??1);
-   const battle=battleMotion(seed,time||0,params.capitalStage);
-   gl.uniform4fv(locations.battlePattern,battlePattern(seed));
-   gl.uniform4fv(locations.uBattleA,battle[0]);gl.uniform4fv(locations.uBattleB,battle[1]);
+   const pattern=battlePattern(params.patternKey??seed,time||0),battle=pattern.motions;
+   for(let layer=0;layer<2;layer++){const suffix=layer===0?'A':'B';gl.uniform4fv(locations['uBattlePattern'+suffix],pattern.shapes[layer]);gl.uniform4fv(locations['uBattleStyle'+suffix],pattern.styles[layer]);gl.uniform4fv(locations['uBattle'+suffix],battle[layer].slice(0,4));gl.uniform4fv(locations['uBattleFlow'+suffix],battle[layer].slice(4,8));}
+   gl.uniform4fv(locations.uBattleMix,pattern.mix);
    const ink=params.inkColor??1;gl.uniform3f(locations.uColor,ink,ink,ink);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uMarkDirection',Math.sign(Number(params.markDirection)||0));

@@ -21,7 +21,7 @@
 #X obj 355 135 hip~ 25;
 #X obj 355 175 *~;
 #X obj 355 215 r data-level;
-#X obj 355 255 pack f 80;
+#X obj 355 255 pack f 12;
 #X obj 355 295 line~;
 #X obj 355 335 *~;
 #X obj 355 375 r data-pan-left;

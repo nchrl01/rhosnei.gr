@@ -1,9 +1,9 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=3';
 import {createLabConnections} from './lab-connections.js?v=198';
-import {audioLab} from './audio-lab.js?v=211';
+import {audioLab} from './audio-lab.js?v=214';
 import {knob} from './lab-knob.js?v=1';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=209';
-import {advancePixelSurvival} from './pixel-blast-parameters.js?v=192';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=214';
+import {advancePixelSurvival} from './pixel-blast-parameters.js?v=214';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),KEY='upic-av-lab-v1';
 const specs=[['dotSize','Mark size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['speed','Flow speed',0,2.7,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Wallet size variation',0,1,.01],['pixelPresence','Audio presence',0,1,.01],['survivalRelease','Pixel survival · sec',.25,12,.01]];
 const sources=[['auto','AUTO · existing mapping'],['manual','MANUAL · fixed value'],['audio','Engine audio level'],['tempo','Tempo · 40–140 BPM'],['cap','Market cap · logarithmic'],['relativeCap','Cap / reference · logarithmic'],['liquidity','Liquidity depth'],['activity','Trade activity'],['volume','Trade volume'],['motion','Price motion'],['intensity','Musical intensity'],['change','Price direction · −90% to +100%'],['balance','Buy share'],['wallet','Wallet inequality'],['fresh','Data freshness']];

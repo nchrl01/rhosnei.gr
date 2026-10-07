@@ -4,7 +4,7 @@
 #X obj 25 135 av-random 10000;
 #X obj 25 175 <;
 #X obj 25 215 r data-density;
-#X obj 25 255 expr 3500 + 6500 * $f1;
+#X obj 25 255 expr 9000 + 1000 * $f1;
 #X obj 25 295 sel 1;
 #X obj 25 335 spigot 0;
 #X obj 25 375 r data-enabled;
@@ -13,10 +13,10 @@
 #X obj 25 495 t f f;
 #X obj 25 535 sel 0 1 2 3 4;
 #X obj 25 575 s data-onset;
-#X obj 25 615 av-data-pulse 4 12 0.05 0.8;
-#X obj 25 655 av-data-pulse 0.5 170 0.05 0.7;
-#X obj 25 695 av-data-pulse 2 26 2.5 0.05;
-#X obj 355 55 av-data-pulse 1 70 0.08 0.8;
+#X obj 25 615 av-data-pulse 2.003 55 0.05 0.8;
+#X obj 25 655 av-data-pulse 0.501 170 0.05 0.7;
+#X obj 25 695 av-data-pulse 1.499 85 0.55 0.35;
+#X obj 355 55 av-data-pulse 1.002 110 0.08 0.8;
 #X obj 355 95 av-data-low;
 #X obj 355 135 r seed;
 #X msg 355 175 seed \$1;

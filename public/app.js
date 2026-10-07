@@ -6,7 +6,7 @@ import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMa
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,loadSharedScore} from './take-share.js?v=211';
+import {createTakeShare,loadSharedScore} from './take-share.js?v=214';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=209';
 import {createEngineView} from './engine-view.js?v=209';
@@ -14,9 +14,9 @@ import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createAudioDots} from './audio-dots.js?v=212';
+import {createAudioDots} from './audio-dots.js?v=214';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
-import {createDataSonification} from './data-sonification.js?v=209';
+import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=211';
 import {createMilestoneSounds} from './milestone-sounds.js?v=8';
@@ -77,7 +77,7 @@ createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>piano?.setArpeggioPattern(pattern)});
 const displaySettings={dither:false};
-const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-name').dataset.direction]||0})});
+const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-name').dataset.direction]||0})});
 $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>event.preventDefault());
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image)});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
@@ -372,16 +372,16 @@ async function initialize(){
   audioErrors.pd='';audioErrors.envion='';
   pdLoading=(async()=>{
    const [orchestra,envionFiles]=await Promise.all([(async()=>{
-    const response=await fetch('patches/orchestra/manifest.json?v=209');if(!response.ok)throw Error('Cannot load orchestra manifest');
+    const response=await fetch('patches/orchestra/manifest.json?v=214');if(!response.ok)throw Error('Cannot load orchestra manifest');
     const manifest=await response.json();
-    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=209');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
+    const files=Object.fromEntries(await Promise.all(manifest.files.map(async name=>{const path='orchestra/'+name,r=await fetch('patches/'+path+'?v=214');if(!r.ok)throw Error('Cannot load '+name);return [path,await r.text()];})));
     return {manifest,files};
    })(),envion.files()]);
    if(epoch!==audioEpoch)throw Error('Audio loading cancelled');
    const {manifest,files}=orchestra;Object.assign(files,envionFiles);
    const runtime=await createPd({audioContext:context,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>{if(epoch===audioEpoch&&!envion.printed(text)){console.log('[Pd]',text);engineView.log(text);}},onError:error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log(error.message);audioStatus();}}});
    if(epoch!==audioEpoch){await runtime.close();throw Error('Audio loading cancelled');}
-   pd=runtime;replayPhrase=null;runtime.connect(audioScopes[1]?.input||destination);engineView.setFiles(files,manifest,true);bindSignalMap();
+   pd=runtime;replayPhrase=null;runtime.connect(audioScopes[1]?.input||destination);engineView.setFiles(files,manifest,true);bindSignalMap();dataSonification.reset(seed);
    send('seed',seed%16777216);send('master',playing?engineMaster():0);if(playing)tick();send('run',playing?1:0);
    // Math and beat voices can start as soon as Pd is ready. Envion's sample
    // handshake has its own outcome and cannot close the other instruments.
@@ -696,7 +696,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:211,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));

@@ -1,8 +1,8 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=3';
-import {battlePatternNames} from './earthbound-pattern.js?v=172';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=209';
-import {advancePixelSurvival} from './pixel-blast-parameters.js?v=192';
-import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=171';
+import {battlePatternNames} from './earthbound-pattern.js?v=214';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=214';
+import {advancePixelSurvival} from './pixel-blast-parameters.js?v=214';
+import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=214';
 import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
 const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
 const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity depth',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
@@ -55,7 +55,7 @@ function buildControls(){
  $('controls').replaceChildren();knobs=[];$('notes').value=notes;
  const global=section('01 / EarthBound scene','Coin seed selects the EarthBound Suggested Layers motion preset and a fixed graphic family. Market cap never changes the pattern. These adapt the original motion data, not game artwork.',true);
  knob(global,['seed','EarthBound coin seed',0,suggestedLayers.length-1,1],()=>seed%suggestedLayers.length,v=>{seed=v;resetMotion();});
- const presetName=document.createElement('p');presetName.className='group-note wide';global.append(presetName);knobs.push(()=>{presetName.textContent=coinVisualPreset(seed).name+' · '+battlePatternNames[coinVisualPreset(seed).index%8];});
+ const presetName=document.createElement('p');presetName.className='group-note wide';global.append(presetName);knobs.push(()=>{presetName.textContent=coinVisualPreset(seed).name+' · '+battlePatternNames[coinVisualPreset(seed).index];});
  const toggle=document.createElement('button');toggle.textContent='Ink cycles: '+(cycles?'on':'off');toggle.onclick=()=>{cycles=!cycles;toggle.textContent='Ink cycles: '+(cycles?'on':'off');rebuild();save();};global.append(toggle);
  const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. Edge shrink is strongest at $1K and weakest at $1B. Higher market cap tightens grid spacing from 24 to 4 px. Reference cap stays fixed until you turn it. Trade activity controls flow speed: zero = still, full activity = 2.7. Mark size is limited to 12 px. Higher market cap makes marks dissolve more slowly after sound stops. Pixel survival follows this sound tail; a manual value can reduce it. Turning activity restores automatic flow speed.',true);
  for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;if(spec[0]==='activity')delete overrides.speed;});

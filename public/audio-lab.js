@@ -7,7 +7,7 @@ import {createTradePiano} from './trade-piano.js?v=211';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=209';
 import {createEnvion} from './envion.js?v=209';
 import {createPd} from './vendor/libpd-wasm.js?v=206';
-import {createDataSonification} from './data-sonification.js?v=209';
+import {createDataSonification} from './data-sonification.js?v=214';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=208';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=209';
 import {HARMONIES,CHARACTER_GROUPS,pianoHarmony,chartCharacter,resolveHarmonicCharacter} from './music-context.js?v=208';
@@ -91,7 +91,7 @@ async function loadEngines(){
   const jobs=[];
   if(!piano){setStatus('GeneralUser','Loading samples…');jobs.push(createTradePiano(ctx,buses.earthbound,{initialSeed:state.market.seed,onVoice:event=>{$('last-note').textContent=event.instrument+' · '+event.notes.join(' / ')+' · '+event.reason;},onArpeggio:event=>{$('last-note').textContent='Arpeggio · MIDI '+event.midi;}}).then(result=>{if(closed){result.close();return;}piano=result;piano.reset(state.market.seed);piano.setMaster(1);piano.setRunning(running);applyAudio();refreshInstruments();setStatus('GeneralUser','Ready');}).catch(error=>setStatus('GeneralUser',error.message)));}
   if(!pd){setStatus('Pure Data','Loading patches…');setStatus('ENVION','Loading samples…');jobs.push((async()=>{
-   const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=209','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=209')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
+   const [orchestra,envionFiles]=await Promise.all([(async()=>{const manifest=await asset('patches/orchestra/manifest.json?v=214','json');const pairs=await Promise.all(manifest.files.map(async name=>['orchestra/'+name,await asset('patches/orchestra/'+name+'?v=214')]));return {manifest,files:Object.fromEntries(pairs)};})(),envion.files()]);
    if(closed)return;const files={...orchestra.files,...envionFiles};
    const result=await createPd({audioContext:ctx,packages:['vanilla','cyclone','else'],files,entry:'orchestra/'+orchestra.manifest.entry,workletUrl:'vendor/libpd-worklet-full.js?v=114',onPrint:text=>envion.printed(text),onError:error=>setStatus('Pure Data',String(error?.message||error))});
    if(closed){await result.close();return;}pd=result;pd.connect(musicMeter);send('master',1);send('seed',state.market.seed);send('run',running?1:0);setStatus('Pure Data','Ready');

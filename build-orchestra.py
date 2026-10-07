@@ -86,7 +86,7 @@ noise=p.obj('noise~');band=p.obj('bp~ 3000 4');cut=p.obj('r data-filter');p.chai
 noise_level=p.signal('data-noise',80);noise_gain=p.obj('*~');p.link(band,noise_gain);p.link(noise_level,noise_gain,inp=1)
 trim=p.obj(r'*~ \$3');p.chain(noise_gain,trim);mix=p.obj('+~');p.link(sine_trim,mix);p.link(trim,mix,inp=1)
 lowpass=p.obj('lop~ 8400');highpass=p.obj('hip~ 80');window=p.obj('*~');p.chain(mix,lowpass,highpass,window);p.link(square,window,inp=1)
-level=p.signal('data-level',80);scaled=p.obj('*~');p.link(window,scaled);p.link(level,scaled,inp=1)
+level=p.signal('data-level',12);scaled=p.obj('*~');p.link(window,scaled);p.link(level,scaled,inp=1)
 for side in ['left','right']:
  pan=p.signal('data-pan-'+side,80);output=p.obj('*~');p.link(scaled,output);p.link(pan,output,inp=1);p.chain(output,p.obj('outlet~'))
 run=p.obj('r run');stop=p.obj('sel 0');off=p.msg('0 15');p.chain(run,stop,off,shape)
@@ -107,7 +107,7 @@ for multiple in [1,2,4]:
 pair=p.obj('+~');all_sines=p.obj('+~');p.link(oscillators[0],pair);p.link(oscillators[1],pair,inp=1);p.chain(pair,all_sines);p.link(oscillators[2],all_sines,inp=1)
 trim=p.obj('*~ 0.32');rounding=p.obj('clip~ -0.7 0.7');lowpass=p.obj('lop~ 260');highpass=p.obj('hip~ 25');p.chain(all_sines,trim,rounding,lowpass,highpass)
 window=p.obj('*~');p.chain(highpass,window);p.link(shape,window,inp=1)
-level=p.signal('data-level',80);scaled=p.obj('*~');p.chain(window,scaled);p.link(level,scaled,inp=1)
+level=p.signal('data-level',12);scaled=p.obj('*~');p.chain(window,scaled);p.link(level,scaled,inp=1)
 for side in ['left','right']:
  pan=p.signal('data-pan-'+side,80);output=p.obj('*~');p.link(scaled,output);p.link(pan,output,inp=1);p.chain(output,p.obj('outlet~'))
 off=p.msg('0 15');p.chain(off,shape)
@@ -118,11 +118,11 @@ for osc in oscillators:p.link(phase,osc,inp=1)
 p.write('av-data-low')
 
 p=Patch('Original market data set / Ikeda and Sound Simulator principles / seeded microtones, sine clusters, noise',width=1800,height=1100)
-tick=p.obj('r data-observation-disabled');probability=p.obj('av-random 10000');threshold=p.obj('<');density=p.obj('r data-density');percent=p.obj('expr 3500 + 6500 * $f1');hit=p.obj('sel 1');gate=p.obj('spigot 0');enabled=p.obj('r data-enabled')
+tick=p.obj('r data-observation-disabled');probability=p.obj('av-random 10000');threshold=p.obj('<');density=p.obj('r data-density');percent=p.obj('expr 9000 + 1000 * $f1');hit=p.obj('sel 1');gate=p.obj('spigot 0');enabled=p.obj('r data-enabled')
 p.chain(probability,threshold,hit,gate);p.chain(density,percent);p.link(percent,threshold,inp=1);p.link(enabled,gate,inp=1)
 trade=p.obj('r data-trade');p.chain(trade,probability)
 choice=p.obj('av-random 5');reported=p.obj('t f f');routes=p.obj('sel 0 1 2 3 4');onset=p.obj('s data-onset');p.chain(gate,choice,reported);p.link(reported,routes,out=1);p.chain(reported,onset)
-voices=[p.obj('av-data-pulse 4 12 0.05 0.8'),p.obj('av-data-pulse 0.5 170 0.05 0.7'),p.obj('av-data-pulse 2 26 2.5 0.05'),p.obj('av-data-pulse 1 70 0.08 0.8'),p.obj('av-data-low')]
+voices=[p.obj('av-data-pulse 2.003 55 0.05 0.8'),p.obj('av-data-pulse 0.501 170 0.05 0.7'),p.obj('av-data-pulse 1.499 85 0.55 0.35'),p.obj('av-data-pulse 1.002 110 0.08 0.8'),p.obj('av-data-low')]
 for i,voice in enumerate(voices):p.link(routes,voice,out=i)
 seed=p.obj('r seed');seed_msg=p.msg(r'seed \$1');p.chain(seed,seed_msg);p.link(seed_msg,probability);p.link(seed_msg,choice)
 # Tolerate the ordinary one-second timer cadence in background browser tabs.

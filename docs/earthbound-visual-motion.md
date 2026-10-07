@@ -1,24 +1,42 @@
-# EarthBound motion reference
+# Address-generated EarthBound visual vocabulary
 
 Source: https://github.com/gjtorikian/Earthbound-Battle-Backgrounds-JS
 Reference revision: 572caf31f996e3055251368011a5d073b5a59003
 
-All 222 Suggested Layers entries are retained in earthbound-motion-presets.js,
-including their 252 distinct nonblank layer IDs and distortion sequences.
-The coin seed selects one entry deterministically. Its paired distortion
-profiles move the existing UPIC field; this is an adaptation of motion settings,
-not a reproduction of the game's tiled artwork or colour palettes.
+The renderer now uses the complete canonical chain + contract address to
+produce two independent layers. Numeric seeds remain available in the labs.
+Every parameter uses a separately labeled hash of the full identity; coins
+are no longer reduced to an index in the Suggested Layers list.
 
-Horizontal displacement, interlaced counterflow and vertical displacement use
-continuous phase. UPIC bounds amplitude/frequency and replaces alternating
-scanline jumps with smooth counterflow to preserve the square lattice.
-Market cap controls deformation depth, the existing eight structures, and
-white coverage. Audio/market activity controls the shared animation clock.
-No deliberate active frame skipping. Render fills the visual container.
-Audio silence continues to clear the field.
+## Characteristics carried into UPIC
 
-Original preset preview links use frameskip=1 and aspectRatio=0 (Full):
-https://gjtorikian.online/Earthbound-Battle-Backgrounds-JS/?layer1=7&layer2=275&frameskip=1&aspectRatio=0
+- Numeric metadata for all 327 background records (326 nonblank choices).
+- Independent source-layer selections, arrangements and distortion sequences.
+- Horizontal displacement, alternating-band displacement, vertical compression.
+- Effect duration, signed 16-bit amplitude/frequency/compression acceleration.
+- Palette cycling and reflected cycling translated to monochrome occupancy.
+- Tile repetition, mirrored arrangements, orientation, aspect and phase.
+- Two-layer mixing; additional procedural interference and maximum blending.
 
-No game ROM or artwork is loaded at runtime. Attribution is retained in
-public/licenses/earthbound-backgrounds.txt.
+The upstream graphics use actual game tile/palette data. UPIC instead generates
+12 procedural tile families and bounded continuous luminance cycling, before
+its existing dither/mark renderer. It does not reproduce the game artwork.
+Scrolling is an original UPIC extension; the reference declares movement fields
+but marks their implementation TODO. No game texture/ROM is loaded at runtime.
+Numeric metadata can be rebuilt with scripts/build-earthbound-visual-metadata.py.
+Original attribution remains in public/licenses/earthbound-backgrounds.txt.
+
+The address fixes the visual structure. Market/audio controls the shared clock,
+mark size, spacing, directional notation and persistence. No active frame skip
+is introduced. WebGL and the software fallback share the parameter profile and
+matching field equations. Color remains black and white.
+
+Artwork formation is now tied to cap: no forced periodic image reveal. Between
+$10M and $1B, a smooth logarithmic curve gradually resolves the same marks into
+the token's dithered image. At $100M the mask influence is 50%; at $1B it is 100%.
+Existing saturation generations shrink away during formation. Missing artwork
+keeps the abstract composition. Quiet marks remain faintly visible.
+
+These are deterministic generative identities, not a proof that every possible
+address must be perceptually unique. No browser visual/audio audition accompanied
+this source change.

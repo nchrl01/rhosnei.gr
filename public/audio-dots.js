@@ -1,7 +1,7 @@
-import {advancePixelSurvival,marketCapReleaseSeconds} from './pixel-blast-parameters.js?v=192';
-import {walletSizeVariation} from './visual-context.js?v=171';
+import {advancePixelSurvival,marketCapReleaseSeconds,marketCapIdentity} from './pixel-blast-parameters.js?v=214';
+import {walletSizeVariation} from './visual-context.js?v=214';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=209';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=214';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -18,8 +18,7 @@ export function fieldState(m={}){
  // Missing historical liquidity stays neutral, never borrowed from today's pool.
  const capital=values[5]>0?unit((Math.log10(values[5])-4)/4):.5;
  // A known cap gradually pulls the flow into the artwork: $100K → $5M.
- const imageGrowth=values[5]>0?unit((Math.log10(values[5])-5)/Math.log10(50)):0;
- const identity=imageGrowth*imageGrowth*(3-2*imageGrowth);
+ const identity=marketCapIdentity(values[5]);
  const depth=liquidity===null?.5:liquidity>0?unit((Math.log10(liquidity)-3)/4):0;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
@@ -44,7 +43,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
  let frameID=0,lastPaint=0,dirty=true,closed=false,visible=true,replaying=false;
  let audible=false,hasMarket=false,width=0,height=0,layoutPending=true;
  let pianoPulses=[],pianoEnergy=0;
- let pixelPresence=0,referenceCap=null;
+ let pixelPresence=0,referenceCap=null,hasIdentityImage=false;
  let landmarkCue=null,landmarkSeen=null;
  let appearance=null,formation=0,layoutKey=null,visualCursor=null,marketPulse=-Infinity;
  const running=()=>{
@@ -207,7 +206,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
   referenceCap??=latest.referenceCap>0?latest.referenceCap:latest.marketCap>0?latest.marketCap:null;
-  const visualInputs={...smoothed,seed,referenceCap,walletVariation:walletSizeVariation(latest.relationships?.clusters)*unit(latest.relationships?.weight),marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
+  const visualInputs={...smoothed,seed,coinKey:getState().coinKey,referenceCap,walletVariation:walletSizeVariation(latest.relationships?.clusters)*unit(latest.relationships?.weight),marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Match the title’s green/red price-update signal exactly, then return to circles.
   visualParams.markDirection=Number(getState().markDirection)||0;
@@ -239,14 +238,15 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
    if(replaying&&sourceClock!==null){clock=eventTime*.8;liquidClock=clock*visualParams.liquidWobbleSpeed;}else{clock+=advance;liquidClock+=advance*visualParams.liquidWobbleSpeed;}
    dirty=true;
   }
-  // Recurring, seed-stable image phrase on the same field clock. The image
-  // resolves through pixel occupancy, never a separate fading image layer.
-  const imagePeriod=24+(seed>>>0)%13;
-  const imagePhase=((clock+((seed>>>0)%7))%imagePeriod+imagePeriod)%imagePeriod;
-  const easeImage=x=>{const t=unit(x);return t*t*t*(t*(t*6-15)+10);};
-  visualParams.identity=reduced.matches?0:easeImage((imagePhase-10)/4)*(1-easeImage((imagePhase-17)/5));
-  visualParams.identityMotion=.3*(1-visualParams.identity);
-  visualParams.dotSize+=(Math.min(visualParams.dotSize,3.5)-visualParams.dotSize)*visualParams.identity;
+  // Market-cap proximity controls formation, rather than a periodic timer.
+  // Preserve the same dots, with finer sampling as the dither becomes legible.
+  appearance.identity??=smoothed.identity;
+  appearance.identity+=(smoothed.identity-appearance.identity)*(1-Math.exp(-dt/1.4));
+  visualParams.identity=hasIdentityImage?appearance.identity:0;
+  visualParams.identityMotion=reduced.matches?0:.3*(1-visualParams.identity);
+  visualParams.cellSize+=(Math.min(visualParams.cellSize,3)-visualParams.cellSize)*visualParams.identity;
+  visualParams.dotSize+=(Math.min(visualParams.dotSize,visualParams.cellSize*.85)-visualParams.dotSize)*visualParams.identity;
+  visualParams.pixelSize=visualParams.dotSize;
   visualCursor=replaying?eventTime:null;
   visualParams.pixelPresence=Math.max(.32,pixelPresence);
   visualParams.inkColor=.18+.82*pixelPresence;
@@ -298,7 +298,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   piano(at,strength=1){if(running()&&Number.isFinite(at)){pianoPulses.push({at,strength:unit(strength),key:'note:'+audioEvent++,fired:false});pianoPulses=pianoPulses.slice(-24);dirty=true;}},
   pulse(strength=.7){excite(unit(strength)||.7);},
   snapshot(){return blast?.snapshot()??null;},
-  setImage(image){blast?.setImage(image);dirty=true;},
+  setImage(image){hasIdentityImage=Boolean(image?.pixels&&image.width>0&&image.height>0);blast?.setImage(image);dirty=true;},
   refresh(){dirty=true;},
   reset(){clear(true);},
   close(){
