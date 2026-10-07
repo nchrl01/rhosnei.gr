@@ -1,7 +1,7 @@
 // Seeded EarthBound instruments following the existing piano composition engine.
-import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=177';
+import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=195';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=189';
-import {createPianoPolicy} from './piano-policy.js?v=194';
+import {createPianoPolicy} from './piano-policy.js?v=195';
 import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=185';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
@@ -164,11 +164,13 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   if(arp.index>=arp.notes.length)arp=null;
  },25);
  function play(selection,event,cap,music){
-  const quiet=selection.reason==='quiet',phrase=phrasing.next(event,music,{quiet,changePct:selection.changePct});
-  const {midi,harmony}=phrase,intensity=unit(music.intensity);
+  const quiet=selection.reason==='quiet',scoredEvent={...event,harmonyStep:selection.harmonyStep??event.harmonyStep,harmonyCharacter:selection.harmonyCharacter??event.harmonyCharacter};
+  const phrase=phrasing.next(scoredEvent,music,{quiet,changePct:selection.changePct,advanceHarmony:selection.reason==='movement'});
+  // Trading sustains the phrases even when price stays inside the current
+  // 5% harmonic band. Quiet notes remain sparse and never launch arpeggios.
+  const {midi,harmony}=phrase,intensity=unit(Math.max(Number(music.intensity)||0,quiet?0:.15+.65*unit(music.activity)));
   const time=note(midi,ctx.currentTime+phrase.delay,.075*(quiet?.6:.6+.4*intensity)*phrase.velocity,(quiet?2.4:1.6)*phrase.duration,'note',phrase.attack);
-  // Significant moves sound the current harmony on this coin's instrument.
-  // Arpeggios decorate that chord; they do not replace its harmonic onset.
+  // Trade activity repeats the held harmony; a 5% move selects the next one.
   const chordNotes=quiet?[]:[...new Set(harmony.notes)].slice(0,3);
   for(const pitch of chordNotes){
    if(pitch===midi)continue;
@@ -176,21 +178,21 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   }
   const bucket=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(selection.at/30000);
   const draw=(Math.imul((seed^bucket)>>>0,2654435761)>>>0)%4;
-  if(!quiet&&arp){arp=null;} // A new harmony replaces the previous finite phrase.
-  if(!quiet&&interlock){
+  if(selection.reason==='movement'&&arp){arp=null;} // Only a harmonic change replaces a phrase.
+  if(selection.reason==='movement'&&interlock){
    for(let i=interlock.index;i<interlock.events.length;i++){
     const event=interlock.events[i];event.midi=interlockPitch(event,harmony);
    }
    interlock.tonic=music.tonic;
   }
-  if(lab.arpeggios!==false&&!quiet&&!interlock&&!(pattern.length&&draw===0&&time>=nextArp&&bucket!==lastArpBucket)){
+  if(lab.arpeggios!==false&&!quiet&&!arp&&!interlock&&!(pattern.length&&draw===0&&time>=nextArp&&bucket!==lastArpBucket)){
    const events=interlockingPiano((seed^bucket)>>>0,cap,intensity,harmony);
    if(events.length){
     const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40));
     arp=null;interlock={events,index:0,start:time+30/tempo,step:30/tempo,tempo,pendingTempo:tempo,boundary:8,activity:intensity,initialActivity:Math.max(.04,intensity),tonic:music.tonic};
    }
   }
-  // The existing occasional AI phrase is allowed only after a significant move.
+  // The optional phrase decorates measured activity in the same held harmony.
   // Quiet notes never start a phrase or a chord.
   if(lab.arpeggios!==false&&!quiet&&!interlock&&pattern.length&&intensity>.015&&!arp&&time>=nextArp&&bucket!==lastArpBucket&&draw===0){
    const tempo=Math.max(40,Math.min(140,Number(music.tempo)||40)),beat=60/tempo;
@@ -239,7 +241,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    if(seeking||ended||!playing){if(arp||interlock||roomDirty)clear();return false;}
    if(!enabled||!running||ctx.state!=='running')return false;
    this.resonance(m.context?.latestCap);this.setTempo(m.music?.tempo);
-   if(interlock)interlock.activity=unit(m.music?.intensity);
+   if(interlock)interlock.activity=unit(Math.max(Number(m.music?.intensity)||0,(Number(m.activity)>0&&Number(m.fresh)>0)?.15+.65*unit(m.activity):0));
    if(arp&&Number.isFinite(m.music?.tonic)&&Number.isFinite(arp.tonic)&&m.music.tonic!==arp.tonic){
     const shift=m.music.tonic-arp.tonic;arp.harmony=arp.harmony.map(n=>n+shift);arp.tonic=m.music.tonic;
    }

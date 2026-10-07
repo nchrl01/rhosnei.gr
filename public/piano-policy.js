@@ -2,9 +2,10 @@
 // Compressed history must not accelerate the quiet piano into a repetitive loop.
 export const PIANO_MOVE_PCT=5;
 export const PIANO_QUIET_MS=30000;
+export const phraseSpacingMs=tempo=>8*60000/Math.max(40,Math.min(140,Number(tempo)||100));
 const priceOf=event=>Number(event.priceUsd??event.price);
 export function createPianoPolicy(seed=0){
- let anchor=null,lastTrade=null,started=null,lastNote=null;
+ let anchor=null,lastTrade=null,started=null,lastNote=null,lastPhrase=null,harmonyStep=0,harmonyCharacter='serene',hasSounded=false;
  const quietSpacing=()=>45000+(seed>>>0)%16*1000;
  function prime(price,music={},reference){
   if(anchor>0||!(price>0))return;
@@ -14,8 +15,11 @@ export function createPianoPolicy(seed=0){
  }
  function select(price,at,music,reason,quietAt){
   const changePct=(price/anchor-1)*100;
-  anchor=price;lastNote=quietAt;
-  return {reason,changePct,price,at,music};
+  if(!hasSounded||reason==='movement')harmonyCharacter=music.character||'serene';
+  if(reason==='movement'){anchor=price;if(hasSounded)harmonyStep++;}
+  if(reason!=='quiet')lastPhrase=quietAt;
+  lastNote=quietAt;hasSounded=true;
+  return {reason,changePct,price,at,music,harmonyStep,harmonyCharacter};
  }
  function movement(price,at,music,quietAt){
   const move=(price/anchor-1)*100;
@@ -24,7 +28,7 @@ export function createPianoPolicy(seed=0){
   return Math.abs(move)+1e-9>=PIANO_MOVE_PCT&&(lastNote===null||quietAt-lastNote>=spacing)?select(price,at,music,'movement',quietAt):null;
  }
  return {
-  reset(value=seed){seed=value>>>0;anchor=null;lastTrade=null;started=null;lastNote=null;},
+  reset(value=seed){seed=value>>>0;anchor=null;lastTrade=null;started=null;lastNote=null;lastPhrase=null;harmonyStep=0;harmonyCharacter='serene';hasSounded=false;},
   observe(event,music={}){
    const price=priceOf(event),at=Number(event.receivedAt??event.occurredAt??event.at);
    if(!(price>0)||!Number.isFinite(price)||!Number.isFinite(at))return null;
@@ -41,11 +45,13 @@ export function createPianoPolicy(seed=0){
    prime(price,music,event.referencePrice);started??=quietAt;
    // Empty candles are known quiet intervals, never invented historical trades.
    if(event.historical&&event.volume===0)return null;
-   const gap=quietAt-(lastTrade??started);lastTrade=Math.max(lastTrade??quietAt,quietAt);
+   lastTrade=Math.max(lastTrade??quietAt,quietAt);
    // A cached burst or overdue replay batch cannot strike many notes at once.
    // Suppressed observations leave the price anchor intact for the next move.
    const selected=movement(price,at,music,quietAt);if(selected)return selected;
-   if(!event.historical&&gap>=PIANO_QUIET_MS&&(lastNote===null||quietAt-lastNote>=quietSpacing()))return select(price,at,music,'quiet',quietAt);
+   // New real trades may retrigger the current harmony every eight beats.
+   // Activity and quiet notes never move the five-percent price anchor.
+   if(!event.historical&&(lastPhrase===null||quietAt-lastPhrase>=phraseSpacingMs(music.tempo)))return select(price,at,music,'activity',quietAt);
    return null;
   },
   idle({at,quietAt=at,price,music={},known=false,quiet=false,referencePrice}={}){

@@ -1,4 +1,3 @@
-import {createHarmonicNetwork} from './harmonic-network.js?v=146';
 import {pianoHarmony,HARMONIES} from './music-context.js?v=177';
 // Small timing/velocity differences are stable for a coin and phrase, so replay
 // has a human contour without drawing fresh random notes on each listen.
@@ -8,15 +7,32 @@ export function pianoNuance(seed,step){
  return {delay:.012+random()*.016,velocity:.94+random()*.12,attack:.014+random()*.012,duration:.9+random()*.2};
 }
 export function createPianoPhrasing(seed=0){
- let step=0,previous=null,repeats=0,character='serene';const network=createHarmonicNetwork(seed);
+ seed=Number(seed)>>>0;
+ let step=0,previous=null,repeats=0,character='serene',harmonyStep=null,heldHarmony=null;
  return {
-  reset(value=seed){seed=value>>>0;network.reset(seed);step=0;previous=null;repeats=0;character='serene';},
-  next(event,music,{quiet=false,changePct=0}={}){
-   // Complete a four-note harmonic arc before choosing its next character.
-   // Clock buckets no longer skip unheard stages of the progression.
-   if(event.historical){step=Number(event.chordStep)||0;previous=null;repeats=0;}
-   if(event.historical||step%4===0)character=HARMONIES[music.character]?music.character:'serene';
-   const harmony=pianoHarmony(seed,{...event,chordStep:event.historical?step:network.next(music,quiet)-(seed%4)},{...music,character});
+  reset(value=seed){seed=Number(value)>>>0;step=0;previous=null;repeats=0;character='serene';harmonyStep=null;heldHarmony=null;},
+  next(event={},music={},{quiet=false,changePct=0,advanceHarmony=!quiet}={}){
+   // Price selection owns the harmonic clock. Activity can articulate the
+   // current chord repeatedly without changing its character or voicing.
+   // Direct lab auditions have no selection step: each movement advances it.
+   const selectedStep=Number.isFinite(event.harmonyStep)?Math.max(0,Math.floor(event.harmonyStep)):
+    harmonyStep===null?0:harmonyStep+(advanceHarmony&&!quiet?1:0);
+   const root=Number.isFinite(music.tonic)?48+((Math.round(music.tonic)%12)+12)%12:48+(seed>>>0)%5;
+   if(!heldHarmony||selectedStep!==harmonyStep){
+    harmonyStep=selectedStep;
+    const requested=Object.hasOwn(HARMONIES,event.harmonyCharacter)?event.harmonyCharacter:music.character;
+    character=Object.hasOwn(HARMONIES,requested)?requested:'serene';
+    // harmonyStep zero is the first chord for both live playback and seeks.
+    heldHarmony=pianoHarmony(seed,{...event,chordStep:harmonyStep-seed%4},{...music,character});
+   }else if(heldHarmony.root!==root){
+    // A deliberate lab key change retunes the same chord without advancing it.
+    heldHarmony=pianoHarmony(seed,{...event,chordStep:harmonyStep-seed%4},{...music,character});
+    previous=null;repeats=0;
+   }
+   const harmony=heldHarmony;
+   // Frozen candles use their score position for repeatable melodic nuance,
+   // independently of how many activity notes were played before a seek.
+   if(event.historical){step=Number.isFinite(event.chordStep)?Math.max(0,Math.floor(event.chordStep)):0;previous=null;repeats=0;}
    const candidates=[...new Set(harmony.notes.flatMap(note=>[note-12,note,note+12]).filter(note=>note>=45&&note<=67))];
    const target=previous??(52+seed%5),direction=quiet?0:Math.sign(changePct);
    const cost=note=>Math.abs(note-target)*1.2+Math.abs(note-54)*.12
@@ -26,7 +42,7 @@ export function createPianoPhrasing(seed=0){
    const midi=candidates.reduce((a,b)=>cost(a)<=cost(b)?a:b);
    repeats=midi===previous?repeats+1:0;previous=midi;
    const nuance=pianoNuance(seed,step);
-   return {midi,harmony,...nuance,step:step++};
+   return {midi,harmony,...nuance,harmonyStep,step:step++};
   },
  };
 }
