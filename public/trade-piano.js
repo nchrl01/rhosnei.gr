@@ -1,4 +1,4 @@
-import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=209';
+import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=210';
 // Seeded GeneralUser melodic voices and a dedicated EarthBound Kraken bass.
 import {createPianoPolicy} from './piano-policy.js?v=208';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=209';
@@ -93,7 +93,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   finally{if(token===bankEpoch)bankLoading=false;}
  }
  let lab={};
- let timeline=null,replayAnchor=null,liveBeat=0,liveAt=ctx.currentTime,liveTempo=100,pendingContext={music:{},cap:0,active:false},liveUntil=-Infinity;
+ let timeline=null,timelineSegments=[],replayAnchor=null,lastObservedPrice=null,activityOpen=false,liveBeat=0,liveAt=ctx.currentTime,liveTempo=100,pendingContext={music:{},cap:0,active:false},liveUntil=-Infinity;
  let scheduled=new Set(),barCache=new Map(),resumeNotes=true,lastHarmonyBar=null,transportHeld=false;
  function labRoom(){for(const [key,param] of [['cutoff',instrumentFilter.frequency],['q',instrumentFilter.Q],['roomSend',instrumentSend.gain],['dry',dry.gain],['wet',wet.gain]])if(Number.isFinite(lab[key]))param.setTargetAtTime(lab[key],ctx.currentTime,.05);}
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.025);}
@@ -163,7 +163,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  // Stable score clock: no pattern restarts when a new chart frame arrives.
  function queueContext(selection,event,cap,music){
   pendingContext={music:{...music},cap,active:selection?.reason!=='quiet',harmonyStep:selection?.harmonyStep??pendingContext.harmonyStep??0};
-  liveUntil=ctx.currentTime+Math.max(6,480/scoreTempo(music));
+  liveUntil=ctx.currentTime+Math.min(3,Math.max(.6,120/scoreTempo(music)));
   return true;
  }
  function scoreNow(){return replayAnchor?replayAnchor.at+(ctx.currentTime-replayAnchor.clock)*1000*replayAnchor.rate:null;}
@@ -172,6 +172,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   if(closed||bankLoading||bankError||!running||!enabled||transportHeld||ctx.state!=='running')return;
   const now=ctx.currentTime,position=scoreNow(),replaying=timeline&&position!==null;
   const beat=replaying?timeline.beatAt(position):livePosition();
+  const activeContext=replaying?timeline.contextAtBeat(beat):pendingContext;
+  const active=replaying?!!activeContext&&position>=activeContext.start&&position<activeContext.end&&activeContext.active!==false:pendingContext.active&&now<liveUntil;
+  // Gate cached phrases too: a bar composed during activity must not keep
+  // issuing notes after that activity ends. Release voices, retaining the room.
+  if(!active){if(activityOpen)for(const voice of voices)stopVoice(voice);activityOpen=false;resumeNotes=false;return;}
+  activityOpen=true;
   const rate=replaying?replayAnchor.rate:1;
   const atBeat=b=>replaying?now+(timeline.atBeat(b)-position)/1000/rate:now+(b-beat)*60/liveTempo;
   const lastBeat=replaying?timeline.beatAt(position+120*rate):beat+.12*liveTempo/60;
@@ -183,12 +189,19 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const context=replaying?timeline.contextAtBeat(bar*4):{...pendingContext,active:pendingContext.active&&now<liveUntil};
     if(!context)continue;
     if(!replaying&&bar===currentBar){liveTempo=scoreTempo(context.music);}
-    plan=composeMarketBar(seed,bar,{...context,arpeggios:lab.arpeggios,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
+    plan=composeMarketBar(seed,bar,{...context,active:true,arpeggios:lab.arpeggios,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
+    // Order actual sounding pitches after instrument register folding, so a
+    // high note cannot wrap down and reverse the requested market direction.
+    const arp=plan.events.filter(e=>e.kind==='arp').sort((a,b)=>a.beat-b.beat);
+    const direction=context.music?.group==='down'?-1:1;
+    const pitches=arp.map(e=>instrumentPitch(e.midi,profile)).sort((a,b)=>direction*(a-b));
+    arp.forEach((event,index)=>{event.midi=pitches[index];});
     if(context.music?.movement?.event)lastMarketCue=context.music.movement.event.id;
     barCache.set(bar,plan);
    }
    for(let index=0;index<plan.events.length;index++){
     const e=plan.events[index],id=bar+':'+index;
+    if(replaying&&timeline.contextAtBeat(bar*4+e.beat)?.active===false)continue;
     const begin=atBeat(bar*4+e.beat),end=atBeat(bar*4+e.beat+e.duration);
     if(scheduled.has(id)||begin>=now+.12||end<=now+.015)continue;
     if(begin<now-.06&&!resumeNotes)continue;
@@ -197,7 +210,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const elapsed=Math.max(0,now-begin),start=Math.max(now+.012,begin);
     scheduled.add(id);
     note(e.midi,start,e.gain,end-start,e.kind,.012,elapsed);
-    if(e.kind==='arp')onArpeggio({midi:instrumentPitch(e.midi,profile),step:bar*16+e.beat*4,time:start,tempo:replaying?timeline.contextAtBeat(bar*4).tempo:liveTempo,instrument:instrument.name});
+    if(e.kind==='arp')onArpeggio({midi:instrumentPitch(e.midi,profile),step:bar*16+e.beat*4,time:start,tempo:replaying?timeline.contextAtBeat(bar*4).audibleTempo:liveTempo,instrument:instrument.name});
    }
    if(bar===currentBar&&lastHarmonyBar!==bar){
     lastHarmonyBar=bar;
@@ -225,27 +238,32 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){transportHeld=!value;if(!value&&running&&!replayAnchor)livePosition();running=Boolean(value);liveAt=ctx.currentTime;updateGain();if(!running)clear();},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;replayAnchor=null;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
+  reset(value=seed){clear();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;timelineSegments=[];replayAnchor=null;lastObservedPrice=null;activityOpen=false;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){pendingContext.music={...pendingContext.music,tempo:scoreTempo({tempo:value})};},
   resonance(cap){currentCap=cap;const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;const clarity=unit((Math.log10(Math.max(1000,Number(cap)||1000))-4)/3);instrumentFilter.frequency.setTargetAtTime(profile.cutoff*(.7+.3*clarity),ctx.currentTime,.2);instrumentSend.gain.setTargetAtTime(.7-.46*clarity,ctx.currentTime,.4);dry.gain.setTargetAtTime(.3+.55*clarity,ctx.currentTime,.4);wet.gain.setTargetAtTime(1.1-.45*clarity,ctx.currentTime,.4);}labRoom();return r;},
   snapshot(){return {name:bankLoading?'Loading GeneralUser…':bankError?'Instrument unavailable':instrument.name,error:bankError,loading:bankLoading,family:profile.family,preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:running,tempo:liveTempo,bass:'Kraken Sine '+(1+seed%2),roomSend:instrumentSend.gain.value,wetReturn:wet.gain.value};},
-  setTimeline(segments){timeline=createCompositionTimeline(segments);barCache.clear();scheduled.clear();lastHarmonyBar=null;},
-  seekTimeline(at,rate=1){transportHeld=false;clear();barCache.clear();lastHarmonyBar=null;replayAnchor={at,clock:ctx.currentTime,rate:Math.max(.1,Number(rate)||1)};},
+  setTimeline(segments){timelineSegments=segments;timeline=createCompositionTimeline(segments,replayAnchor?.rate||1);barCache.clear();scheduled.clear();lastHarmonyBar=null;},
+  seekTimeline(at,rate=1){transportHeld=false;clear();barCache.clear();lastHarmonyBar=null;rate=Math.max(.1,Number(rate)||1);if(!replayAnchor||replayAnchor.rate!==rate)timeline=createCompositionTimeline(timelineSegments,rate);replayAnchor={at,clock:ctx.currentTime,rate};},
   syncTimeline(at,rate=1){if(!replayAnchor||rate!==replayAnchor.rate||Math.abs(scoreNow()-at)>250*Math.max(1,rate))this.seekTimeline(at,rate);},
   replay(event,selection,cap,music){if(!selection)return false;return queueContext(selection,event,cap,music);},
   observePrice(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);this.setTempo(music.tempo);
+   const price=Number(event.priceUsd??event.price),previous=Number(event.referencePrice??lastObservedPrice);
+   if(price>0)lastObservedPrice=price;
+   if(!(price>0&&previous>0)||Math.abs(price/previous-1)<1e-9)return false;
    const selection=policy.observe({...event,quietAt:ctx.currentTime*1000},music);
-   return selection?queueContext(selection,event,cap,music):false;
+   return queueContext(selection||{reason:'activity'},event,cap,music);
   },
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);
    this.setTempo(music.tempo);
+   const price=Number(event.priceUsd??event.price);
+   if(!(price>0)||!Number.isFinite(price)||(event.historical&&!(Number(event.volume)>0)))return false;
    const selection=policy.trade({...event,quietAt:ctx.currentTime*1000},music);
-   return selection?queueContext(selection,event,cap,music):false;
+   return queueContext(selection||{reason:'activity'},event,cap,music);
   },
   frame(m,{playing=false,seeking=false,ended=false,at,price,known=false,quiet=false,referencePrice}={}){
    if(closed)return false;
@@ -254,9 +272,8 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    if(!enabled||!running||ctx.state!=='running')return false;
    this.resonance(m.context?.latestCap);this.setTempo(m.music?.tempo);
    if(m.replay)return false;
-   const active=Number(m.fresh)>0&&Number(m.activity)>0;
+   const active=ctx.currentTime<liveUntil;
    pendingContext={...pendingContext,music:{...m.music,activity:m.activity},cap:m.context?.latestCap,active};
-   if(active)liveUntil=ctx.currentTime+Math.max(2,240/scoreTempo(m.music));
    return false;
   },
   close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [instrumentFilter,instrumentSend,roomInput,dry,wet,room,tailGate,master,bassFilter,bassGain,...reflections])node.disconnect();},50);},

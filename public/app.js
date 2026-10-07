@@ -6,7 +6,7 @@ import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMa
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,loadSharedScore} from './take-share.js?v=209';
+import {createTakeShare,loadSharedScore} from './take-share.js?v=210';
 import {harmonyPlan,pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=209';
 import {createEngineView} from './engine-view.js?v=209';
@@ -18,7 +18,7 @@ import {createAudioDots} from './audio-dots.js?v=209';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=209';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=209';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=210';
 import {createMilestoneSounds} from './milestone-sounds.js?v=8';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=208';
@@ -205,7 +205,7 @@ function updateReplayUI(m){
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
 
- $('replay-info').textContent='One shared musical clock: chart context shapes the next bar, without restarting the phrase. Low-cap chords bloom in reverb; markets above $1M add syncopated patterns. Kraken follows the chord as a separate bassline. Replay resumes the frozen score at the selected timestamp. Historical candles describe aggregate activity, not individual trades.';
+ $('replay-info').textContent='One shared musical clock: chart context shapes the next bar, without restarting the phrase. Fast replay folds the musical subdivision below 200 BPM while the chart keeps its selected speed. Fresh trades or changed prices open live phrases briefly; empty historical candles stay silent. Low-cap chords bloom in reverb; markets above $1M add syncopated patterns. Kraken follows the chord as a separate bassline. Replay resumes the frozen score at the selected timestamp. Historical candles describe aggregate activity, not individual trades.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Exchange history volume is estimated from base volume × close. Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
@@ -302,7 +302,7 @@ function replayPiano(m){
  if(!replayPianoPrimed){
   const segments=bars.map(bar=>{
    const score=replay.state.score?.frames.get(bar.time),music=pianoMusic({music:score?.music||{},activity:score?.activity||0});
-   return {start:candleEnd(bar,interval),end:candleEnd(bar,interval)+interval,music,cap:score?.cap,harmonyStep:score?.harmonyStep||0,active:score?.activity>0||score?.selection?.reason==='movement'};
+   return {start:candleEnd(bar,interval),end:candleEnd(bar,interval)+interval,music,cap:score?.cap,harmonyStep:score?.harmonyStep||0,active:Number(bar.volume)>0||(bar.volume==null&&score?.selection?.reason==='movement')};
   });
   piano.setTimeline(segments);piano.seekTimeline(cursor,rate);replayPianoPrimed=true;
  }else piano.syncTimeline(cursor,rate);
@@ -451,7 +451,8 @@ function display(){
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
  displayCoinImage();
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
- $('mode').textContent=historical?(recorded?'HISTORY · RECORDED CONTROLS':'HISTORY · CANDLE ESTIMATES'):!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
+ $('mode').hidden=!!historical||!market;
+ $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
  $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
@@ -695,7 +696,7 @@ function shareSnapshot(){
  const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
  if(!rows.length)return null;
  const basis=frozen?.market||market;
- return {version:1,engine:209,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+ return {version:1,engine:210,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));

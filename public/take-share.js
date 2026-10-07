@@ -19,7 +19,7 @@ export function decodeScore(hash){
  const raw=new URLSearchParams(hash.replace(/^#/,'' )).get('score');if(!raw)return null;
  if(raw.length>180000)throw Error('Shared score is too large');
  const bytes=Uint8Array.from(atob(raw.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0));const score=JSON.parse(new TextDecoder().decode(bytes));
- if(score.version!==VERSION||![52,53,56,58,59,60,61,62,63,64,65,76,209].includes(score.engine)||!Number.isFinite(score.interval)||score.interval<1000||score.interval>86400000||!Array.isArray(score.rows)||!score.rows.length||score.rows.length>256)throw Error('Unsupported shared score');
+ if(score.version!==VERSION||![52,53,56,58,59,60,61,62,63,64,65,76,209,210].includes(score.engine)||!Number.isFinite(score.interval)||score.interval<1000||score.interval>86400000||!Array.isArray(score.rows)||!score.rows.length||score.rows.length>256)throw Error('Unsupported shared score');
  if(score.engine>=56&&!validArp(score.arpeggio))throw Error('Invalid shared arpeggio');
  if(!score.market?.baseToken||!score.market?.quoteToken||!['chainId','pairAddress','dexId'].every(k=>typeof score.market[k]==='string'&&score.market[k].length<256))throw Error('Invalid shared coin');
  for(const token of [score.market.baseToken,score.market.quoteToken])if(!['address','symbol','name'].every(k=>typeof token[k]==='string'&&token[k].length<256))throw Error('Invalid shared coin');
