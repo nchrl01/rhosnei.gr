@@ -1,0 +1,23 @@
+.milestone-sounds{width:min(100%,1000px);margin:28px auto 34px;color:#f2f2f2;font:12px/1.45 NDS12,sans-serif}
+.milestone-sounds-head{display:flex;align-items:end;justify-content:space-between;gap:16px;border-bottom:1px solid #424242;padding:0 0 10px}
+.milestone-sounds-head .eyebrow{margin:0 0 5px;color:#999;font-size:10px;letter-spacing:.08em}
+.milestone-sounds-head h3{margin:0;font:400 18px/1.2 NDS12,sans-serif}
+.milestone-sounds-head>[data-current-cap]{font-variant-numeric:tabular-nums;color:#aaa}
+.milestone-sounds-note{max-width:680px;color:#aaa;margin:10px 0 16px}
+.milestone-sound-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.milestone-sound-card{min-width:0;border:1px solid #444;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.milestone-sound-card.is-unlocked{border-color:#aaa}
+.milestone-sound-title{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.milestone-sound-title strong{font-size:15px;font-weight:400}
+.milestone-sound-title span{font-size:9px;color:#888;white-space:nowrap}
+.milestone-sound-card.is-unlocked .milestone-sound-title span{color:#f2f2f2}
+.milestone-sound-card p{margin:0;min-height:32px;max-width:100%;overflow-wrap:anywhere;color:#aaa}
+.milestone-upload,.milestone-clear{display:inline-flex;align-items:center;justify-content:center;min-height:32px;padding:0 10px;border:1px solid #777;background:transparent;color:#f2f2f2;font:inherit;cursor:pointer}
+.milestone-upload:hover,.milestone-clear:hover{border-color:#fff}
+.milestone-upload.is-disabled{opacity:.45;cursor:not-allowed}
+.milestone-upload input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.milestone-clear{border-color:#333;color:#999}
+.milestone-clear[hidden]{display:none}
+.milestone-sound-status{min-height:18px;margin:10px 0 0;color:#999}
+@media(max-width:760px){.milestone-sound-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.milestone-sound-grid{gap:8px}.milestone-sound-card{padding:9px}.milestone-sound-title{align-items:flex-start;flex-direction:column;gap:3px}}

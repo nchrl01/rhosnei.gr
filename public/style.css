@@ -192,7 +192,7 @@ button,summary,a{font-variant-emoji:text}
 body.inspecting .audio-visualizer{display:none}
 /* Use the whole window before there is room for a separate right-hand field. */
 @media(min-width:761px) and (max-width:1049px){
- #coin-form,#coin-search-results,.instrument-top,.readings,#math-functions{max-width:none}
+ #coin-form,#coin-search-results,.instrument-top,.readings,#milestone-sounds{max-width:none}
  .instrument-top{grid-template-columns:minmax(210px,.72fr) minmax(320px,1fr) 76px;gap:12px;margin:14px 0 12px}
  .coin-title{align-items:flex-start}
  .coin-context{gap:8px}.coin-context .eyebrow{font-size:9px}
@@ -259,7 +259,7 @@ body.inspecting .audio-visualizer{display:none}
  #coin-form{grid-column:1;grid-row:2;width:100%;max-width:none}
  #coin-search-results{grid-column:1;width:100%;max-width:none}
  .instrument{grid-column:1;width:100%;min-width:0;margin-top:0}
- .instrument-top,.readings,#math-functions{width:100%;max-width:none}
+ .instrument-top,.readings,#milestone-sounds{width:100%;max-width:none}
  .audio-visualizer{grid-column:2;grid-row:2/span 3;position:sticky;top:var(--visual-top,80px);align-self:start;width:calc(100% + 16px);height:calc(100vh - var(--visual-top,80px));height:calc(100svh - var(--visual-top,80px));min-height:0;aspect-ratio:auto;margin:12px 0 0;z-index:0}
  #load{width:32px;flex-basis:32px;font-size:20px}
  .transport{align-self:start;padding-top:28px}
