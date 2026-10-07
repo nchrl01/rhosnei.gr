@@ -17,7 +17,7 @@ import {createAudioDots} from './audio-dots.js?v=173';
 import {createHolderMetadata} from './holder-metadata.js?v=168';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=187';
-import {createArpeggioAI} from './ai-instruments.js?v=189';
+import {createArpeggioAI} from './ai-instruments.js?v=190';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=189';
 import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=152';
 import {createMathPatternView} from './math-pattern-view.js?v=152';
@@ -319,7 +319,7 @@ function tick(){
  const m=metrics(),music=musicalFrame(m),energy=music.volume*m.fresh;
  const audible=otherInstrumentsAudible();
 
- if(audible&&!replay.state.active)void arpeggioAI.prepare();
+
 
 
  syncLevels(m);envion.market(music,orchestraTempo(m));

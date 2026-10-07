@@ -8,7 +8,7 @@ import {createEnvion} from './envion.js?v=152';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {createDataSonification} from './data-sonification.js?v=187';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
-import {createArpeggioAI,seededArp} from './ai-instruments.js?v=189';
+import {createArpeggioAI,seededArp} from './ai-instruments.js?v=190';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=177';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();

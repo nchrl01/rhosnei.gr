@@ -24,7 +24,7 @@ export function createArpeggioAI({onStatus=()=>{},onPattern=()=>{}}={}){
  const runner=backgroundModel('./arp-ai-worker.js?v=146',text=>{if(source!=='frozen')onStatus(text);},150000);
  function publish(){onPattern(pattern,source);}
  return {
-  setSeed(value,frozen){epoch++;retryAt=0;seed=value>>>0;pattern=validArp(frozen)?frozen:cache.get(seed)||seededArp(seed);source=validArp(frozen)?'frozen':cache.has(seed)?'ai':'seeded';publish();onStatus(source==='seeded'?'Seeded arpeggios · AI loads with Listen':source==='frozen'?'Frozen arpeggio score':'AI arpeggios ready');},
+  setSeed(value,frozen){epoch++;retryAt=0;seed=value>>>0;pattern=validArp(frozen)?frozen:cache.get(seed)||seededArp(seed);source=validArp(frozen)?'frozen':cache.has(seed)?'ai':'seeded';publish();onStatus(source==='seeded'?'Seeded arpeggios · AI is optional':source==='frozen'?'Frozen arpeggio score':'AI arpeggios ready');},
   freezeScore(){
    const key='upic.replay-arps.v1:'+seed;let saved;
    try{saved=JSON.parse(localStorage.getItem(key)||'null');}catch{}

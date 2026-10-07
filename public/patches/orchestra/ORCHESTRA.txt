@@ -2,7 +2,7 @@ AV / MARKET INSTRUMENT
 
 The default website source is the CC0 sampled Web Audio trade piano:
 one chord per decoded trade; trade arrival frequency is rhythm; market cap
-controls resonance. See ../../trade-piano.js and ../../samples/piano/.
+controls resonance. See ../../trade-piano.js and ../../samples/earthbound/.
 
 Five seeded math voices are enabled above their market-cap thresholds.
 av-math.pd mixes five av-math-voice instances. The browser supplies the plotted
