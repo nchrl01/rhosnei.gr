@@ -2,8 +2,7 @@ const THRESHOLDS=[100000,500000,1000000,2000000];
 const DB_NAME='upic-envion-samples-v1',STORE='samples',UNLOCK_KEY='upic-envion-unlocks-v1';
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const money=value=>value>=1e6?'$'+(value/1e6).toFixed(value%1e6?1:0)+'M':value>0?'$'+Math.round(value/1000)+'K':'—';
-const placeholderWave=[1,2,4,7,10,13,11,7,4,2,3,6,9,12,8,4,3,5,9,12,8,4,2,4,7,10,13,9,5,2,1,2];
-function waveSvg(values=placeholderWave){const safe=Array.isArray(values)&&values.length?values:placeholderWave;const bars=Array.from({length:32},(_,i)=>{const magnitude=Math.max(0,Math.min(1,Number(safe[Math.floor(i*safe.length/32)])||0));const height=Math.max(2,Math.round(magnitude*14)*2),y=16-height/2;return `<rect x="${i*2}" y="${y}" width="1" height="${height}"/>`;}).join('');return `<svg class="milestone-wave" viewBox="0 0 64 32" role="img" aria-label="Pixelated audio waveform" focusable="false" shape-rendering="crispEdges"><g fill="currentColor">${bars}</g></svg>`;}
+function waveSvg(values){if(!Array.isArray(values)||!values.length)return '';const bars=Array.from({length:32},(_,i)=>{const magnitude=Math.max(0,Math.min(1,Number(values[Math.floor(i*values.length/32)])||0));const height=Math.max(2,Math.round(magnitude*14)*2),y=16-height/2;return `<rect x="${i*2}" y="${y}" width="1" height="${height}"/>`;}).join('');return `<svg class="milestone-wave" viewBox="0 0 64 32" role="img" aria-label="Pixelated audio waveform" focusable="false" shape-rendering="crispEdges"><g fill="currentColor">${bars}</g></svg>`;}
 const lockIcon='<svg class="milestone-lock" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5 1h6v2h2v4h1v8H2V7h1V3h2zm1 2v4h4V3zm-2 6v4h8V9z"/></svg>';
 
 function openStore(){
@@ -62,10 +61,10 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
  const cards=THRESHOLDS.map((threshold,index)=>{
   const card=document.createElement('article');card.className='milestone-sound-card';
-  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock aria-label="Locked until ${money(threshold)}">${lockIcon}</span></div><small data-range>Starts at ${money(threshold)}</small><div data-file>${waveSvg()}</div><label class="milestone-upload" aria-label="Upload a sound for ${money(threshold)}"><span class="milestone-upload-wave">${waveSvg()}</span><input type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg"></label><button type="button" class="milestone-clear" data-clear>Remove sound</button>`;
-  const input=card.querySelector('input'),name=card.querySelector('[data-file]');
-  input.addEventListener('change',async()=>{
-   const file=input.files?.[0];input.value='';if(!file||!marketKey)return;
+  card.tabIndex=0;card.setAttribute('role','group');card.setAttribute('aria-label',`Sound slot at ${money(threshold)}. Click to choose a sample or drop an audio file here.`);
+  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock aria-label="Locked until ${money(threshold)}">${lockIcon}</span></div><small data-range>Starts at ${money(threshold)}</small><div data-file></div><input data-upload type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg"><button type="button" class="milestone-clear" data-clear>Remove sound</button>`;
+  const input=card.querySelector('[data-upload]');
+  async function loadFile(file){if(!file||!marketKey)return;
    const token=marketKey,version=revision;statusText='Preparing '+file.name+'…';render();
    try{
     const compact=await compactAudio(file,getAudioContext);if(token!==marketKey||version!==revision)return;
@@ -74,7 +73,13 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
     rows[index]=record;statusText=`Saved ${record.name} · ${record.duration.toFixed(1)} sec · ${Math.round(record.sampleRate/1000)} kHz`;
     updateActive();render();
    }catch(error){statusText=error.message||'Could not load this sound.';render();}
-  });
+  }
+  input.addEventListener('change',()=>{const file=input.files?.[0];input.value='';void loadFile(file);});
+  card.addEventListener('click',event=>{if(event.target.closest('[data-clear]')||!marketKey)return;input.click();});
+  card.addEventListener('keydown',event=>{if((event.key==='Enter'||event.key===' ')&&event.target===card){event.preventDefault();if(marketKey)input.click();}});
+  card.addEventListener('dragover',event=>{if(marketKey&&Array.from(event.dataTransfer?.types||[]).includes('Files')){event.preventDefault();card.classList.add('is-dragging');}});
+  card.addEventListener('dragleave',event=>{if(!card.contains(event.relatedTarget))card.classList.remove('is-dragging');});
+  card.addEventListener('drop',event=>{event.preventDefault();card.classList.remove('is-dragging');if(marketKey)void loadFile(event.dataTransfer?.files?.[0]);});
   card.querySelector('[data-clear]').addEventListener('click',async()=>{
    if(!marketKey)return;const token=marketKey;try{await storeRequest('readwrite',store=>store.delete(token+'|'+index));if(token!==marketKey)return;rows[index]=null;statusText=`Removed ${money(threshold)} sound.`;updateActive();render();}catch(error){statusText=error.message||'Could not remove this sound.';render();}
   });
@@ -95,10 +100,9 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
    const row=rows[index],locked=reached<THRESHOLDS[index],active=index===activeSlot&&!!row;card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);card.classList.toggle('is-active',active);
    const lock=card.querySelector('[data-lock]');lock.innerHTML=locked?lockIcon:active?'PLAYING':row?'READY':'UNLOCKED';lock.setAttribute('aria-label',locked?`Locked until ${money(THRESHOLDS[index])}`:active?'Currently playing':row?'Sound ready':'Unlocked');
    const nextAssigned=rows.slice(index+1).find(Boolean);card.querySelector('[data-range]').textContent=row?`${money(THRESHOLDS[index])} → ${nextAssigned?money(nextAssigned.threshold):'and beyond'}`:`Starts at ${money(THRESHOLDS[index])}`;
-   const fileLabel=card.querySelector('[data-file]');fileLabel.replaceChildren();fileLabel.insertAdjacentHTML('afterbegin',waveSvg(row?.waveform));if(row){const name=document.createElement('span');name.className='milestone-sample-name';name.textContent=`${row.name} · ${row.duration.toFixed(1)} sec`;fileLabel.append(name);}
+   const fileLabel=card.querySelector('[data-file]');fileLabel.replaceChildren();if(row){fileLabel.insertAdjacentHTML('afterbegin',waveSvg(row.waveform));const name=document.createElement('span');name.className='milestone-sample-name';name.textContent=`${row.name} · ${row.duration.toFixed(1)} sec`;fileLabel.append(name);}
   card.querySelector('[data-clear]').hidden=!row;
-   card.querySelector('input').disabled=!marketKey;
-   card.querySelector('.milestone-upload').classList.toggle('is-disabled',!marketKey);
+   card.querySelector('[data-upload]').disabled=!marketKey;card.classList.toggle('is-disabled',!marketKey);
   });
  }
  render();
