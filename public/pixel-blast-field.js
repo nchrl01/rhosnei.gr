@@ -250,7 +250,7 @@ function hash(key,seed){
  let value=seed>>>0;for(const ch of String(key).slice(0,160))value=Math.imul(value^ch.charCodeAt(0),16777619)>>>0;
  return value;
 }
-export function createPixelBlastField(host){
+export function createPixelBlastField(host,{generations=true}={}){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer';canvas.setAttribute('aria-hidden','true');host.append(canvas);
  let gl,software=null,identityMask=null,identityTexture=null,probeFramebuffer=null,probeTexture=null;
  const probePixels=new Uint8Array(32*32*4),emptyHolderGroups=new Float32Array(32);
@@ -363,5 +363,5 @@ export function createPixelBlastField(host){
   clear(){software?.clear();if(gl&&!lost){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ripples=[];},
   close(){closed=true;software?.close();release();identityMask=null;canvas.removeEventListener('webglcontextlost',contextLost);canvas.removeEventListener('webglcontextrestored',contextRestored);canvas.remove();},
  };
- return withPixelGenerations(renderer,pixelBlastParameters);
+ return generations?withPixelGenerations(renderer,pixelBlastParameters):renderer;
 }
