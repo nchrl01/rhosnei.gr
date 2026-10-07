@@ -86,6 +86,7 @@ export function createUIControls(){
  return {
   loading,
   clock(props){
+   time.dataset.replay=String(Boolean(props.replay));
    clockFallback.textContent=new Date(props.timestamp).toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
    // The app updates several times a second; the clock needs only changed seconds.
    const key=[Math.floor(props.timestamp/1000),props.rate,props.replay,props.seeking].join(':');

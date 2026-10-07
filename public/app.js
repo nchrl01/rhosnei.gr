@@ -1,13 +1,13 @@
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
-import {createUIControls} from './ui-controls.js?v=133';
+import {createUIControls} from './ui-controls.js?v=213';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=206';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,loadSharedScore} from './take-share.js?v=211';
-import {harmonyPlan,pianoHarmony} from './music-context.js?v=208';
+import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=209';
 import {createEngineView} from './engine-view.js?v=209';
 import {createCoinDither} from './coin-dither.js?v=119';
@@ -718,8 +718,7 @@ function updateCoinReadout(m){
  rollCap(cap>0?'$'+Math.round(cap).toLocaleString('en'):'—',cap||0);
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
  $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
- const harmony=harmonyPlan(seed,m.music?.character,m.music);
- $('coin-character').textContent=harmony.group.toUpperCase()+' · '+harmony.name.toUpperCase();$('coin-character').title=m.music?.movement?.available?'Market cap movement · '+Math.abs(m.music.capChangePct).toFixed(1)+'% toward a 20% landmark':'Price direction · market cap unavailable';$('coin-progression').textContent=harmony.progression;
+
 }
 async function restoreSharedScore(){
  try{

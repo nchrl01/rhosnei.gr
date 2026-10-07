@@ -171,10 +171,10 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:12px;line-hei
 }
 
 /* Compact live numbers beneath the coin name. */
-.coin-copy{min-width:0;flex:1}.coin-live-readings{display:grid;gap:6px;margin-top:9px;font-variant-numeric:tabular-nums;font-size:10px;line-height:1.3}.coin-live-readings>div{display:flex;gap:5px;align-items:baseline;flex-wrap:wrap}.coin-live-readings small{display:block;flex-basis:100%;font-size:8px;font-weight:400;color:#aaa;letter-spacing:.03em}.coin-live-readings strong{font-weight:700;font-size:13px}.rolling-cell{display:inline-block;overflow:hidden;vertical-align:bottom;height:1.25em}.rolling-cell>span{display:inline-block;white-space:pre}#coin-progression{font-size:9px;color:#aaa}.coin-clock-stale{color:#aaa}
+.coin-copy{min-width:0;flex:1}.coin-live-readings{display:grid;gap:6px;margin-top:9px;font-variant-numeric:tabular-nums;font-size:10px;line-height:1.3}.coin-live-readings>div{display:flex;gap:5px;align-items:baseline;flex-wrap:wrap}.coin-live-readings small{display:block;flex-basis:100%;font-size:8px;font-weight:400;color:#aaa;letter-spacing:.03em}.coin-live-readings strong{font-weight:700;font-size:13px}.rolling-cell{display:inline-block;overflow:hidden;vertical-align:bottom;height:1.25em}.rolling-cell>span{display:inline-block;white-space:pre}.coin-clock-stale{color:#aaa}
 *,*::before,*::after{border-radius:0!important}
 #share-dialog{width:min(420px,calc(100vw - 32px));border:1px solid #f2f2f2;padding:22px;background:#000;color:#f2f2f2}#share-dialog::backdrop{background:#0005}#share-dialog h2{font-size:18px}#share-dialog p{font-size:12px;line-height:1.5}#share-dialog form{float:right}#share-dialog button{padding:9px;margin:4px 4px 4px 0}#share-files a{display:block;font-size:12px;margin:12px 0;color:#f2f2f2}
-@media(max-width:760px){.coin-live-readings{grid-template-columns:1fr 1fr;font-size:12px;gap:12px}.coin-live-readings small{font-size:9px}.coin-live-readings strong{font-size:17px}.coin-live-readings>div:last-child{grid-column:1/-1}}
+@media(max-width:760px){.coin-live-readings{grid-template-columns:1fr 1fr;font-size:12px;gap:12px}.coin-live-readings small{font-size:9px}.coin-live-readings strong{font-size:17px}}
 
 #coin-search-results{max-width:600px;padding:12px 0;border-bottom:1px solid #f2f2f2}#coin-search-results[hidden]{display:none}#coin-search-results>p{font-size:9px;margin:0 0 8px}.coin-search-result{display:grid;grid-template-columns:1fr auto;gap:5px 12px;width:100%;background:transparent;border:0;border-top:1px solid #333;text-align:left;padding:10px 0;min-height:44px}.coin-search-result:hover,.coin-search-result:focus-visible{background:#333}.coin-search-result>span{display:flex;gap:8px;min-width:0}.coin-search-result>span span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.coin-search-result small{font-size:9px;color:#aaa}.coin-search-address{grid-column:1/-1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -282,7 +282,7 @@ body.inspecting .audio-visualizer{display:none}
 }
 
 /* Pixel lettering stays readable at small interface sizes. */
-.coin-context .eyebrow,.coin-context .badge,.coin-live-readings small,#coin-progression,.chart-status>span,.readings small,.transport-readout .transport-indicator,#tick-position,#tick-reading,.replay-actions>button,.playback-speed{font-size:12px;line-height:1.25}
+.coin-context .eyebrow,.coin-context .badge,.coin-live-readings small,.chart-status>span,.readings small,.transport-readout .transport-indicator,#tick-position,#tick-reading,.replay-actions>button,.playback-speed{font-size:12px;line-height:1.25}
 .coin-live-readings{font-size:12px}.coin-live-readings strong{font-size:16px}
 
 .display-options{display:flex;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid #333;flex-wrap:wrap}
@@ -498,3 +498,6 @@ body.visual-expanded{overflow:hidden}
  .coin-title>.audio-visualizer:not(.is-expanded){grid-column:1/-1;grid-row:1;justify-self:center;position:relative;inset:auto;width:min(100%,72vw,32svh,320px);height:auto!important;min-height:0;aspect-ratio:1;margin:0;overflow:hidden}
  .coin-title>.visual-placeholder{grid-column:1/-1;grid-row:1;justify-self:center}
 }
+
+/* Replay clock uses the same pink as the chart playhead. */
+#coin-time[data-replay="true"]{color:var(--playhead)}
