@@ -1,4 +1,4 @@
-"""Prepare Envion 5.2 source, assets and web UI taps without rewriting its DSP."""
+"""Prepare the Envion web patch while preserving the curated runtime sample pool."""
 from pathlib import Path
 import re,json,hashlib,shutil,struct
 BASE=Path(__file__).resolve().parent
@@ -14,10 +14,23 @@ text=original.read_text()
 if original.resolve()!=(DEST/'original/Envion_v5.2_Plugdata.pd').resolve():shutil.copy2(original,DEST/'original/Envion_v5.2_Plugdata.pd')
 if SOURCE!=DEST:shutil.copy2(SOURCE/'LICENSE',DEST/'LICENSE.txt')
 for folder in ['data','audio','asset']:
- if SOURCE!=DEST:shutil.copytree(SOURCE/folder,DEST/folder,dirs_exist_ok=True)
+ # The audio pool is user-curated. Copying the downloaded source folder here
+ # would silently restore every unused sample, so only refresh data/effect assets.
+ if SOURCE!=DEST and folder!='audio':shutil.copytree(SOURCE/folder,DEST/folder,dirs_exist_ok=True)
 if SOURCE!=DEST:
  for pattern_ in ['*.gif','*.png']:
   for pic in SOURCE.glob(pattern_):shutil.copy2(pic,DEST/pic.name)
+text=original.read_text()
+sample_remap={
+ 'micro_reel.wav':'iqos-gesture.wav',
+ 'sample16bit-mono.wav':'file_master_profile.wav',
+ 'env_0001.wav':'env_0002.wav',
+ 'earings.wav':'env_0011.wav',
+ 'd_a.wav':'env_0003.wav',
+ 'c_b.wav':'env_0004.wav',
+ 'plotter_m.wav':'FFT-ethet_1.wav',
+}
+for old,new in sample_remap.items():text=text.replace(old,new)
 canvases={};stack=[];root=None
 pattern=re.compile(r'(?:\\.|[^\s])+')
 def tokens(s):return [re.sub(r'\\(.)',r'\1',x) for x in pattern.findall(s)]

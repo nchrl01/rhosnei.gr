@@ -1,7 +1,10 @@
 {
   "version": 1,
   "files": [
+    "ENVION-Minimal-README.txt",
+    "ENVION-Minimal.pd",
     "LICENSE.txt",
+    "MINIMAL-VIEW.txt",
     "PORT-NOTES.txt",
     "asset/tape_deck.pd",
     "audiolab/ADAPTER-LICENSE.txt",

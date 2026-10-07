@@ -1224,7 +1224,7 @@
 #X msg 403 69 14;
 #X obj 273 234 s \$0-strt;
 #X obj 25 136 s \$0-end;
-#X msg 380 143 read -resize audio/micro_reel.wav samplebufL samplebufR, f 148;
+#X msg 380 143 read -resize audio/iqos-gesture.wav samplebufL samplebufR, f 148;
 #X msg 248 348 1;
 #X obj 185 390 s \$0-radio_1;
 #X obj 279 390 s \$0-radio_2;
@@ -1239,7 +1239,7 @@
 #X msg 867 354 1;
 #X obj 1043 206 s \$0-preset-path;
 #X text 719 178 aggiorna path per visualizzare percorsso nella patch;
-#X obj 1042 177 symbol audio/micro_reel.wav;
+#X obj 1042 177 symbol audio/iqos-gesture.wav;
 #X text 446 572 attiva radio autopan-master;
 #X obj 325 548 s \$0-slider-pan;
 #X text 283 571 posizione.slider.vel.pan;
@@ -1326,7 +1326,7 @@
 #X obj 270 636 s \$0-preset;
 #X obj 132 454 list;
 #X obj 160 693 s \$0-path;
-#X msg 621 275 read -resize audio/sample16bit-mono.wav samplebufL samplebufR, f 101;
+#X msg 621 275 read -resize audio/file_master_profile.wav samplebufL samplebufR, f 101;
 #X msg 108 389 read data/unstable-metro.txt;
 #X obj 381 615 s \$0-reverbl;
 #X obj 478 615 s \$0-reverbr;
@@ -1350,7 +1350,7 @@
 #X msg 651 201 17;
 #X obj 1109 363 s \$0-preset-path;
 #X text 785 335 aggiorna path per visualizzare percorsso nella patch;
-#X obj 1108 334 symbol audio/sample16bit-mono.wav;
+#X obj 1108 334 symbol audio/file_master_profile.wav;
 #X text 1096 525 attiva radio autopan-master;
 #X obj 975 501 s \$0-slider-pan;
 #X text 933 524 posizione.slider.vel.pan;
@@ -1467,7 +1467,7 @@
 #X obj 410 341 array.copy;
 #X obj 411 369 bng 8 250 50 0 empty empty empty 17 7 0 10 #fcfcfc #000000 #000000;
 #X msg 373 309 copy samplebufL samplebufR;
-#X msg 380 143 read -resize audio/env_0001.wav samplebufL samplebufR, f 101;
+#X msg 380 143 read -resize audio/env_0002.wav samplebufL samplebufR, f 101;
 #X msg 250 453 1;
 #X obj 187 495 s \$0-radio_2;
 #X obj 281 495 s \$0-radio_3;
@@ -1485,7 +1485,7 @@
 #X msg 813 491 1;
 #X obj 848 211 s \$0-preset-path;
 #X text 524 183 aggiorna path per visualizzare percorsso nella patch;
-#X obj 847 182 symbol audio/env_0001.wav;
+#X obj 847 182 symbol audio/env_0002.wav;
 #X text 1097 459 attiva radio autopan-master;
 #X obj 976 435 s \$0-slider-pan;
 #X text 934 458 posizione.slider.vel.pan;
@@ -1853,7 +1853,7 @@
 #X msg 611 388 1;
 #X msg 707 364 1;
 #X obj 825 418 s \$0-strt;
-#X msg 670 235 read -resize audio/micro_reel.wav samplebufL samplebufR, f 101;
+#X msg 670 235 read -resize audio/iqos-gesture.wav samplebufL samplebufR, f 101;
 #X obj 545 552 s \$0-raw-mix-l;
 #X obj 655 552 s \$0-raw-mix-r;
 #X obj 778 551 s \$0-pan-mix-l;
@@ -1862,7 +1862,7 @@
 #X msg 774 493 1;
 #X obj 1136 298 s \$0-preset-path;
 #X text 812 270 aggiorna path per visualizzare percorsso nella patch;
-#X obj 1135 269 symbol audio/micro_reel.wav;
+#X obj 1135 269 symbol audio/iqos-gesture.wav;
 #X text 1063 480 attiva radio autopan-master;
 #X obj 942 456 s \$0-slider-pan;
 #X text 900 479 posizione.slider.vel.pan;
@@ -2904,7 +2904,7 @@
 #X msg 209 654 0.13, f 8;
 #X msg 310 657 0.1, f 8;
 #X msg 388 657 0.1;
-#X msg 670 235 read -resize audio/earings.wav samplebufL samplebufR, f 101;
+#X msg 670 235 read -resize audio/env_0011.wav samplebufL samplebufR, f 101;
 #X msg 707 364 0;
 #X text 624 437 accendi i toggle metro master -metro-terna;
 #X msg 780 485 0.1;
@@ -2920,7 +2920,7 @@
 #X msg 1481 528 1;
 #X obj 1244 317 s \$0-preset-path;
 #X text 920 289 aggiorna path per visualizzare percorsso nella patch;
-#X obj 1243 288 symbol audio/earings.wav;
+#X obj 1243 288 symbol audio/env_0011.wav;
 #X text 1522 240 attiva radio autopan-master;
 #X obj 1401 216 s \$0-slider-pan;
 #X text 1359 239 posizione.slider.vel.pan;
@@ -4639,8 +4639,8 @@
 #X obj 507 453 cnv 19 120 29 empty empty RED-TOGGLE 8 14 0 15 #dcdcdc #000000 0;
 #X text 507 486 GREY-TOGGLE;
 #X obj 33 16 cnv 19 300 50 empty empty MASTER-PRESET 12 24 0 36 #fb15ac #fcfcfc 0;
-#X msg 730 235 read -resize audio/d_a.wav samplebufL samplebufR, f 101;
-#X obj 1161 261 symbol audio/d_a.wav;
+#X msg 730 235 read -resize audio/env_0003.wav samplebufL samplebufR, f 101;
+#X obj 1161 261 symbol audio/env_0003.wav;
 #X text 1229 617 attiva radio autopan-master;
 #X obj 1108 593 s \$0-slider-pan;
 #X text 1066 616 posizione.slider.vel.pan;
@@ -4909,8 +4909,8 @@
 #X msg 1418 620 1;
 #X msg 419 800 2.1794;
 #X obj 1427 661 s \$0-activate-autopan;
-#X msg 730 235 read -resize audio/c_b.wav samplebufL samplebufR, f 101;
-#X obj 1161 261 symbol audio/c_b.wav;
+#X msg 730 235 read -resize audio/env_0004.wav samplebufL samplebufR, f 101;
+#X obj 1161 261 symbol audio/env_0004.wav;
 #X msg 636 98 627;
 #X msg 81 410 0.13;
 #X msg 172 408 0.41, f 8;
@@ -5148,8 +5148,8 @@
 #X text 1229 640 posizione.slider.vel.pan;
 #X msg 1275 576 0.2387;
 #X msg 1380 577 1;
-#X msg 730 235 read -resize audio/earings.wav samplebufL samplebufR, f 101;
-#X obj 1161 261 symbol audio/earings.wav;
+#X msg 730 235 read -resize audio/env_0011.wav samplebufL samplebufR, f 101;
+#X obj 1161 261 symbol audio/env_0011.wav;
 #X msg 840 485 0.3;
 #X msg 81 410 7.59;
 #X msg 172 408 0.35, f 8;
@@ -5482,8 +5482,8 @@
 #X msg 532 800 137.81;
 #X msg 734 885 96.488;
 #X obj 1389 618 s \$0-activate-autopan;
-#X msg 730 235 read -resize audio/plotter_m.wav samplebufL samplebufR, f 101;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X msg 730 235 read -resize audio/FFT-ethet_1.wav samplebufL samplebufR, f 101;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X msg 172 408 0.58, f 8;
 #X msg 273 411 0.32, f 8;
 #X msg 351 411 0.38;
@@ -5714,7 +5714,7 @@
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
 #X obj 1389 618 s \$0-activate-autopan;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X obj 1112 195 else/sfload samplebufL;
 #X obj 1272 196 else/sfload samplebufR;
 #X obj 1042 74 bng 25 250 50 0 empty empty empty 17 7 0 10 #e4e4e4 #4d4d4d #373737;
@@ -6881,7 +6881,7 @@
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
 #X obj 1389 618 s \$0-activate-autopan;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X obj 1112 195 else/sfload samplebufL;
 #X obj 1042 74 bng 25 250 50 0 empty empty empty 17 7 0 10 #e4e4e4 #4d4d4d #373737;
 #X msg 1112 132 download https://raw.githubusercontent.com/aveniridm/netaudio/d26bb15244c87d9c81467fef0c70f5092a73eaf3/rst.mp3, f 84;
@@ -7237,7 +7237,7 @@
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
 #X obj 1389 618 s \$0-activate-autopan;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X msg 419 800 3.9;
 #X msg 734 885 50.488;
 #X text 1598 517 attiva radio autopan-master;
@@ -7612,7 +7612,7 @@
 #X msg 636 98 512;
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X msg 419 800 3.9;
 #X msg 734 885 50.488;
 #X text 1598 517 attiva radio autopan-master;
@@ -8436,7 +8436,7 @@
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
 #X obj 1389 618 s \$0-activate-autopan;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X msg 419 800 3.9;
 #X msg 734 885 50.488;
 #X text 1598 517 attiva radio autopan-master;
@@ -9011,7 +9011,7 @@
 #X msg 636 98 512;
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X msg 419 800 3.9;
 #X msg 734 885 50.488;
 #X text 1598 517 attiva radio autopan-master;
@@ -12037,7 +12037,7 @@
 #X msg 636 98 512;
 #X msg 532 800 137.81;
 #X msg 639 803 716.4;
-#X obj 1161 261 symbol audio/plotter_m.wav;
+#X obj 1161 261 symbol audio/FFT-ethet_1.wav;
 #X msg 419 800 3.9;
 #X msg 734 885 50.488;
 #X text 1598 517 attiva radio autopan-master;

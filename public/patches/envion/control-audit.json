@@ -7,28 +7,28 @@
         "index": 337,
         "name": "plugmain",
         "assets": [
-          "audio/micro_reel.wav"
+          "audio/iqos-gesture.wav"
         ]
       },
       {
         "index": 342,
         "name": "bowed-piano",
         "assets": [
-          "audio/sample16bit-mono.wav"
+          "audio/file_master_profile.wav"
         ]
       },
       {
         "index": 345,
         "name": "buchla-lpg",
         "assets": [
-          "audio/env_0001.wav"
+          "audio/env_0002.wav"
         ]
       },
       {
         "index": 365,
         "name": "random-gesture",
         "assets": [
-          "audio/micro_reel.wav"
+          "audio/iqos-gesture.wav"
         ]
       },
       {
@@ -70,7 +70,7 @@
         "index": 425,
         "name": "lamina-reso",
         "assets": [
-          "audio/earings.wav"
+          "audio/env_0011.wav"
         ]
       },
       {
@@ -112,35 +112,35 @@
         "index": 491,
         "name": "d_a",
         "assets": [
-          "audio/d_a.wav"
+          "audio/env_0003.wav"
         ]
       },
       {
         "index": 515,
         "name": "p_l",
         "assets": [
-          "audio/earings.wav"
+          "audio/env_0011.wav"
         ]
       },
       {
         "index": 518,
         "name": "c_b",
         "assets": [
-          "audio/c_b.wav"
+          "audio/env_0004.wav"
         ]
       },
       {
         "index": 546,
         "name": "p_l_o",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
         "index": 549,
         "name": "p_l_o",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
@@ -162,28 +162,28 @@
         "index": 563,
         "name": "ddr",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
         "index": 600,
         "name": "vcr",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
         "index": 610,
         "name": "autechre",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
         "index": 670,
         "name": "lowercase",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
@@ -195,7 +195,7 @@
         "index": 677,
         "name": "gesti",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
@@ -229,7 +229,7 @@
         "index": 805,
         "name": "fll",
         "assets": [
-          "audio/plotter_m.wav"
+          "audio/FFT-ethet_1.wav"
         ]
       },
       {
@@ -239,39 +239,21 @@
       }
     ],
     "samples": [
-      "audio/morph2.wav",
       "audio/iqos-gesture.wav",
-      "audio/micro_reel.wav",
       "audio/toy.wav",
-      "audio/env_0008.wav",
-      "audio/env_0009.wav",
-      "audio/earings.wav",
       "audio/BUGGY.wav",
       "audio/wood.wav",
-      "audio/d_a.wav",
-      "audio/rec16.wav",
-      "audio/c_b.wav",
-      "audio/env_0007wav.wav",
       "audio/FFT-ethet_1.wav",
-      "audio/plotter_m.wav",
       "audio/love.wav",
       "audio/simp.wav",
-      "audio/emiliano-conta-stereo.wav",
-      "audio/sample16bit-mono.wav",
       "audio/env_0002.wav",
       "audio/env_0003.wav",
       "audio/buchla_2.wav",
       "audio/gait.wav",
-      "audio/env_0001.wav",
-      "audio/env_0015.wav",
-      "audio/env_0014.wav",
       "audio/klick.wav",
       "audio/env_0004.wav",
-      "audio/env_0010.wav",
       "audio/env_0011.wav",
       "audio/env_0005.wav",
-      "audio/env_0013.wav",
-      "audio/env_0006.wav",
       "audio/env_0012.wav",
       "audio/file_master_profile.wav",
       "audio/frog.wav",
@@ -4472,7 +4454,7 @@
       "canvasName": "plugmain",
       "index": 16,
       "receiver": "av-envion-ui-c28-16",
-      "original": "read -resize audio/micro_reel.wav samplebufL samplebufR, f 148",
+      "original": "read -resize audio/iqos-gesture.wav samplebufL samplebufR, f 148",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -4552,7 +4534,7 @@
       "canvasName": "bowed-piano",
       "index": 22,
       "receiver": "av-envion-ui-c29-22",
-      "original": "read -resize audio/sample16bit-mono.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/file_master_profile.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -4696,7 +4678,7 @@
       "canvasName": "buchla-lpg",
       "index": 19,
       "receiver": "av-envion-ui-c30-19",
-      "original": "read -resize audio/env_0001.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/env_0002.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -4856,7 +4838,7 @@
       "canvasName": "random-gesture",
       "index": 27,
       "receiver": "av-envion-ui-c35-27",
-      "original": "read -resize audio/micro_reel.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/iqos-gesture.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -5712,7 +5694,7 @@
       "canvasName": "lamina-reso",
       "index": 38,
       "receiver": "av-envion-ui-c47-38",
-      "original": "read -resize audio/earings.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/env_0011.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -7336,7 +7318,7 @@
       "canvasName": "d_a",
       "index": 93,
       "receiver": "av-envion-ui-c61-93",
-      "original": "read -resize audio/d_a.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/env_0003.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -7488,7 +7470,7 @@
       "canvasName": "c_b",
       "index": 85,
       "receiver": "av-envion-ui-c63-85",
-      "original": "read -resize audio/c_b.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/env_0004.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -7728,7 +7710,7 @@
       "canvasName": "p_l",
       "index": 85,
       "receiver": "av-envion-ui-c64-85",
-      "original": "read -resize audio/earings.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/env_0011.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {
@@ -8048,7 +8030,7 @@
       "canvasName": "p_l_o",
       "index": 92,
       "receiver": "av-envion-ui-c68-92",
-      "original": "read -resize audio/plotter_m.wav samplebufL samplebufR, f 101",
+      "original": "read -resize audio/FFT-ethet_1.wav samplebufL samplebufR, f 101",
       "category": "authored DSP / preset internals; not independently randomized"
     },
     {

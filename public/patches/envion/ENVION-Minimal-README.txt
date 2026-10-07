@@ -45,12 +45,12 @@ no $UPIC browser control receivers, and no browser file/recording bridge.
 
 PRESERVATION / VALIDATION
 Original source SHA-256: b311a1ef54914f22987d4ec8846b05b2155eb922de5611d7d9dfa1fe7f4f6591
-All four #N struct preambles remain at document level. The entire original
-source body is embedded unchanged, with its root wrapped in a closed
-subpatch. Subpatches share their parent's $0 namespace in Pd, so existing
-$0 controls and buses remain in the same namespace. Folder lookup is from
-the same patch directory. Every original object, nested canvas, saved
-value and connection retains its original index and text.
+All four #N struct preambles remain at document level. The original DSP
+source is embedded with its root wrapped in a closed subpatch. Subpatches
+share their parent's $0 namespace in Pd, so existing controls and buses
+retain the same namespace. Folder lookup is from the same patch directory.
+The kept-sound preset remaps change sample path text only; object indexes and
+DSP connections retain their original positions.
 Only new receives, bounds checks, UI feedback taps and the read-only meter
 are appended after the original objects/connections. The new output-gain
 control writes the existing $0-initvol bus; it adds no new gain stage.
@@ -64,20 +64,20 @@ named samplebufL/samplebufR buffers and authored routing/clock interactions.
 Open one instance at a time to avoid those original shared buffer names.
 
 ORIGINAL / BACKUP
-The existing Envion_v5.2_Plugdata.pd and main.pd were not modified for this
-standalone. The project backup remains:
-backups/envion/ENVION-before-minimal-2026-10-04.zip
-Original license: LICENSE.txt. Copyright and library notices are retained.
+The original full patch remains preserved in public/patches/envion/original/
+and in the dated pre-cleanup backup. Active browser and standalone patches
+use the retained-sound pool. Original license: LICENSE.txt. Copyright and
+library notices are retained.
 
 PRESET INDEX (the number is a view selector, not a rewritten preset)
  0 / plugmain / original control 337
-     audio/micro_reel.wav
+     audio/iqos-gesture.wav
  1 / bowed-piano / original control 342
-     audio/sample16bit-mono.wav
+     audio/file_master_profile.wav
  2 / buchla-lpg / original control 345
-     audio/env_0001.wav
+     audio/env_0002.wav
  3 / random-gesture / original control 365
-     audio/micro_reel.wav
+     audio/iqos-gesture.wav
  4 / echochamber / original control 386
      audio/klick.wav
  5 / frog-verb / original control 389
@@ -89,7 +89,7 @@ PRESET INDEX (the number is a view selector, not a rewritten preset)
  8 / toy-bathroom / original control 402
      audio/toy.wav
  9 / lamina-reso / original control 425
-     audio/earings.wav
+     audio/env_0011.wav
 10 / cyber-kick / original control 429
      audio/gait.wav
 11 / buchla-bongos / original control 442
@@ -101,29 +101,29 @@ PRESET INDEX (the number is a view selector, not a rewritten preset)
 14 / web-socket / original control 488
      audio/FFT-ethet_1.wav
 15 / d_a / original control 491
-     audio/d_a.wav
+     audio/env_0003.wav
 16 / p_l / original control 515
-     audio/earings.wav
+     audio/env_0011.wav
 17 / c_b / original control 518
-     audio/c_b.wav
+     audio/env_0004.wav
 18 / p_l_o / original control 546
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 19 / p_l_o / original control 549
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 20 / p_l_o / original control 552
 21 / fluid / original control 557
 22 / exotica / original control 561
 23 / ddr / original control 563
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 24 / vcr / original control 600
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 25 / autechre / original control 610
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 26 / lowercase / original control 670
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 27 / xenaxis / original control 674
 28 / gesti / original control 677
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 29 / foley / original control 684
 30 / p_l_o / original control 703
 31 / p_l_o / original control 707
@@ -131,5 +131,5 @@ PRESET INDEX (the number is a view selector, not a rewritten preset)
      audio/buchla_2.wav
 33 / p_l_o / original control 729
 34 / fll / original control 805
-     audio/plotter_m.wav
+     audio/FFT-ethet_1.wav
 35 / fk-material / original control 872
