@@ -1,5 +1,5 @@
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=165';
-import {capitalFeed} from './capital-field.js?v=165';
+import {battleMotion,battleWarp} from './earthbound-motion.js?v=166';
+import {capitalFeed} from './capital-field.js?v=166';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
@@ -45,19 +45,21 @@ function identityInk(mask,fx,fy,w,h,time,offset,params){
 }
 export function createPixelBlastCanvas(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
- const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,borders=null,output=null;
+ const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,output=null,lastCoverage=0;
+ const layerCanvas=document.createElement("canvas"),layerContext=layerCanvas.getContext("2d");
  return {
   canvas,
+  coverage(){return lastCoverage;},
   setImage(mask){identityMask=mask;},
-  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[]}){
+  render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-   ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
-   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);borders=new Uint8Array(w*h);}
-   counts.fill(0);borders.fill(0);output.data.fill(0);
+   if(!preserve)ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
+   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
+   counts.fill(0);output.data.fill(0);
    const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const battle=battleMotion(seed,time,params.capitalStage);
@@ -132,14 +134,16 @@ export function createPixelBlastCanvas(host){
     if(x1<=x0||y1<=y0)continue;
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
      const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);
-     if(x===left||x===left+diameter-1||y===top||y===top+diameter-1)borders[index]=1;
+
     }
    }
+   let occupied=0;
    for(let n=0;n<counts.length;n++)if(counts[n]){
-    const ink=counts[n]>1&&borders[n]?0:255,i=n*4;
+    occupied++;const ink=(params.inkColor??1)*255,i=n*4;
     output.data[i]=output.data[i+1]=output.data[i+2]=ink;output.data[i+3]=255;
    }
-   ctx.putImageData(output,0,0);
+   lastCoverage=occupied/counts.length;
+   layerContext.putImageData(output,0,0);ctx.drawImage(layerCanvas,0,0);
    canvas.hidden=false;
    Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),basePixelSize:params.pixelSize.toFixed(3),cellSize:cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),ecosystem:params.ecosystem.toFixed(3),jitter:params.jitter.toFixed(3),ripples:String(params.ripples?ripples.length:0),rippleIntensity:params.rippleIntensity.toFixed(3),rippleSpeed:params.rippleSpeed.toFixed(3),rippleThickness:params.rippleThickness.toFixed(3),liquid:String(params.liquid),liquidStrength:params.liquidStrength.toFixed(3),liquidRadius:params.liquidRadius.toFixed(3),liquidWobbleSpeed:params.liquidWobbleSpeed.toFixed(3),noiseAmount:params.noiseAmount.toFixed(3),balance:params.balance.toFixed(3),direction:params.direction.toFixed(3),identity:identity.toFixed(3),identityMotion:params.identityMotion.toFixed(3),identityImage:String(!!identityMask)});
   },
