@@ -5,13 +5,11 @@
 .milestone-sounds-head>[data-current-cap]{font-variant-numeric:tabular-nums;color:#aaa}
 .milestone-sounds-note{max-width:680px;color:#aaa;margin:10px 0 16px}
 .milestone-sound-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.milestone-sound-card{min-width:0;border:1px solid #444;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;transition:border-color .16s ease,background-color .16s ease}
-.milestone-sound-card:hover,.milestone-sound-card:focus-visible{border-color:#aaa}
+.milestone-sound-card{min-width:0;border:0;padding:12px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;cursor:pointer;transition:background-color .16s ease}
+.milestone-sound-card:focus-visible{outline:1px dashed #888;outline-offset:2px}
 .milestone-sound-card.is-disabled{opacity:.55;cursor:default}
 .milestone-sound-card.is-locked{cursor:default;pointer-events:none}
-.milestone-sound-card.is-dragging{border-color:#fff;background:#111}
-.milestone-sound-card.is-unlocked{border-color:#aaa}
-.milestone-sound-card.is-active{border-color:#fff;box-shadow:inset 0 0 0 1px #fff}
+.milestone-sound-card.is-dragging{background:#111}
 .milestone-sound-title{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .milestone-sound-title strong{font-size:15px;font-weight:400}
 .milestone-sound-title span{font-size:9px;color:#888;white-space:nowrap}

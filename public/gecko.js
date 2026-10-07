@@ -32,6 +32,6 @@ export function fetchGecko(url,{signal,priority=40}={}){
    if(!job.consumers.size){const index=queue.indexOf(job);if(index>=0)queue.splice(index,1);job.controller.abort();if(jobs.get(url)===job)jobs.delete(url);}
    drain();
   };
-  job.consumers.add(consumer);signal?.addEventListener('abort',cancel,{once:true});drain();
+  job.consumers.add(consumer);signal?.addEventListener('abort',cancel,{once:true});queueMicrotask(drain);
  });
 }

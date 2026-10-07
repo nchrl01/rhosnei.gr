@@ -1,4 +1,4 @@
-import {harmoniousPitch} from './harmonic-network.js?v=146';
+import {harmoniousPitch} from './harmonic-network.js?v=206';
 // Original Pd control score: real observations -> finite microtones and noise.
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
 export function createDataSonification({send=()=>{},event=()=>{}}={}){

@@ -5,7 +5,7 @@ import sys
 BASE=Path(__file__).resolve().parent
 ROOT=BASE/'public'/'patches'/'orchestra'
 ROOT.mkdir(exist_ok=True)
-sys.path.insert(0,str(BASE/'native'/'perc-generator'))
+sys.path.insert(0,str(BASE/'scripts'))
 import pd_patch
 pd_patch.ROOT=ROOT
 Patch=pd_patch.Patch

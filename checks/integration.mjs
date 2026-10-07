@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {MarketChart} from '../public/chart.js';
 import {signalFreshness} from '../public/market-controls.js';
 import {createOrchestraConductor} from '../public/orchestra.js';
-import {createNativePd} from '../public/native-pd.js';
 
 function chartWith(history){
  const chart=Object.create(MarketChart.prototype);
@@ -48,21 +47,4 @@ test('replay chart stays frozen while live observations continue, then catches u
  chart.setHistory([{...complete,close:111}],60000,null);chart.draw();
  assert.equal(chart.renderedBars[0].close,110,'Backfill cannot alter the score being heard');
  state.active=false;chart.draw();assert.equal(chart.renderedBars.length,2);assert.equal(chart.renderedBars.at(-1).close,140);
-});
-function nativeMocks(t,post){
- t.mock.method(globalThis,'setInterval',()=>1);t.mock.method(globalThis,'clearInterval',()=>{});
- t.mock.method(globalThis,'fetch',async(url,options)=>url==='/pd/status'?{ok:true,json:async()=>({connected:true,orchestra:true,state:{run:1}})}:post(JSON.parse(options.body).messages));
-}
-test('native close waits for in-flight controls AND subsequent stop delivery',async t=>{
- const requests=[],releases=[];nativeMocks(t,messages=>{requests.push(messages);return new Promise(resolve=>releases.push(resolve));});
- const pd=await createNativePd(()=>{});pd.sendFloat('run',1);const flight=pd.flush();let done=false;const closing=pd.close().then(()=>{done=true;});
- pd.sendFloat('run',1);assert.equal(requests.length,1);assert.equal(done,false);
- releases[0]({ok:true});await new Promise(resolve=>setImmediate(resolve));
- assert.deepEqual(requests[1],[['run',0],['master',0]]);assert.equal(done,false);
- releases[1]({ok:true});await Promise.all([flight,closing]);assert.equal(done,true);assert.equal(requests.length,2);
-});
-test('a failed in-flight request does not prevent the queued stop attempt',async t=>{
- const requests=[];let rejectFirst;nativeMocks(t,messages=>{requests.push(messages);return requests.length===1?new Promise((_,reject)=>rejectFirst=reject):Promise.resolve({ok:true});});
- const errors=[];const pd=await createNativePd(e=>errors.push(e));pd.sendFloat('run',1);pd.flush();const closing=pd.close();rejectFirst(Error('connection interrupted'));await closing;
- assert.equal(errors.length,1);assert.deepEqual(requests[1],[['run',0],['master',0]]);
 });

@@ -46,7 +46,7 @@ browser must download them to run the site.
 
 - `public/` — website, audio engines, visuals and browser assets
 - `public/patches/` — Pure Data patches and ENVION
-- `native/` — offline and desktop tools
+- `native/` — standalone ENVION and browser MusicRNN build sources
 - `scripts/` — asset build helpers
 - `cloudflare/` — optional InsightX data worker
 

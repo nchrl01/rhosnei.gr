@@ -1,26 +1,5 @@
 // npm/dist/runtimeBundles.js
-var runtimeBundles = [
-  {
-    name: "basic",
-    worklet: "libpd-worklet.js",
-    packages: ["vanilla"]
-  },
-  {
-    name: "cyclone",
-    worklet: "libpd-worklet-cyclone.js",
-    packages: ["vanilla", "cyclone"]
-  },
-  {
-    name: "else",
-    worklet: "libpd-worklet-else.js",
-    packages: ["vanilla", "else"]
-  },
-  {
-    name: "full",
-    worklet: "libpd-worklet-full.js",
-    packages: ["vanilla", "cyclone", "else"]
-  }
-];
+var runtimeBundles = [{name: "full", worklet: "libpd-worklet-full.js", packages: ["vanilla", "cyclone", "else"]}];
 function normalizePackages(packages) {
   return [...new Set(packages)].sort();
 }

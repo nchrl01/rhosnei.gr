@@ -1,6 +1,6 @@
 // Free REST trade observations across GeckoTerminal-indexed networks.
 // HTTP polling is explicitly reported; this is not a WebSocket trade stream.
-import {fetchGecko} from './gecko.js?v=39';
+import {fetchGecko} from './gecko.js?v=206';
 const networkAlias={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro',zksync:'zksync',pulsechain:'pulsechain'};
 const same=(a,b)=>/^0x[0-9a-f]{40}$/i.test(a||'')?a.toLowerCase()===b?.toLowerCase():a===b;
 export function pollPoolTrades(market,onEvent,onState){

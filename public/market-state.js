@@ -1,5 +1,5 @@
 // Musical context uses fixed historical data and the latest observation.
-import {musicContext} from './music-context.js?v=53';
+import {musicContext} from './music-context.js?v=206';
 // Chart viewport, drawing geometry and zoom never enter this calculation.
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 const median=values=>{const s=values.filter(Number.isFinite).sort((a,b)=>a-b);return s.length?s[Math.floor(s.length/2)]:null;};

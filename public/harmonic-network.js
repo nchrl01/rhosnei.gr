@@ -1,3 +1,4 @@
+import {HARMONIES,resolveHarmonicCharacter} from './harmonic-characters.js?v=206';
 // Authored probability network inspired by GrundTon's knot/event architecture.
 // No upstream patch code is embedded. One step is consumed per audible note.
 export function createHarmonicNetwork(initialSeed=0){
@@ -18,7 +19,7 @@ export function createHarmonicNetwork(initialSeed=0){
  };
 }
 export function harmoniousPitch(value,tonic=48,character='serene',chordNotes=[]){
- const intervals=['tense','restless'].includes(character)?[0,3,5,7,10]:[0,2,4,7,9];
+ const intervals=HARMONIES[resolveHarmonicCharacter(character)].mode==='Minor'?[0,3,5,7,10]:[0,2,4,7,9];
  const pcs=chordNotes.length?[...new Set(chordNotes.map(n=>((Math.round(n)%12)+12)%12))]:intervals.map(n=>((Math.round(tonic)+n)%12+12)%12);
  let best=Math.round(value),distance=Infinity;
  for(let note=Math.max(24,Math.floor(value)-12);note<=Math.min(96,Math.ceil(value)+12);note++){

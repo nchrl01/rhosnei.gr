@@ -16,7 +16,7 @@ if SOURCE!=DEST:shutil.copy2(SOURCE/'LICENSE',DEST/'LICENSE.txt')
 for folder in ['data','audio','asset']:
  # The audio pool is user-curated. Copying the downloaded source folder here
  # would silently restore every unused sample, so only refresh data/effect assets.
- if SOURCE!=DEST and folder!='audio':shutil.copytree(SOURCE/folder,DEST/folder,dirs_exist_ok=True)
+ if SOURCE!=DEST and folder!='audio':shutil.copytree(SOURCE/folder,DEST/folder,dirs_exist_ok=True,ignore=shutil.ignore_patterns('tape_deck.pd') if folder=='asset' else None)
 if SOURCE!=DEST:
  for pattern_ in ['*.gif','*.png']:
   for pic in SOURCE.glob(pattern_):shutil.copy2(pic,DEST/pic.name)
@@ -203,8 +203,8 @@ model={'images':images,'root':root,'canvases':canvases,'receivers':receivers,'as
 (DEST/'model.json').write_text(json.dumps(model,separators=(',',':')))
 print('Prepared original Envion:',len(canvases),'canvases,',len(receivers),'live UI values,',len(assets),'on-demand assets')
 
-files=[str(p.relative_to(DEST)) for p in DEST.rglob('*') if p.is_file() and p.name!='Envion_v5.2_Plugdata.pd' and p.suffix in ['.pd','.txt'] and not any(x in p.parts for x in ['original','audio'])]
-(DEST/'manifest.json').write_text(json.dumps({'version':1,'files':sorted(files),'initialAssets':['audio/buchla_2.wav',*sorted(x for x in assets if x.startswith('asset/'))]},indent=2)+'\n')
+files=[str(p.relative_to(DEST)) for p in DEST.rglob('*') if p.is_file() and ((p.suffix=='.pd' and p.name not in {'Envion_v5.2_Plugdata.pd','ENVION-Minimal.pd','tape_deck.pd'} and 'original' not in p.parts) or (p.suffix=='.txt' and p.parent==DEST/'data'))]
+(DEST/'manifest.json').write_text(json.dumps({'version':2,'files':sorted(files),'initialAssets':['audio/buchla_2.wav',*sorted(x for x in assets if x.startswith('asset/') and x.endswith('.wav'))]},indent=2)+'\n')
 
 # The automatic file workflow needs real row counts (perc has 328, not 1000).
 banks=[{'path':'data/'+p.name,'rows':len([row for row in p.read_text().split(';') if row.strip()])} for p in sorted((DEST/'data').glob('*.txt'))]

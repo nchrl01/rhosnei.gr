@@ -87,7 +87,7 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:12px;line-hei
 #replay-playhead{position:absolute;top:0;left:50%;bottom:24px;width:2px;background:var(--playhead);transform:translateX(-50%);pointer-events:none;z-index:3}
 #replay-playhead::before,#replay-playhead::after{content:'';position:absolute;left:50%;width:6px;height:3px;background:var(--playhead);transform:translateX(-50%)}#replay-playhead::before{top:0}#replay-playhead::after{bottom:0}
 .chart-ticks{margin:5px 0 0;padding:0;background:transparent}.tick-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
-#tick-position{font-size:9px;font-weight:700;line-height:14px;white-space:nowrap}#tick-reading{font-size:10px;font-weight:400;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;color:#aaa;font-variant-numeric:tabular-nums}
+#tick-position{flex-shrink:0;font-size:9px;font-weight:700;line-height:14px;white-space:nowrap}#tick-reading{flex:1;min-width:0;font-size:10px;font-weight:400;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;color:#aaa;font-variant-numeric:tabular-nums}
 #chart-tick-row{display:flex;align-items:flex-end;gap:2px;height:24px;margin-top:4px;overflow:hidden;cursor:crosshair;touch-action:none;user-select:none}
 #chart-tick-row[aria-disabled=true]{cursor:default}.chart-tick{display:block;flex:1;height:var(--tick-height,52%);background:#333;transition:background .16s,height .32s cubic-bezier(.22,1,.36,1)}
 .chart-tick[data-on=true]{height:calc(var(--tick-height,52%) + 26%);background:#f2f2f2}.chart-tick[data-cursor=true]{background:#999}
@@ -323,8 +323,8 @@ input{caret-color:#fff}
 .playback-speed button{width:100%;padding:4px 6px;min-height:32px;height:auto;border-color:#333;font-size:12px;line-height:1.2}
 .playback-speed button[aria-pressed=true]{background:#f2f2f2;color:#000;border-color:#f2f2f2}
 #replay-hint{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--muted)}
-.tick-heading{align-items:baseline;flex-wrap:wrap;gap:3px 8px}
-#tick-reading{flex:1 1 140px;white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.tick-heading{align-items:baseline;flex-wrap:nowrap;gap:3px 8px}
+#tick-reading{flex:1 1 140px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chart-status{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"status status" "feed feed" "event tempo";align-items:start;gap:4px 10px;padding-top:10px;margin-top:10px;border-top:1px solid #333;white-space:normal;line-height:1.4}
 .chart-status>span{overflow:visible;text-overflow:clip;overflow-wrap:anywhere;font-size:12px;line-height:1.4}
 .chart-status #status{grid-area:status;color:#f2f2f2}

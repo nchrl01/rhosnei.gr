@@ -1,5 +1,5 @@
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
-import {fetchGecko} from './gecko.js?v=39';
+import {fetchGecko} from './gecko.js?v=206';
 import {createHolderClusters} from './holder-clusters.js?v=168';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
 const cache=new Map(),HOUR=3600000;

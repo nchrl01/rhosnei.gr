@@ -1,8 +1,0 @@
-#N canvas 50 50 980 400 12;
-#X text 25 15 AV / Perc Generator - standalone local market launcher;
-#X obj 25 70 declare -path ../../public/patches;
-#X obj 25 115 av-bridge;
-#X obj 25 160 perc-generator;
-#X text 25 235 Open perc-generator above. Enable MARKET and DSP there.;
-#X text 25 270 localhost:4173 -> Native Pd -> choose coin -> Listen.;
-#X text 25 305 Only one AV bridge may bind UDP 3001. Close other native AV launchers first.;

@@ -1,4 +1,4 @@
-import {harmoniousPitch} from './harmonic-network.js?v=146';
+import {harmoniousPitch} from './harmonic-network.js?v=206';
 // Both source reels share one data-gated, finite-phrase Pure Data transport.
 import {REFERENCE_FUNCTIONS} from './math-reference-functions.js?v=85';
 import {REEL_FUNCTIONS} from './math-reel-functions.js?v=152';

@@ -49,19 +49,21 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
  const interval={minute:60000,hour:3600000,day:86400000}[timeframe]*aggregate;
  const frame=String(aggregate)+({minute:'m',hour:'h',day:'d'}[timeframe]);
  const key='upic-ccxt-history-v1:'+id+':'+symbol+':'+frame;
- let bars=[],before=Date.now(),lastOldest=Infinity;
+ let bars=[],before=Date.now(),lastOldest=Infinity,freshCache=false;
  function report(state,message,detail={}){if(!closed)onUpdate({candles:bars,interval,timeframe,state,message,created:null,error:null,retrying:false,...detail});}
  try{
   const cached=JSON.parse(localStorage.getItem(key));
   if(cached?.saved>Date.now()-86400000&&Array.isArray(cached.bars)){
    bars=cached.bars.filter(b=>Number.isFinite(b.time)&&b.open>0&&b.high>=b.close&&b.low>0&&b.close>0).slice(-1200);
-   report('cached','Saved exchange history · refreshing');
+   freshCache=bars.length>0&&(options.maxPages===1||cached.pages>=Math.min(3,options.maxPages||3))&&Date.now()-cached.saved<Math.min(60000,Math.max(0,options.cacheAge??5000));
+   report(freshCache?'partial':'cached',freshCache?'Recently fetched exchange history':'Saved exchange history · refreshing');
   }
  }catch{}
+ if(freshCache)return()=>{closed=true;};
  if(!bars.length)report('loading','Loading '+pair.exchangeName+' history');
  async function load(){
   const saved=bars,limit=Math.min(3,Math.max(1,options.maxPages||3));
-  let obtained=false;
+  let obtained=false,pagesLoaded=0;
   try{
    for(let page=0;page<limit&&!closed;page++){
     while(!closed&&options.shouldFetch?.()===false)await new Promise(resolve=>setTimeout(resolve,1000));
@@ -79,7 +81,7 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
      else grouped.set(time,{time,open,high,low,close,volume:volume*close,volumeEstimated:true,observedThrough:through});
     }
     const merged=new Map(saved.map(bar=>[bar.time,bar]));for(const [time,bar] of grouped)merged.set(time,bar);
-    bars=[...merged.values()].sort((a,b)=>a.time-b.time).slice(-1200);obtained=true;
+    bars=[...merged.values()].sort((a,b)=>a.time-b.time).slice(-1200);obtained=true;pagesLoaded++;
     report(page+1<limit?'loading':'partial','Exchange history · estimated quote volume · available coverage only');
     before=oldest;
     if(valid.length<300||id==='kraken')break;
@@ -87,7 +89,7 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
    if(!obtained&&!bars.length)throw Error('Exchange returned no candles for this pair');
    report('partial','Exchange history · base volume × close estimate · launch coverage not assumed');
    try{
-    localStorage.setItem(key,JSON.stringify({saved:Date.now(),bars}));
+    localStorage.setItem(key,JSON.stringify({saved:Date.now(),bars,pages:pagesLoaded}));
     const keys=Object.keys(localStorage).filter(k=>k.startsWith('upic-ccxt-history-v1:'));
     while(keys.length>12){const old=keys.shift();if(old!==key)localStorage.removeItem(old);}
    }catch{}

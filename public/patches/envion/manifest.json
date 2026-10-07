@@ -1,16 +1,6 @@
 {
-  "version": 1,
+  "version": 2,
   "files": [
-    "ENVION-Minimal-README.txt",
-    "ENVION-Minimal.pd",
-    "LICENSE.txt",
-    "MINIMAL-VIEW.txt",
-    "PORT-NOTES.txt",
-    "asset/tape_deck.pd",
-    "audiolab/ADAPTER-LICENSE.txt",
-    "audiolab/LICENSE-BSD3.txt",
-    "audiolab/LICENSE-GNU-GPL3.txt",
-    "audiolab/SOURCE.txt",
     "audiolab/array.copy.pd",
     "audiolab/pp.echo~.pd",
     "audiolab/pp.fft-partconv-st-part.pd",
@@ -41,10 +31,6 @@
     "data/vline_perc_2.txt",
     "data/vline_ultra_perc_3.txt",
     "data/zadar_style_4triplets.txt",
-    "else/ADAPTER-LICENSE.txt",
-    "else/BROWSER-ADAPTER.txt",
-    "else/LICENSE.txt",
-    "else/SOURCE.txt",
     "else/f2s~.pd",
     "else/float2sig.unit.pd",
     "else/float2sig~.pd",
@@ -61,7 +47,6 @@
     "asset/IR-Dual-CC3600-3.wav",
     "asset/IR-Dual-CC3600-4.wav",
     "asset/IR-Panasonic_TapeDeck-269-1.wav",
-    "asset/IR-Panasonic_TapeDeck-269-2.wav",
-    "asset/tape_deck.pd"
+    "asset/IR-Panasonic_TapeDeck-269-2.wav"
   ]
 }

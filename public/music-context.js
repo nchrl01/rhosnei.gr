@@ -1,4 +1,5 @@
-import {REFERENCE_HARMONIES} from './harmony-catalog.js?v=1';
+import {HARMONIES,chartCharacter,chartHarmony,resolveHarmonicCharacter} from './harmonic-characters.js?v=206';
+export {HARMONIES,chartCharacter,resolveHarmonicCharacter} from './harmonic-characters.js?v=206';
 // Musical interpretation of percentage movement, not a trading recommendation.
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const median=values=>{const s=values.filter(Number.isFinite).sort((a,b)=>a-b);return s.length?s[Math.floor(s.length/2)]:0;};
@@ -15,28 +16,20 @@ export function musicContext({price,rows=[],interval=300000,changes={},cap,fresh
  const intensity=unit((.72*absolute+.28*(1-Math.exp(-relative/2)))*(.4+.6*size))*unit(fresh);
  const lastMove=recent?(recent.close/recent.open-1)*100:change;
  const priorMove=previous?(previous.close/previous.open-1)*100:lastMove;
- const slowing=lastMove<0&&lastMove>priorMove;
- let character='serene';
- if(Math.abs(change)>.25){
-  character=change>0?(intensity>.58?'confident':'hopeful'):
-   slowing?'reflective':intensity>.48?'tense':'bittersweet';
- }else if(typical>2&&Math.abs(lastMove)>.3)character='restless';
- return {version:1,character,intensity,tempo:Math.round(40+100*Math.sqrt(intensity)),changePct:change,typicalPct:typical,relativeMove:relative};
+ const moves=complete.slice(-12).map(b=>(b.close/b.open-1)*100);
+ const travel=moves.reduce((sum,n)=>sum+Math.abs(n),0);
+ const trendConsistency=travel>0?Math.abs(moves.reduce((sum,n)=>sum+n,0))/travel:1;
+ const observedVolatility=median(moves.map(Math.abs));
+ const volatility=observedVolatility/(observedVolatility+2);
+ const typicalVolume=median(complete.slice(-25,-1).map(b=>b.volume).filter(v=>v>0));
+ const volumeRatio=typicalVolume>0&&recent?.volume>=0?recent.volume/typicalVolume:1;
+ const features={changePct:change,intensity,volatility,trendConsistency,lastMove,priorMove,volumeRatio};
+ const character=chartCharacter(features);
+ return {version:2,character,...features,tempo:Math.round(40+100*Math.sqrt(intensity)),typicalPct:typical,relativeMove:relative};
 }
-const chord=(root,intervals)=>intervals.map(n=>root+n);
-const major=root=>chord(root,[0,4,7]),minor=root=>chord(root,[0,3,7]);
-export const HARMONIES={
- ...REFERENCE_HARMONIES,
- serene:{name:'Serene',progression:'I · IVsus2 · I · V',chords:[chord(0,[0,4,7,14]),chord(5,[0,2,7]),major(0),major(7)]},
- hopeful:{name:'Hopeful',progression:'I · V · vi · IV',chords:[major(0),major(7),minor(9),major(5)]},
- confident:{name:'Confident',progression:'I · vi · IV · V',chords:[major(0),minor(9),major(5),major(7)]},
- reflective:{name:'Reflective',progression:'I · IV · vi · V',chords:[major(0),major(5),minor(9),major(7)]},
- bittersweet:{name:'Bittersweet',progression:'IV · iv · I · I',chords:[major(5),minor(5),major(0),chord(0,[0,4,7,14])]},
- tense:{name:'Tense',progression:'i · v · ♭VI · V',chords:[minor(0),minor(7),major(8),major(7)]},
- restless:{name:'Restless',progression:'i · ii° · V · i',chords:[minor(0),chord(2,[0,3,6]),major(7),minor(0)]},
-};
+
 export function pianoHarmony(seed,event={},music={}){
- const character=HARMONIES[music.character]?music.character:'serene',h=harmonyPlan(seed,character);
+ const character=resolveHarmonicCharacter(music.character),h=harmonyPlan(seed,character,music);
  const at=Number(event.occurredAt??event.at??event.receivedAt)||0;
  const step=Number.isFinite(event.chordStep)?event.chordStep:Math.floor(at/30000);
  const index=((step+(seed>>>0)%4)%4+4)%4,root=Number.isFinite(music.tonic)?48+((Math.round(music.tonic)%12)+12)%12:48+(seed>>>0)%5;
@@ -45,22 +38,10 @@ export function pianoHarmony(seed,event={},music={}){
  return {character,name:h.name,progression:h.progression,index,notes,root};
 }
 
-// Functional harmony, extensions and modal interchange studied in ChordSeqAI's
-// theory wiki. These authored progressions do not run its neural models.
-const seventh=(root,quality='major')=>chord(root,quality==='minor'?[0,3,7,10]:quality==='dominant'?[0,4,7,10]:[0,4,7,11]);
-const HARMONY_VARIANTS={
- serene:[{progression:'Imaj7 · IVmaj7 · ii7 · Vsus4',chords:[seventh(0),seventh(5),seventh(2,'minor'),chord(7,[0,5,7])]}],
- hopeful:[{progression:'Iadd9 · vi7 · IVmaj7 · V7',chords:[chord(0,[0,4,7,14]),seventh(9,'minor'),seventh(5),seventh(7,'dominant')]}],
- confident:[{progression:'I · IV · ii7 · V7',chords:[major(0),major(5),seventh(2,'minor'),seventh(7,'dominant')]}],
- reflective:[{progression:'Imaj7 · iii7 · vi7 · IVmaj7',chords:[seventh(0),seventh(4,'minor'),seventh(9,'minor'),seventh(5)]}],
- bittersweet:[{progression:'Imaj7 · IVmaj7 · iv6 · Iadd9',chords:[seventh(0),seventh(5),chord(5,[0,3,7,9]),chord(0,[0,4,7,14])]}],
- tense:[{progression:'i7 · iv7 · ♭VImaj7 · V7',chords:[seventh(0,'minor'),seventh(5,'minor'),seventh(8),seventh(7,'dominant')]}],
- restless:[{progression:'i · iiø7 · V7 · iadd9',chords:[minor(0),chord(2,[0,3,6,10]),seventh(7,'dominant'),chord(0,[0,3,7,14])]}],
-};
-export function harmonyPlan(seed,character='serene'){
- const name=HARMONIES[character]?character:'serene',variants=[HARMONIES[name],...(HARMONY_VARIANTS[name]||[])];
- const choice=((seed>>>0)^(seed>>>8))>>>0;
- return {...variants[choice%variants.length],name:HARMONIES[name].name};
+// Keep the call signature for existing score callers; chart data selects the
+// progression. The coin seed still controls the key and instrument elsewhere.
+export function harmonyPlan(_seed,character='serene',music={}){
+ return chartHarmony(character,music);
 }
 function compactVoicing(chordNotes,root,previous=[]){
  const tones=[...new Set(chordNotes.map(n=>((root+n)%12+12)%12))];let best=null,cost=Infinity;

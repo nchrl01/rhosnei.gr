@@ -8,7 +8,7 @@ from pathlib import Path
 import sys
 
 BASE = Path(__file__).resolve().parent
-sys.path.insert(0, str(BASE / 'native' / 'perc-generator'))
+sys.path.insert(0, str(BASE / 'scripts'))
 import pd_patch
 
 pd_patch.ROOT = BASE / 'public' / 'patches' / 'orchestra'
