@@ -6,7 +6,6 @@
   },
   "dependencies": {
     "@magenta/music": "1.23.1",
-    "kokoro-js": "1.2.1",
     "esbuild": "0.25.10"
   },
   "name": "john-in-a-cage-ai"

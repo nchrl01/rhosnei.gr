@@ -1,5 +1,5 @@
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,voiceSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=1';
+import {marketSpecs,mixSpecs,pianoSpecs,drumSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=2';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {createTradePiano} from './trade-piano.js?v=174';
 import {instrumentProfile} from './earthbound-instruments.js?v=147';
@@ -8,16 +8,16 @@ import {createEnvion} from './envion.js?v=152';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {createDataSonification} from './data-sonification.js?v=146';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
-import {createCoinVoice,createArpeggioAI,seededArp} from './ai-instruments.js?v=174';
+import {createArpeggioAI,seededArp} from './ai-instruments.js?v=175';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=53';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs,drums:drumSpecs,voice:voiceSpecs};
+const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs,drums:drumSpecs};
 const pdSpecs=[...envionSpecs,...dataSpecs,...phraseSpecs.flat()];
-const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},drums:Object.fromEntries(drumSpecs.map(s=>[s[0],s[5]])),voice:Object.fromEntries(voiceSpecs.map(s=>[s[0],s[5]])),pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',autoTrades:true,arpeggios:true,voiceModel:false,coinName:'UPIC',notes:'',arp:seededArp(1917)});
+const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},drums:Object.fromEntries(drumSpecs.map(s=>[s[0],s[5]])),pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
 let state=defaults(),ctx,piano,drums,pd,envionReady=false,running=false,starting=false,closed=false,timer,saveTimer;
 let transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,phraseViews=[],paints=[],pdValues={},lastUI=0;
 let idleSuspend=null,seedTimer=null;
-let solo=null,buses={},engineStatus={EarthBound:'Not loaded',Drums:'Not loaded','Pure Data':'Not loaded',ENVION:'Not loaded',Voice:'Optional download',Arpeggio:'Seeded phrase'},statuses={};
+let solo=null,buses={},engineStatus={EarthBound:'Not loaded',Drums:'Not loaded','Pure Data':'Not loaded',ENVION:'Not loaded',Arpeggio:'Seeded phrase'},statuses={};
 const report=text=>{$('status').textContent=text;};
 function readPreset(data){
  if(data?.schema!=='upic-audio-lab'||data.version!==1)throw Error('Not an Audio Lab preset');
@@ -26,16 +26,14 @@ function readPreset(data){
  for(const [key,,min,max,step] of pdSpecs)if(Number.isFinite(data.pd?.[key]))next.pd[key]=clamp(Math.round(data.pd[key]/step)*step,min,max);
  for(const [key] of mixSpecs)if(typeof data.enabled?.[key]==='boolean')next.enabled[key]=data.enabled[key];
  for(let i=0;i<5;i++){if(typeof data.slots?.[i]==='boolean')next.slots[i]=data.slots[i];if(Number.isFinite(data.slotLevels?.[i]))next.slotLevels[i]=clamp(data.slotLevels[i],0,1);}
- for(const key of ['autoTrades','arpeggios','voiceModel'])if(typeof data[key]==='boolean')next[key]=data[key];
+ for(const key of ['autoTrades','arpeggios'])if(typeof data[key]==='boolean')next[key]=data[key];
  if(Number.isFinite(data.master))next.master=clamp(data.master,0,1);
  if(Number.isInteger(data.instrument)&&data.instrument>=-1&&data.instrument<=1000)next.instrument=data.instrument;
  if(data.character==='auto'||Object.hasOwn(HARMONIES,data.character))next.character=data.character;
- if(typeof data.coinName==='string')next.coinName=data.coinName.replace(/[\p{C}<>]/gu,'').slice(0,80);
  if(typeof data.notes==='string')next.notes=data.notes.slice(0,10000);
  if(Array.isArray(data.arp)&&data.arp.length>=3&&data.arp.length<=16&&data.arp.every((p,i)=>Array.isArray(p)&&p.length===2&&Number.isInteger(p[0])&&p[0]>=0&&p[0]<16&&Number.isInteger(p[1])&&p[1]>=48&&p[1]<=83&&(!i||p[0]>data.arp[i-1][0])))next.arp=data.arp;
  else next.arp=seededArp(next.market.seed);
- // Loading a preset never initiates a model download.
- next.voiceModel=false;return next;
+ return next;
 }
 try{const saved=localStorage.getItem(KEY);if(saved)state=readPreset(JSON.parse(saved));}catch{}
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(state));}catch{report('Browser storage unavailable. Export your preset to keep it.');}},200);}
@@ -50,7 +48,6 @@ function send(name,value){
 const data=createDataSonification({send,event:name=>pd?.sendBang(name)});
 const math=createMathPatterns({send,onView:view=>{phraseViews=view.slots;}});
 const envion=createEnvion($('envion-host'));
-const voice=createCoinVoice({onStatus:text=>setStatus('Voice',text)});
 const arpAI=createArpeggioAI({onStatus:text=>setStatus('Arpeggio',text),onPattern:pattern=>{state.arp=pattern;piano?.setArpeggioPattern(pattern);save();}});
 function setStatus(name,text){engineStatus[name]=text;if(statuses[name])statuses[name].textContent=text;}
 for(const [name,text] of Object.entries(engineStatus)){const row=document.createElement('div');row.className='engine-line';const a=document.createElement('span'),b=document.createElement('span');a.textContent=name;b.textContent=text;statuses[name]=b;row.append(a,b);$('engines').append(row);}
@@ -62,17 +59,16 @@ function market(){
 }
 function applyAudio(){
  if(!ctx)return;master.gain.setTargetAtTime(state.master,ctx.currentTime,.025);
- for(const key of ['earthbound','drums','voice'])buses[key]?.gain.setTargetAtTime(level(key),ctx.currentTime,.025);
+ for(const key of ['earthbound','drums'])buses[key]?.gain.setTargetAtTime(level(key),ctx.currentTime,.025);
  piano?.configure({...state.piano,preset:state.instrument,arpeggios:state.arpeggios});piano?.setEnabled(level('earthbound')>0);piano?.setArpeggioPattern(state.arp);
  drums?.configure(state.drums);drums?.setEnabled(level('drums')>0);
- voice.configureSpace(state.voice);voice.setEnabled(state.voiceModel&&level('voice')>0);voice.setMaster(1);
  data.setEnabled(level('data')>0);math.setEnabled(level('math')>0);state.slots.forEach((v,i)=>math.setSlot(i,v));
  // ENVION caches automatic writes. Reapply explicit overrides immediately.
  for(const [name,value] of Object.entries(state.pd))send(name,pdValues[name]??value);
 }
 function resetScore(){
  clearTimeout(seedTimer);elapsed=0;lastTime=ctx?.currentTime??null;nextTrade=0;tradeIndex=0;price=1;pdValues={};
- piano?.reset(state.market.seed);drums?.reset(state.market.seed);math.setSeed(state.market.seed);data.reset(state.market.seed);envion.setSeed(state.market.seed);voice.setCoin(state.coinName,state.market.seed);send('seed',state.market.seed);applyAudio();
+ piano?.reset(state.market.seed);drums?.reset(state.market.seed);math.setSeed(state.market.seed);data.reset(state.market.seed);envion.setSeed(state.market.seed);send('seed',state.market.seed);applyAudio();
 }
 async function asset(path,type='text'){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),25000);
@@ -103,8 +99,7 @@ function setup(){
  const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-3;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;
  musicMeter=ctx.createAnalyser();musicMeter.fftSize=1024;musicData=new Float32Array(1024);musicMeter.connect(transport);
  transport.connect(limiter);limiter.connect(master);meter=ctx.createAnalyser();meter.fftSize=1024;master.connect(meter);meter.connect(ctx.destination);meterData=new Float32Array(1024);
- for(const key of ['earthbound','drums','voice']){const bus=ctx.createGain();bus.gain.value=level(key);bus.connect(key==='voice'?transport:musicMeter);buses[key]=bus;}
- voice.attach(ctx,buses.voice);voice.setCoin(state.coinName,state.market.seed);voice.setEnabled(false);voice.setMaster(1);
+ for(const key of ['earthbound','drums']){const bus=ctx.createGain();bus.gain.value=level(key);bus.connect(musicMeter);buses[key]=bus;}
  ctx.addEventListener('statechange',()=>{if(ctx.state==='interrupted'||ctx.state==='suspended'){if(running)stop();report('Audio paused. Tap Start audio to resume.');}});
  timer=setInterval(tick,50);
 }
@@ -113,14 +108,14 @@ async function start(){
  starting=true;$('play').disabled=true;
  try{
   if(!ctx)setup();await unlockPlayback(ctx);running=true;lastTime=ctx.currentTime;nextTrade=elapsed;transport.gain.setTargetAtTime(1,ctx.currentTime,.04);
-  piano?.setRunning(true);drums?.setRunning(true);envion.setRunning(true);voice.setRunning(true);send('run',1);
+  piano?.setRunning(true);drums?.setRunning(true);envion.setRunning(true);send('run',1);
   $('play').textContent='Pause audio';$('chord').disabled=false;$('trade').disabled=false;
   void loadEngines().then(()=>{if(!closed&&running){nextTrade=elapsed;report(piano||pd?'Loading finished. Check the engine statuses, then audition a chord.':'Audio engines could not load. Pause and start to retry.');}});
   applyAudio();
  }catch(error){stop();report(error.message);}finally{starting=false;$('play').disabled=false;}
 }
 function stop(){
- running=false;lastTime=null;transport?.gain.setTargetAtTime(0,ctx.currentTime,.025);piano?.setRunning(false);drums?.setRunning(false);voice.setRunning(false);envion.setRunning(false);math.stop();send('run',0);stopLegacyPlayback();arpAI.suspend();
+ running=false;lastTime=null;transport?.gain.setTargetAtTime(0,ctx.currentTime,.025);piano?.setRunning(false);drums?.setRunning(false);envion.setRunning(false);math.stop();send('run',0);stopLegacyPlayback();arpAI.suspend();
  $('play').textContent='Start audio';$('chord').disabled=true;$('trade').disabled=true;clearTimeout(idleSuspend);if(ctx&&!closed&&!loadJob)idleSuspend=setTimeout(()=>{if(!running)void ctx.suspend().catch(()=>{});},120);paint();
 }
 function trigger(force=false){
@@ -140,8 +135,6 @@ function tick(){
   send('melody',.6*m.music.intensity*m.fresh);if(envionReady)envion.market(m,state.market.tempo);
   data.frame(m,{playing:true,clock:now});math.frame(m,{playing:true,ready:!!pd,clock:now,event:tradeIndex?'lab-'+(tradeIndex-1):null});drums?.frame(m,{playing:true});
   piano?.frame({...m,replay:null},{playing:true,at:elapsed*1000,price,known:true,quiet:state.market.activity===0});
-  musicMeter.getFloatTimeDomainData(musicData);const power=musicData.reduce((sum,v)=>sum+v*v,0)/musicData.length;
-  if(state.voiceModel)voice.frame(m,{playing:true,audible:power>1e-6});
  }
  if(now-lastUI>.15||!running){lastUI=now;paint();}
 }
@@ -187,12 +180,6 @@ function build(){
   const sw=document.createElement('div');sw.className='switches';grid.append(sw);switchButton(sw,'Phrase '+(i+1),()=>state.slots[i],v=>state.slots[i]=v);
   addKnob(grid,['slot'+i,'Phrase level',0,1,.01],()=>state.slotLevels[i],v=>state.slotLevels[i]=v);pdKnobs(grid,phraseSpecs[i]);
  }
- const speech=section('08 / Coin whisper','Kokoro generates the coin name locally in a worker after you enable it. Initial model download may take time. The voice only plays over audible instruments; it repeats on the engine’s existing 90–139 second cadence.');
- const label=document.createElement('label');label.className='select-row';label.textContent='Coin name';const name=document.createElement('input');name.maxLength=80;name.value=state.coinName;name.onchange=()=>{state.coinName=name.value.replace(/[\p{C}<>]/gu,'').slice(0,80);voice.setCoin(state.coinName,state.market.seed);changed();};label.append(name);speech.append(label);
- action(speech,'Enable / retry voice model',()=>{if(!ctx){report('Start audio first, then enable the voice model.');return;}state.voiceModel=true;applyAudio();voice.retry();save();});
- action(speech,'Disable voice model',()=>{state.voiceModel=false;voice.setEnabled(false);changed();});
- action(speech,'Re-cue coin name',()=>{voice.reset();report('Voice re-cued. It will enter when music is audible.');});
- for(const spec of voiceSpecs)direct(speech,'voice',spec);
  paint();
 }
 function paint(){
@@ -220,7 +207,7 @@ $('load').onchange=async event=>{const file=event.target.files?.[0];if(!file)ret
 $('reset').onclick=()=>{stop();arpAI.suspend();state=defaults();solo=null;resetScore();build();save();report('Default settings restored. Press Start audio.');};
 // Hidden pages stop expensive DSP and sequencing; return requires a deliberate tap.
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();void ctx?.suspend().catch(()=>{});}});
-window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);piano?.close();drums?.close();voice.close();arpAI.close();envion.detach();void pd?.close();void ctx?.close();});
+window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);piano?.close();drums?.close();arpAI.close();envion.detach();void pd?.close();void ctx?.close();});
 math.setSeed(state.market.seed);data.reset(state.market.seed);build();
 
 window.addEventListener('pageshow',event=>{if(event.persisted&&closed)location.reload();});

@@ -1,4 +1,4 @@
-import {audioLab} from './audio-lab.js?v=2';
+import {audioLab} from './audio-lab.js?v=3';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),KEY='upic-av-lab-v1';

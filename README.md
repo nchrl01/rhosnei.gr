@@ -1,3 +1,5 @@
+> Current audio: Coin Whisper has been removed from the website and all labs, along with its model loader and dependency. Earlier version notes below describe historical behavior.
+
 # $UPIC — market instrument
 
 $UPIC turns observed cryptocurrency market behavior into a Pure Data instrument.
@@ -24,7 +26,7 @@ from 0.34 to 0.26. The room is audible from startup,
 including when market cap is unknown; cap adds resonance and a longer-feeling wash.
 These are sound-design mappings, not physical measurements of resonance.
 
-Piano, Envion and coin voice are ON by default and can be removed separately via
+Piano and Envion are ON by default and can be removed separately via
 `pdata`. Harmonic strings have been removed. The violin research output is not in the site.
 Envion's original source, 44 samples, 19 envelope banks and authored effects
 remain available in the full Pure Data browser engine.
