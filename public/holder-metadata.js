@@ -1,18 +1,22 @@
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {fetchGecko} from './gecko.js?v=39';
+import {createHolderClusters} from './holder-clusters.js?v=168';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
 const cache=new Map(),HOUR=3600000;
 export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
+ const clusters=createHolderClusters();
  let key='',state={state:'unavailable',holders:null,watchers:null},controller,timer,epoch=0;
  function publish(next){state=next;onChange(snapshot());}
  function snapshot(now=Date.now()){
-  if(state.holders===null)return {...state,weight:0,watchers:null};
+  const relationships=clusters.snapshot(now);
+  if(state.holders===null)return {...state,weight:0,watchers:null,relationships};
   // Provider time measures the snapshot, receipt time bounds our own cache.
   const age=state.countAt?Math.max(0,now-state.countAt,now-state.receivedAt):null;
   const weight=state.countAt?Math.max(0,Math.min(1,1-(age-HOUR)/(5*HOUR))):0;
-  return {...state,age,weight,watchers:null,state:age===null?'age-unknown':weight===0?'expired':state.state};
+  return {...state,age,weight,watchers:null,relationships,state:age===null?'age-unknown':weight===0?'expired':state.state};
  }
  function setMarket(pair){
+  clusters.setMarket(pair);
   epoch++;controller?.abort();clearTimeout(timer);key='';
   if(!pair){publish({state:'unavailable',holders:null,watchers:null});return;}
   const network=aliases[pair.chainId]||pair.chainId,address=pair.baseToken.address;
@@ -44,5 +48,5 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   }
   void refresh();
  }
- return {setMarket,snapshot,close(){epoch++;controller?.abort();clearTimeout(timer);}};
+ return {setMarket,snapshot,close(){clusters.close();epoch++;controller?.abort();clearTimeout(timer);}};
 }
