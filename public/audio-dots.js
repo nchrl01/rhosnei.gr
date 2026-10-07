@@ -1,6 +1,7 @@
+import {advancePixelSurvival,marketCapReleaseSeconds} from './pixel-blast-parameters.js?v=192';
 import {walletSizeVariation} from './visual-context.js?v=171';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=191';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=192';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;
 export function fieldState(m={}){
@@ -176,9 +177,9 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   audible=active&&(rms>.0005||now-lastSound<100);
   if(host){host.dataset.audible=String(audible);host.dataset.visible='true';}
   const target=audible?unit((20*Math.log10(Math.max(1e-8,rms))+70)/52):0;
-  level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:1.4)));
+  level+=(target-level)*(1-Math.exp(-dt/(target>level?.15:marketCapReleaseSeconds(latest.marketCap))));
   const presenceTarget=audible?unit(target/.45):0;
-  pixelPresence+=(presenceTarget-pixelPresence)*(1-Math.exp(-dt/(presenceTarget>pixelPresence?.08:.5)));
+  pixelPresence=advancePixelSurvival(pixelPresence,presenceTarget,dt,latest.marketCap);
   if(!audible&&pixelPresence<.001)pixelPresence=0;
   if(pixelPresence>0)dirty=true;
   const audioTime=getAudio()?.context?.currentTime??0;
@@ -213,7 +214,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   else appearance.capitalStage+=(visualParams.capitalStage-appearance.capitalStage)*(1-Math.exp(-dt/2.5));
   visualParams.capitalStage=appearance.capitalStage;
   for(const key of ['dotSize','density']){
-   appearance[key]+=(visualParams[key]-appearance[key])*(1-Math.exp(-dt/(visualParams[key]>appearance[key]?.14:.65)));
+   appearance[key]+=(visualParams[key]-appearance[key])*(1-Math.exp(-dt/(visualParams[key]>appearance[key]?.14:marketCapReleaseSeconds(latest.marketCap))));
    visualParams[key]=appearance[key];
   }
   visualParams.pixelSize=visualParams.dotSize;visualParams.patternDensity=visualParams.density;

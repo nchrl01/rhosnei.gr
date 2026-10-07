@@ -6,6 +6,19 @@ const unit=n=>Math.max(0,Math.min(1,Number.isFinite(Number(n))?Number(n):0));
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 const mix=(a,b,t)=>a+(b-a)*unit(t);
 
+// Higher-cap marks retain sound history longer; no energy is created at rest.
+export function marketCapReleaseSeconds(marketCap){
+ const cap=Number(marketCap);
+ const size=Number.isFinite(cap)&&cap>0?unit((Math.log10(cap)-4)/5):.5;
+ return .25*Math.pow(16,size);
+}
+export function advancePixelSurvival(previous,target,dt,marketCap,releaseOverride){
+ const before=unit(previous),goal=unit(target);
+ const release=Number.isFinite(releaseOverride)?clamp(releaseOverride,.1,12):marketCapReleaseSeconds(marketCap);
+ const next=goal+(before-goal)*Math.exp(-Math.max(0,Number(dt)||0)/(goal>before?.08:release));
+ return goal===0&&next<.001?0:unit(next);
+}
+
 // The user's standalone React Bits reference, before market/audio modulation.
 export const PIXEL_BLAST_REFERENCE=Object.freeze({
  pixelSize:2,patternScale:.25,patternDensity:1.65,speed:1.35,edgeFade:.5,
@@ -54,6 +67,7 @@ export function pixelBlastParameters({seed=0,referenceCap=null,walletVariation=0
   variant:reference.variant,color:reference.color,transparent:reference.transparent,
   antialias:reference.antialias,autoPauseOffscreen:reference.autoPauseOffscreen,
   capitalStage:coinVisualPreset(seed).patternStage,patternStage:coinVisualPreset(seed).patternStage,pixelSize,cellSize:mix(16,4,liquidity),dotSize:pixelSize,
+  pixelPresence:active?unit(level/.02):0,survivalRelease:marketCapReleaseSeconds(marketCap),
   patternScale,scale:patternScale,
   patternDensity,density:patternDensity,
   // One tempo ratio drives flow: 100 BPM = reference speed, 200 = twice it.

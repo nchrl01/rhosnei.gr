@@ -1,7 +1,7 @@
 // Seeded EarthBound instruments following the existing piano composition engine.
 import {createPianoPhrasing,pianoNuance} from './piano-phrasing.js?v=177';
 import {pianoArticulation,interlockingPiano,interlockPitch} from './piano-interlock.js?v=189';
-import {createPianoPolicy} from './piano-policy.js?v=61';
+import {createPianoPolicy} from './piano-policy.js?v=194';
 import {EARTHBOUND_PRESETS,earthboundPreset,instrumentProfile,instrumentPitch} from './earthbound-instruments.js?v=185';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 let sampleDownload;
@@ -217,10 +217,16 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
   reset(value=seed){clear();seed=Number(value)>>>0;instrument=chooseInstrument(seed);profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);phrasing.reset(seed);nextArp=0;lastArpBucket=null;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
-  setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=30/tempo;}if(interlock)interlock.pendingTempo=tempo;},
+  setTempo(value){const tempo=Math.max(40,Math.min(140,Number(value)||40));if(arp){arp.tempo=tempo;arp.step=15/tempo;}if(interlock)interlock.pendingTempo=tempo;},
   resonance(cap){currentCap=cap;const r=marketResonance(cap),a=pianoArticulation(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;instrumentFilter.frequency.setTargetAtTime(profile.cutoff,ctx.currentTime,.08);instrumentSend.gain.setTargetAtTime(profile.room,ctx.currentTime,.08);dry.gain.setTargetAtTime(.34+.5*a,ctx.currentTime,.8);wet.gain.setTargetAtTime(1.45-1.15*a,ctx.currentTime,.8);}labRoom();return r;},
   snapshot(){return {name:instrument.name,family:profile.family,preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:Boolean(interlock||arp),tempo:interlock?.tempo??arp?.tempo??null,roomSend:profile.room,wetReturn:1.45-1.15*pianoArticulation(currentCap)};},
   replay(event,selection,cap,music){if(closed||!enabled||!running||ctx.state!=='running'||!selection)return false;this.resonance(cap);this.setTempo(music.tempo);return play(selection,event,cap,music);},
+  observePrice(event,cap,music=event.music||{}){
+   if(closed||!enabled||!running||ctx.state!=='running')return false;
+   this.resonance(cap);this.setTempo(music.tempo);
+   const selection=policy.observe({...event,quietAt:ctx.currentTime*1000},music);
+   return selection?play(selection,event,cap,music):false;
+  },
   trade(event,cap,music=event.music||{}){
    if(closed||!enabled||!running||ctx.state!=='running')return false;
    this.resonance(cap);

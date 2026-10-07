@@ -1,20 +1,21 @@
-import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=1';
+import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=2';
 import {battlePatternNames} from './earthbound-pattern.js?v=172';
-import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=191';
+import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=192';
+import {advancePixelSurvival} from './pixel-blast-parameters.js?v=192';
 import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=171';
 import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
 const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
 const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity depth',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
 const visualSpecs=[['dotSize','Mark size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
 const stage=$('preview');
-let renderer=createPixelBlastField(stage,{generations:false}),seed=1917%suggestedLayers.length,inputs={},overrides={},knobs=[],groups=[],notes='',running=true,time=0,eventTime=0,last=0,lastReadout=0,saveTimer,image=null,cycles=false,dirty=true;
+let renderer=createPixelBlastField(stage,{generations:false}),seed=1917%suggestedLayers.length,inputs={},overrides={},knobs=[],groups=[],notes='',running=true,time=0,eventTime=0,last=0,lastReadout=0,pixelSurvival=0,saveTimer,image=null,cycles=false,dirty=true;
 const initial=()=>Object.fromEntries(inputSpecs.map(s=>[s[0],s[5]]));
 inputs=initial();
 const defaultGroups=()=>Array.from({length:4},(_,i)=>({percentage:[20,10,5,2][i],wallets:[{address:'lab-wallet-'+i,percentage:[15,6,3,1][i]}]}));
 groups=defaultGroups();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function mapped(){return {...labVisualMappings(pixelBlastParameters({...inputs,seed,walletVariation:walletSizeVariation(groups),capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),{...inputs,active:true}),pixelPresence:Math.min(1,inputs.level/.02)};}
-function params(){const p={...mapped(),...overrides};p.pixelSize=p.dotSize;p.patternScale=p.scale;p.patternDensity=p.density;p.pixelSizeJitter=p.jitter;return p;}
+function mapped(){return {...labVisualMappings(pixelBlastParameters({...inputs,seed,walletVariation:walletSizeVariation(groups),capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),{...inputs,active:true})};}
+function params(){const p={...mapped(),pixelPresence:pixelSurvival,...overrides};p.pixelPresence=Math.min(p.pixelPresence,pixelSurvival);p.pixelSize=p.dotSize;p.patternScale=p.scale;p.patternDensity=p.density;p.pixelSizeJitter=p.jitter;return p;}
 function draft(){return {schema:'upic-visual-lab',version:2,mappingVersion:LAB_MAPPING_VERSION,rendererVersion:173,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
 function save(){dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(draft()));}catch{$('status').textContent='Storage unavailable — export your preset to keep it.';}},250);}
 function apply(data){
@@ -29,7 +30,7 @@ function apply(data){
  notes=typeof data.notes==='string'?data.notes.slice(0,10000):'';cycles=data.cycles===true;
 }
 try{const stored=localStorage.getItem(KEY);if(stored)apply(JSON.parse(stored));}catch{}
-function resetMotion(){time=0;eventTime=0;renderer.reset(seed);dirty=true;}
+function resetMotion(){time=0;eventTime=0;pixelSurvival=0;renderer.reset(seed);dirty=true;}
 function rebuild(){renderer.close();renderer=createPixelBlastField(stage,{generations:cycles});if(image)renderer.setImage(image);resetMotion();}
 function section(title,description,open=false){const d=document.createElement('details');d.open=open;const s=document.createElement('summary');s.textContent=title;d.append(s);const p=document.createElement('p');p.className='group-note';p.textContent=description;d.append(p);const grid=document.createElement('div');grid.className='grid';d.append(grid);$('controls').append(d);return grid;}
 function knob(parent,spec,get,set,auto){
@@ -56,7 +57,7 @@ function buildControls(){
  knob(global,['seed','EarthBound coin seed',0,suggestedLayers.length-1,1],()=>seed%suggestedLayers.length,v=>{seed=v;resetMotion();});
  const presetName=document.createElement('p');presetName.className='group-note wide';global.append(presetName);knobs.push(()=>{presetName.textContent=coinVisualPreset(seed).name+' · '+battlePatternNames[coinVisualPreset(seed).index%8];});
  const toggle=document.createElement('button');toggle.textContent='Ink cycles: '+(cycles?'on':'off');toggle.onclick=()=>{cycles=!cycles;toggle.textContent='Ink cycles: '+(cycles?'on':'off');rebuild();save();};global.append(toggle);
- const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. The reference-cap edge effect is inverted. Higher market cap tightens grid spacing from 24 to 4 px. Reference cap stays fixed until you turn it. Trade activity controls flow speed: zero = still, full activity = 2.7. Mark size is limited to 12 px. Turning activity restores automatic flow speed.',true);
+ const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. Edge shrink is strongest at $1K and weakest at $1B. Higher market cap tightens grid spacing from 24 to 4 px. Reference cap stays fixed until you turn it. Trade activity controls flow speed: zero = still, full activity = 2.7. Mark size is limited to 12 px. Higher market cap makes marks dissolve more slowly after sound stops. Pixel survival follows this sound tail; a manual value can reduce it. Turning activity restores automatic flow speed.',true);
  for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;if(spec[0]==='activity')delete overrides.speed;});
  const b=section('03 / Renderer','Turning a knob overrides its mapping. Image knobs need a loaded image. Grid spacing changes the hidden lattice.',true);
  for(const spec of visualSpecs)knob(b,spec,()=>params()[spec[0]],v=>{overrides[spec[0]]=v;},()=>{delete overrides[spec[0]];});
@@ -80,6 +81,8 @@ $('load').onchange=async e=>{try{const file=e.target.files[0];if(!file)return;if
 $('image').onchange=async e=>{const file=e.target.files[0];if(!file)return;if(file.size>12000000){$('status').textContent='Choose an image under 12 MB.';return;}const url=URL.createObjectURL(file);try{const img=new Image();img.src=url;await img.decode();image=img;renderer.setImage(img);overrides.identity=.7;save();$('status').textContent='Image loaded — turn Image morph to shape the field.';}catch{$('status').textContent='Could not load that image.';}finally{URL.revokeObjectURL(url);}};
 let width=1,height=1;new ResizeObserver(entries=>{width=entries[0].contentRect.width;height=entries[0].contentRect.height;dirty=true;}).observe(stage);
 function frame(now){requestAnimationFrame(frame);const dt=Math.min(.05,(now-(last||now))/1000);last=now;if(document.hidden)return;
+ const nextSurvival=advancePixelSurvival(pixelSurvival,mapped().pixelPresence,dt,inputs.marketCap);
+ if(nextSurvival!==pixelSurvival){pixelSurvival=nextSurvival;dirty=true;}
  if(running){const p=params();time+=dt*p.speed;eventTime+=dt;dirty=true;}
  if(dirty){const p=params();renderer.render({width,height,time,eventTime,liquidTime:time,active:true,parameters:p});dirty=false;}
  if(now-lastReadout>120){lastReadout=now;knobs.forEach(p=>p());$('clock').textContent=Math.floor(eventTime/60).toString().padStart(2,'0')+':'+Math.floor(eventTime%60).toString().padStart(2,'0');$('renderer').textContent=(stage.dataset.pixelBlast||'pixel')+' · '+Math.round(width)+' × '+Math.round(height);}

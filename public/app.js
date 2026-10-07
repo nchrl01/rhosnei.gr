@@ -13,12 +13,12 @@ import {createCoinDither} from './coin-dither.js?v=119';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=112';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=61';
-import {createAudioDots} from './audio-dots.js?v=191';
+import {createAudioDots} from './audio-dots.js?v=192';
 import {createHolderMetadata} from './holder-metadata.js?v=168';
 import {createTouchDesignerBridge} from './touchdesigner-bridge.js?v=97';
 import {createDataSonification} from './data-sonification.js?v=187';
 import {createArpeggioAI} from './ai-instruments.js?v=190';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=189';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=194';
 import {createMathPatterns,MATH_SLOT_COUNT} from './math-patterns.js?v=152';
 import {createMathPatternView} from './math-pattern-view.js?v=152';
 import {contextualizeMarket} from './market-state.js?v=53';
@@ -35,7 +35,7 @@ import {fetchGecko} from './gecko.js?v=39';
 import {startTrending} from './trending.js?v=99';
 import {MarketChart} from './chart.js?v=136';
 import {loadHistory} from './history.js?v=136';
-import {pollPoolTrades} from './trades.js?v=39';
+import {pollPoolTrades} from './trades.js?v=194';
 const $=id=>document.getElementById(id);
 const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -64,7 +64,7 @@ let seed=1917,state=1917,step=0,timer,next=0,bpm=120,session=null;
 const controls=['master'];
 const engineMaster=()=>$('audio-output').value==='native'?Number($('master').value):1;
 let stopStream,streamConnected=false,poolEvents=[],lastSnapshot=0,streamPool='',sharedMarket=false;
-let streamKind='snapshot',tradeEvents=[],lastTrade=null,lastChainPrice=null,discovered=[],lastExcitation=0;
+let streamKind='snapshot',tradePollingAt=0,tradeEvents=[],lastTrade=null,lastChainPrice=null,discovered=[],lastExcitation=0;
 let piano=null,pianoEnabled=true,pianoHistory=[],pianoReplayCursor=null,pianoChordCount=0;
 let audioEpoch=0,pianoLoading=null,pdLoading=null,pendingPianoTrade=null,idleAudioTimer;
 const audioErrors={piano:'',pd:'',envion:''};
@@ -142,9 +142,14 @@ function audioStatus(){
 function flushPianoTrade(){
  if(!piano||!playing||ctx?.state!=='running')return;
  const trade=pendingPianoTrade;pendingPianoTrade=null;
- // Only a real, recently received event can survive the loading boundary.
- // Do not replay a stale backlog or turn snapshots into invented trades.
- if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000)piano?.trade(trade,liveMetrics().context?.latestCap,{...trade.music,tonic:marketRoot(liveMetrics())});
+ // Keep only a fresh observation across loading, preserving its source type.
+ if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000){const m=liveMetrics();piano[trade.kind==='price-observation'?'observePrice':'trade'](trade,m.context?.latestCap,{...trade.music,tonic:marketRoot(m)});}
+}
+function observePianoPrice(priceUsd,referencePrice,receivedAt=Date.now(),id='price:'+receivedAt){
+ if((!playing&&!starting)||replay.state.active||!(priceUsd>0)||!Number.isFinite(priceUsd))return;
+ const m=liveMetrics(),event={id,kind:'price-observation',priceUsd,referencePrice,receivedAt,music:{...m.music,tonic:marketRoot(m)}};
+ if(playing&&piano?.observePrice(event,m.context?.latestCap,event.music)){pendingPianoTrade=null;audioStatus();}
+ else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=event;
 }
 function currentPrice(){if(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind)){if((lastChainPrice?.receivedAt||0)>(lastTrade?.receivedAt||0))return Number(lastChainPrice.priceUsd);if(lastTrade?.priceUsd)return Number(lastTrade.priceUsd);}return Number(market?.priceUsd);}
 function marketRoot(m){
@@ -197,7 +202,7 @@ function updateReplayUI(m){
 
  const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
  $('replay-state').textContent=active?'· '+rate+'×':'';
- $('replay-info').textContent=!active?'Each coin has an EarthBound instrument. A ≥'+PIANO_MOVE_PCT+'% move selects a note and can start a finite pattern; market cap and activity shape its layers. Known quiet intervals allow sparse notes.':'Selective candle score: ≥'+PIANO_MOVE_PCT+'% movement selects notes and finite patterns. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
+ $('replay-info').textContent=!active?'Each coin has an EarthBound instrument. Observed price changes of ≥'+PIANO_MOVE_PCT+'% select a note and can start a finite pattern; market cap and activity shape its layers. Known quiet intervals allow sparse notes.':'Selective candle score: ≥'+PIANO_MOVE_PCT+'% movement selects notes and finite patterns. Zero-volume candles allow sparse quiet notes. OHLC is not a reconstruction of historical trades; historical cap uses frozen snapshot supply.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Exchange history volume is estimated from base volume × close. Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
@@ -234,7 +239,7 @@ function syncLevels(m){
 }
 function setupStream(){
  const key=market?.chainId+':'+market?.pairAddress;if(key===streamPool)return;
- stopStream?.();streamPool=key;streamConnected=false;poolEvents=[];
+ stopStream?.();streamPool=key;streamConnected=false;tradePollingAt=0;poolEvents=[];
  const gen=generation;
  let stopNative,stopFallback,nativeState={connected:false,kind:'snapshot',message:''},fallbackState={connected:false,kind:'snapshot',message:''};
  const signatures={rpc:new Set(),gecko:new Set(),ccxt:new Set()},tradeIds=new Set();
@@ -242,12 +247,12 @@ function setupStream(){
   const chosen=nativeState.connected&&['swap','rpc-poll','exchange'].includes(nativeState.kind)?nativeState:fallbackState.connected&&fallbackState.kind==='trade-poll'?fallbackState:nativeState.connected&&nativeState.kind==='pool'?nativeState:fallbackState.message?fallbackState:nativeState;
   streamConnected=chosen.connected;streamKind=chosen.kind;$('feed').textContent=chosen.message+(chosen!==nativeState&&nativeState.message?' · direct route: '+nativeState.message:'');display();
  };
- const startFallback=()=>{if(stopFallback)return;stopFallback=pollPoolTrades(market,receive,s=>{if(gen!==generation)return;fallbackState=s;publish();});};
+ const startFallback=()=>{if(stopFallback)return;stopFallback=pollPoolTrades(market,receive,s=>{if(gen!==generation)return;fallbackState=s;tradePollingAt=s.connected?s.checkedAt||0:0;publish();});};
  const receive=e=>{
   if(gen!==generation)return;
   if(e.kind==='market-price'){
    const quoteUsd=Number(market.priceUsd)/Number(market.priceNative),priceUsd=e.priceQuote*quoteUsd;
-   if(priceUsd>0&&Number.isFinite(priceUsd)){const previous=lastChainPrice?.priceUsd??currentPrice();if(!replay.state.active&&previous>0&&Math.abs(priceUsd/previous-1)>1e-9){dataVisual.event({...e,priceUsd});touchDesigner.event({kind:'pool-state'});}lastChainPrice={...e,priceUsd};chart.add({at:e.occurredAt||e.receivedAt,price:priceUsd,source:'rpc-state'});$('chart-source').textContent='Direct Robinhood RPC pool state · refreshed during quiet periods · USD quote conversion uses snapshots';display();}
+   if(priceUsd>0&&Number.isFinite(priceUsd)){const previous=lastChainPrice?.priceUsd??currentPrice();if(!replay.state.active&&previous>0&&Math.abs(priceUsd/previous-1)>1e-9){dataVisual.event({...e,priceUsd});touchDesigner.event({kind:'pool-state'});}lastChainPrice={...e,priceUsd};observePianoPrice(priceUsd,previous,e.receivedAt);chart.add({at:e.occurredAt||e.receivedAt,price:priceUsd,source:'rpc-state'});$('chart-source').textContent='Direct Robinhood RPC pool state · refreshed during quiet periods · USD quote conversion uses snapshots';display();}
    session?.events?.push(e);return;
   }
   if(e.kind==='timing'){const trade=tradeEvents.find(t=>t.id===e.id)||(lastTrade?.id===e.id?lastTrade:null);if(trade){trade.occurredAt=e.occurredAt;trade.precision=e.precision;}chart.retime(e.id,e.occurredAt);session?.events?.push(e);return;}
@@ -326,7 +331,7 @@ function tick(){
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
  if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
  const historical=replay.state.active,bar=replay.state.bar;
- piano?.frame({...m,music:{...m.music,tonic:marketRoot(m)}},{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)&&m.fresh>0,quiet:historical?bar?.volume===0:true});
+ piano?.frame({...m,music:{...m.music,tonic:marketRoot(m)}},{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:(m.decoded&&streamKind!=='trade-poll'&&m.fresh>0)||(tradePollingAt>0&&Date.now()-tradePollingAt<25000),quiet:historical?bar?.volume===0:true});
  send('tempo',bpm);send('activity',music.activity);send('motion',music.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
 }
@@ -361,7 +366,7 @@ async function initialize(){
   // Piano and Pd share the instrument-analysis tap.
   instrumentTap=ctx.createAnalyser();instrumentTap.fftSize=2048;instrumentSamples=new Float32Array(instrumentTap.fftSize);instrumentTap.connect(gain);
   function scope(name,out){const input=ctx.createGain();input.connect(out);const split=ctx.createChannelSplitter(2);input.connect(split);const channels=[0,1].map(channel=>{const meter=ctx.createAnalyser();meter.fftSize=2048;split.connect(meter,channel);return meter;});audioScopes.push({name,input,channels});return input;}
-  scope('EarthBound',instrumentTap);scope('Pure Data',instrumentTap);
+  scope('EarthBound',instrumentTap).gain.value=2;scope('Pure Data',instrumentTap);
 
  }
  const epoch=audioEpoch,context=ctx,destination=instrumentTap;
@@ -565,15 +570,16 @@ async function fetchJSON(url,{signal}={}){
  }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
 function applySnapshot(pair){
+ const previous=currentPrice();
  market=isExchangeMarket(pair)?{...pair,exchangeBook:market?.pairAddress===pair.pairAddress?market.exchangeBook:null}:pair;lastSnapshot=Date.now();
- if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':'Observed market snapshots · 5-second polling; provider data may be cached';}
+ if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){observePianoPrice(Number(pair.priceUsd),previous,lastSnapshot);chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':'Observed market snapshots · 5-second polling; provider data may be cached';}
  display();
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
  pendingHistoryReplay=false;
  void takeShare.finish();takeShare.reset();
- pendingPianoTrade=null;preloadPianoSamples().catch(error=>engineView.log('Piano preload: '+error.message));
+ pendingPianoTrade=null;tradePollingAt=0;preloadPianoSamples().catch(error=>engineView.log('Piano preload: '+error.message));
  mathMarket=null;
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);

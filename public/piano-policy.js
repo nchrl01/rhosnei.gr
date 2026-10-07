@@ -17,8 +17,23 @@ export function createPianoPolicy(seed=0){
   anchor=price;lastNote=quietAt;
   return {reason,changePct,price,at,music};
  }
+ function movement(price,at,music,quietAt){
+  const move=(price/anchor-1)*100;
+  // Trades and observed prices share one anchor and onset-spacing rule.
+  const spacing=Math.max(600,60000/Math.max(40,Math.min(140,Number(music.tempo)||40)));
+  return Math.abs(move)+1e-9>=PIANO_MOVE_PCT&&(lastNote===null||quietAt-lastNote>=spacing)?select(price,at,music,'movement',quietAt):null;
+ }
  return {
   reset(value=seed){seed=value>>>0;anchor=null;lastTrade=null;started=null;lastNote=null;},
+  observe(event,music={}){
+   const price=priceOf(event),at=Number(event.receivedAt??event.occurredAt??event.at);
+   if(!(price>0)||!Number.isFinite(price)||!Number.isFinite(at))return null;
+   const quietAt=Number.isFinite(event.quietAt)?event.quietAt:at;
+   prime(price,music,event.referencePrice);started??=quietAt;
+   // A real pool/ticker price may select a meaningful movement, but it says
+   // nothing about whether trades occurred. Never manufacture quiet activity.
+   return movement(price,at,music,quietAt);
+  },
   trade(event,music={}){
    const price=priceOf(event),at=Number(event.historical?event.at:event.receivedAt??event.occurredAt??event.at);
    if(!(price>0)||!Number.isFinite(price)||!Number.isFinite(at))return null;
@@ -27,18 +42,16 @@ export function createPianoPolicy(seed=0){
    // Empty candles are known quiet intervals, never invented historical trades.
    if(event.historical&&event.volume===0)return null;
    const gap=quietAt-(lastTrade??started);lastTrade=Math.max(lastTrade??quietAt,quietAt);
-   const move=(price/anchor-1)*100;
    // A cached burst or overdue replay batch cannot strike many notes at once.
    // Suppressed observations leave the price anchor intact for the next move.
-   const spacing=Math.max(600,60000/Math.max(40,Math.min(140,Number(music.tempo)||40)));
-   if(Math.abs(move)+1e-9>=PIANO_MOVE_PCT&&(lastNote===null||quietAt-lastNote>=spacing))return select(price,at,music,'movement',quietAt);
+   const selected=movement(price,at,music,quietAt);if(selected)return selected;
    if(!event.historical&&gap>=PIANO_QUIET_MS&&(lastNote===null||quietAt-lastNote>=quietSpacing()))return select(price,at,music,'quiet',quietAt);
    return null;
   },
   idle({at,quietAt=at,price,music={},known=false,quiet=false,referencePrice}={}){
    if(!(price>0)||!Number.isFinite(price)||!Number.isFinite(at)||!Number.isFinite(quietAt))return null;
    prime(price,music,referencePrice);started??=quietAt;
-   // A disconnected/cached feed cannot establish the absence of trades.
+   // Only a healthy stream or recently checked trade poll can establish observed quiet.
    if(!known){lastTrade=quietAt;return null;}
    if(!quiet){lastTrade=quietAt;return null;}
    if(quietAt-(lastTrade??started)<PIANO_QUIET_MS||lastNote!==null&&quietAt-lastNote<quietSpacing())return null;
