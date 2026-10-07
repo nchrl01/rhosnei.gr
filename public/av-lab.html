@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#090909">
   <title>UPIC · Audiovisual lab</title>
   <link rel="icon" href="upic-favicon.svg">
-  <link rel="stylesheet" href="visual-lab.css?v=197">
-  <link rel="stylesheet" href="audio-lab.css?v=197">
-  <link rel="stylesheet" href="av-lab.css?v=197">
+  <link rel="stylesheet" href="visual-lab.css?v=198">
+  <link rel="stylesheet" href="audio-lab.css?v=198">
+  <link rel="stylesheet" href="av-lab.css?v=198">
 </head>
 <body>
   <header>
@@ -44,7 +44,7 @@
       </div>
     </section>
     <div class="lab-toolbar">
-      <p>Patch the connections. Hear and see the result.</p>
+      <p>One market signal drives both engines. Start audio to hear the patch.</p>
       <div class="actions">
         <button id="note">Export change note</button>
         <button id="save">Save preset</button>
@@ -57,25 +57,24 @@
       <details class="engine-panel audio-controls">
         <summary><span>03 / AUDIO CONTROLS</span><span class="panel-summary">Instruments, harmony, effects</span></summary>
         <div class="panel-body">
-          <div class="intro"><p>Drag knobs, use arrow keys, or type a value. AUTO follows the engine; turn a knob to override it. Start audio before auditioning. Your changes stay in this lab.</p></div>
+          <div class="intro"><p>Optional tuning. The default Envion and visual mappings follow the same market context automatically.</p></div>
           <div id="controls"></div>
           <label class="notes">Notes for changes<textarea id="notes" placeholder="What should change in the main website’s audio and visuals?"></textarea></label>
-          <details class="inactive"><summary>What this lab covers</summary><p>Actual sampled EarthBound harmony and arpeggios, ENVION’s market-mapped controls, five seeded Pure Data market phrases, data sonification, and optional AI arpeggios. Tempo is limited to the existing melodic engine’s 40–140 BPM range.</p><p>It simulates market inputs; it does not fetch trades or reproduce a historical recording. The arpeggio model downloads only when you request it. ENVION sample replacement, internal Pd patch wiring, model weights and convolution impulse lengths are not editable here. Exported notes and presets do not change the main website.</p></details>
+          <details class="inactive"><summary>About this patch</summary><p>Market inputs here are simulated. Trade activity drives flow and Envion gesture timing; cap controls spacing, edge shrink and pixel survival; liquidity drives Envion reverb; motion opens its filters; price direction shifts the key mood and visual marks.</p><p>These are the live mappings used by the engines. Presets and change notes can be exported below.</p></details>
           <p class="footer">Drafts are stored in this browser. Attach an exported change note in our chat to request changes.</p>
         </div>
       </details>
       <details class="engine-panel visual-controls">
         <summary><span>04 / VISUAL CONTROLS</span><span class="panel-summary">Context, marks, motion</span></summary>
         <div class="panel-body">
-          <div class="intro"><p>Both outputs share the same market and audio clock. Marks are circles at neutral price change, + for gains and × for losses. AUTO Pixel survival decays more slowly at higher market caps. A cable controls its destination; otherwise AUTO or the manual value applies.</p></div>
+          <div class="intro"><p>Automatic mappings: activity → flow; market cap → spacing, edge shrink and survival; holders → size variation; price direction → + / × marks. Envion uses the same activity, liquidity, motion, volume, tempo and direction signals.</p></div>
           <div id="visual-controls"></div>
-          <label class="upload">Load coin image<input id="coin-image" type="file" accept="image/*"></label>
-          <p class="footer">Audio level is measured before listening volume. Marks dissolve after sound stops. Market inputs are simulated. EarthBound presets adapt motion, not original game artwork.</p>
+          <p class="footer">Audio presence is measured before listening volume. Marks dissolve after sound stops. Market inputs are simulated.</p>
         </div>
       </details>
     </section>
   </main>
   <div id="envion-host" hidden></div>
-  <script type="module" src="av-lab.js?v=197"></script>
+  <script type="module" src="av-lab.js?v=198"></script>
 </body>
 </html>

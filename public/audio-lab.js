@@ -4,17 +4,17 @@ import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from 
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=55';
 import {createTradePiano} from './trade-piano.js?v=196';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=185';
-import {createEnvion} from './envion.js?v=197';
+import {createEnvion} from './envion.js?v=198';
 import {createPd} from './vendor/libpd-wasm.js?v=30';
 import {createDataSonification} from './data-sonification.js?v=187';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=152';
 import {createArpeggioAI,seededArp} from './ai-instruments.js?v=190';
 import {HARMONIES,pianoHarmony} from './music-context.js?v=177';
-const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),combinedLab=Boolean(document.getElementById('patch-workspace'));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:pianoSpecs};
 const pdSpecs=[...envionSpecs,...dataSpecs,...phraseSpecs.flat()];
-const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},pd:{},enabled:Object.fromEntries(mixSpecs.map(s=>[s[0],true])),slots:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',seedKey:true,autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
+const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},pd:{},enabled:Object.fromEntries(mixSpecs.map(([key])=>[key,!(combinedLab&&key==='math')])),slots:combinedLab?[false,false,false,false,false]:[true,true,true,true,true],slotLevels:[1,1,1,1,1],master:.5,instrument:-1,character:'auto',seedKey:true,autoTrades:true,arpeggios:true,notes:'',arp:seededArp(1917)});
 let state=defaults(),ctx,piano,pd,envionReady=false,running=false,starting=false,closed=false,timer,saveTimer;
 let transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,phraseViews=[],paints=[],pdValues={},lastUI=0;
 let idleSuspend=null,seedTimer=null;
@@ -28,6 +28,7 @@ function readPreset(data){
  for(const [key] of mixSpecs)if(typeof data.enabled?.[key]==='boolean')next.enabled[key]=data.enabled[key];
  for(let i=0;i<5;i++){if(typeof data.slots?.[i]==='boolean')next.slots[i]=data.slots[i];if(Number.isFinite(data.slotLevels?.[i]))next.slotLevels[i]=clamp(data.slotLevels[i],0,1);}
  for(const key of ['autoTrades','arpeggios','seedKey'])if(typeof data[key]==='boolean')next[key]=data[key];
+ if(combinedLab){next.mix.math=0;next.enabled.math=false;next.slots.fill(false);}
  if(Number.isFinite(data.master))next.master=clamp(data.master,0,1);
  if(Number.isInteger(data.instrument)&&(data.instrument===-1||EARTHBOUND_PRESETS.includes(data.instrument)))next.instrument=data.instrument;
  if(data.character==='auto'||Object.hasOwn(HARMONIES,data.character))next.character=data.character;
@@ -68,6 +69,7 @@ function applyAudio(){
  data.setEnabled(level('data')>0);math.setEnabled(level('math')>0);state.slots.forEach((v,i)=>math.setSlot(i,v));
  // ENVION caches automatic writes. Reapply explicit overrides immediately.
  for(const [name,value] of Object.entries(state.pd))send(name,pdValues[name]??value);
+ envion.setOverrides(Object.fromEntries(Object.entries(state.pd).filter(([name])=>/^av-envion-ui-c0-\d+$/.test(name))));
 }
 function resetScore(){
  clearTimeout(seedTimer);elapsed=0;lastTime=ctx?.currentTime??null;nextTrade=0;tradeIndex=0;price=1;pdValues={};
@@ -179,7 +181,7 @@ function build(){
  const env=section('04 / ENVION · granular + tape + effects','Every market-mapped ENVION parameter. AUTO shows the current performer value after audio loads. Overrides stay fixed while the market conductor keeps running. Original samples remain loaded.');pdKnobs(env,envionSpecs);
  const signals=section('05 / Data sonification','Pure Data pulses, noise and low tones. AUTO follows market excitation; manual pitch overrides can intentionally leave the current key. Mute this layer in the mixer.');pdKnobs(signals,dataSpecs);
  const identities=mathIdentity(state.market.seed);
- for(let i=0;i<5;i++){
+ if(!combinedLab)for(let i=0;i<5;i++){
   const grid=section('06.'+(i+1)+' / Market phrase','Seeded function with a finite eight-beat passage. Pitch is tuned to the shared harmony unless overridden. Sawtooth synthesis is fixed.');
   const name=document.createElement('p');name.className='lab-hint';grid.append(name);paints.push(()=>{const view=phraseViews[i];name.textContent=(view?.name||identities[i].name)+' · ≥ $'+(view?.threshold||identities[i].threshold).toLocaleString()+' · '+(view?.status||'Start audio');});
   const sw=document.createElement('div');sw.className='switches';grid.append(sw);switchButton(sw,'Phrase '+(i+1),()=>state.slots[i],v=>state.slots[i]=v);
@@ -227,13 +229,14 @@ function readControl(id){if(id==='market.tonic')return currentTonic();const [gro
 function connectionValue(id,value){const spec=connectionSpecs[id];if(!spec||!Number.isFinite(value))return null;return clamp(Math.round(value/spec[4])*spec[4],spec[2],spec[3]);}
 // Shared-engine interface for the combined audiovisual workspace.
 export const audioLab={
- descriptors(){return Object.entries(connectionSpecs).map(([id,s])=>({id,label:s[1],min:s[2],max:s[3],step:s[4],category:id.startsWith('market.')?'Market':'Audio'}));},
+ descriptors(){return Object.entries(connectionSpecs).filter(([id])=>!combinedLab||(!id.startsWith('math.')&&!id.startsWith('pd.math-')&&id!=='mix.math')).map(([id,s])=>({id,label:s[1],min:s[2],max:s[3],step:s[4],category:id.startsWith('market.')?'Market':id.startsWith('pd.av-envion-ui-c0-')?'ENVION':'Audio'}));},
  controls(){return Object.fromEntries(Object.keys(connectionSpecs).map(id=>[id,readControl(id)]));},
  setControl(id,value){if(id==='market.tonic')state.seedKey=false;const v=connectionValue(id,value);if(v===null)return;const [group,key]=id.split('.');if(connectionBaselines.has(id))connectionBaselines.get(id).base=v;else state[group][key]=v;changed();},
  connect(patch={}){
   let dirty=false;
   for(const [id,held] of connectionBaselines)if(!Object.hasOwn(patch,id)){const [group,key]=id.split('.');if(held.base===undefined)delete state[group][key];else state[group][key]=held.base;if(group==='pd'&&Number.isFinite(pdValues[key]))send(key,pdValues[key]);connectionBaselines.delete(id);dirty=true;}
   for(const [id,value] of Object.entries(patch)){const v=connectionValue(id,value);if(v===null)continue;const [group,key]=id.split('.');if(!connectionBaselines.has(id))connectionBaselines.set(id,{base:state[group][key],last:state[group][key]});if(state[group][key]!==v){state[group][key]=v;dirty=true;}connectionBaselines.get(id).last=v;}
+  envion.setOverrides(Object.fromEntries(Object.entries(state.pd).filter(([name])=>/^av-envion-ui-c0-\d+$/.test(name))));
   if(dirty){applyAudio();paint();}
  },
  snapshot(){

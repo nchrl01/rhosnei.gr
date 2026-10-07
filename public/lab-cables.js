@@ -3,13 +3,13 @@ export function createCablePanel({host,sources,targets,getRoutes,onConnect,onSel
  const NS='http://www.w3.org/2000/svg',layoutKey='upic-lab-node-layout-v1';
  const definitions=[
   {id:'market',title:'MARKET',subtitle:'Shared simulated inputs',x:24,y:80,accept:d=>d.category==='Market'},
-  {id:'audio',title:'AUDIO ENGINE',subtitle:'Sound controls and returns',x:414,y:80,accept:d=>d.category==='Audio'&&!d.id.startsWith('signal.')},
+  {id:'audio',title:'AUDIO + ENVION',subtitle:'Melody, granular sound and effects',x:414,y:80,accept:d=>['Audio','ENVION'].includes(d.category)&&!d.id.startsWith('signal.')},
   {id:'signals',title:'SOUND SIGNALS',subtitle:'Measured before listening volume',x:414,y:480,accept:d=>d.id.startsWith('signal.')},
   {id:'visual',title:'VISUAL ENGINE',subtitle:'Pattern and mark controls',x:804,y:80,accept:d=>d.category==='Visual'},
  ];
  const defaults={
-  out:new Set(['market.cap','market.activity','market.tempo','market.change','market.liquidity','market.holderConcentration','signal.level','signal.rms','piano.arpGain','piano.roomSend','visual.dotSize','visual.speed']),
-  in:new Set(['market.tempo','market.activity','market.intensity','market.tonic','piano.chordGain','piano.arpGain','piano.roomSend','pd.data-reverb','visual.speed','visual.cellSize','visual.dotSize','visual.edgeFade','visual.jitter','visual.pixelPresence']),
+  out:new Set(['market.cap','market.activity','market.tempo','market.change','market.liquidity','market.motion','market.volume','market.holderConcentration','signal.level','signal.rms']),
+  in:new Set(['market.tempo','market.activity','market.intensity','market.tonic','piano.chordGain','piano.arpGain','piano.roomSend','pd.av-envion-ui-c0-350','pd.av-envion-ui-c0-379','pd.av-envion-ui-c0-454','pd.av-envion-ui-c0-540','visual.speed','visual.cellSize','visual.dotSize','visual.edgeFade','visual.jitter','visual.pixelPresence']),
  };
  let pending=null,drag=null,nodeDrag=null,suppressUntil=0,raf=0,allPorts=false,savedLayout={};
  try{savedLayout=JSON.parse(localStorage.getItem(layoutKey)||'{}')||{};}catch{}
@@ -17,7 +17,7 @@ export function createCablePanel({host,sources,targets,getRoutes,onConnect,onSel
  const board=host.querySelector('.cable-board'),scroll=host.querySelector('.cable-scroll'),svg=host.querySelector('svg'),search=host.querySelector('input'),help=host.querySelector('.cable-help'),cancel=host.querySelector('[data-cancel]'),ports=new Map(),nodes=[];
  const key=(kind,id)=>kind+':'+id;
  const bound=(n,a,b)=>Math.max(a,Math.min(b,n));
- const label=d=>d.category==='Audio'&&!d.id.startsWith('signal.')?d.id.split('.')[0]+' · '+d.label:d.label;
+ const label=d=>d.category==='ENVION'?'ENVION · '+d.label:d.category==='Audio'&&!d.id.startsWith('signal.')?d.id.split('.')[0]+' · '+d.label:d.label;
  const idleHelp='Drag OUT to IN, or tap the two jacks. Select a cable to change its mapping. Drag a node header to arrange the patch.';
  function release(element,pointer){if(element?.hasPointerCapture(pointer))element.releasePointerCapture(pointer);}
  function reset(){

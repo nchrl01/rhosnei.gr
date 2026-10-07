@@ -89,7 +89,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   let activePicker = null, pendingDialog = null, generation = 0, initialized = false;
   let sampleWaveforms=[null,null],scopeOff=null,waveformSource=null,waveformLoading=null,waveformLoaded=null;
   const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [];
-  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917,replayScene=null, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0;
+  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917,replayScene=null, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0, marketOverrides={};
   const marketWrites = new Map();
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
   let recordingOperation = Promise.resolve();
@@ -354,7 +354,9 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   function applyCurrent() {
     if(!pd||!initialized||!latestMarket)return;
     const soundingPlan=performancePlan?{...performancePlan,material:{...performancePlan.material,bank:{...performancePlan.material.bank,rows:loadedBankRows}},row:performancePlan.row%loadedBankRows}:null;
-    const values=applyEnvionMarket(pd,namespace,latestMarket.m,latestMarket.tempo,writeMarket,soundingPlan);
+    const automaticWrite=(receiver,value)=>{if(!Object.hasOwn(marketOverrides,receiver))writeMarket(receiver,value);};
+    const values=applyEnvionMarket(pd,namespace,latestMarket.m,latestMarket.tempo,automaticWrite,soundingPlan);
+    for(const [receiver,value] of Object.entries(marketOverrides))writeMarket(receiver,value);
     writeMarket('av-envion-row-count',loadedBankRows);if(!soundingPlan)writeMarket('av-envion-row-base',0);
     for(const [name,value] of Object.entries(values)){const target=document.getElementById('function-'+name);if(target)target.textContent=value;}
     const description=performancePlan?.summary||'Waiting for a market phrase';
@@ -450,6 +452,10 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       if(!performancePlan&&running)decide(0,true);
       applyCurrent();
     },
-    detach(){scopeOff?.();scopeOff=null;waveformSource=null;waveformLoaded=null;waveformLoading=null;materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
+    setOverrides(values={}){
+      marketOverrides=Object.fromEntries(Object.entries(values).filter(([receiver,value])=>/^av-envion-ui-c0-\d+$/.test(receiver)&&Number.isFinite(value)));
+      applyCurrent();
+    },
+    detach(){scopeOff?.();scopeOff=null;waveformSource=null;waveformLoaded=null;waveformLoading=null;materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;marketOverrides={};performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
   };
 }
