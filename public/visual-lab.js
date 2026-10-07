@@ -5,7 +5,7 @@ const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
 const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity → spacing',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
 const visualSpecs=[['dotSize','Square size · px',.5,24,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
 const stage=$('preview');
-let renderer=createPixelBlastField(stage,{generations:false}),seed=1917,inputs={},overrides={},knobs=[],groups=[],notes='',running=true,time=0,eventTime=0,last=0,lastReadout=0,saveTimer,image=null,cycles=false,dirty=true;
+let renderer=createPixelBlastField(stage,{generations:false}),seed=1917%suggestedLayers.length,inputs={},overrides={},knobs=[],groups=[],notes='',running=true,time=0,eventTime=0,last=0,lastReadout=0,saveTimer,image=null,cycles=false,dirty=true;
 const initial=()=>Object.fromEntries(inputSpecs.map(s=>[s[0],s[5]]));
 inputs=initial();
 const defaultGroups=()=>Array.from({length:4},(_,i)=>({percentage:[20,10,5,2][i],wallets:[{address:'lab-wallet-'+i,percentage:[15,6,3,1][i]}]}));
@@ -21,7 +21,7 @@ function apply(data){
  for(const [key,,min,max] of inputSpecs)if(Number.isFinite(data.inputs?.[key]))inputs[key]=clamp(data.inputs[key],min,max);
  for(const [key,,min,max] of visualSpecs)if(Number.isFinite(data.overrides?.[key]))overrides[key]=clamp(data.overrides[key],min,max);
  if(data.version===1)for(const key of ['edgeFade','cellSize','density','jitter'])delete overrides[key];
- seed=Number.isFinite(data.seed)?clamp(Math.round(data.seed),0,999999):1917;
+ seed=Number.isFinite(data.seed)?clamp(Math.round(data.seed),0,999999)%suggestedLayers.length:1917%suggestedLayers.length;
  groups=defaultGroups();if(Array.isArray(data.groups))data.groups.slice(0,4).forEach((g,i)=>{if(Number.isFinite(g.percentage))groups[i].percentage=clamp(g.percentage,0,25);if(Number.isFinite(g.wallets?.[0]?.percentage))groups[i].wallets[0].percentage=clamp(g.wallets[0].percentage,0,groups[i].percentage);});
  notes=typeof data.notes==='string'?data.notes.slice(0,10000):'';cycles=data.cycles===true;
 }
@@ -69,7 +69,7 @@ $('pause').onclick=()=>{running=!running;$('pause').textContent=running?'Pause':
 $('restart').onclick=resetMotion;
 $('pulse').onclick=()=>{renderer.pulse({key:'lab:'+eventTime,time:eventTime,strength:Math.max(.1,inputs.transient),balance:inputs.balance,direction:Math.sign(inputs.change)});dirty=true;};
 $('expand').onclick=()=>{document.body.classList.toggle('expanded');$('expand').textContent=document.body.classList.contains('expanded')?'Return':'Expand';dirty=true;};
-$('reset').onclick=()=>{inputs=initial();overrides={};seed=1917;groups=defaultGroups();notes='';cycles=false;image=null;buildControls();rebuild();save();};
+$('reset').onclick=()=>{inputs=initial();overrides={};seed=1917%suggestedLayers.length;groups=defaultGroups();notes='';cycles=false;image=null;buildControls();rebuild();save();};
 function download(name,text,type){const url=URL.createObjectURL(new Blob([text],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('save').onclick=()=>download('upic-visual-preset.json',JSON.stringify(draft(),null,2),'application/json');
 $('note').onclick=()=>{const d=draft();download('upic-visual-change-note.md','# UPIC visual change request\n\nUse this preset as the visual reference. Manual overrides are fixed values; all remaining parameters follow the current input mapping.\n\n'+d.notes+'\n\n## Preset\n```json\n'+JSON.stringify(d,null,2)+'\n```\n\n## Effective renderer values\n```json\n'+JSON.stringify(params(),null,2)+'\n```\n\nSynthetic market and holder inputs are examples, not real token data. Image files are not included.\n','text/markdown');};
