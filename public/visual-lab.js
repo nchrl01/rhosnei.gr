@@ -1,10 +1,11 @@
+import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=1';
 import {battlePatternNames} from './earthbound-pattern.js?v=172';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=173';
 import {coinVisualPreset,walletSizeVariation} from './visual-context.js?v=171';
 import {suggestedLayers} from './earthbound-motion-presets.js?v=167';
 const $=id=>document.getElementById(id),KEY='upic-visual-lab-v1';
-const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity → spacing',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
-const visualSpecs=[['dotSize','Square size · px',.5,24,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
+const inputSpecs=[['marketCap','Market cap · USD',1000,1e9,1000,500000,true],['referenceCap','Reference cap · USD',1000,1e9,1000,100000,true],['level','Engine audio level',0,1,.01,.5],['tempo','Tempo · BPM',10,240,1,100],['activity','Trade activity',0,1,.01,.5],['volume','Volume intensity',0,1,.01,.5],['motion','Price motion',0,1,.01,.4],['change','Price change · %',-100,100,1,5],['depth','Liquidity depth',0,1,.01,.5],['drive','Movement drive',0,1,.01,.5],['pressure','Pressure',0,1,.01,.2],['surge','Volume surge',0,1,.01,.3],['imbalance','Imbalance',0,1,.01,.2],['balance','Buy balance',0,1,.01,.6],['fresh','Data freshness',0,1,.01,1],['piano','Melody energy',0,1,.01,.5],['transient','Attack energy',0,1,.01,.2]];
+const visualSpecs=[['dotSize','Square size · px',.5,12,.1],['cellSize','Grid spacing · px',4,24,1],['scale','Pattern scale',.05,8,.01],['density','Pattern density',0,4,.01],['speed','Flow speed',0,4,.01],['edgeFade','Edge shrink',0,.5,.005],['jitter','Size variation',0,1,.01],['ecosystem','Local populations',0,1,.01],['pixelPresence','Pixel survival',0,1,.01],['identity','Image morph',0,1,.01],['identityMotion','Image flow',0,2,.01]];
 const stage=$('preview');
 let renderer=createPixelBlastField(stage,{generations:false}),seed=1917%suggestedLayers.length,inputs={},overrides={},knobs=[],groups=[],notes='',running=true,time=0,eventTime=0,last=0,lastReadout=0,saveTimer,image=null,cycles=false,dirty=true;
 const initial=()=>Object.fromEntries(inputSpecs.map(s=>[s[0],s[5]]));
@@ -12,15 +13,16 @@ inputs=initial();
 const defaultGroups=()=>Array.from({length:4},(_,i)=>({percentage:[20,10,5,2][i],wallets:[{address:'lab-wallet-'+i,percentage:[15,6,3,1][i]}]}));
 groups=defaultGroups();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-function mapped(){return {...pixelBlastParameters({...inputs,seed,walletVariation:walletSizeVariation(groups),capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),pixelPresence:Math.min(1,inputs.level/.02)};}
+function mapped(){return {...labVisualMappings(pixelBlastParameters({...inputs,seed,walletVariation:walletSizeVariation(groups),capital:clamp((Math.log10(inputs.marketCap)-4)/4,0,1),active:true}),{...inputs,active:true}),pixelPresence:Math.min(1,inputs.level/.02)};}
 function params(){const p={...mapped(),...overrides};p.pixelSize=p.dotSize;p.patternScale=p.scale;p.patternDensity=p.density;p.pixelSizeJitter=p.jitter;return p;}
-function draft(){return {schema:'upic-visual-lab',version:2,rendererVersion:173,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
+function draft(){return {schema:'upic-visual-lab',version:2,mappingVersion:LAB_MAPPING_VERSION,rendererVersion:173,seed,inputs,overrides,groups,cycles,notes:$('notes').value,image:image?'Local image must be reloaded':null};}
 function save(){dirty=true;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(draft()));}catch{$('status').textContent='Storage unavailable — export your preset to keep it.';}},250);}
 function apply(data){
  if(data.schema!=='upic-visual-lab'||![1,2].includes(data.version))throw Error('Not a Visual Lab preset');
  inputs=initial();overrides={};
  for(const [key,,min,max] of inputSpecs)if(Number.isFinite(data.inputs?.[key]))inputs[key]=clamp(data.inputs[key],min,max);
  for(const [key,,min,max] of visualSpecs)if(Number.isFinite(data.overrides?.[key]))overrides[key]=clamp(data.overrides[key],min,max);
+ if((data.mappingVersion||0)<LAB_MAPPING_VERSION)for(const key of UPDATED_TARGETS)delete overrides[key];
  if(data.version===1)for(const key of ['edgeFade','cellSize','density','jitter'])delete overrides[key];
  seed=Number.isFinite(data.seed)?clamp(Math.round(data.seed),0,999999)%suggestedLayers.length:1917%suggestedLayers.length;
  groups=defaultGroups();if(Array.isArray(data.groups))data.groups.slice(0,4).forEach((g,i)=>{if(Number.isFinite(g.percentage))groups[i].percentage=clamp(g.percentage,0,25);if(Number.isFinite(g.wallets?.[0]?.percentage))groups[i].wallets[0].percentage=clamp(g.wallets[0].percentage,0,groups[i].percentage);});
@@ -54,8 +56,8 @@ function buildControls(){
  knob(global,['seed','EarthBound coin seed',0,suggestedLayers.length-1,1],()=>seed%suggestedLayers.length,v=>{seed=v;resetMotion();});
  const presetName=document.createElement('p');presetName.className='group-note wide';global.append(presetName);knobs.push(()=>{presetName.textContent=coinVisualPreset(seed).name+' · '+battlePatternNames[coinVisualPreset(seed).index%8];});
  const toggle=document.createElement('button');toggle.textContent='Ink cycles: '+(cycles?'on':'off');toggle.onclick=()=>{cycles=!cycles;toggle.textContent='Ink cycles: '+(cycles?'on':'off');rebuild();save();};global.append(toggle);
- const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. Lower relative cap shrinks the edges more; higher liquidity tightens grid spacing. Reference cap stays fixed until you turn it. Tempo controls flow speed: 100 BPM = 1.35; 200 BPM = 2.7. Turning tempo restores automatic flow speed.',true);
- for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;if(spec[0]==='tempo')delete overrides.speed;});
+ const a=section('02 / Market + sound','Simulated inputs. Engine audio level means sound inside the engine before the listening-volume slider. The reference-cap edge effect is inverted. Higher market cap tightens grid spacing from 24 to 4 px. Reference cap stays fixed until you turn it. Trade activity controls flow speed: zero = still, full activity = 2.7. Square size is limited to 12 px. Turning activity restores automatic flow speed.',true);
+ for(const spec of inputSpecs)knob(a,spec,()=>inputs[spec[0]],v=>{inputs[spec[0]]=v;if(spec[0]==='activity')delete overrides.speed;});
  const b=section('03 / Renderer','Turning a knob overrides its mapping. Image knobs need a loaded image. Grid spacing changes the hidden lattice.',true);
  for(const spec of visualSpecs)knob(b,spec,()=>params()[spec[0]],v=>{overrides[spec[0]]=v;},()=>{delete overrides[spec[0]];});
  const c=section('04 / Wallet size variation','Synthetic wallet sizes, not InsightX data. More unequal wallet sizes produce more pixel-size variation. Wallets no longer add bubble shapes. Each group is capped at 25% of supply.');
