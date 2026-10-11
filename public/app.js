@@ -914,3 +914,5 @@ const playerScreen=window.matchMedia('(max-width:760px)');
 function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'NDS12, sans-serif',fontSize:12}});}
 playerScreen.addEventListener('change',syncChartTypography);
 document.fonts.ready.then(syncChartTypography);
+
+// Release 225: retain coin contexts across navigation.
