@@ -178,11 +178,15 @@ function send(name,value){
  sentControls.set(name,value);pd.sendFloat(name,value);engineView.sent(name,value);
 }
 function event(name){pd?.sendBang(name);}
-const liveLandmarks=createMarketLandmarks();
+const liveLandmarks=new Map();
+function coinLandmarks(key){
+ if(!liveLandmarks.has(key)){liveLandmarks.set(key,createMarketLandmarks());if(liveLandmarks.size>8)liveLandmarks.delete(liveLandmarks.keys().next().value);}
+ return liveLandmarks.get(key);
+}
 function liveMetrics(){
  if(!market)return contextualizeMarket({motion:0,activity:0,balance:.5,texture:0,volume:0,fresh:0,snapshotFresh:0,snapshotAge:Infinity},{price:0,history:[],interval:1000});
  const livePrice=currentPrice(),liveCap=Number(market.marketCap)>0&&Number(market.priceUsd)>0?Number(market.marketCap)*livePrice/Number(market.priceUsd):null;
- const moodMovement=liveLandmarks.observe(liveCap,Date.now(),imageKey(market));
+ const moodMovement=coinLandmarks(imageKey(market)).observe(liveCap,Date.now(),imageKey(market));
  const tx=market.txns?.m5||{};const total=(tx.buys||0)+(tx.sells||0);
  tradeEvents=tradeEvents.filter(e=>Date.now()-e.receivedAt<30000);
  poolEvents=poolEvents.filter(e=>Date.now()-e.receivedAt<10000);
