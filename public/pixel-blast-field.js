@@ -1,10 +1,10 @@
 import {battlePattern,battlePatternGLSL} from './earthbound-pattern.js?v=214';
 import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
-import {withPixelGenerations} from './pixel-generations.js?v=214';
+import {withPixelGenerations} from './pixel-generations.js?v=222';
 import {battleGLSL} from './earthbound-motion.js?v=214';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=220';
-import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=220';
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=222';
+import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=222';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=220';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
@@ -363,7 +363,7 @@ export function createPixelBlastField(host,{generations=true}={}){
    const palette=identityMask?.palette;
    gl.uniform3f(locations.uArtworkColorA,...(palette?.[0]??[1,1,1]));
    gl.uniform3f(locations.uArtworkColorB,...(palette?.[1]??[1,1,1]));
-   f('uArtworkColor',palette?.some(rgb=>Math.max(...rgb)-Math.min(...rgb)>.08)?unit(params.artworkColor):0);
+   f('uArtworkColor',palette?unit(params.artworkColor):0);
    const ink=params.inkColor??1;gl.uniform3f(locations.uColor,ink,ink,ink);gl.uniform2f(locations.uResolution,w,h);gl.uniform2f(locations.uCanvasScale,rasterScale,rasterScale);
    f('uTime',Number(time)||0);f('uEventTime',Number(eventTime)||0);f('uSeed',(seed%65521)/65521*173.6);f('uDotSize',params.dotSize);f('uDotStrength',params.dotStrength);f('uEdgeFade',params.edgeFade);
    f('uMarkDirection',Math.sign(Number(params.markDirection)||0));

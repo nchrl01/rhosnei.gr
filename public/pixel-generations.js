@@ -30,7 +30,7 @@ export function withPixelGenerations(renderer,parametersFor){
     }
    }
    const count=layers.length+1,identity=unit(params.identity??0);
-   layers.forEach((layer,index)=>renderer.render({...args,...layer,preserve:index>0,parameters:{...layer.parameters,inkColor:index%2?0:whiteInk,pixelPresence:layer.parameters.pixelPresence*unit(unit(presence/referencePresence)*count-index)*(1-identity)}}));
+   layers.forEach((layer,index)=>renderer.render({...args,...layer,preserve:index>0,parameters:{...layer.parameters,artworkColor:params.artworkColor??0,inkColor:index%2?0:whiteInk,pixelPresence:layer.parameters.pixelPresence*unit(unit(presence/referencePresence)*count-index)*(1-identity)}}));
    current.pixelPresence=presence*unit(unit(presence/referencePresence)*count-layers.length)*(born===null?1:unit((now-born)/2));
    // Old saturation layers shrink away as the coin forms; its ink remains
    // readable even when the previous generation used black marks.

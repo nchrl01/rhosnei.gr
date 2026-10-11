@@ -33,10 +33,13 @@ export function coinImagePixels(image,size=256){
  if(!(width>0&&height>0))throw Error('Coin artwork has no decoded dimensions');
  const scratch=document.createElement('canvas');scratch.width=scratch.height=size;
  const context=scratch.getContext('2d',{willReadFrequently:true});
- context.fillStyle='#fff';context.fillRect(0,0,size,size);
  const scale=Math.min(size/width,size/height),w=width*scale,h=height*scale;
  context.drawImage(image,(size-w)/2,(size-h)/2,w,h);
- return {pixels:context.getImageData(0,0,size,size).data,width:size,height:size};
+ // Preserve original colours and alpha for the field's palette before the
+ // avatar's white paper ground is added.
+ const originalPixels=context.getImageData(0,0,size,size).data;
+ context.globalCompositeOperation='destination-over';context.fillStyle='#fff';context.fillRect(0,0,size,size);
+ return {pixels:context.getImageData(0,0,size,size).data,originalPixels,width:size,height:size};
 }
 let filterSerial=0;
 export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=>{}}={}){

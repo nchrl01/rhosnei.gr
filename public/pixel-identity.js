@@ -1,4 +1,4 @@
-import {ditherPixels,imageLevels} from './coin-dither.js?v=217';
+import {ditherPixels,imageLevels} from './coin-dither.js?v=222';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const smooth=x=>{const t=clamp(x);return t*t*(3-2*t);};
@@ -63,15 +63,16 @@ export function preparePixelIdentity(source){
  const width=Math.floor(Number(source?.width)),height=Math.floor(Number(source?.height)),pixels=source?.pixels;
  if(!(width>0&&height>0)||!pixels||pixels.length<width*height*4)return null;
  const scale=Math.min(1,256/Math.max(width,height)),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
- let rgba=pixels;
+ let rgba=pixels,original=source.originalPixels?.length>=width*height*4?source.originalPixels:pixels;
  if(w!==width||h!==height){
-  rgba=new Uint8ClampedArray(w*h*4);
+  rgba=new Uint8ClampedArray(w*h*4);const resizedOriginal=new Uint8ClampedArray(w*h*4);
   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
    const from=(Math.min(height-1,Math.floor((y+.5)*height/h))*width+Math.min(width-1,Math.floor((x+.5)*width/w)))*4,to=(y*w+x)*4;
-   rgba[to]=pixels[from];rgba[to+1]=pixels[from+1];rgba[to+2]=pixels[from+2];rgba[to+3]=pixels[from+3];
+   for(let c=0;c<4;c++){rgba[to+c]=pixels[from+c];resizedOriginal[to+c]=original[from+c];}
   }
+  original=resizedOriginal;
  }
- const palette=originalArtworkPalette(rgba),paletteBytes=palette.map(rgb=>rgb.map(v=>v*255));
+ const palette=originalArtworkPalette(original),paletteBytes=palette.map(rgb=>rgb.map(v=>v*255));
  const dither=ditherPixels(rgba,w,h),texture=new Uint8Array(w*h*4),tone=new Float32Array(w*h);
  const {black,white}=imageLevels(rgba),range=white-black;
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
@@ -81,7 +82,7 @@ export function preparePixelIdentity(source){
   const alpha=rgba[i+3]/255;
   const luminance=clamp((rgba[i]*.2126+rgba[i+1]*.7152+rgba[i+2]*.0722-black)/range);
   tone[n]=(1-Math.pow(luminance,.88))*alpha*corner;
-  const region=paletteDistance(rgba[i],rgba[i+1],rgba[i+2],paletteBytes[0])<=paletteDistance(rgba[i],rgba[i+1],rgba[i+2],paletteBytes[1])?0:1;
+  const region=paletteDistance(original[i],original[i+1],original[i+2],paletteBytes[0])<=paletteDistance(original[i],original[i+1],original[i+2],paletteBytes[1])?0:1;
   const ink=dither[i]<128?dither[i+3]*corner/255:0;
   texture[i]=(Math.round(ink*127)<<1)|region;
  }

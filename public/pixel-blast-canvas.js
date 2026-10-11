@@ -4,7 +4,7 @@ import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
-import {samplePixelIdentity} from './pixel-identity.js?v=220';
+import {samplePixelIdentity} from './pixel-identity.js?v=222';
 const fract=x=>x-Math.floor(x);
 const hash=n=>fract(Math.sin(n)*43758.5453);
 const fade=x=>x*x*x*(x*(x*6-15)+10);
@@ -41,7 +41,7 @@ export function createPixelBlastCanvas(host){
    const pattern=battlePattern(params.patternKey??seed,time);
    const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
    const identity=identityMask?params.identity:0,identitySide=.82*Math.min(cssWidth,cssHeight);
-   const artworkColor=identityMask?.palette?.some(rgb=>Math.max(...rgb)-Math.min(...rgb)>.08)?clamp(params.artworkColor??0):0;
+   const artworkColor=identityMask?.palette?clamp(params.artworkColor??0):0;
    const ink=(params.inkColor??1)*255;
    const palette=(identityMask?.palette??[[1,1,1],[1,1,1]]).map(color=>color.map(channel=>Math.round(ink*mix(1,channel,artworkColor))));
    const identityFlow=(.028-.014*identity)*params.identityMotion,identityPhase=time*.65+offset*.013;
