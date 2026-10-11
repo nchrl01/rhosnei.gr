@@ -574,6 +574,23 @@ async function fetchJSON(url,{signal}={}){
   if(!r.ok)throw Error('Market provider returned '+r.status);return await r.json();
  }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
+const capLookups=new Map();
+async function completeMarketCap(pair,{signal}={}){
+ if(isExchangeMarket(pair)||Number(pair.marketCap)>0)return pair;
+ const key=imageKey(pair),now=Date.now();let cached=capLookups.get(key);
+ if(!cached||cached.until<=now){
+  cached={until:now+300000,pending:null};capLookups.set(key,cached);
+  cached.pending=fetchJSON('https://api.dexscreener.com/token-pairs/v1/'+encodeURIComponent(pair.chainId)+'/'+encodeURIComponent(pair.baseToken.address),{signal}).then(rows=>{
+   const candidates=(Array.isArray(rows)?rows:[]).filter(row=>row.chainId===pair.chainId&&sameToken(row.baseToken?.address,pair.baseToken.address)&&Number(row.marketCap)>0&&Number(row.priceUsd)>0);
+   candidates.sort((a,b)=>(Number(b.liquidity?.usd)||0)-(Number(a.liquidity?.usd)||0));
+   return candidates[0]||null;
+  }).catch(()=>null);
+  if(capLookups.size>64)capLookups.delete(capLookups.keys().next().value);
+ }
+ const source=await cached.pending;if(signal?.aborted||!source)return pair;
+ const price=Number(pair.priceUsd),sourcePrice=Number(source.priceUsd);
+ return {...pair,marketCap:Number(source.marketCap)*(price>0?price/sourcePrice:1),marketCapSource:'dexscreener-token',marketCapEstimated:true};
+}
 async function freshMarketSnapshot(pair,{signal}={}){
  if(isExchangeMarket(pair))return prepareExchangeMarket(pair);
  const chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
@@ -581,7 +598,7 @@ async function freshMarketSnapshot(pair,{signal}={}){
   try{
    const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address),{signal});
    const raw=(data.pairs||[]).find(p=>p.chainId===chain&&(/^0x/i.test(address)?p.pairAddress?.toLowerCase()===address.toLowerCase():p.pairAddress===address));
-   const updated=raw&&orientPair(raw,token);if(updated&&Number(updated.priceUsd)>0&&Number.isFinite(Number(updated.priceUsd)))return updated;
+   const updated=raw&&orientPair(raw,token);if(updated&&Number(updated.priceUsd)>0&&Number.isFinite(Number(updated.priceUsd)))return completeMarketCap(updated,{signal});
   }catch(error){if(signal?.aborted)throw error;}
  }
  // A pool can be indexed by GeckoTerminal even when DEX search has no result.
@@ -592,7 +609,7 @@ async function freshMarketSnapshot(pair,{signal}={}){
  const data=await response.json(),included=new Map((data.included||[]).map(item=>[item.id,item]));
  const raw=geckoPoolMarket(data.data,included,network),updated=raw&&orientPair(raw,token);
  if(!updated||!(Number(updated.priceUsd)>0))throw Error('Selected live pool is unavailable');
- return updated;
+ return completeMarketCap(updated,{signal});
 }
 async function findOnchainMarkets(query,{network,signal}={}){
  const priced=pair=>Number(pair?.priceUsd)>0&&Number.isFinite(Number(pair.priceUsd));
@@ -626,6 +643,10 @@ async function findOnchainMarkets(query,{network,signal}={}){
 }
 function applySnapshot(pair){
  const previous=currentPrice();
+ // A provider's empty cap must not erase known supply for this same token.
+ if(!isExchangeMarket(pair)&&!(Number(pair.marketCap)>0)&&market&&imageKey(pair)===imageKey(market)&&Number(market.marketCap)>0&&Number(market.priceUsd)>0&&Number(pair.priceUsd)>0){
+  pair={...pair,marketCap:Number(market.marketCap)*Number(pair.priceUsd)/Number(market.priceUsd),marketCapSource:market.marketCapSource||'previous-snapshot',marketCapEstimated:true};
+ }
  market=isExchangeMarket(pair)?{...pair,exchangeBook:market?.pairAddress===pair.pairAddress?market.exchangeBook:null}:pair;lastSnapshot=Date.now();
  if(!(streamConnected&&['swap','trade-poll','rpc-poll','exchange'].includes(streamKind))){observePianoPrice(Number(pair.priceUsd),previous,lastSnapshot);chart.add({at:Date.now(),price:Number(pair.priceUsd),source:'snapshot'});$('chart-source').textContent=isExchangeMarket(pair)?pair.exchangeName+' · exchange ticker snapshot; waiting for live trades':pair.snapshotProvider==='gecko'?'GeckoTerminal market snapshots · 30-second refresh; provider data may be cached':'Observed market snapshots · 5-second polling; provider data may be cached';}
  display();
@@ -645,6 +666,11 @@ function chooseMarket(pair,{shared=false}={}){
  sharedMarket=shared;
  if(shared)return;
  const gen=generation;
+ if(!isExchangeMarket(pair)&&!(Number(pair.marketCap)>0))void completeMarketCap(pair).then(enriched=>{
+  if(gen!==generation||!(Number(enriched.marketCap)>0)||Number(market?.marketCap)>0)return;
+  const price=Number(market.priceUsd),basis=Number(enriched.priceUsd);
+  market={...market,marketCap:Number(enriched.marketCap)*(price>0&&basis>0?price/basis:1),marketCapSource:enriched.marketCapSource,marketCapEstimated:true};display();
+ });
  if(isExchangeMarket(pair)){
   const refresh=async()=>{if(document.hidden&&!playing){if(gen===generation)poll=setTimeout(refresh,30000);return;}try{const updated=await prepareExchangeMarket(pair);if(gen!==generation)return;applySnapshot(updated);}catch(error){if(gen===generation)$('chart-source').textContent='Exchange snapshot delayed: '+error.message;}if(gen===generation)poll=setTimeout(refresh,30000);};
   poll=setTimeout(refresh,30000);status(playing?'Playing · exchange market':'Exchange market loaded · press Play');return;
@@ -788,7 +814,7 @@ function updateCoinReadout(m){
  ui.clock({timestamp:at,rate:replay.state.active?Number(replay.state.speed)||1:1,replay:replay.state.active,seeking:replay.state.dragging,label:replay.state.active?'Playback time':'Local time'});
  rollCap(cap>0?'$'+Math.round(cap).toLocaleString('en'):'—',cap||0);
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
- $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
+ $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated||market?.marketCapEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
 
 }
 async function restoreSharedScore(){
