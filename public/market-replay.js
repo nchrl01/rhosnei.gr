@@ -30,11 +30,19 @@ export function createMarketReplay(){
    if(state.frozen){bars=state.frozen.bars;interval=state.frozen.interval;}
    if(!state.active||!bars.length)return false;
    const previous=state.clock??now;state.clock=now;
-   const rate=state.speed==='candle'?interval/1000:Number(state.speed)||1;
+   const rate=Number(state.speed)||1;
    // The audio clock keeps advancing during rendering stalls. Preserve elapsed
    // time so the chart cannot force the score backwards after a late frame.
    if(running&&!state.dragging)state.cursor+=Math.max(0,now-previous)*rate;
    const end=candleEnd(bars.at(-1),interval);
+   if(state.speed==='jump'&&running&&!state.dragging){
+    const current=bars.findLast(bar=>candleEnd(bar,interval)<=state.cursor);
+    const active=bar=>Number(bar.volume)>0||(bar.volume==null&&Number(bar.open)>0&&Math.abs(Number(bar.close)/Number(bar.open)-1)>1e-7);
+    if(!current||!active(current)){
+     const next=bars.find(bar=>candleEnd(bar,interval)>state.cursor&&active(bar));
+     state.cursor=next?candleEnd(next,interval):end;state.controls=null;
+    }
+   }
    if(state.cursor>=end){state.cursor=end;if(!running||state.dragging){state.endHold=null;return false;}state.endHold??=now;if(now-state.endHold>=1000){state.ended=true;return true;}return false;}
    state.endHold=null;
    return false;

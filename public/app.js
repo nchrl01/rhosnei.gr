@@ -22,7 +22,7 @@ import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
 import {createMilestoneSounds} from './milestone-sounds.js?v=229';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=224';
+import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=230';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=227';
 import {createPd} from './vendor/libpd-wasm.js?v=220';
@@ -32,7 +32,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=206';
 import {startTrending,geckoPoolMarket} from './trending.js?v=219';
-import {MarketChart} from './chart.js?v=224';
+import {MarketChart} from './chart.js?v=230';
 import {loadHistory} from './history.js?v=207';
 import {pollPoolTrades} from './trades.js?v=206';
 const $=id=>document.getElementById(id);
@@ -232,8 +232,8 @@ function updateReplayUI(m){
  const hint=$('replay-hint');
  if(hint){const text=!(chart.renderedBars?.length)?'Loading history · live playback is available.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the strip to move through the replay.'):'Choose a point on the strip to replay.';if(hint.textContent!==text)hint.textContent=text;}
 
- const rate=replay.state.speed==='candle'?chart.interval/1000:Number(replay.state.speed);
- $('replay-state').textContent=active?'· '+rate+'×':'';
+ const rate=Number(replay.state.speed)||1;
+ $('replay-state').textContent=active?(replay.state.speed==='jump'?'· Jump':'· '+rate+'×'):'';
 
  $('replay-info').textContent='Choose a point to replay. Market changes shape the sound.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Historical market cap is unavailable.';
@@ -830,7 +830,7 @@ async function restoreSharedScore(){
  try{
   const score=await loadSharedScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=replay.preserveScore(buildReplayScore(bars,seed,score.interval,score.market),score.interval);replay.state.speed=['1','10','20','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=replay.preserveScore(buildReplayScore(bars,seed,score.interval,score.market),score.interval);replay.state.speed=['1','50','jump'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Replay ready · press Play');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
