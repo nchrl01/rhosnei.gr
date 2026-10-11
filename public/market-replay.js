@@ -4,16 +4,23 @@ export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,bar.observedTh
 
 // Keep the controls actually observed during this visit, separate from OHLC history.
 export function createMarketReplay(){
- const recordings=new Map();let key='demo';
+ const recordings=new Map(),archives=new Map();let key='demo';
+ function archive(){if(!archives.has(key))archives.set(key,{controls:new Map(),scores:new Map()});return archives.get(key);}
  const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null};
  function frames(){return recordings.get(key)||[];}
  return {
   state,
-  freeze(bars,market,interval){state.frozen={bars:structuredClone(bars),market:structuredClone(market),interval};},
-  setMarket(value){key=value;this.live();if(!recordings.has(key)){recordings.set(key,[]);if(recordings.size>8)recordings.delete(recordings.keys().next().value);}},
+  freeze(bars,market,interval){state.frozen={bars:structuredClone(bars),market:structuredClone(market),interval,observations:structuredClone(frames())};},
+  preserveScore(score,interval){
+   const saved=archive().scores;
+   for(const [time,frame] of score.frames){const id=interval+':'+time;if(saved.has(id))score.frames.set(time,structuredClone(saved.get(id)));else saved.set(id,structuredClone(frame));}
+   while(saved.size>20000)saved.delete(saved.keys().next().value);
+   return score;
+  },
+  setMarket(value){key=value;this.live();if(!recordings.has(key)){recordings.set(key,[]);if(recordings.size>8){const oldest=recordings.keys().next().value;recordings.delete(oldest);archives.delete(oldest);};}},
   record(metrics,price,at=Date.now()){
    const rows=frames();if(rows.length&&at-rows.at(-1).at<1000)return;
-   rows.push({at,price,metrics:{...metrics,raw:{...metrics.raw},context:{...metrics.context,path:[]}}});
+   rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,path:[]}})});
    if(rows.length>3600)rows.shift();recordings.set(key,rows);
   },
   seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.ended=false;state.controls=null;},
@@ -38,7 +45,19 @@ export function createMarketReplay(){
    const at=state.cursor,known=bars.filter(bar=>candleEnd(bar,interval)<=at),bar=known.at(-1)||bars[0];
    if(state.controls&&state.bar?.time===bar.time)return state.controls;
    state.bar=bar;
-   state.source='candles';state.price=bar.close;state.controls=scoreCandle(bars,market,interval,bar);return state.controls;
+   const end=candleEnd(bar,interval),observations=state.frozen?.observations||frames();
+   // Never borrow an observation from after the historical cursor.
+   const observed=observations.findLast(row=>row.at<=Math.min(at,end));
+   if(observed&&end-observed.at<=2000){
+    state.source='observed';state.price=observed.price;
+    state.controls={...structuredClone(observed.metrics),replay:{source:'observed',at:observed.at,price:observed.price}};
+   }else{
+    const saved=archive().controls,id=interval+':'+bar.time;
+    if(!saved.has(id))saved.set(id,structuredClone(scoreCandle(bars,market,interval,bar)));
+    state.source='candles';state.price=bar.close;state.controls=structuredClone(saved.get(id));
+    while(saved.size>20000)saved.delete(saved.keys().next().value);
+   }
+   return state.controls;
   },
  };
 }

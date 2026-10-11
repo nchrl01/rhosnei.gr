@@ -22,7 +22,7 @@ export function fieldState(m={}){
  const depth=liquidity===null?.5:liquidity>0?unit((Math.log10(liquidity)-3)/4):0;
  const surge=context.volumeRatio>1?unit(Math.log10(context.volumeRatio)):0;
  const imbalance=m.availability?.balance===false?0:Math.abs(2*unit(m.balance??.5)-1);
- return {marketMovement:m.music?.movement,referenceCap:finite(context.impliedBaselineCap),relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
+ return {marketMovement:m.music?.movement,referenceCap:finite(m.music?.movement?.referenceCap??context.impliedBaselineCap),relationships:m.replay?null:m.audience?.relationships,marketCap:values[5],drive,fresh,values,activity,volume,motion:unit(raw.motion),capital,identity,depth,surge,imbalance,liquidity,holder,holderWeight:unit(m.audience?.weight),change:finite(m.music?.changePct),tempo:Math.max(10,Math.min(240,Number(m.music?.tempo)||40)),pressure:unit(context.pressure),balance:m.availability?.balance===false?.5:unit(m.balance??.5)};
 }
 
 // Market data shapes the field. Quiet activity leaves smaller, weaker dots;
@@ -205,7 +205,7 @@ export function createAudioDots(canvas,{getAudio=()=>null,getState=()=>({})}={})
   if(!smoothed||replaying)smoothed={...latest};
   const approach=1-Math.exp(-dt/.16);
   for(const key of ['drive','activity','volume','pressure','balance','motion','fresh','capital','identity','depth','surge','imbalance','tempo','change'])smoothed[key]+=(Number(latest[key]??0)-Number(smoothed[key]??0))*approach;
-  referenceCap??=latest.referenceCap>0?latest.referenceCap:latest.marketCap>0?latest.marketCap:null;
+  referenceCap=latest.referenceCap>0?latest.referenceCap:referenceCap??(latest.marketCap>0?latest.marketCap:null);
   const visualInputs={...smoothed,seed,coinKey:getState().coinKey,referenceCap,walletVariation:walletSizeVariation(latest.relationships?.clusters)*unit(latest.relationships?.weight),marketCap:latest.marketCap,level,formation,piano:pianoEnergy,transient,active,reducedMotion:reduced.matches,mobile:mobile.matches};
   const visualParams=pixelBlastParameters(visualInputs);
   // Match the title’s green/red price-update signal exactly, then return to circles.

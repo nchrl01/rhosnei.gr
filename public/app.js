@@ -15,14 +15,14 @@ import {createCoinDither} from './coin-dither.js?v=223';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createAudioDots} from './audio-dots.js?v=223';
+import {createAudioDots} from './audio-dots.js?v=224';
 import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
 import {createMilestoneSounds} from './milestone-sounds.js?v=220';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=220';
+import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=224';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=54';
 import {createPd} from './vendor/libpd-wasm.js?v=220';
@@ -32,7 +32,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=206';
 import {startTrending,geckoPoolMarket} from './trending.js?v=219';
-import {MarketChart} from './chart.js?v=220';
+import {MarketChart} from './chart.js?v=224';
 import {loadHistory} from './history.js?v=207';
 import {pollPoolTrades} from './trades.js?v=206';
 const $=id=>document.getElementById(id);
@@ -203,7 +203,7 @@ function metrics(){
  const ended=replay.advance(chart.renderedBars||[],chart.interval,playing&&ctx?.state==='running');
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
  const scored=historical&&replay.state.score?.frames.get(replay.state.bar?.time);
- if(scored?.music)historical.music={...historical.music,...scored.music};
+ if(scored?.music&&historical.replay?.source==='candles')historical.music={...historical.music,...scored.music};
  if(ended&&playing){$('play').onclick();status('History replay finished');}
  return historical||live;
 }
@@ -791,7 +791,7 @@ async function restoreSharedScore(){
  try{
   const score=await loadSharedScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=buildReplayScore(bars,seed,score.interval,score.market);replay.state.speed=['1','10','20','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=replay.preserveScore(buildReplayScore(bars,seed,score.interval,score.market),score.interval);replay.state.speed=['1','10','20','100'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Replay ready · press Play');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
@@ -839,7 +839,7 @@ function seekHistory(bar,dragging=false){
   pendingHistoryReplay=true;primeAudio();status('Loading history for replay');return;
  }
  if(!playing)primeAudio();
- if(!replay.state.active){arpeggioAI.freezeScore();resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);replay.state.score=buildReplayScore(replay.state.frozen.bars,seed,chart.interval,replay.state.frozen.market);}
+ if(!replay.state.active){arpeggioAI.freezeScore();resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);replay.state.score=replay.preserveScore(buildReplayScore(replay.state.frozen.bars,seed,chart.interval,replay.state.frozen.market),chart.interval);}
  replayPianoPrimed=false;replayPhrase=null;dataSonification.reset(seed);
  replay.seek(bar,chart.interval,dragging);chart.schedule();
  sharedHarmony=null;pianoReplayCursor=replay.state.cursor;
