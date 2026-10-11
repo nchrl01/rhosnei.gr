@@ -67,16 +67,16 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
     const fieldImage=coinImagePixels(decoded);
     pixels=(size===fieldImage.width?fieldImage:coinImagePixels(decoded,size)).pixels;
     canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';paint();notify(fieldImage);
-   }catch{original(url,token);}
+   }catch{relayOrFallback();}
   };
-  decoded.onerror=()=>{
+  let relayed=false;
+  function relayOrFallback(){
    if(token!==serial)return;
-   // These CDN hosts display <img> tags but deny canvas pixel access. A
-   // bounded, cached UPIC route makes the same artwork readable by the field.
-   let relay='';try{const source=new URL(url);if(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com'].includes(source.hostname))relay='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(source.href);}catch{}
-   if(relay&&decoded.src!==relay){decoded.src=relay;return;}
+   let relay='';try{const source=new URL(url);if(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com'].includes(source.hostname))relay='https://upic-insightx.nchrl01.workers.dev/artwork?revision=2&url='+encodeURIComponent(source.href);}catch{}
+   if(relay&&!relayed){relayed=true;decoded.src=relay;return;}
    original(url,token);
-  };decoded.src=url;
+  }
+  decoded.onerror=relayOrFallback;decoded.src=url;
  }
  // Retain the original SVG dithering for restricted hosts, without its fade mask.
  function original(url,token){

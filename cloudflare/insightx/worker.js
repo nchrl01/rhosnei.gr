@@ -25,8 +25,25 @@ async function artwork(url,headers){
  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
  let bytes,type;
  try{
-  const upstream=await fetch(target.href,{method:'GET',redirect:'error',credentials:'omit',headers:{Accept:'image/avif,image/webp,image/png,image/jpeg,image/gif'},signal:controller.signal});
-  if(!upstream.ok){controller.abort();return json({state:'artwork-unavailable'},502,headers);}
+  // CDN artwork can redirect between its approved hosts. Validate every hop
+  // instead of treating a legitimate CDN redirect as missing artwork.
+  let upstream,location=target.href;
+  for(let hop=0;hop<4;hop++){
+   upstream=await fetch(location,{method:'GET',redirect:'manual',credentials:'omit',headers:{Accept:'image/avif,image/webp,image/png,image/jpeg,image/gif','User-Agent':'Mozilla/5.0 (compatible; AVArtwork/1.0)'},signal:controller.signal});
+   if(![301,302,303,307,308].includes(upstream.status))break;
+   const next=new URL(upstream.headers.get('Location')||'',location);
+   await upstream.body?.cancel();
+   if(next.protocol!=='https:'||!ARTWORK_HOSTS.has(next.hostname)||next.username||next.password||next.port)return json({state:'invalid-artwork-redirect'},502,headers);
+   location=next.href;
+  }
+  // CoinGecko publishes the same artwork under both of these CDN domains.
+  // Some CDN edges reject Worker-origin requests to the newer domain.
+  if(!upstream.ok&&target.hostname==='coin-images.coingecko.com'){
+   await upstream.body?.cancel();
+   const mirror=new URL(target);mirror.hostname='assets.coingecko.com';
+   upstream=await fetch(mirror.href,{redirect:'error',headers:{Accept:'image/*','User-Agent':'Mozilla/5.0 (compatible; AVArtwork/1.0)'},signal:controller.signal});
+  }
+  if(!upstream.ok){controller.abort();return json({state:'artwork-unavailable',upstreamStatus:upstream.status},502,headers);}
   type=(upstream.headers.get('Content-Type')||'').split(';')[0].trim().toLowerCase();
   if(!ARTWORK_TYPES.has(type)){controller.abort();return json({state:'unsupported-artwork'},415,headers);}
   if(Number(upstream.headers.get('Content-Length'))>ARTWORK_LIMIT){controller.abort();return json({state:'artwork-too-large'},413,headers);}

@@ -4,7 +4,7 @@ import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
-import {samplePixelIdentity} from './pixel-identity.js?v=222';
+import {samplePixelIdentity} from './pixel-identity.js?v=223';
 const fract=x=>x-Math.floor(x);
 const hash=n=>fract(Math.sin(n)*43758.5453);
 const fade=x=>x*x*x*(x*(x*6-15)+10);
@@ -109,9 +109,9 @@ export function createPixelBlastCanvas(host){
     if(identity>0||artworkColor>0){
      samplePixelIdentity(identityMask,fx+sample.warpX*cssHeight,fy+sample.warpY*cssHeight,identitySide,identityFlow,identityPhase,imageSample);
      imageDensity=imageSample[1];imagePalette=imageSample[4];
-     // Attraction never replaces the running pattern: its contrast remains
-     // at least 76%, including above $50M. Sound still owns survival.
-     feed=feed*(1-.24*identity)+identity*(.52*imageSample[0]+.16*imageDensity-.16);
+     // Match GPU occupancy while retaining the moving field's texture.
+     const imageOccupancy=.04+.88*imageSample[0];
+     feed=mix(feed,imageOccupancy+Math.max(-.5,Math.min(.5,feed-.5))*.16,identity);
     }
     if(feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;

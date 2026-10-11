@@ -34,6 +34,6 @@ not consume InsightX calls, store audio files, or change paid-plan settings.
 
 `GET /artwork?url=...` relays raster images from the fixed Dexscreener and
 CoinGecko CDN allowlist so both the coin avatar and visual field can read
-image pixels. Successful responses are cached for one day. Requests reject
-redirects, credentials, explicit ports and non-image content, and are bounded
+image pixels. Successful responses are cached for one day. Requests validate each redirect against the same CDN allowlist and reject
+credentials, explicit ports and non-image content, and are bounded
 to 2 MiB and 12 seconds. No InsightX requests or secrets are involved.

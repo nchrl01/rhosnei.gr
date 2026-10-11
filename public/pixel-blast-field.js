@@ -3,8 +3,8 @@ import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=222';
 import {battleGLSL} from './earthbound-motion.js?v=214';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=222';
-import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=222';
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=223';
+import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=223';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=220';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).
@@ -207,10 +207,10 @@ void main(){
   const float dampR     = 10.0;
 
 
-  // Keep at least 76% of the live pattern contrast, even above $50M.
-  // Artwork biases occupancy and local size; it never becomes a replacement
-  // frame or overrides the sound-driven survival of the existing marks.
-  feed=feed*(1.-.24*uIdentity)+uIdentity*(.52*imageGuide.r+.16*imageGuide.g-.16);
+  // The running field supplies motion and texture; the artwork progressively
+  // owns occupancy. At full attraction its silhouette must remain legible.
+  float imageOccupancy=.04+.88*imageGuide.r;
+  feed=mix(feed,imageOccupancy+clamp(feed-.5,-.5,.5)*.16,uIdentity);
 
   float bayer = Bayer8(pixelId) - 0.5;
   float bw = step(0.5, feed + bayer);
