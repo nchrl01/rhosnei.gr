@@ -9,7 +9,7 @@ import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.j
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,loadSharedScore} from './take-share.js?v=220';
 import {pianoHarmony} from './music-context.js?v=208';
-import {createEnvion} from './envion.js?v=227';
+import {createEnvion} from './envion.js?v=229';
 import {createEngineView} from './engine-view.js?v=209';
 import {createCoinDither} from './coin-dither.js?v=223';
 import {createUpicBrand} from './upic-brand.js?v=115';
@@ -20,7 +20,7 @@ import {createHolderMetadata} from './holder-metadata.js?v=206';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
-import {createMilestoneSounds} from './milestone-sounds.js?v=220';
+import {createMilestoneSounds} from './milestone-sounds.js?v=229';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=224';
 import {signalFreshness} from './market-controls.js?v=18';
@@ -398,7 +398,7 @@ async function initialize(){
    send('seed',seed%16777216);send('master',playing?engineMaster():0);if(playing)tick();send('run',playing?1:0);
    // Math and beat voices can start as soon as Pd is ready. Envion's sample
    // handshake has its own outcome and cannot close the other instruments.
-   envionLoading=envion.attach(runtime,context,files).then(attached=>{if(epoch!==audioEpoch||!attached)return;envion.setSeed(replayPhrase==null?seed:hash(seed+':'+replayPhrase));envion.setRunning(playing);if(playing)tick();audioStatus();}).catch(error=>{if(epoch===audioEpoch){send('av-envion-ready',0);envion.detach();audioErrors.envion=error.message;engineView.log('Envion: '+error.message);audioStatus();}});
+   envionLoading=envion.attach(runtime,context,files).then(attached=>{if(epoch!==audioEpoch||!attached)return;envion.setSeed(seed);envion.setRunning(playing);if(playing)tick();audioStatus();}).catch(error=>{if(epoch===audioEpoch){send('av-envion-ready',0);envion.detach();audioErrors.envion=error.message;engineView.log('Envion: '+error.message);audioStatus();}});
    audioStatus();return runtime;
   })().catch(error=>{if(epoch===audioEpoch){audioErrors.pd=error.message;engineView.log('Pd: '+error.message);audioStatus();}throw error;}).finally(()=>{if(epoch===audioEpoch)pdLoading=null;});
  }

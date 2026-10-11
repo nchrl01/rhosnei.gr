@@ -55,12 +55,12 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
  if(!container)throw new TypeError('A container is required for milestone sounds.');
  let marketKey='',cap=0,replay=false,rows=[],revision=0,activeId='',activeSlot=-1,statusText='Choose a coin to customize its sound.';
  container.className='milestone-sounds';
- container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">SOUND MILESTONES</p><h3>Sounds unlocked by market cap</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Drop audio into an unlocked slot · up to 8 sec.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
+ container.innerHTML='<div class="milestone-sounds-head"><div><p class="eyebrow">COIN SOUNDS</p><h3>Seed-selected recordings</h3></div><span data-current-cap>—</span></div><p class="milestone-sounds-note">Drop audio into a slot · up to 8 sec.</p><div class="milestone-sound-grid" data-slots></div><p class="milestone-sound-status" role="status" aria-live="polite" data-status></p>';
  const slots=container.querySelector('[data-slots]'),status=container.querySelector('[data-status]'),capLabel=container.querySelector('[data-current-cap]');
  const cards=THRESHOLDS.map((threshold,index)=>{
   const card=document.createElement('article');card.className='milestone-sound-card';
-  card.tabIndex=-1;card.setAttribute('role','group');card.setAttribute('aria-label',`Sound slot at ${money(threshold)}.`);
-  card.innerHTML=`<div class="milestone-sound-title"><strong>${money(threshold)}</strong><span data-lock aria-label="Locked until ${money(threshold)}">${lockIcon}</span></div><small data-range>Starts at ${money(threshold)}</small><div data-file><button type="button" class="milestone-clear" data-clear>Remove sound</button></div><input data-upload type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg">`;
+  card.tabIndex=-1;card.setAttribute('role','group');card.setAttribute('aria-label',`Coin sound slot ${index+1}.`);
+  card.innerHTML=`<div class="milestone-sound-title"><strong>SAMPLE ${index+1}</strong><span data-lock aria-label="Choose a coin first">${lockIcon}</span></div><small data-range>Coin-seeded selection</small><div data-file><button type="button" class="milestone-clear" data-clear>Remove sound</button></div><input data-upload type="file" accept="audio/*,.wav,.mp3,.m4a,.aiff,.flac,.ogg">`;
   const input=card.querySelector('[data-upload]');
   async function loadFile(file){if(!file||!marketKey||unlockedCap()<threshold)return;
    const token=marketKey,version=revision;statusText='Preparing '+file.name+'…';render();
@@ -79,24 +79,25 @@ export function createMilestoneSounds(container,{getAudioContext=()=>null,onActi
   card.addEventListener('dragleave',event=>{if(!card.contains(event.relatedTarget))card.classList.remove('is-dragging');});
   card.addEventListener('drop',event=>{event.preventDefault();card.classList.remove('is-dragging');if(marketKey&&unlockedCap()>=threshold)void loadFile(event.dataTransfer?.files?.[0]);});
   card.querySelector('[data-clear]').addEventListener('click',async()=>{
-   if(!marketKey||unlockedCap()<threshold)return;const token=marketKey;try{await storeRequest('readwrite',store=>store.delete(token+'|'+index));if(token!==marketKey)return;rows[index]=null;statusText=`Removed ${money(threshold)} sound.`;updateActive();render();}catch(error){statusText=error.message||'Could not remove this sound.';render();}
+   if(!marketKey||unlockedCap()<threshold)return;const token=marketKey;try{await storeRequest('readwrite',store=>store.delete(token+'|'+index));if(token!==marketKey)return;rows[index]=null;statusText=`Removed sample ${index+1}.`;updateActive();render();}catch(error){statusText=error.message||'Could not remove this sound.';render();}
   });
   slots.append(card);return card;
  });
- function unlockedCap(){return cap;}
+ function unlockedCap(){return marketKey?Infinity:0;}
  function updateActive(){
-  const reached=unlockedCap();let row=null;
-  for(let i=rows.length-1;i>=0;i--)if(rows[i]&&reached>=THRESHOLDS[i]){row=rows[i];break;}
-  const id=row?row.id:'';activeSlot=row?.slot??-1;if(id===activeId)return;activeId=id;
+  let seed=2166136261;for(const c of marketKey)seed=Math.imul(seed^c.charCodeAt(0),16777619)>>>0;
+  const start=seed%rows.length;let row=null;
+  for(let offset=0;offset<rows.length;offset++){const candidate=rows[(start+offset)%rows.length];if(candidate){row=candidate;break;}}
+  const id=row?row.id+':'+row.revision:'';activeSlot=row?.slot??-1;if(id===activeId)return;activeId=id;
   if(!row){onActiveSample(null);return;}
   row.blob.arrayBuffer().then(data=>{if(activeId===id)onActiveSample({token:row.token,slot:row.slot,threshold:row.threshold,name:row.name,revision:row.revision,data:new Uint8Array(data)});}).catch(error=>{statusText=error.message;render();});
  }
  function render(){
-  capLabel.textContent=money(cap);status.textContent=statusText;
+  capLabel.textContent='COIN SEED';status.textContent=statusText;
   const reached=unlockedCap();cards.forEach((card,index)=>{
-   const row=rows[index],locked=!marketKey||reached<THRESHOLDS[index],active=index===activeSlot&&!!row;card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);card.classList.toggle('is-active',active);card.tabIndex=locked?-1:0;card.setAttribute('aria-disabled',String(locked));card.setAttribute('aria-label',locked?`Sound slot locked until ${money(THRESHOLDS[index])}.`:`Sound slot at ${money(THRESHOLDS[index])}. Click to choose a sample or drop an audio file here.`);
-   const lock=card.querySelector('[data-lock]');lock.innerHTML=locked?lockIcon:active?'PLAYING':row?'READY':'UNLOCKED';lock.setAttribute('aria-label',locked?`Locked until ${money(THRESHOLDS[index])}`:active?'Currently playing':row?'Sound ready':'Unlocked');
-   const nextAssigned=rows.slice(index+1).find(Boolean);card.querySelector('[data-range]').textContent=row?`${money(THRESHOLDS[index])} → ${nextAssigned?money(nextAssigned.threshold):'and beyond'}`:`Starts at ${money(THRESHOLDS[index])}`;
+   const row=rows[index],locked=!marketKey||reached<THRESHOLDS[index],active=index===activeSlot&&!!row;card.classList.toggle('is-locked',locked);card.classList.toggle('is-unlocked',!locked);card.classList.toggle('is-active',active);card.tabIndex=locked?-1:0;card.setAttribute('aria-disabled',String(locked));card.setAttribute('aria-label',locked?'Choose a coin first.':`Coin sound slot ${index+1}. Click to choose a sample or drop an audio file here.`);
+   const lock=card.querySelector('[data-lock]');lock.innerHTML=locked?lockIcon:active?'PLAYING':row?'READY':'UNLOCKED';lock.setAttribute('aria-label',locked?'Choose a coin first.':active?'Currently playing':row?'Sound ready':'Unlocked');
+   card.querySelector('[data-range]').textContent=active?'Seed-selected source':'Coin-seeded selection';
    const fileLabel=card.querySelector('[data-file]'),clear=card.querySelector('[data-clear]');fileLabel.replaceChildren();if(row&&!locked){fileLabel.insertAdjacentHTML('afterbegin',waveSvg(row.waveform));const name=document.createElement('span');name.className='milestone-sample-name';name.textContent=`${row.name} · ${row.duration.toFixed(1)} sec`;fileLabel.append(name);}fileLabel.append(clear);clear.hidden=!row||locked;
    card.querySelector('[data-upload]').disabled=locked;card.classList.toggle('is-disabled',locked);
   });

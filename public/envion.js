@@ -1,7 +1,7 @@
-import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=220';
-import {createEnvionView} from './envion-view.js?v=220';
-import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=41';
-export {applyEnvionMarket} from './envion-market.js?v=41';
+import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=229';
+import {createEnvionView} from './envion-view.js?v=229';
+import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=229';
+export {applyEnvionMarket} from './envion-market.js?v=229';
 
 const BASE = 'patches/envion/';
 const ROOT = 'orchestra/envion/';
@@ -204,7 +204,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       material:{...source.material,sample:sound?milestonePath(sound):baseSample},
       values:sound?{...baseValues,484:1,751:1,826:1,867:1,926:Math.max(.4,Number(baseValues[926])||0)}:baseValues,
       actions,effects:sound?[...new Set([...baseEffects,'grains'])]:baseEffects,
-      summary:sound?`Milestone sound · ${sound.name} · ${baseSummary}`:baseSummary};
+      summary:sound?`Coin sound · ${sound.name} · ${baseSummary}`:baseSummary};
   }
   async function ensurePath(path) {
     const relative = path.replace(/^\/patches\//,'');

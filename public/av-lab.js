@@ -1,6 +1,6 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=3';
 import {createLabConnections} from './lab-connections.js?v=198';
-import {audioLab} from './audio-lab.js?v=227';
+import {audioLab} from './audio-lab.js?v=229';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=223';
 import {advancePixelSurvival} from './pixel-blast-parameters.js?v=220';
@@ -31,7 +31,7 @@ function configureRoute(key,patch){const spec=specs.find(s=>s[0]===key);settings
 function section(title,note){const d=document.createElement('details');d.open=true;const h=document.createElement('summary');h.textContent=title;const p=document.createElement('p');p.className='group-note';p.textContent=note;const grid=document.createElement('div');grid.className='grid';d.append(h,p,grid);$('visual-controls').append(d);return grid;}
 function build(){
  $('visual-controls').replaceChildren();paints=[];
- const global=section('Shared context','The current defaults are already wired: market activity drives tempo and flow; cap controls grid spacing, edge shrink and how long marks survive; wallet concentration changes mark size; price direction chooses + or ×. Envion receives the same activity, liquidity, motion, volume, tempo and direction.');
+ const global=section('Shared context','The current defaults are already wired: market activity drives tempo and flow; cap controls grid spacing, edge shrink and how long marks survive; wallet concentration changes mark size; price direction chooses + or ×. Envion: activity drives grains; intensity and buy/sell imbalance merge into expression; direction drives pitch and pan; volume drives overlap and echo; liquidity drives reverb; tempo drives timing; coin seed chooses material.');
  knob(global,['reference','Reference cap · USD',1000,1e9,1000,100000,true],()=>settings.referenceCap,v=>settings.referenceCap=v,{paints,onChange:persist});
  knob(global,['wallet','Wallet size variation',0,1,.01],()=>settings.wallet,v=>settings.wallet=v,{paints,onChange:persist});
  const cycle=document.createElement('button');cycle.className='action';cycle.onclick=()=>{settings.cycles=!settings.cycles;rebuild();persist();};global.append(cycle);paints.push(()=>{cycle.textContent='White / black cycles · '+(settings.cycles?'on':'off');cycle.setAttribute('aria-pressed',settings.cycles);});
