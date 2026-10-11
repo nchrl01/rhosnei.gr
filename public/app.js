@@ -649,7 +649,8 @@ function applySnapshot(pair){
  const previous=currentPrice();
  if(market&&imageKey(pair)===imageKey(market)){
   const oldTx=market.txns?.m5||{},newTx=pair.txns?.m5||{};
-  if(Number(pair.priceUsd)>0&&previous>0&&Math.abs(Number(pair.priceUsd)/previous-1)>1e-7||(Number(newTx.buys)||0)>(Number(oldTx.buys)||0)||(Number(newTx.sells)||0)>(Number(oldTx.sells)||0))lastMarketActivityAt=Date.now();
+  const oldPrice=Number(market.priceNative)||Number(market.priceUsd),newPrice=Number(pair.priceNative)||Number(pair.priceUsd);
+  if(newPrice>0&&oldPrice>0&&Math.abs(newPrice/oldPrice-1)>1e-7||(Number(newTx.buys)||0)>(Number(oldTx.buys)||0)||(Number(newTx.sells)||0)>(Number(oldTx.sells)||0))lastMarketActivityAt=Date.now();
  }
  // A provider's empty cap must not erase known supply for this same token.
  if(!isExchangeMarket(pair)&&!(Number(pair.marketCap)>0)&&market&&imageKey(pair)===imageKey(market)&&Number(market.marketCap)>0&&Number(market.priceUsd)>0&&Number(pair.priceUsd)>0){
