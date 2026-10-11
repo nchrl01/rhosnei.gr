@@ -149,7 +149,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   const status = () => view.setStatus('Envion 5.2 · '+'market + chance'+(running?' · playing':' · paused'));
   function clocks(force = false) {
     if (!pd || !namespace) return;
-    pd.sendFloat('av-envion-market',1);
+    pd.sendFloat('av-envion-market',+(running&&!!latestMarket&&(latestMarket.m.tradingActivity??latestMarket.m.raw?.activity??latestMarket.m.activity)>0.025));
     pd.sendFloat(namespace+'-met0',0);
   }
   async function fetchBytes(path) {
@@ -411,7 +411,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     view.setPerformance?.(description,activeMaterial,materialBusy,{plan:soundingPlan,row:soundingPlan?.row??0,market:latestMarket.m,tempo:latestMarket.tempo});
   }
   function decide(step,force=false) {
-    if(!running||!initialized||!latestMarket||!performer)return;
+    if(!running||!initialized||!latestMarket||!performer||(latestMarket.m.tradingActivity??latestMarket.m.raw?.activity??latestMarket.m.activity)<=0.025)return;
     const generated=performer.next(latestMarket.m,latestMarket.tempo,step,force);if(!generated)return;
     const plan=milestonePlan(generated,milestoneSound);
     performancePlan=plan;applyCurrent();
@@ -510,7 +510,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
     setRunning(value){const wasRunning=running;running=!!value;if(!running){clearTimeout(materialRetryTimer);materialRetryTimer=null;}else if(!wasRunning)resetMaterialRetry();view.setRunning(running);clocks(true);if(!running){pd?.sendBang('av-envion-hard-stop');pd?.sendBang('av-envion-ui-c44-1');}else if(!wasRunning&&initialized&&pendingMaterial)void loadPerformanceMaterial();status();},
     market(m,tempo){
       if(!pd||!namespace||!initialized)return;
-      clocks();latestMarket={m,tempo};
+      latestMarket={m,tempo};clocks();
       if(m.replay){
        const scene=m.replay.sceneSeed??Math.floor(m.replay.at||0);
        if(scene!==replayScene){replayScene=scene;performer?.reset(scene,{preserveMaterial:true});performancePlan=null;decide(0,true);}
