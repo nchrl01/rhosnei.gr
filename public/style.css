@@ -566,3 +566,6 @@ body{padding-bottom:0}
 @media(max-width:760px){.site-footer{margin-inline:-20px}}
 @media(min-width:701px) and (max-width:760px){.about-page .site-footer{margin-inline:-16px}}
 @media(max-width:700px){.about-page .site-footer{margin-inline:-20px}}
+
+/* Footer stays at the end of the page without sticking to the viewport. */
+.site-footer,.about-page .site-footer{position:relative;inset:auto;z-index:auto}
