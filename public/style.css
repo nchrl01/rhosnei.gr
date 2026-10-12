@@ -581,3 +581,23 @@ body{padding-bottom:0}
 /* Standalone pages use flex columns; stretch the header across both margins. */
 .marketplace-page main,.about-page main{align-items:stretch}
 .marketplace-page .market-header,.about-page .market-header{align-self:stretch;width:auto;max-width:none}
+
+/* Desktop instrument: give the chart its own full-width working area. */
+@media(min-width:761px){
+ .instrument-page .instrument-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:20px 16px;margin:12px 0 16px}
+ .instrument-page .coin-identity{grid-column:1;grid-row:1;min-width:0}
+ .instrument-page .transport{grid-column:2;grid-row:1;flex-direction:row;align-items:center;gap:10px;padding-top:0}
+ .instrument-page .chart-panel{grid-column:1/-1;grid-row:2;width:100%;min-width:0}
+ .instrument-page #market-chart{height:clamp(180px,28svh,300px)}
+ .instrument-page .coin-title{margin-top:12px;gap:16px}
+ .instrument-page .coin-title h2{overflow-wrap:anywhere;line-height:1.3}
+ .instrument-page .readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;padding-block:12px}
+ .instrument-page .readings>div{min-width:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+ .instrument-page .readings strong{margin:0;overflow-wrap:anywhere;text-align:right}
+ .instrument-page .readings small{line-height:1.4}
+ .instrument-page .tick-heading{flex-wrap:wrap;gap:6px 12px;line-height:1.4}
+ .instrument-page #tick-reading{min-width:0;overflow-wrap:anywhere}
+}
+@media(min-width:1050px){
+ .instrument-page main{grid-template-columns:minmax(430px,min(44%,780px)) minmax(0,1fr);column-gap:28px}
+}
