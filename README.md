@@ -12,7 +12,7 @@ Live site: https://nchrl01.github.io/rhosnei.gr/
 - **Visuals:** WebGL, Canvas, React and Motion
 - **Market connections:** JSON-RPC, WebSocket, REST and CCXT
 - **Charts:** Lightweight Charts
-- **Type:** NDS12
+- **Type:** GNU Unifont
 
 The audiovisual lab uses the same audio and visual engines as the main player.
 Its patch cables route shared market signals into both engines. Lab market
@@ -32,6 +32,7 @@ that user action so the browser can enable sound.
 ## Build assets
 
 ```sh
+npm run build:site
 npm run build:ui
 npm run build:ccxt
 python3 build-envion.py
@@ -47,8 +48,16 @@ browser must download them to run the site.
 - `public/` — website, audio engines, visuals and browser assets
 - `public/patches/` — Pure Data patches and ENVION
 - `native/` — standalone ENVION and browser MusicRNN build sources
-- `scripts/` — asset build helpers
+- `scripts/` — static shell and asset build helpers
+- `src/site/` — shared header and footer templates
 - `cloudflare/` — optional InsightX data worker
 
 Third-party license and attribution notices remain with their corresponding
 assets and libraries.
+
+## Site architecture
+
+All pages share the same navigation, typography and interaction rules. Header and
+footer HTML is generated before deployment, so controls are present at startup.
+See [site architecture](docs/site-architecture.md) for component ownership and
+build details.

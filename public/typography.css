@@ -1,5 +1,5 @@
-/* Shared type scale across the instrument, marketplace and labs. */
-:root{--font-size-small:12px;--font-size-body:16px;--font-size-title:24px}
+/* Compatibility text assignments after page styles; tokens live in foundation.css. */
 body,input,button,select,textarea{font-size:var(--font-size-body)}
 h1,h2,h3{font-size:var(--font-size-title)}
 small{font-size:var(--font-size-small)}
+html body,html body *,html body *::before,html body *::after{font-family:var(--font-family)!important;font-weight:400!important}

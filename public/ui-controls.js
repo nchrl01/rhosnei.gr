@@ -1,30 +1,11 @@
+import {bindListeningVolume} from './listening-volume.js?v=281';
 // Small bridge between the existing player and independently mounted React UI.
 // Loading the presentation bundle never delays market or audio initialization.
 export function createUIControls(){
  const $=id=>document.getElementById(id),states=new Map(),loaders=new Map(),timers=new Map();
- const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
+ const time=$('coin-time');
  let components,clock,dateClock,lastClock=null,sequence=0;
- const volumeButton=$('volume-button'),mobile=matchMedia('(max-width:760px)');
- let volumeOpen=false;
- function setVolumeOpen(open,focus=false){
-  volumeOpen=Boolean(open);panel.hidden=!volumeOpen;
-  volumeButton.hidden=false;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
-  if(volumeOpen&&focus)input.focus({preventScroll:true});
- }
- function volumeLabel(){
-  const amount=Math.round(Number(input.value)*100);
-  input.style.setProperty('--range-fill',amount+'%');
-  const value=$('master-value');if(value)value.textContent=amount+'%';
-  volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);volumeButton.dataset.volumeLevel=amount>50?"high":"low";
- }
- volumeButton.addEventListener('click',()=>setVolumeOpen(mobile.matches?!volumeOpen:true,true));
- volumeButton.parentElement.addEventListener('pointerenter',()=>{if(!mobile.matches)setVolumeOpen(true);});
- volumeButton.parentElement.addEventListener('pointerleave',()=>{if(!mobile.matches&&!volumeButton.parentElement.contains(document.activeElement))setVolumeOpen(false);});
- document.addEventListener('pointerdown',event=>{if(volumeOpen&&!volumeButton.parentElement.contains(event.target))setVolumeOpen(false);});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){event.preventDefault();setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
- volumeButton.parentElement.addEventListener('focusout',event=>{if(volumeOpen&&event.relatedTarget&&!volumeButton.parentElement.contains(event.relatedTarget))setVolumeOpen(false);});
- mobile.addEventListener('change',()=>setVolumeOpen(false));
- input.addEventListener('input',volumeLabel);setVolumeOpen(false);volumeLabel();
+ bindListeningVolume();
  const dateNode=$('coin-date');
  const clockFallback=document.createElement('span'),clockHost=document.createElement('span');
  clockFallback.className='clock-fallback';clockHost.className='clock-island';time.replaceChildren(clockFallback,clockHost);

@@ -7,15 +7,15 @@
 #volume-button[data-muted=true] .volume-muted{display:block}
 #volume-button[data-muted=true] .volume-waves{display:none}
 /* The same native slider is used on touch screens and desktop. */
-.header-links #volume-panel{position:absolute;top:100%;right:0;left:auto;width:44px;height:132px;display:flex;align-items:center;justify-content:center;padding:12px 0;border:1px solid #777;background:#000;box-shadow:none;box-sizing:border-box;z-index:120}
+.volume-widget #volume-panel{position:absolute;top:100%;right:0;left:auto;width:44px;height:132px;display:flex;align-items:center;justify-content:center;padding:12px 0;border:1px solid #777;background:#000;box-shadow:none;box-sizing:border-box;z-index:120}
 #volume-panel[hidden]{display:none!important}
-.header-links #volume-panel>label,.header-links #volume-panel>span{display:none}
-.header-links #volume-panel #master{display:block;appearance:none;-webkit-appearance:none;writing-mode:vertical-lr;direction:rtl;width:24px;height:100px;min-height:100px;margin:0;background:transparent;outline-offset:3px;cursor:pointer;touch-action:none;--range-direction:to top}
-.header-links #master::-webkit-slider-runnable-track{width:4px;height:100%}
-.header-links #master::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;margin:0 0 0 -4px;border-radius:50%;background:#fff;border:0}
-.header-links #master::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:0}
-.header-links #master::-moz-range-track{width:4px;height:100%;background:#555}
-.header-links #master::-moz-range-progress{background:#fff;width:4px;height:auto}
+.volume-widget #volume-panel>label,.volume-widget #volume-panel>span{display:none}
+.volume-widget #volume-panel #master{display:block;appearance:none;-webkit-appearance:none;writing-mode:vertical-lr;direction:rtl;width:24px;height:100px;min-height:100px;margin:0;background:transparent;outline-offset:3px;cursor:pointer;touch-action:none;--range-direction:to top}
+.volume-widget #master::-webkit-slider-runnable-track{width:4px;height:100%}
+.volume-widget #master::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;margin:0 0 0 -4px;border-radius:50%;background:#fff;border:0}
+.volume-widget #master::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:0}
+.volume-widget #master::-moz-range-track{width:4px;height:100%;background:#555}
+.volume-widget #master::-moz-range-progress{background:#fff;width:4px;height:auto}
 .visual-volume-control{position:fixed;left:60px;top:calc(var(--visual-full-top,64px) + 8px);z-index:120;pointer-events:auto}
 @media(max-width:760px){
  .transport #volume-button,.visual-volume-control #volume-button{width:60px;height:60px;min-width:60px;min-height:60px}
@@ -60,6 +60,7 @@
 
 .header-links #volume-button{display:flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:32px;padding:4px;border:0;background:transparent;color:#fff}
 .header-links #volume-button[hidden]{display:none}
+.header-links #volume-button svg{width:24px;height:24px}
 
 .transport #play[aria-busy=true]::after{display:none!important}
 .transport #play[aria-busy=true]{background:#000;color:#f2f2f2;cursor:default}

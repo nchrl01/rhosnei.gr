@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.mjs",
+    "start": "node scripts/build-site-shell.mjs && node server.mjs",
+    "build:site": "node scripts/build-site-shell.mjs",
     "build:ccxt": "node scripts/build-ccxt.mjs",
     "build:ui": "node scripts/build-ui.mjs"
   },

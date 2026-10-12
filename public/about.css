@@ -1,0 +1,16 @@
+    .about-page main{display:flex;flex-direction:column;width:100%;min-height:100svh;margin:0;}
+    .about-page .about-copy{width:100%;max-width:560px;align-self:center;margin:auto;padding:48px 0;text-align:left}
+    .about-page .about-logo{display:block;width:64px;height:auto;max-width:100%;margin:0 0 24px;object-fit:contain;image-rendering:pixelated}
+    .about-page .about-copy h1{margin:0 0 24px;font-size:var(--font-size-title);font-weight:400;line-height:1.35;letter-spacing:0}
+    .about-page .about-copy p{margin:0 0 18px;font-size:var(--font-size-body);font-weight:400;line-height:1.5;color:#f2f2f2;overflow-wrap:break-word}
+    .about-page .about-copy p:last-child{margin-bottom:0}
+    @media(max-width:700px){
+      .about-page .about-copy{padding:36px 0}
+      .about-page .about-copy h1{font-size:var(--font-size-title)}
+      .about-page .about-copy p{font-size:var(--font-size-body)}
+    }
+    .about-page .about-copy strong,.about-page .about-copy b{font-weight:400}
+    .about-page .about-copy small{font-size:var(--font-size-small);font-weight:400}
+    .about-page .about-credit{margin-top:32px}
+    .about-page .about-credit .developer-credit{margin-bottom:14px;font-size:var(--font-size-body)}
+    .about-page .about-credit .technology-credit{margin-bottom:8px;font-size:var(--font-size-body);line-height:1.5;color:#aaa}

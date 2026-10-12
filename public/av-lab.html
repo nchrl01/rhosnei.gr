@@ -6,12 +6,19 @@
   <meta name="theme-color" content="#090909">
   <title>UPIC · Audiovisual lab</title>
   <link rel="icon" href="upic-favicon.svg">
-  <link rel="stylesheet" href="visual-lab.css?v=272">
-  <link rel="stylesheet" href="audio-lab.css?v=256">
-  <link rel="stylesheet" href="av-lab.css?v=256">
-<link rel="stylesheet" href="shared-navigation.css?v=280"><link rel="stylesheet" href="typography.css?v=256"></head>
-<body><header class="site-navigation" aria-label="$AV navigation"><a class="site-navigation-brand" href="./"><img src="upic-logo-transparent.svg?v=116" alt="" width="24" height="32"><span>$AV <small>(BETA)</small></span></a><nav class="header-links" aria-label="Primary navigation"><a href="./">Instrument</a><a href="upic/marketplace/">Marketplace</a><a href="https://x.com/upicdotapp" target="_blank" rel="noopener noreferrer">X</a><a href="about.html">About</a></nav></header>
-  <header>
+  <!-- site-shell:styles:start -->
+<link rel="stylesheet" href="foundation.css?v=281">
+<link rel="stylesheet" href="visual-lab.css?v=281">
+<link rel="stylesheet" href="audio-lab.css?v=281">
+<link rel="stylesheet" href="av-lab.css?v=281">
+<link rel="stylesheet" href="typography.css?v=281">
+<link rel="stylesheet" href="shared-navigation.css?v=281">
+<!-- site-shell:styles:end -->
+</head>
+<body><!-- site-shell:header:start -->
+<header class="site-navigation" aria-label="$AV navigation"><div class="header-main"><a class="upic-brand site-navigation-brand" href="./" aria-label="$AV home" title="$AV"><span class="brand-icon" aria-hidden="true"><img src="upic-logo-transparent.svg?v=116" alt="" width="125" height="173" decoding="async" draggable="false"></span><span class="brand-name">$AV <span class="brand-beta">(BETA)</span></span></a><nav class="header-links" aria-label="Primary navigation"><a class="header-link" href="./">Instrument</a><a class="header-link" href="upic/marketplace/">Marketplace</a><a class="header-link" href="about.html">About</a></nav></div></header>
+<!-- site-shell:header:end -->
+  <header class="lab-toolbar-header">
     <a href="./">UPIC ↗</a>
     <span>AUDIOVISUAL LAB <small>/ PATCH</small></span>
     <button id="play">Start audio</button>
@@ -76,5 +83,8 @@
   </main>
   <div id="envion-host" hidden></div>
   <script type="module" src="av-lab.js?v=276"></script>
-<script type="module" src="shared-header.js?v=276"></script></body>
+<!-- site-shell:scripts:start -->
+<script type="module" src="shared-header.js?v=281"></script>
+<!-- site-shell:scripts:end -->
+</body>
 </html>

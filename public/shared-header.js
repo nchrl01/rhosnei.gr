@@ -1,19 +1,59 @@
-const links=[...document.querySelectorAll('.header-links a')];
-for(const link of links){const target=new URL(link.href);if(target.origin===location.origin&&target.pathname.replace(/\/$/,'')===location.pathname.replace(/\/$/,''))link.setAttribute('aria-current','page');}
-const input=document.getElementById('master'),button=document.getElementById('volume-button'),panel=document.getElementById('volume-panel');
-if(input){try{const saved=localStorage.getItem('av-listening-volume');if(saved!==null)input.value=String(Math.max(0,Math.min(1,Number(saved)||0)));}catch{}input.addEventListener('input',()=>{try{localStorage.setItem('av-listening-volume',input.value);}catch{}});}
-if(input&&button&&panel&&!document.getElementById('market-chart')){
- const value=document.getElementById('master-value');
- const update=()=>{const amount=Math.round(Number(input.value)*100);input.style.setProperty('--range-fill',amount+'%');value.textContent=amount+'%';button.setAttribute('aria-label','Volume '+amount+'%');button.dataset.muted=String(amount===0);button.dataset.volumeLevel=amount>50?"high":"low";};
- const open=(state,focus=false)=>{panel.hidden=!state;button.setAttribute('aria-expanded',String(state));if(state&&focus)input.focus({preventScroll:true});};
- button.parentElement.addEventListener('pointerenter',()=>{if(matchMedia('(min-width:761px)').matches)open(true);});
- button.parentElement.addEventListener('pointerleave',()=>{if(matchMedia('(min-width:761px)').matches&&!button.parentElement.contains(document.activeElement))open(false);});
- button.addEventListener('click',()=>open(matchMedia('(max-width:760px)').matches?panel.hidden:true,true));input.addEventListener('input',update);
- document.addEventListener('pointerdown',event=>{if(!button.parentElement.contains(event.target))open(false);});document.addEventListener('keydown',event=>{if(event.key==='Escape')open(false);});update();
+import {bindListeningVolume} from './listening-volume.js?v=281';
+
+function markCurrentPage(){
+ const canonical=path=>path.replace(/\/index\.html$/,'/').replace(/\/$/,'')||'/';
+ for(const link of document.querySelectorAll('.header-links a')){
+  const target=new URL(link.href);
+  if(target.origin===location.origin&&canonical(target.pathname)===canonical(location.pathname))link.setAttribute('aria-current','page');
+ }
 }
+function bindRangeTracks(){
+ const paint=input=>{
+  if(!input.matches?.('input[type=range]')||input.classList.contains('envion-slider'))return;
+  const min=Number(input.min||0),max=Number(input.max||100),value=Number(input.value);
+  input.style.setProperty('--range-fill',Math.max(0,Math.min(100,(value-min)/(max-min||1)*100))+'%');
+ };
+ document.querySelectorAll('input[type=range]').forEach(paint);
+ document.addEventListener('input',event=>paint(event.target));
+}
+function bindNetworkDisclosure(){
+ const details=document.querySelector('.footer-networks'),panel=details?.querySelector('.footer-networks-panel'),summary=details?.querySelector('summary');
+ if(!details||!panel||!summary)return;
+ const place=()=>{
+  if(!details.open)return;
+  const rect=summary.getBoundingClientRect(),gutter=8;
+  const width=Math.min(190,window.innerWidth-gutter*2);
+  const height=Math.min(panel.scrollHeight,Math.max(80,rect.top-gutter*2));
+  panel.style.setProperty('--network-menu-left',Math.max(gutter,Math.min(rect.right-width,window.innerWidth-width-gutter))+'px');
+  panel.style.setProperty('--network-menu-top',Math.max(gutter,rect.top-height-gutter)+'px');
+  panel.style.maxHeight=Math.max(80,rect.top-gutter*2)+'px';
+ };
+ details.addEventListener('toggle',()=>{summary.setAttribute('aria-expanded',String(details.open));place();});
+ document.addEventListener('pointerdown',event=>{if(details.open&&!details.contains(event.target))details.open=false;});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&details.open){details.open=false;summary.focus({preventScroll:true});}});
+ window.addEventListener('resize',place);
+ window.addEventListener('scroll',place,true);
+ summary.setAttribute('aria-expanded',String(details.open));
+}
+function keepArtworkUndraggable(){
+ document.addEventListener('dragstart',event=>{if(event.target.closest?.('img,canvas,.coin-avatar,.trending-avatar,.collection-card'))event.preventDefault();},true);
+}
+function removeRetiredSampleStorage(){
+ try{const cleanup=indexedDB.deleteDatabase('upic-envion-samples-v1');cleanup.onerror=()=>{};}catch{}
+}
+markCurrentPage();
+bindListeningVolume();
+bindRangeTracks();
+bindNetworkDisclosure();
+keepArtworkUndraggable();
+removeRetiredSampleStorage();
 
-// Remove recordings saved by the retired coin-sound upload feature.
-try{const cleanup=indexedDB.deleteDatabase('upic-envion-samples-v1');cleanup.onerror=()=>{};}catch{}
-
-// Artwork is for viewing, never a browser drag payload.
-document.addEventListener('dragstart',event=>{if(event.target.closest?.('img,canvas,.coin-avatar,.trending-avatar,.collection-card'))event.preventDefault();},true);
+// Optional footer features cannot prevent navigation or volume from starting.
+if(document.querySelector('.site-footer')){
+ void import('./footer-prices.js?v=240').catch(()=>{});
+ void import('./wallet-connect.js?v=281').catch(()=>{
+  const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
+  if(button)button.disabled=true;
+  if(status)status.textContent='Wallet unavailable. Reload to try again.';
+ });
+}
