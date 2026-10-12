@@ -1,5 +1,5 @@
 import {buildPerformanceCatalog,createEnvionPerformance,CHANCE_LABELS} from './envion-performance.js?v=229';
-import {createEnvionView} from './envion-view.js?v=231';
+import {createEnvionView} from './envion-view.js?v=234';
 import {applyEnvionMarket,ENVION_CONTROLS,ENVION_FIXED} from './envion-market.js?v=229';
 export {applyEnvionMarket} from './envion-market.js?v=229';
 

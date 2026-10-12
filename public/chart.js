@@ -8,7 +8,7 @@ export class MarketChart{
   this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
-   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'Handjet, sans-serif',attributionLogo:true},
+   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'Unifont, sans-serif',attributionLogo:true},
    grid:{vertLines:{visible:false},horzLines:{color:'#222222'}},
    rightPriceScale:{borderColor:'#3a3a3a',scaleMargins:{top:.1,bottom:.25}},
    timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
@@ -18,8 +18,8 @@ export class MarketChart{
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
   // Canvas axes must invalidate their measurements after the webfont loads.
-  if(document.fonts)document.fonts.load('400 12px Handjet','0123456789.,$').then(()=>{
-   this.chart.applyOptions({layout:{fontFamily:'"Handjet", "Noto Sans", sans-serif',fontSize:12}});
+  if(document.fonts)document.fonts.load('400 12px Unifont','0123456789.,$').then(()=>{
+   this.chart.applyOptions({layout:{fontFamily:'"Unifont", "Noto Sans", sans-serif',fontSize:12}});
   }).catch(()=>{});
   const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9}),minMove:1e-12};
   this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#000000',downColor:'#f2f2f2',wickUpColor:'#f2f2f2',wickDownColor:'#f2f2f2',borderVisible:true,borderUpColor:'#f2f2f2',borderDownColor:'#f2f2f2',priceLineColor:'#b5b5b5',priceFormat});
