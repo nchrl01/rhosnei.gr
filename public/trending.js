@@ -1,3 +1,4 @@
+import {attachArtworkDither} from './coin-dither.js?v=269';
 import {fetchGecko} from './gecko.js?v=206';
 const REFRESH_MS=30000;
 const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom',cro:'cronos'};
@@ -61,7 +62,7 @@ export function startTrending(onPick,onLoading=()=>{}){
   pick.setAttribute('aria-label','Play '+item.name+' on '+item.network+', market cap '+(money(item.marketCap)||'unknown'));
   const avatar=node('span',item.symbol.slice(0,2),'trending-avatar'),url=safeImage(item.image);
   avatar.setAttribute('aria-hidden','true');
-  if(url){const img=node('img');img.src=url;img.alt='';img.width=24;img.height=24;img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{img.remove();avatar.textContent=item.symbol.slice(0,2);};avatar.textContent='';avatar.append(img);}
+  if(url){const img=node('img');img.src=url;img.alt='';img.width=24;img.height=24;img.loading='lazy';img.referrerPolicy='no-referrer';img.onerror=()=>{img.remove();avatar.textContent=item.symbol.slice(0,2);};avatar.textContent='';avatar.append(img);attachArtworkDither(img);}
   pick.append(avatar,node('b',item.symbol,'trending-name'),node('span',money(item.marketCap)||'MCAP —','trending-market-cap'));
   pick.onclick=()=>onPick(item);article.append(pick);
   if(duplicate){article.setAttribute('aria-hidden','true');pick.tabIndex=-1;}

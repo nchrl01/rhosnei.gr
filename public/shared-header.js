@@ -14,3 +14,6 @@ if(input&&button&&panel&&!document.getElementById('market-chart')){
 
 // Remove recordings saved by the retired coin-sound upload feature.
 try{const cleanup=indexedDB.deleteDatabase('upic-envion-samples-v1');cleanup.onerror=()=>{};}catch{}
+
+// Artwork is for viewing, never a browser drag payload.
+document.addEventListener('dragstart',event=>{if(event.target.closest?.('img,canvas,.coin-avatar,.trending-avatar,.collection-card'))event.preventDefault();},true);

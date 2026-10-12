@@ -5,7 +5,7 @@ const HOUR=3600000,DAY=24*HOUR,TTL=6*HOUR;
 const json=(body,status=200,headers={})=>Response.json(body,{status,headers:{'Cache-Control':'no-store',...headers}});
 const number=value=>value!==null&&value!==''&&Number.isFinite(Number(value))?Number(value):null;
 const pct=value=>number(value)===null?null:Math.max(0,Math.min(100,Number(value)));
-const ARTWORK_HOSTS=new Set(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com']);
+const ARTWORK_HOSTS=new Set(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io']);
 const ARTWORK_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif','image/avif']);
 const ARTWORK_LIMIT=2*1024*1024;
 

@@ -44,21 +44,22 @@ export function coinImagePixels(image,size=256){
 export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=>{}}={}){
  const host=img.parentElement,canvas=document.createElement('canvas');canvas.className='coin-dither';canvas.setAttribute('aria-hidden','true');canvas.hidden=true;host.append(canvas);
  const context=canvas.getContext('2d');
- let serial=0,current='',pixels=null,size=96;
+ let serial=0,current='',pixels=null,size=96,stopReveal=()=>{};
  // Share the decoded source once; the field never fetches or reads it per frame.
  function notify(image){try{onPixels(image);}catch(error){console.warn('Coin artwork unavailable to the visual field:',error.message);}}
  function paint(){if(!pixels)return;context.putImageData(new ImageData(ditherPixels(pixels,size,size),size,size),0,0);}
  function load(url,token){
-  img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
+  stopReveal();img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
   if(!url){img.removeAttribute('src');return;}
   const decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
+  let relayed=false;decoded.onerror=()=>{if(relayed)return;try{const url=new URL(img.currentSrc||img.src);if(!['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io'].includes(url.hostname))return;relayed=true;decoded.src='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(url.href);}catch{}};
   decoded.onload=()=>{
    if(token!==serial)return;
    try{
     size=Math.max(64,Math.min(256,Math.round(host.clientWidth||96)));canvas.width=canvas.height=size;
     const fieldImage=coinImagePixels(decoded);
     pixels=(size===fieldImage.width?fieldImage:coinImagePixels(decoded,size)).pixels;
-    canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';paint();notify(fieldImage);
+    canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';canvas.style.filter='none';stopReveal=ditherReveal(canvas,pixels,size,size,host);notify(fieldImage);
    }catch{relayOrFallback();}
   };
   let relayed=false;
@@ -78,5 +79,37 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
   try{onUnavailable(url);}catch{}
  }
 
- return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;canvas.remove();}};
+ return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;stopReveal();canvas.remove();}};
+}
+
+// Reveal the source through ordered pixel holes, rather than an opacity fade.
+export function ditherReveal(canvas,source,width,height,host=canvas.parentElement){
+ const ctx=canvas.getContext('2d'),dither=ditherPixels(source,width,height),frame=new ImageData(width,height);
+ let amount=0,target=0,raf=0,last=0;
+ const reduced=matchMedia('(prefers-reduced-motion:reduce)');
+ function paint(){for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+  const i=(y*width+x)*4,threshold=(BAYER[(y%8)*8+x%8]+.5)/64,data=amount>threshold?source:dither;
+  frame.data[i]=data[i];frame.data[i+1]=data[i+1];frame.data[i+2]=data[i+2];frame.data[i+3]=data[i+3];
+ }ctx.putImageData(frame,0,0);}
+ function tick(now){raf=0;if(!canvas.isConnected)return;const dt=last?Math.min(40,now-last):16;last=now;amount+=Math.sign(target-amount)*Math.min(Math.abs(target-amount),dt/420);paint();if(amount!==target)raf=requestAnimationFrame(tick);}
+ function set(value){target=value;if(reduced.matches){amount=value;paint();return;}if(!raf){last=0;raf=requestAnimationFrame(tick);}}
+ const enter=()=>set(1),leave=()=>set(0);host.addEventListener('pointerenter',enter);host.addEventListener('pointerleave',leave);host.addEventListener('focusin',enter);host.addEventListener('focusout',leave);paint();
+ return ()=>{cancelAnimationFrame(raf);host.removeEventListener('pointerenter',enter);host.removeEventListener('pointerleave',leave);host.removeEventListener('focusin',enter);host.removeEventListener('focusout',leave);};
+}
+export function attachArtworkDither(img){
+ img.draggable=false;img.addEventListener('dragstart',e=>e.preventDefault());
+ const host=img.parentElement;host.classList.add('dither-artwork');
+ function ready(){
+  if(!img.naturalWidth||!img.isConnected||host.querySelector('.artwork-dither'))return;
+  const decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
+  let relayed=false;decoded.onerror=()=>{if(relayed)return;try{const url=new URL(img.currentSrc||img.src);if(!['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io'].includes(url.hostname))return;relayed=true;decoded.src='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(url.href);}catch{}};
+  decoded.onload=()=>{if(!img.isConnected)return;try{
+   const size=Math.max(32,Math.min(240,Math.round(img.clientWidth||200))),canvas=document.createElement('canvas');canvas.width=canvas.height=size;canvas.className='artwork-dither';canvas.setAttribute('aria-hidden','true');
+   const ctx=canvas.getContext('2d',{willReadFrequently:true}),scale=Math.max(size/decoded.naturalWidth,size/decoded.naturalHeight);
+   ctx.drawImage(decoded,(size-decoded.naturalWidth*scale)/2,(size-decoded.naturalHeight*scale)/2,decoded.naturalWidth*scale,decoded.naturalHeight*scale);
+   const data=ctx.getImageData(0,0,size,size).data;host.append(canvas);ditherReveal(canvas,data,size,size,host.closest('.collection-card')||host);host.classList.add('dither-ready');
+  }catch{/* Keep the image when its host disallows canvas access. */}};
+  decoded.src=img.currentSrc||img.src;
+ }
+ img.addEventListener('load',ready);if(img.complete)ready();
 }

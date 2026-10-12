@@ -32,3 +32,5 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 .marketplace-heading{gap:16px;margin-bottom:18px}.marketplace-eyebrow{margin:0 0 8px}.marketplace-heading h1{margin:0 0 8px}.marketplace-heading p:not(.marketplace-eyebrow){margin:0}
 .marketplace-toolbar{gap:10px;margin-bottom:12px}.marketplace-results-heading{padding-block:12px}.marketplace-grid{gap:20px;padding-block:20px}
 @media(max-width:760px){.marketplace-content{padding:0 0 24px}.marketplace-heading{gap:12px;margin-bottom:12px}.marketplace-toolbar{gap:8px}.marketplace-grid{gap:16px 12px;padding-block:16px}}
+
+.marketplace-results-heading{align-items:center;min-height:44px}.marketplace-results-heading .marketplace-sort{padding:0;margin:0 0 0 auto}.marketplace-results-heading #marketplace-sort{min-height:32px;text-transform:uppercase}.marketplace-status a{color:inherit}
