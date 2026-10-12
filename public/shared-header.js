@@ -8,7 +8,7 @@ if(input&&button&&panel&&!document.getElementById('market-chart')){
  const open=state=>{panel.hidden=!state;button.setAttribute('aria-expanded',String(state));if(state&&matchMedia('(max-width:760px)').matches){const rect=button.getBoundingClientRect();panel.style.left=Math.max(12,Math.min(innerWidth-180,rect.right-168))+'px';panel.style.top=rect.bottom+8+'px';}};
  button.parentElement.addEventListener('pointerenter',()=>{if(matchMedia('(min-width:761px)').matches)open(true);});
  button.parentElement.addEventListener('pointerleave',()=>{if(matchMedia('(min-width:761px)').matches&&!button.parentElement.contains(document.activeElement))open(false);});
- button.addEventListener('click',()=>open(panel.hidden));input.addEventListener('input',update);
+ button.addEventListener('click',()=>open(matchMedia('(max-width:760px)').matches?panel.hidden:true));input.addEventListener('input',update);
  document.addEventListener('pointerdown',event=>{if(!button.parentElement.contains(event.target))open(false);});document.addEventListener('keydown',event=>{if(event.key==='Escape')open(false);});update();
 }
 

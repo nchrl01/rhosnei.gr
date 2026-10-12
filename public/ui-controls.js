@@ -31,7 +31,7 @@ export function createUIControls(){
   const amount=Math.round(Number(input.value)*100);
   volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);volumeButton.dataset.volumeLevel=amount>50?"high":"low";
  }
- volumeButton.addEventListener('click',()=>setVolumeOpen(!volumeOpen,true));
+ volumeButton.addEventListener('click',()=>setVolumeOpen(mobile.matches?!volumeOpen:true,true));
  volumeButton.parentElement.addEventListener('pointerenter',()=>{if(!mobile.matches)setVolumeOpen(true);});
  volumeButton.parentElement.addEventListener('pointerleave',()=>{if(!mobile.matches&&!volumeButton.parentElement.contains(document.activeElement))setVolumeOpen(false);});
  document.addEventListener('pointerdown',event=>{if(volumeOpen&&!volumeButton.parentElement.contains(event.target))setVolumeOpen(false);});

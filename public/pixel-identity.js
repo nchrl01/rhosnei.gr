@@ -1,4 +1,4 @@
-import {ditherPixels,imageLevels} from './coin-dither.js?v=231';
+import {ditherPixels,imageLevels} from './coin-dither.js?v=274';
 
 const clamp=x=>Math.max(0,Math.min(1,x));
 const smooth=x=>{const t=clamp(x);return t*t*(3-2*t);};
