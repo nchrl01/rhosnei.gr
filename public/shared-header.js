@@ -11,3 +11,6 @@ if(input&&button&&panel&&!document.getElementById('market-chart')){
  button.addEventListener('click',()=>open(panel.hidden));input.addEventListener('input',update);
  document.addEventListener('pointerdown',event=>{if(!button.parentElement.contains(event.target))open(false);});document.addEventListener('keydown',event=>{if(event.key==='Escape')open(false);});update();
 }
+
+// Remove recordings saved by the retired coin-sound upload feature.
+try{const cleanup=indexedDB.deleteDatabase('upic-envion-samples-v1');cleanup.onerror=()=>{};}catch{}

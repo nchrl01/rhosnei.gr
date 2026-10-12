@@ -89,7 +89,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   let activePicker = null, pendingDialog = null, generation = 0, initialized = false;
   let sampleWaveforms=[null,null],scopeOff=null,waveformSource=null,waveformLoading=null,waveformLoaded=null;
   const nodes = new Map(), dialogs = new Map(), staged = new Set(), loads = new Map(), requests = new Map(), subscriptions = [], guiSubscriptions = [];
-  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917,replayScene=null, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0, marketOverrides={}, milestoneSound=null, milestoneSoundIdentity='';
+  let presetRequest = 0, latestMarket = null, catalog, performer, performancePlan=null, performanceSeed=1917,replayScene=null, materialBusy=false, pendingMaterial=null, activeMaterial=null, loadedBankRows=328, materialOperation=0, marketOverrides={};
   let materialRetryTimer=null,materialRetries=0;
   const marketWrites = new Map();
   const writeMarket = (receiver,value) => {if(marketWrites.get(receiver)===value)return;marketWrites.set(receiver,value);pd.sendFloat(receiver,value);};
@@ -167,44 +167,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       await target.writeFile(ROOT+path,content);staged.add(ROOT+path);
     })().finally(() => loads.delete(path)));
     return loads.get(path);
-  }
-  function milestonePath(sound=milestoneSound) {
-    if(!sound)return '';
-    const token=String(sound.token||'market').replace(/[^a-z0-9_-]/gi,'_').slice(0,150);
-    return `imports/milestone-sounds/${token}/${Number(sound.slot)||0}-${Number(sound.revision)||0}.wav`;
-  }
-  async function ensurePerformanceSample(path) {
-    if(path.startsWith('imports/milestone-sounds/')) {
-      if(staged.has(ROOT+path))return;
-      const sound=milestoneSound;
-      if(!sound||milestonePath(sound)!==path)throw Error('This token’s milestone sound is no longer available.');
-      const target=pd,epoch=generation;
-      await target.writeFile(ROOT+path,sound.data);
-      if(target!==pd||epoch!==generation)throw Error('Audio session changed');
-      staged.add(ROOT+path);return;
-    }
-    return ensureAsset(path);
-  }
-  function setMilestoneSound(sound) {
-    const identity=sound?`${sound.token}|${sound.slot}|${sound.revision}|${sound.name}`:'';
-    if(identity===milestoneSoundIdentity)return;
-    resetMaterialRetry();
-    milestoneSoundIdentity=identity;milestoneSound=sound||null;
-    if(!performancePlan)return;
-    performancePlan=milestonePlan(performancePlan,sound);
-    applyCurrent();
-    if(initialized){pendingMaterial=performancePlan;if(running)void loadPerformanceMaterial();}
-  }
-  function milestonePlan(source,sound) {
-    const baseSample=source.baseSample||source.material.sample,baseValues=source.baseValues||source.values;
-    const baseActions=source.baseActions||source.actions,baseEffects=source.baseEffects||source.effects,baseSummary=source.baseSummary||source.summary;
-    const actions=sound?[...baseActions]:baseActions;
-    if(sound&&!actions.some(index=>index>=760&&index<=766))actions.push(760+(Number(sound.slot)%7));
-    return {...source,baseSample,baseValues,baseActions,baseEffects,baseSummary,
-      material:{...source.material,sample:sound?milestonePath(sound):baseSample},
-      values:sound?{...baseValues,484:1,751:1,826:1,867:1,926:Math.max(.4,Number(baseValues[926])||0)}:baseValues,
-      actions,effects:sound?[...new Set([...baseEffects,'grains'])]:baseEffects,
-      summary:sound?`Coin sound · ${sound.name} · ${baseSummary}`:baseSummary};
   }
   async function ensurePath(path) {
     const relative = path.replace(/^\/patches\//,'');
@@ -324,7 +286,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       // Original NETaudio buttons now draw from the supplied library. A patch
       // gesture never blocks on an external sample host or a file chooser.
       const local=performancePlan?.material.sample||'audio/buchla_2.wav';
-      await ensurePerformanceSample(local);if(target!==pd||epoch!==generation)return;
+      await ensureAsset(local);if(target!==pd||epoch!==generation)return;
       data=await target.readFile(ROOT+local);
     } else {
       await ensurePath(path);
@@ -413,7 +375,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
   function decide(step,force=false) {
     if(!running||!initialized||!latestMarket||!performer||(latestMarket.m.tradingActivity??latestMarket.m.raw?.activity??latestMarket.m.activity)<=0.025)return;
     const generated=performer.next(latestMarket.m,latestMarket.tempo,step,force);if(!generated)return;
-    const plan=milestonePlan(generated,milestoneSound);
+    const plan=generated;
     performancePlan=plan;applyCurrent();
     for(const index of plan.actions)pd.sendBang('av-envion-ui-c0-'+index);
     if(plan.changeMaterial){pendingMaterial=plan;void loadPerformanceMaterial();}
@@ -431,7 +393,7 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
         const {preset,sample,bank,tape,ir}=plan.material;
         await Promise.all([...new Set([...preset.assets,tape,ir])].filter(Boolean).map(ensureAsset));
         if(!current()||paused())return;
-        await ensurePerformanceSample(sample);
+        await ensureAsset(sample);
         if(!current()||paused())return;
         if(pendingMaterial)continue;
         // Let the supplied preset configure its own DSP, then populate its file
@@ -451,7 +413,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
         resetMaterialRetry();
         marketWrites.clear();clocks();applyCurrent();
         pd.sendFloat('av-envion-ready',1);
-        if(milestoneSound&&sample===milestonePath(milestoneSound))pd.sendBang('av-envion-ui-c0-'+(760+(Number(milestoneSound.slot)%7)));
         status();
       }
     } catch(error){
@@ -522,7 +483,6 @@ export function createEnvion(container, {onTransport = () => {}} = {}) {
       marketOverrides=Object.fromEntries(Object.entries(values).filter(([receiver,value])=>/^av-envion-ui-c0-\d+$/.test(receiver)&&Number.isFinite(value)));
       applyCurrent();
     },
-    setMilestoneSound,
     detach(){resetMaterialRetry();pd?.setGuiTelemetry?.(false);scopeOff?.();scopeOff=null;waveformSource=null;waveformLoaded=null;waveformLoading=null;materialOperation++;loadedBankRows=328;marketWrites.clear();latestMarket=null;performancePlan=null;pendingMaterial=null;activeMaterial=null;materialBusy=false;marketOverrides={};performer?.reset(performanceSeed);generation++;presetRequest++;initialized=false;for(const off of guiSubscriptions.splice(0))off();for(const off of subscriptions.splice(0))off();pd=null;namespace=null;context=null;running=false;staged.clear();loads.clear();requests.clear();view.reset?.();view.setRunning(false);view.requestFile(null);view.setStatus('Envion 5.2 · press Listen');},
   };
 }
