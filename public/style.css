@@ -517,3 +517,16 @@ body.visual-expanded{overflow:hidden}
 
 /* Shared typography for text, numbers and controls. */
 html body,html body *,html body *::before,html body *::after{font-family:Handjet,"Noto Sans",sans-serif!important;font-weight:400!important}
+
+/* History feedback owns one permanent row, regardless of loading state. */
+.history-feedback{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:44px;align-items:center;min-width:0}
+.history-feedback>#history-loader,.history-feedback>#history-loading{grid-area:1/1;margin:0;min-width:0;max-width:100%;min-height:0;height:44px;padding:0;align-items:center;flex-wrap:nowrap}
+.history-feedback .lattice-loader{flex-wrap:nowrap}
+.history-feedback .lattice-loader__label,.history-feedback .lattice-loader__text[data-active],#history-loading-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#history-retry{flex-shrink:0}
+.compact-chart-toolbar{min-height:44px;margin-bottom:4px}
+.replay-actions>button{height:44px;min-height:44px;padding-block:0;white-space:nowrap}
+.playback-speed{grid-template-columns:1.65fr repeat(2,1fr);height:44px}
+.playback-speed button{height:44px;min-height:44px;padding-block:0}
+.tick-heading{height:20px;min-height:20px}
+@media(max-width:380px){.compact-chart-toolbar{display:grid;grid-template-columns:1fr;min-height:70px;gap:2px}.replay-actions{margin-left:0;justify-self:end}}
