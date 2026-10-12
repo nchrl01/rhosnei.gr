@@ -25,3 +25,5 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 .marketplace-networks .network-name{top:100%;font-size:var(--font-size-small);line-height:20px}
 .marketplace-networks button[data-chain]:not([data-chain=all])[aria-pressed=true]::after{bottom:0;width:10px;left:calc(50% - 5px)}
 @media(max-width:760px){.marketplace-networks{gap:4px}.marketplace-networks button[data-chain]:not([data-chain=all]){flex:0 0 32px;max-width:32px;height:36px;padding:6px}.marketplace-networks .network-mark{max-width:22px;max-height:22px}}
+
+.marketplace-sort #marketplace-sort{border:0;background:transparent;color:var(--muted);padding:0;min-height:44px;font-size:var(--font-size-small);font-weight:400;letter-spacing:.04em;white-space:nowrap}.marketplace-sort #marketplace-sort:hover{color:#fff}.marketplace-sort #marketplace-sort:focus-visible{outline:1px solid #aaa;outline-offset:4px}.marketplace-empty #marketplace-loader{display:flex;justify-content:center;align-items:center;width:100%;min-height:48px}.marketplace-empty #marketplace-loader[hidden],.marketplace-empty [hidden]{display:none!important}

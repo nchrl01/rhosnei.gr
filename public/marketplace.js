@@ -5,16 +5,18 @@ const grid=document.createElement('div');grid.className='marketplace-grid';grid.
 const back=document.createElement('button');back.textContent='← All collections';back.hidden=true;grid.before(back);
 const more=document.createElement('button');more.textContent='Load more';more.hidden=true;grid.after(more);
 const retry=document.createElement('button');retry.textContent='Try again';retry.hidden=true;empty.append(retry);
-const sort=document.getElementById('marketplace-sort');sort.replaceChildren();for(const [value,label]of [['volume','Popular this week'],['name','Name A–Z']]){const option=document.createElement('option');option.value=value;option.textContent=label;sort.append(option);}
+const sort=document.getElementById('marketplace-sort');let sortMode='volume';
+function syncSort(){const defaultLabel=collection?'Collection order':query?'Relevance':'Popular this week';sort.textContent=sortMode==='name'?'Name A–Z':defaultLabel;sort.title='Click to switch order';sort.setAttribute('aria-label',sort.textContent+'. Switch to '+(sortMode==='name'?defaultLabel:'Name A–Z'));}
 const form=document.getElementById('marketplace-form'),submit=document.getElementById('marketplace-submit'),feedback=document.getElementById('marketplace-feedback'),loaderHost=document.getElementById('marketplace-loader');
 bindSearchField(search,document.getElementById('address-label'));
 let loader,loadingState=null;
-import('./vendor/ui/upic-ui.js?v=235').then(module=>{loader=module.mountLoader(loaderHost);loaderHost.hidden=false;loader.update(loadingState);}).catch(()=>{});
-function searchBusy(value){busy=value;submit.disabled=value;submit.textContent=value?'Searching…':'Search';submit.setAttribute('aria-busy',String(value));form.setAttribute('aria-busy',String(value));grid.setAttribute('aria-busy',String(value));loadingState=value?{status:'working',label:collection?'Loading NFTs':'Loading collections',startedAt:performance.now(),operation:String(revision)}:null;loader?.update(loadingState);}
+import('./vendor/ui/upic-ui.js?v=235').then(module=>{loader=module.mountLoader(loaderHost);loaderHost.hidden=!loadingState;loader.update(loadingState);}).catch(()=>{});
+function searchBusy(value){busy=value;syncSort();loaderHost.hidden=!value;title.hidden=value;empty.querySelector('img').hidden=value;empty.querySelector('a').hidden=value;submit.disabled=value;submit.textContent=value?'Searching…':'Search';submit.setAttribute('aria-busy',String(value));form.setAttribute('aria-busy',String(value));grid.setAttribute('aria-busy',String(value));loadingState=value?{status:'working',label:collection?'Loading NFTs':'Loading collections',startedAt:performance.now(),operation:String(revision)}:null;loader?.update(loadingState);}
 let chain='all',next='',busy=false,controller,revision=0,rows=[],collection='',query='';
 function safeURL(value,host){try{const u=new URL(value);return u.protocol==='https:'&&(!host||u.hostname===host)?u.href:'';}catch{return '';}}
 function render(){
- grid.replaceChildren();const items=sort.value==='name'?[...rows].sort((a,b)=>(a.name||'').localeCompare(b.name||'')):rows;
+ syncSort();
+ grid.replaceChildren();const items=sortMode==='name'?[...rows].sort((a,b)=>(a.name||'').localeCompare(b.name||'')):rows;
  for(const item of items){
   if(item.is_disabled||item.is_nsfw)continue;
   const card=document.createElement(collection?'a':'button');card.className='collection-card';
@@ -47,7 +49,7 @@ search.addEventListener('keydown',event=>{
  if(event.key==='Escape'){controller?.abort();revision++;searchBusy(false);feedback.textContent='Search cancelled';if(!rows.length){title.textContent='Search collections';note.textContent='Enter a name or contract address above.';}}
 });
 grid.addEventListener('keydown',event=>{if(event.key==='Escape'){search.focus();return;}if(!['ArrowRight','ArrowLeft'].includes(event.key))return;const cards=[...grid.children],index=cards.indexOf(document.activeElement);const target=cards[index+(event.key==='ArrowRight'?1:-1)];if(target){event.preventDefault();target.focus();}});
-back.addEventListener('click',()=>{collection='';back.hidden=true;void load();});more.addEventListener('click',()=>load(true));retry.addEventListener('click',()=>load());sort.addEventListener('change',render);
+back.addEventListener('click',()=>{collection='';back.hidden=true;void load();});more.addEventListener('click',()=>load(true));retry.addEventListener('click',()=>load());sort.addEventListener('click',()=>{sortMode=sortMode==='name'?'volume':'name';syncSort();render();});
 async function networks(){
  try{
   const response=await fetch(API+'/chains');if(!response.ok)return;
@@ -66,4 +68,4 @@ async function networks(){
   }
  }catch{}
 }
-void networks();void load();
+syncSort();void networks();void load();
