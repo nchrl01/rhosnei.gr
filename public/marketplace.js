@@ -25,7 +25,7 @@ function render(){
   else{card.type='button';card.addEventListener('click',()=>{collection=item.collection;next='';back.hidden=false;void load();});}
   const image=document.createElement('img');image.alt='';image.loading='lazy';image.referrerPolicy='no-referrer';const src=safeURL(item.display_image_url||item.image_url);if(src)image.src=src;image.addEventListener('error',()=>{image.removeAttribute('src');});
   const name=document.createElement('h2');name.textContent=item.name||item.collection||('#'+item.identifier);
-  const label=document.createElement('span');label.textContent=collection?'View / trade on OpenSea ↗':(item.contracts?.map(c=>c.chain).filter((v,i,a)=>a.indexOf(v)===i).join(' · ')||'Explore collection');const artwork=document.createElement('span');artwork.className='collection-artwork';artwork.append(image);card.draggable=false;card.addEventListener('dragstart',event=>event.preventDefault());card.append(artwork,name,label);grid.append(card);attachArtworkDither(image);
+  const label=document.createElement('span');label.textContent=collection?'View / trade on OpenSea ↗':(item.contracts?.map(c=>c.chain).filter((v,i,a)=>a.indexOf(v)===i).join(' · ').toUpperCase()||'Explore collection');const artwork=document.createElement('span');artwork.className='collection-artwork';artwork.append(image);card.draggable=false;card.addEventListener('dragstart',event=>event.preventDefault());card.append(artwork,name,label);grid.append(card);attachArtworkDither(image);
  }
  count.textContent=grid.children.length+(collection?' NFTs':' collections');empty.hidden=grid.children.length>0;
  if(!grid.children.length&&!busy){title.textContent='No results';note.textContent='Try another collection or network.';}
