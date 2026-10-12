@@ -642,3 +642,5 @@ body{padding-bottom:0}
  .instrument-page .readings{max-width:none;gap:12px;padding-block:12px}
  .instrument-page .transport{gap:14px}
 }
+
+.site-footer .footer-wallet{background:none;border:0;color:inherit;padding:0;font:inherit;white-space:nowrap;min-height:32px}.wallet-status{font-size:var(--font-size-small);max-width:240px}.wallet-status:empty{display:none}

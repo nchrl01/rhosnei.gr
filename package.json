@@ -8,7 +8,11 @@
     "build:ui": "node scripts/build-ui.mjs"
   },
   "dependencies": {
+    "@reown/appkit": "^1.8.24",
+    "@reown/appkit-adapter-ethers": "^1.8.24",
+    "@reown/appkit-adapter-solana": "^1.8.24",
     "ccxt": "4.5.85",
+    "ethers": "^6.17.0",
     "motion": "12.23.12",
     "react": "19.3.0",
     "react-dom": "19.3.0"

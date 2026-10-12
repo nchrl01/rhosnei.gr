@@ -1,3 +1,4 @@
+import {marketplace} from './marketplace.js';
 import {DurableObject} from 'cloudflare:workers';
 
 const HOUR=3600000,DAY=24*HOUR,TTL=6*HOUR;
@@ -71,6 +72,7 @@ export default {
   const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   const url=new URL(request.url);
+  if(url.pathname.startsWith('/marketplace/'))return marketplace(request,env,headers);
   if(url.pathname==='/takes'||/^\/takes\/[A-Za-z0-9_-]{16}$/.test(url.pathname)){
    if(!['GET','POST'].includes(request.method))return json({state:'method-not-allowed'},405,headers);
    try{
