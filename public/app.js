@@ -1,3 +1,4 @@
+import {bindSearchField} from './search-field.js?v=265';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
@@ -691,31 +692,7 @@ function chooseMarket(pair,{shared=false}={}){
   if(gen===generation)poll=setTimeout(refresh,market.snapshotProvider==='gecko'?30000:streamConnected&&['swap','rpc-poll'].includes(streamKind)?15000:5000);
  };poll=setTimeout(refresh,pair.snapshotProvider==='gecko'?30000:5000);status(playing?'Playing · automatic market instrument':'Market loaded · press Play');
 }
-const addressField=$('address').closest('.address-field');
-const label=$('address-label');label.replaceChildren(...[...label.textContent].map((letter,index)=>{const span=document.createElement('span');span.textContent=letter;span.style.setProperty('--letter',index);return span;}));
-function syncAddressLabel(){addressField.classList.toggle('has-value',!!$('address').value.trim());}
-$('address').addEventListener('input',syncAddressLabel);
-$('address').addEventListener('change',syncAddressLabel);
-// Read only after an intentional first click/tap. Subsequent clicks edit the
-// field normally; an asynchronous clipboard response never overwrites typing.
-let pasteOnAddressClick=false,clipboardRequest=0;
-addressField.addEventListener('pointerdown',event=>{
- pasteOnAddressClick=event.button===0&&document.activeElement!==$('address');
-});
-addressField.addEventListener('click',async()=>{
- if(!pasteOnAddressClick)return;pasteOnAddressClick=false;
- if(!navigator.clipboard?.readText)return;
- const input=$('address'),previous=input.value,revision=++clipboardRequest;
- try{
-  const text=(await navigator.clipboard.readText()).trim();
-  if(revision!==clipboardRequest||document.activeElement!==input||input.value!==previous||!text||text.length>250||/[\r\n]/.test(text))return;
-  input.value=text;input.dispatchEvent(new Event('input',{bubbles:true}));input.setSelectionRange(text.length,text.length);
- }catch{/* Clipboard permission is optional; ordinary paste keeps working. */}
-});
-$('address').addEventListener('input',()=>{clipboardRequest++;});
-$('address').addEventListener('blur',()=>{clipboardRequest++;pasteOnAddressClick=false;});
-
-syncAddressLabel();
+const syncAddressLabel=bindSearchField($('address'),$('address-label'));
 let searchRevision=0;
 function searchFeedback(message,state='ready'){
  const node=$('lookup');node.hidden=!message;node.dataset.state=state;
