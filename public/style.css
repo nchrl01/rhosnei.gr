@@ -527,3 +527,9 @@ html body,html body *,html body *::before,html body *::after{font-family:Unifont
 .footer-upcoming{display:inline-flex;align-items:baseline;gap:6px;color:#777;cursor:default}
 .footer-upcoming small{font-size:10px;color:#666}
 @media(max-width:600px){.site-footer{align-items:flex-start;gap:16px;margin-top:28px;padding-top:16px}.site-footer nav{gap:10px 18px;justify-content:flex-start}}
+
+.site-footer{grid-column:1/-1;justify-self:stretch;align-self:stretch;width:auto;max-width:none;margin-inline:-16px;padding-inline:16px}
+.about-page .site-footer{margin-inline:-16px}
+@media(max-width:760px){.site-footer{margin-inline:-20px;padding-inline:20px}}
+@media(min-width:701px) and (max-width:760px){.about-page .site-footer{margin-inline:-16px;padding-inline:16px}}
+@media(max-width:700px){.about-page .site-footer{margin-inline:-20px}}
