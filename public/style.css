@@ -577,3 +577,7 @@ body{padding-bottom:0}
 .market-header .header-link[aria-current=page]{color:#fff;text-decoration:underline;text-underline-offset:5px}
 @media(max-width:760px){.market-header .header-main,.about-page .market-header .header-main,.marketplace-page .market-header .header-main{gap:8px;padding-right:3px}.market-header .header-links,.marketplace-page .market-header .header-links{gap:8px}.market-header .header-link,.marketplace-page .market-header .header-link{font-size:10px}}
 @media(max-width:380px){.market-header .header-links,.marketplace-page .market-header .header-links{gap:6px}.market-header .header-link,.marketplace-page .market-header .header-link{font-size:9px}.header-main .brand-beta{display:none}}
+
+/* Standalone pages use flex columns; stretch the header across both margins. */
+.marketplace-page main,.about-page main{align-items:stretch}
+.marketplace-page .market-header,.about-page .market-header{align-self:stretch;width:auto;max-width:none}
