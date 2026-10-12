@@ -1,5 +1,5 @@
 // Bayer grain with image-specific black and white points, without edge fading.
-// Keep the original <img> available when a remote host disallows pixel reads.
+// All thumbnails share this treatment, independent of market-cap milestones.
 export const BAYER=[0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
 export function imageLevels(source){
  const histogram=new Float64Array(256);let weight=0;
@@ -41,16 +41,8 @@ export function coinImagePixels(image,size=256){
  context.globalCompositeOperation='destination-over';context.fillStyle='#fff';context.fillRect(0,0,size,size);
  return {pixels:context.getImageData(0,0,size,size).data,originalPixels,width:size,height:size};
 }
-let filterSerial=0;
 export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=>{}}={}){
- const filterId=`coin-bayer-filter-${++filterSerial}`;
  const host=img.parentElement,canvas=document.createElement('canvas');canvas.className='coin-dither';canvas.setAttribute('aria-hidden','true');canvas.hidden=true;host.append(canvas);
- // SVG can threshold SourceGraphic without exposing cross-origin image bytes
- // to JavaScript. This preserves real monochrome dithering in the CORS fallback.
- const threshold=document.createElement('canvas');threshold.width=threshold.height=64;const tc=threshold.getContext('2d');
- for(let y=0;y<64;y++)for(let x=0;x<64;x++){const gray=Math.round((BAYER[(y%8)*8+x%8]+.5)/64*255);tc.fillStyle=`rgb(${gray},${gray},${gray})`;tc.fillRect(x,y,1,1);}
- const defs=document.createElementNS('http://www.w3.org/2000/svg','svg');defs.setAttribute('width','0');defs.setAttribute('height','0');defs.setAttribute('aria-hidden','true');defs.style.position='absolute';
- defs.innerHTML=`<defs><filter id="${filterId}" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0" result="gray"/><feImage href="${threshold.toDataURL()}" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="threshold"/><feComposite in="gray" in2="threshold" operator="arithmetic" k1="0" k2="1" k3="-1" k4="0.5"/><feComponentTransfer><feFuncR type="discrete" tableValues="0 1"/><feFuncG type="discrete" tableValues="0 1"/><feFuncB type="discrete" tableValues="0 1"/><feFuncA type="linear" slope="0" intercept="1"/></feComponentTransfer></filter></defs>`;host.append(defs);
  const context=canvas.getContext('2d');
  let serial=0,current='',pixels=null,size=96;
  // Share the decoded source once; the field never fetches or reads it per frame.
@@ -78,11 +70,13 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
   }
   decoded.onerror=relayOrFallback;decoded.src=url;
  }
- // Retain the original SVG dithering for restricted hosts, without its fade mask.
+ // A missing readable image uses the placeholder while metadata fallback
+ // resolves another source. Never show a second dithering style.
  function original(url,token){
   if(token!==serial)return;
+  img.hidden=true;canvas.hidden=true;fallback.hidden=false;host.dataset.dither='unavailable';
   try{onUnavailable(url);}catch{}
-  img.removeAttribute('crossorigin');img.onload=()=>{if(token!==serial)return;img.hidden=false;fallback.hidden=true;host.dataset.dither='mask';img.style.filter=`url(#${filterId}) invert(1)`;};img.onerror=()=>{if(token!==serial)return;img.hidden=true;fallback.hidden=false;};img.src=url;
  }
- return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;canvas.remove();defs.remove();}};
+
+ return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;canvas.remove();}};
 }

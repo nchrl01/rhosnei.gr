@@ -5,7 +5,7 @@ import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from 
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {createTradePiano} from './trade-piano.js?v=220';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,instrumentProfile} from './earthbound-instruments.js?v=209';
-import {createEnvion} from './envion.js?v=229';
+import {createEnvion} from './envion.js?v=231';
 import {createPd} from './vendor/libpd-wasm.js?v=220';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createMathPatterns,mathIdentity} from './math-patterns.js?v=208';
