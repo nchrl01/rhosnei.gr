@@ -569,3 +569,11 @@ body{padding-bottom:0}
 
 /* Footer stays at the end of the page without sticking to the viewport. */
 .site-footer,.about-page .site-footer{position:relative;inset:auto;z-index:auto}
+
+/* Shared public navigation geometry. */
+.market-header .header-main,.about-page .market-header .header-main,.marketplace-page .market-header .header-main{min-height:44px;padding:0 8px 0 0;gap:16px}
+.market-header .header-links,.marketplace-page .market-header .header-links{gap:14px}
+.market-header .header-link,.marketplace-page .market-header .header-link{font-size:12px}
+.market-header .header-link[aria-current=page]{color:#fff;text-decoration:underline;text-underline-offset:5px}
+@media(max-width:760px){.market-header .header-main,.about-page .market-header .header-main,.marketplace-page .market-header .header-main{gap:8px;padding-right:3px}.market-header .header-links,.marketplace-page .market-header .header-links{gap:8px}.market-header .header-link,.marketplace-page .market-header .header-link{font-size:10px}}
+@media(max-width:380px){.market-header .header-links,.marketplace-page .market-header .header-links{gap:6px}.market-header .header-link,.marketplace-page .market-header .header-link{font-size:9px}.header-main .brand-beta{display:none}}
