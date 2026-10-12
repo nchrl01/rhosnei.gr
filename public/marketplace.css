@@ -27,3 +27,8 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 @media(max-width:760px){.marketplace-networks{gap:4px}.marketplace-networks button[data-chain]:not([data-chain=all]){flex:0 0 32px;max-width:32px;height:36px;padding:6px}.marketplace-networks .network-mark{max-width:22px;max-height:22px}}
 
 .marketplace-sort #marketplace-sort{border:0;background:transparent;color:var(--muted);padding:0;min-height:44px;font-size:var(--font-size-small);font-weight:400;letter-spacing:.04em;white-space:nowrap}.marketplace-sort #marketplace-sort:hover{color:#fff}.marketplace-sort #marketplace-sort:focus-visible{outline:1px solid #aaa;outline-offset:4px}.marketplace-empty #marketplace-loader{display:flex;justify-content:center;align-items:center;width:100%;min-height:48px}.marketplace-empty #marketplace-loader[hidden],.marketplace-empty [hidden]{display:none!important}
+/* The shared main element supplies the same outer gutters as the instrument. */
+.marketplace-content{max-width:none;width:100%;margin:0;padding:0 0 28px}
+.marketplace-heading{gap:16px;margin-bottom:18px}.marketplace-eyebrow{margin:0 0 8px}.marketplace-heading h1{margin:0 0 8px}.marketplace-heading p:not(.marketplace-eyebrow){margin:0}
+.marketplace-toolbar{gap:10px;margin-bottom:12px}.marketplace-results-heading{padding-block:12px}.marketplace-grid{gap:20px;padding-block:20px}
+@media(max-width:760px){.marketplace-content{padding:0 0 24px}.marketplace-heading{gap:12px;margin-bottom:12px}.marketplace-toolbar{gap:8px}.marketplace-grid{gap:16px 12px;padding-block:16px}}
