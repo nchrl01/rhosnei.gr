@@ -2,3 +2,6 @@
 
 .expression.changed h3{color:#ffb4e9}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Shared typography for text, numbers and controls. */
+html body,html body *,html body *::before,html body *::after{font-family:Handjet,"Noto Sans",sans-serif!important;font-weight:400!important}

@@ -1,4 +1,4 @@
-import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js';
+import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js?v=232';
 import {candleEnd} from './market-replay.js?v=230';
 import {createChartTicks} from './chart-ticks.js?v=220';
 
@@ -17,6 +17,10 @@ export class MarketChart{
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
+  // Canvas axes must invalidate their measurements after the webfont loads.
+  if(document.fonts)document.fonts.load('400 12px Handjet','0123456789.,$').then(()=>{
+   this.chart.applyOptions({layout:{fontFamily:'"Handjet", "Noto Sans", sans-serif',fontSize:12}});
+  }).catch(()=>{});
   const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9}),minMove:1e-12};
   this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#000000',downColor:'#f2f2f2',wickUpColor:'#f2f2f2',wickDownColor:'#f2f2f2',borderVisible:true,borderUpColor:'#f2f2f2',borderDownColor:'#f2f2f2',priceLineColor:'#b5b5b5',priceFormat});
   this.line=this.chart.addSeries(LineSeries,{color:'#f2f2f2',lineWidth:2,visible:false,priceFormat});
