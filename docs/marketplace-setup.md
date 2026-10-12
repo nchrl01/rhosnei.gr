@@ -11,3 +11,7 @@ Do not describe collection links as native trading. Trading is explicitly false 
 
 Build wallet assets with `node scripts/build-wallet.mjs`.
 Deploy Worker from cloudflare/insightx with Wrangler after configuring credentials.
+
+
+## Connected October 12, 2026
+OpenSea temporary key is an encrypted Cloudflare runtime secret. It expires October 19, 2026 at 16:39 UTC and needs replacement before then. No secret is included in browser code. Collection search, supported network filters, pagination and collection NFT browsing use the relay. Trading links open the exact NFT on OpenSea; native order creation, fulfillment, offers and cancellation are not implemented. Wallet connection is separate from transaction execution.
