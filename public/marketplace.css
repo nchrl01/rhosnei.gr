@@ -8,3 +8,9 @@
 
 /* Preserve the original network artwork without dither or pixel scaling. */
 .network-mark{image-rendering:auto;filter:none}
+
+/* The aggregate filter follows the homepage playback button states. */
+.marketplace-networks button[data-chain=all]{border:1px solid #333;background:#000;color:#aaa;box-shadow:none;padding:4px 12px;font-size:12px;line-height:1.2}
+.marketplace-networks button[data-chain=all][aria-pressed=true]{border-color:#f2f2f2;background:#f2f2f2;color:#000}
+.marketplace-networks button[data-chain=all]:hover{border-color:#aaa}
+.marketplace-networks button[data-chain=all][aria-pressed=true]:hover{background:#d5d5d5}
