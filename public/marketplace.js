@@ -43,7 +43,8 @@ async function networks(){
   for(const b of buttons)if(b.dataset.chain!=='all'&&!supported.has(b.dataset.chain))b.hidden=true;
   const group=document.querySelector('.marketplace-networks');
   for(const c of data.chains){
-   if(buttons.some(b=>b.dataset.chain===c.chain))continue;
+   const existing=buttons.find(b=>b.dataset.chain===c.chain);
+   if(existing){existing.querySelector('img').src='images/networks/'+c.chain+'.svg';continue;}
    if(!/^[a-z_]+$/.test(c.chain))continue;
    const button=document.createElement('button');button.type='button';button.dataset.chain=c.chain;
    button.setAttribute('aria-label',c.name);button.setAttribute('aria-pressed',String(c.chain===chain));
