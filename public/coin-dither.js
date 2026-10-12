@@ -52,7 +52,6 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
   stopReveal();img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
   if(!url){img.removeAttribute('src');return;}
   const decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
-  let relayed=false;decoded.onerror=()=>{if(relayed)return;try{const url=new URL(img.currentSrc||img.src);if(!['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io'].includes(url.hostname))return;relayed=true;decoded.src='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(url.href);}catch{}};
   decoded.onload=()=>{
    if(token!==serial)return;
    try{
