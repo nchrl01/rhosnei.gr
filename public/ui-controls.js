@@ -3,7 +3,7 @@
 export function createUIControls(){
  const $=id=>document.getElementById(id),states=new Map(),loaders=new Map(),timers=new Map();
  const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
- let components,volume,clock,lastClock=null,sequence=0;
+ let components,volume,clock,dateClock,lastClock=null,sequence=0;
  const dial=document.createElement('div');dial.id='volume-dial';dial.hidden=true;input.before(dial);
  const volumeButton=$('volume-button'),mobile=matchMedia('(max-width:760px)');
  let volumeOpen=false;
@@ -43,6 +43,7 @@ export function createUIControls(){
  window.visualViewport?.addEventListener('resize',positionVolumePanel);
  window.visualViewport?.addEventListener('scroll',positionVolumePanel);
  input.addEventListener('input',volumeLabel);setVolumeOpen(false);volumeLabel();
+ const dateNode=$('coin-date');
  const clockFallback=document.createElement('span'),clockHost=document.createElement('span');
  clockFallback.className='clock-fallback';clockHost.className='clock-island';time.replaceChildren(clockFallback,clockHost);
  function hostFor(name){return $(name+'-loader');}
@@ -68,7 +69,7 @@ export function createUIControls(){
   // Completion is acknowledged briefly; errors remain beside the retry action.
   if(status==='done')timers.set(name,setTimeout(()=>{if(states.get(name)===state){states.set(name,null);loaders.get(name)?.update(null);}},1800));
  }
- import('./vendor/ui/upic-ui.js?v=97').then(module=>{
+ import('./vendor/ui/upic-ui.js?v=235').then(module=>{
   components=module;
   try{
    volume=components.mountVolume(dial,input);panel.dataset.volumeUi='true';
@@ -77,7 +78,7 @@ export function createUIControls(){
    if(mobile.matches&&volumeOpen)requestAnimationFrame(positionVolumePanel);
   }catch{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;}
   try{
-   clock=components.mountClock(clockHost);time.dataset.clockUi='true';
+   clock=components.mountClock(clockHost);dateClock=components.mountClock(dateNode);if(lastClock)dateClock.update({...lastClock,dateOnly:true});time.dataset.clockUi='true';
    clockHost.addEventListener('ui-component-error',()=>{time.dataset.clockUi='false';clockHost.hidden=true;clock=null;});
    if(lastClock)clock.update(lastClock);
   }catch{time.dataset.clockUi='false';clockHost.hidden=true;clock=null;}
@@ -86,7 +87,8 @@ export function createUIControls(){
  return {
   loading,
   clock(props){
-   time.dataset.replay=String(Boolean(props.replay));
+   time.dataset.replay=String(Boolean(props.replay));dateNode.dataset.replay=String(Boolean(props.replay));
+   if(dateClock)dateClock.update({...props,dateOnly:true});else dateNode.textContent=new Date(props.timestamp).toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'numeric'});
    clockFallback.textContent=new Date(props.timestamp).toLocaleTimeString(undefined,{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
    // The app updates several times a second; the clock needs only changed seconds.
    const key=[Math.floor(props.timestamp/1000),props.rate,props.replay,props.seeking].join(':');

@@ -2,7 +2,7 @@ import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
-import {createUIControls} from './ui-controls.js?v=213';
+import {createUIControls} from './ui-controls.js?v=235';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=206';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
@@ -805,7 +805,7 @@ function shareSnapshot(){
  return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,snapshotProvider:basis.snapshotProvider,geckoNetwork:basis.geckoNetwork,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol,imageUrl:safeCoinImage(coinImageURL)||undefined},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
-const rollDate=rollingText($('coin-date')),rollCap=rollingText($('coin-cap'));
+const rollCap=rollingText($('coin-cap'));
 let titleMovement={key:null,price:null,at:0,until:0,direction:''};
 function updateCoinReadout(m){
  const title=$('coin-name'),key=(market?.baseToken?.address||'')+':'+replay.state.active;
@@ -819,7 +819,6 @@ function updateCoinReadout(m){
  titleMovement.at=position;title.dataset.direction=now<titleMovement.until?titleMovement.direction:'';
 
  const at=replay.state.active?replay.state.cursor:Date.now(),date=new Date(at),cap=m.context?.latestCap;
- rollDate(date.toLocaleDateString(undefined,{day:'2-digit',month:'2-digit',year:'numeric'}),at);
  ui.clock({timestamp:at,rate:replay.state.active?Number(replay.state.speed)||1:1,replay:replay.state.active,seeking:replay.state.dragging,label:replay.state.active?'Playback time':'Local time'});
  rollCap(cap>0?'$'+Math.round(cap).toLocaleString('en'):'—',cap||0);
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';

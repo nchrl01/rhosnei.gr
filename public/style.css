@@ -500,7 +500,7 @@ body.visual-expanded{overflow:hidden}
 }
 
 /* Replay clock uses the same pink as the chart playhead. */
-#coin-time[data-replay="true"]{color:var(--playhead)}
+#coin-time[data-replay="true"],#coin-date[data-replay="true"]{color:var(--playhead)}
 
 /* Soften only the artwork corners; keep the central portrait fully visible. */
 .coin-avatar #coin-image,.coin-avatar .coin-dither{

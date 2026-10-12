@@ -22,7 +22,7 @@ const counterProps = {
 };
 
 /** The source clock is owned by the market/replay transport, never by this UI. */
-export default function MarketClock({ timestamp, rate = 1, replay = false, seeking = false, label }) {
+export default function MarketClock({ timestamp, rate = 1, replay = false, seeking = false, label, dateOnly = false }) {
   const previous = useRef(null);
   const validInput = timestamp != null && Number.isFinite(Number(timestamp));
   const date = validInput ? new Date(Number(timestamp)) : null;
@@ -50,6 +50,8 @@ export default function MarketClock({ timestamp, rate = 1, replay = false, seeki
   useLayoutEffect(() => {
     previous.current = valid ? { second, localSecond, hours, rate: speed, replay, seeking } : null;
   }, [valid, second, localSecond, hours, speed, replay, seeking]);
+
+  if (dateOnly) return <span className="market-clock market-date" aria-label={valid ? date.toLocaleDateString() : "--/--/----"} style={{display:"inline-flex",alignItems:"center",fontVariantNumeric:"tabular-nums"}}>{valid ? <><Counter {...counterProps} value={date.getDate()} animate={true}/><span>/</span><Counter {...counterProps} value={date.getMonth()+1} animate={true}/><span>/</span><Counter {...counterProps} places={[1000,100,10,1]} value={date.getFullYear()} animate={true}/></> : "--/--/----"}</span>;
 
   return (
     <span
