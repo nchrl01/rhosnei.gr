@@ -1,3 +1,5 @@
 Network icons: Trust Wallet Assets https://github.com/trustwallet/assets
 Robinhood Chain icon: https://docs.robinhood.com/chain/brand-guidelines/
 Dithering is rendered locally by the existing thumbnail engine.
+
+Additional original network SVG logos from OpenSea public network navigation, https://opensea.io/ (October 12, 2026). Hyperliquid uses its shared HyperEVM network mark.

@@ -36,5 +36,21 @@ function chooseNetwork(value){chain=value;collection='';back.hidden=true;for(con
 for(const button of buttons)button.addEventListener('click',()=>chooseNetwork(button.dataset.chain));
 search.placeholder='Search collections or contract addresses';search.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{query=search.value.trim();collection='';back.hidden=true;void load();},650);});
 back.addEventListener('click',()=>{collection='';back.hidden=true;void load();});more.addEventListener('click',()=>load(true));retry.addEventListener('click',()=>load());sort.addEventListener('change',render);
-async function networks(){try{const response=await fetch(API+'/chains');if(!response.ok)return;const data=await response.json();const supported=new Set(data.chains.map(c=>c.chain));for(const b of buttons)if(b.dataset.chain!=='all'&&!supported.has(b.dataset.chain))b.hidden=true;const extra=data.chains.filter(c=>!buttons.some(b=>b.dataset.chain===c.chain));if(!extra.length)return;const select=document.createElement('select');select.setAttribute('aria-label','More networks');const placeholder=new Option('More networks','');select.append(placeholder);for(const c of extra)select.append(new Option(c.name,c.chain));select.addEventListener('change',()=>{if(select.value)chooseNetwork(select.value);});document.querySelector('.marketplace-networks').append(select);}catch{}}
+async function networks(){
+ try{
+  const response=await fetch(API+'/chains');if(!response.ok)return;
+  const data=await response.json(),supported=new Set(data.chains.map(c=>c.chain));
+  for(const b of buttons)if(b.dataset.chain!=='all'&&!supported.has(b.dataset.chain))b.hidden=true;
+  const group=document.querySelector('.marketplace-networks');
+  for(const c of data.chains){
+   if(buttons.some(b=>b.dataset.chain===c.chain))continue;
+   if(!/^[a-z_]+$/.test(c.chain))continue;
+   const button=document.createElement('button');button.type='button';button.dataset.chain=c.chain;
+   button.setAttribute('aria-label',c.name);button.setAttribute('aria-pressed',String(c.chain===chain));
+   const icon=document.createElement('img');icon.className='network-mark';icon.src='images/networks/'+c.chain+'.svg';icon.alt='';icon.width=32;icon.height=32;icon.draggable=false;
+   const label=document.createElement('span');label.className='network-name';label.setAttribute('aria-hidden','true');label.textContent=c.name;
+   button.append(icon,label);button.addEventListener('click',()=>chooseNetwork(c.chain));buttons.push(button);group.append(button);
+  }
+ }catch{}
+}
 void networks();void load();
