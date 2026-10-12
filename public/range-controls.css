@@ -1,0 +1,11 @@
+/* Native sliders share a white active track and thumb on every public page. */
+input[type=range]{accent-color:#fff;color:#fff}
+input[type=range]:not(.envion-slider){appearance:none;-webkit-appearance:none;height:24px;padding:0;border:0;background:transparent;cursor:pointer}
+input[type=range]:not(.envion-slider)::-webkit-slider-runnable-track{height:4px;border:0;border-radius:0;background:linear-gradient(var(--range-direction,to right),#fff 0 var(--range-fill,50%),#555 var(--range-fill,50%) 100%)}
+input[type=range]:not(.envion-slider)::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:12px;height:12px;margin-top:-4px;border:0;border-radius:50%;background:#fff;box-shadow:none}
+input[type=range]:not(.envion-slider)::-moz-range-track{height:4px;border:0;border-radius:0;background:#555}
+input[type=range]:not(.envion-slider)::-moz-range-progress{height:4px;border:0;border-radius:0;background:#fff}
+input[type=range]:not(.envion-slider)::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#fff;box-shadow:none}
+input[type=range]:focus-visible{outline:2px solid #fff;outline-offset:3px}
+input[type=range]:disabled{cursor:default;opacity:.4}
+@media(forced-colors:active){input[type=range]:not(.envion-slider){appearance:auto;-webkit-appearance:auto;forced-color-adjust:auto}}

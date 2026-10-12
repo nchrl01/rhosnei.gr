@@ -3,8 +3,8 @@ import {holderClusterGLSL} from './holder-cluster-field.js?v=169';
 import {withPixelGenerations} from './pixel-generations.js?v=222';
 import {battleGLSL} from './earthbound-motion.js?v=214';
 import {capitalGLSL} from './capital-field.js?v=167';
-import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=274';
-import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=274';
+import {createPixelBlastCanvas} from './pixel-blast-canvas.js?v=276';
+import {preparePixelIdentity,pixelIdentityGLSL} from './pixel-identity.js?v=276';
 import {PIXEL_BLAST_REFERENCE,pixelBlastParameters} from './pixel-blast-parameters.js?v=220';
 export {PIXEL_BLAST_REFERENCE,pixelBlastParameters};
 // PixelBlast shader adapted from React Bits / David Haz (2026).

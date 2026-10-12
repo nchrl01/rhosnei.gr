@@ -43,7 +43,7 @@ async function artwork(url,headers){
   if(!upstream.ok&&target.hostname==='coin-images.coingecko.com'){
    await upstream.body?.cancel();
    const mirror=new URL(target);mirror.hostname='assets.coingecko.com';
-   upstream=await fetch(mirror.href,{redirect:'error',headers:{Accept:'image/*','User-Agent':'Mozilla/5.0 (compatible; AVArtwork/1.0)'},signal:controller.signal});
+   upstream=await fetch(mirror.href,{redirect:'manual',headers:{Accept:'image/*','User-Agent':'Mozilla/5.0 (compatible; AVArtwork/1.0)'},signal:controller.signal});
   }
   if(!upstream.ok){controller.abort();return json({state:'artwork-unavailable',upstreamStatus:upstream.status},502,headers);}
   type=(upstream.headers.get('Content-Type')||'').split(';')[0].trim().toLowerCase();

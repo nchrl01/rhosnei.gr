@@ -109,7 +109,7 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:var(--font-si
 .engine-panel,.engine-panel p,.engine-panel small,.engine-panel pre{font-family:Unifont,"Noto Sans",sans-serif}.engine-panel p{font-size:var(--font-size-small);line-height:1.5}.engine-panel small{font-size:var(--font-size-small);font-weight:700}.engine-panel pre{font-size:var(--font-size-small);line-height:1.5}.pd-label,.pd-comment{font:var(--font-size-small) Unifont,"Noto Sans",sans-serif}
 @media(max-width:900px){.instrument-top{grid-template-columns:minmax(170px,.7fr) minmax(220px,1fr) max-content;gap:12px}.coin-title{gap:10px}.coin-title h2{font-size:var(--font-size-body)}.coin-avatar{flex-basis:80px;width:80px;height:80px}.transport button{min-width:84px}.coin-context{gap:8px}}
 @media(max-width:700px){main{padding:0 12px 24px}.market-header{margin-inline:-12px}.trending-heading{padding-inline:10px}.trending-menu>summary{font-size:var(--font-size-small)}.trending-card{padding-inline:10px}.trending-name,.trending-market-cap{font-size:var(--font-size-small)}.volume-widget{padding-inline:6px}#volume-button{font-size:var(--font-size-small);padding-inline:8px;gap:5px}#market-functions{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}.trending-menu-panel{left:0}}
-@media(max-width:620px){.instrument-top{grid-template-columns:minmax(0,1fr) max-content;gap:14px}.coin-identity{grid-column:1;grid-row:1}.transport{grid-column:2;grid-row:1}.chart-panel{grid-column:1/-1;grid-row:2}#market-chart{height:126px}.coin-title{margin-top:8px}.readings{grid-template-columns:repeat(2,minmax(0,1fr))}#address{font-size:var(--font-size-body)}.replay-speed-label{flex-wrap:wrap}}
+@media(max-width:620px){.instrument-top{grid-template-columns:minmax(0,1fr) max-content;gap:14px}.coin-identity{grid-column:1;grid-row:1}.transport{grid-column:2;grid-row:1}.chart-panel{grid-column:1/-1;grid-row:2}#market-chart{height:126px}.coin-title{margin-top:8px}#address{font-size:var(--font-size-body)}.replay-speed-label{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){#trending-list{overflow-x:auto}.ticker-track{transform:none!important;will-change:auto}.ticker-group[aria-hidden=true]{display:none}.chart-tick,.address-field,#address-label{transition:none}.address-field:focus-within #address-label span{animation:none}}
 
 /* Desktop reference: one compact player at the top left, full-width tape. */
@@ -166,7 +166,7 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:var(--font-si
  .transport #play:hover:not(:disabled){background:#ccc}
  .transport #share{grid-column:2;justify-self:stretch;width:100%;min-width:0;height:auto;min-height:56px;border-radius:0;font-size:var(--font-size-body);font-weight:400;padding:12px}
  .transport #downloads{grid-column:1/-1;max-width:100%;text-align:center}
- .readings{max-width:440px;margin:0 auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 14px;padding:16px 0;border-color:#333}
+ .readings{max-width:440px;margin:0 auto;gap:18px 14px;padding:16px 0;border-color:#333}
  .readings small{font-size:var(--font-size-small)}.readings strong{font-size:var(--font-size-body);margin-top:5px}
  .chart-menu-panel{width:min(420px,calc(100vw - 40px))}
 }
@@ -275,7 +275,7 @@ body.inspecting .audio-visualizer{display:none}
  .chart-panel{grid-column:1/-1;grid-row:2;width:100%}
  .coin-title h2{font-size:var(--font-size-body)}
  #market-chart{height:110px}
- .readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding-block:12px}
+ .readings{gap:12px;padding-block:12px}
 }
 @media(max-width:760px){
  #load{width:44px;flex-basis:44px;font-size:var(--font-size-title)}
@@ -503,18 +503,16 @@ body.visual-expanded{overflow:hidden}
 /* Replay clock uses the same pink as the chart playhead. */
 #coin-time[data-replay="true"],#coin-date[data-replay="true"]{color:var(--playhead)}
 
-/* Soften only the artwork corners; keep the central portrait fully visible. */
-.coin-avatar #coin-image,.coin-avatar .coin-dither{
- -webkit-mask-image:radial-gradient(ellipse farthest-corner at 50% 50%,#000 80%,transparent 100%);
- mask-image:radial-gradient(ellipse farthest-corner at 50% 50%,#000 80%,transparent 100%);
-}
+/* Date and time use identical outer boxes; nested rolling digits must not
+   contribute different synthetic baselines to the wrapping readings row. */
+.coin-live-readings #coin-date,.coin-live-readings #coin-time{display:inline-flex;align-items:center;align-self:center;min-height:20px;font-size:var(--font-size-body);line-height:1;white-space:nowrap}
+.coin-live-readings .clock-island,.coin-live-readings .market-clock{align-items:center;line-height:1}
 
-/* Keep the market readings in a compact, readable strip. */
-.readings{margin-top:8px;padding:5px 0;gap:4px 8px;align-items:center}
-.readings>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 5px}
-.readings small{font-size:var(--font-size-small);line-height:1.15;white-space:nowrap;color:#aaa}
-.readings strong{display:inline;margin:0;font-size:var(--font-size-small);line-height:1.15}
-@media(max-width:760px){.readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 8px}}
+/* Four stable market slots; small screens scroll this strip instead of wrapping. */
+.instrument-page .readings{display:grid;grid-template-columns:repeat(4,minmax(max-content,1fr));width:100%;min-width:0;max-width:none;margin-top:8px;padding:8px 0;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+.instrument-page .readings>div{display:grid;justify-content:start;align-content:start;min-width:0;gap:4px}
+.instrument-page .readings small{font-size:var(--font-size-small);line-height:1.25;white-space:nowrap;color:#aaa}
+.instrument-page .readings strong{display:block;margin:0;font-size:var(--font-size-small);line-height:1.25;white-space:nowrap;overflow-wrap:normal;text-align:left}
 
 /* Shared typography for text, numbers and controls. */
 html body,html body *,html body *::before,html body *::after{font-family:Unifont,"Noto Sans",sans-serif!important;font-weight:400!important}
@@ -592,10 +590,6 @@ body{padding-bottom:0}
  .instrument-page #market-chart{height:clamp(180px,28svh,300px)}
  .instrument-page .coin-title{margin-top:12px;gap:16px}
  .instrument-page .coin-title h2{overflow-wrap:anywhere;line-height:1.3}
- .instrument-page .readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;padding-block:12px}
- .instrument-page .readings>div{min-width:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
- .instrument-page .readings strong{margin:0;overflow-wrap:anywhere;text-align:right}
- .instrument-page .readings small{line-height:1.4}
  .instrument-page .tick-heading{flex-wrap:wrap;gap:6px 12px;line-height:1.4}
  .instrument-page #tick-reading{min-width:0;overflow-wrap:anywhere}
 }
@@ -619,8 +613,6 @@ body{padding-bottom:0}
  .instrument-page .coin-live-readings small{line-height:1.4}
  .instrument-page .playback-speed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;max-width:none;gap:6px}
  .instrument-page .playback-speed button{width:100%;min-width:0;flex:initial}
- .instrument-page .readings>div{display:block}
- .instrument-page .readings strong{display:block;margin-top:4px;text-align:left}
 }
 @media(max-width:760px){
  .instrument-page .instrument-top{max-width:none;gap:16px;margin-bottom:16px}
@@ -640,10 +632,10 @@ body{padding-bottom:0}
  .instrument-page #market-chart{height:140px}
  .instrument-page .tick-heading{flex-wrap:wrap;gap:4px 8px;line-height:1.4}
  .instrument-page #tick-reading{min-width:0;overflow-wrap:anywhere}
- .instrument-page .readings{max-width:none;gap:12px;padding-block:12px}
  .instrument-page .transport{gap:14px}
 }
 
 .site-footer .footer-wallet{background:none;border:0;color:inherit;padding:0;font:inherit;white-space:nowrap;min-height:32px}.wallet-status{font-size:var(--font-size-small);max-width:240px}.wallet-status:empty{display:none}
 
-img,canvas{-webkit-user-drag:none}.dither-artwork{position:relative}.collection-artwork{display:block;aspect-ratio:1;width:100%;overflow:hidden}.artwork-dither{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;pointer-events:none}.dither-ready>img{visibility:hidden}.trending-avatar.dither-artwork{display:inline-block;overflow:hidden}.trending-avatar .artwork-dither{display:block}
+img,canvas{-webkit-user-drag:none}.dither-artwork{position:relative}.collection-artwork{display:block;aspect-ratio:1;width:100%;overflow:hidden}.artwork-dither{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;pointer-events:none}.dither-pending>img,.dither-ready>img{visibility:hidden}.trending-avatar.dither-artwork{display:inline-block;overflow:hidden}.trending-avatar .artwork-dither{display:block}
+.artwork-fallback{position:absolute;inset:0;display:grid;place-items:center;background:#000;pointer-events:none}.dither-artwork .artwork-fallback>img{display:block;width:28%;height:auto;max-width:64px;max-height:70%;aspect-ratio:auto;object-fit:contain;background:transparent;opacity:.4;image-rendering:pixelated}

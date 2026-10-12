@@ -1,1 +1,123 @@
+@import url("range-controls.css?v=276");
 .site-navigation{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;height:auto;margin:0;padding:0 16px;border:0;border-bottom:1px solid #333;background:#000;color:#f2f2f2;font:var(--font-size-small) Unifont,"Noto Sans",sans-serif}.site-navigation .site-navigation-brand{display:inline-flex;align-items:center;gap:8px;margin:0;padding:0;min-height:44px;color:inherit;text-decoration:none;font-size:var(--font-size-body);white-space:nowrap}.site-navigation-brand img{display:block;width:24px;height:32px;object-fit:contain}.site-navigation-brand small{font-size:var(--font-size-small);font-weight:400;color:#aaa}.site-navigation .header-links{display:flex;align-items:center;gap:14px;margin:0}.site-navigation .header-links a{display:inline-flex;align-items:center;min-height:36px;font-size:var(--font-size-small);line-height:1;padding:0 2px;color:inherit;text-decoration:none;margin:0}.site-navigation .header-links a:hover{color:#aaa}.site-navigation .header-links a[aria-current=page]{text-decoration:underline;text-underline-offset:5px}.site-navigation+header{top:44px}.site-navigation:has(+header)~main .stage{top:104px}@media(max-width:760px){.site-navigation{gap:8px;padding-inline:12px}.site-navigation .header-links{gap:8px}.site-navigation .header-links a{font-size:var(--font-size-small)}.site-navigation .site-navigation-brand{font-size:var(--font-size-small);gap:6px}}@media(max-width:380px){.site-navigation-brand small{display:none}.site-navigation .header-links{gap:6px}.site-navigation .header-links a{font-size:var(--font-size-small)}}
+
+/* Public navigation shares the instrument's outer gutters on every page. */
+:root{--site-gutter:16px}
+@media(max-width:760px){:root{--site-gutter:20px}}
+body:is(.instrument-page,.marketplace-page,.about-page)>main{padding-inline:var(--site-gutter)}
+body:is(.instrument-page,.marketplace-page,.about-page) .market-header{margin-inline:calc(-1 * var(--site-gutter))}
+.market-header .header-main,.about-page .market-header .header-main,.marketplace-page .market-header .header-main{padding-inline:var(--site-gutter)}
+.market-header .header-main .upic-brand,.market-header .header-main .volume-widget{padding-inline:0}
+.site-navigation,.site-navigation+header{padding-inline:var(--site-gutter)}
+
+/* Available actions read as primary text; pending tools stay secondary. */
+.site-footer,.about-page .site-footer{
+ position:relative;inset:auto;z-index:auto;display:flex;flex-wrap:nowrap;align-items:center;flex:none;width:auto;
+ height:calc(var(--navigation-row-height,44px) + env(safe-area-inset-bottom));
+ min-height:calc(var(--navigation-row-height,44px) + env(safe-area-inset-bottom));
+ margin-inline:calc(-1 * var(--site-gutter));padding:0 var(--site-gutter) env(safe-area-inset-bottom);
+ color:#f2f2f2;background:#000;line-height:1.4;
+}
+.site-footer a,.site-footer .footer-brand,.site-footer .footer-networks,.site-footer button.footer-wallet{color:#f2f2f2}
+.site-footer .footer-upcoming,.site-footer .footer-upcoming small,.site-footer .footer-networks-heading{color:#999}
+.site-footer .footer-prices{color:#aaa}
+.site-footer .footer-prices output{color:#f2f2f2}
+.site-footer .footer-prices output[data-stale=true]{color:#999}
+.site-footer .wallet-status{color:#aaa;white-space:nowrap;flex:0 0 auto;max-width:none}
+.site-footer .footer-links,.site-footer .footer-tools{flex:0 0 auto;flex-wrap:nowrap}
+.site-footer .footer-prices{flex:0 0 auto;flex-wrap:nowrap}
+@media(max-width:1100px){
+ .site-footer,.about-page .site-footer{
+  display:flex;align-items:center;flex-wrap:nowrap;gap:20px;
+  padding-block:0 env(safe-area-inset-bottom);overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+ }
+ .site-footer::-webkit-scrollbar{display:none}
+ .site-footer .footer-links,.site-footer .footer-tools{
+  display:flex;align-items:center;justify-content:flex-start;flex:0 0 auto;flex-wrap:nowrap;
+  width:auto;min-width:0;max-width:none;margin:0;gap:16px;
+ }
+ .site-footer .footer-links .footer-upcoming{flex:0 0 auto;min-height:32px}
+ .site-footer .footer-brand{display:inline-flex}
+ .site-footer .footer-wallet{justify-content:flex-start;flex-wrap:nowrap;max-width:none}
+ .site-footer .footer-wallet small{flex-basis:auto;text-align:start}
+ .site-footer .footer-prices{
+  justify-content:flex-start;flex:0 0 auto;flex-wrap:nowrap;width:auto;margin:0;
+  padding:0;border:0;gap:20px;
+ }
+ /* Fixed positioning keeps the network menu outside the scrolling bar. */
+ .site-footer .footer-networks-panel{
+  position:fixed;left:var(--site-gutter);right:auto;
+  bottom:calc(var(--navigation-row-height,44px) + env(safe-area-inset-bottom) + 8px);
+  z-index:1100;max-width:calc(100vw - 2 * var(--site-gutter));
+ }
+}
+@media(max-width:380px){
+ .market-header .header-main{gap:6px}
+ .market-header .header-links .header-link{padding-inline:0}
+}
+
+/* Shared interaction rules: text navigation, outlined actions, and icon actions. */
+:root{--control-ink:#f2f2f2;--control-muted:#999;--control-line:#777;--control-hover:#171717;--control-selected-hover:#d5d5d5}
+:is(.market-header .header-links a,.site-navigation .header-links a,.site-footer a,.site-footer .footer-wallet,.footer-networks summary,.trending-cycle){
+ text-decoration-thickness:1px;text-underline-offset:4px;
+}
+:is(.market-header .header-links a,.site-navigation .header-links a,.site-footer a,.site-footer .footer-wallet,.footer-networks summary,.trending-cycle):not(:disabled):not([aria-disabled=true]):hover{
+ color:var(--control-ink);background:transparent;text-decoration-line:underline;
+}
+:is(.market-header .header-links a,.site-navigation .header-links a,.site-footer a)[aria-current=page]{
+ color:var(--control-ink);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px;
+}
+/* Borderless text buttons share the links' treatment, including keyboard focus. */
+.site-footer button.footer-wallet{background:transparent;border:0}
+:is(.market-header .header-links a,.site-navigation .header-links a,.site-footer a,.site-footer .footer-wallet,.footer-networks summary,#trending-cycle,#marketplace-sort):focus-visible{
+ outline:2px solid var(--control-ink);outline-offset:3px;text-decoration-line:underline;text-underline-offset:4px;
+}
+
+/* Search, replay, option groups and pagination use the same secondary action. */
+:is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button,
+.marketplace-content>button,.marketplace-networks button[data-chain=all]{
+ color:var(--control-ink);background:#000;border-color:var(--control-line);
+}
+:is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:not(:disabled):not([aria-disabled=true]):hover,
+.marketplace-content>button:not(:disabled):not([aria-disabled=true]):hover,
+.marketplace-networks button[data-chain=all]:not(:disabled):hover{
+ color:var(--control-ink);background:var(--control-hover);border-color:var(--control-ink);
+}
+:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true],
+.marketplace-networks button[data-chain=all][aria-pressed=true]{
+ color:#000;background:var(--control-ink);border-color:var(--control-ink);
+}
+:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]:not(:disabled):hover,
+.marketplace-networks button[data-chain=all][aria-pressed=true]:not(:disabled):hover{
+ color:#000;background:var(--control-selected-hover);border-color:var(--control-selected-hover);
+}
+:is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:focus-visible,
+.marketplace-content>button:focus-visible,.marketplace-networks button:focus-visible,.collection-card:focus-visible{
+ outline:2px solid var(--control-ink);outline-offset:3px;
+}
+
+/* Icon buttons keep their shape. Play remains the filled primary action. */
+.header-links #volume-button:not(:disabled):hover,.header-links #volume-button[aria-expanded=true],
+.transport #share:not(:disabled):hover,.visual-fullscreen:not(:disabled):hover{
+ color:var(--control-ink);background:var(--control-hover);
+}
+.transport #play:not(:disabled):not([aria-busy=true]):hover{color:#000;background:var(--control-selected-hover)}
+:is(#volume-button,#play,#share,.visual-fullscreen):focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}
+/* Network marks remain unboxed; selection is their existing underline. */
+.marketplace-networks button[data-chain]:not([data-chain=all]):not(:disabled):hover{
+ background:transparent;color:var(--control-ink);opacity:.75;
+}
+.marketplace-networks button[data-chain]:not([data-chain=all])[aria-pressed=true],
+.marketplace-networks button[data-chain]:not([data-chain=all])[aria-pressed=true]:hover{opacity:1}
+/* Artwork handles its own reveal. Hover emphasis belongs to its title. */
+button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:disabled):hover{background:transparent;opacity:1}
+.collection-card:hover h2,.market-tape .trending-pick:hover .trending-name{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}
+
+.site-footer .footer-upcoming,.site-footer .footer-upcoming small{
+ color:var(--control-muted);background:transparent;text-decoration:none;cursor:default;pointer-events:none;
+}
+:is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:is(:disabled,[aria-disabled=true]),
+.marketplace-content>button:is(:disabled,[aria-disabled=true]),.marketplace-networks button:is(:disabled,[aria-disabled=true]){
+ cursor:default;opacity:.35;pointer-events:none;
+}

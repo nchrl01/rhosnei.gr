@@ -98,7 +98,7 @@ export class GeckoProvider {
   if(allowed)return error('gecko-budget-wait',429,{'Retry-After':String(Math.max(1,Math.ceil((allowed-now)/1000)))});
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);
   try{
-   const upstream=await fetch(target.href,{method:'GET',redirect:'error',credentials:'omit',headers:{Accept:'application/json'},signal:controller.signal});
+   const upstream=await fetch(target.href,{method:'GET',redirect:'manual',credentials:'omit',headers:{Accept:'application/json'},signal:controller.signal});
    if(!upstream.ok){
     const header=upstream.headers.get('Retry-After');let until=0;
     if(upstream.status===429||header||upstream.status===403)until=retryAt(header,Date.now());
@@ -121,9 +121,10 @@ export class GeckoProvider {
     this.sql.exec('DELETE FROM gecko_cache WHERE key IN (SELECT key FROM gecko_cache ORDER BY fetched DESC LIMIT -1 OFFSET 128)');
    });
    return {body,status:200,headers:{'X-AV-Cache':'miss','X-AV-Fetched-At':String(fetched)}};
-  }catch{
+  }catch(cause){
    this.cooldown(Date.now()+SPACING);
-   return error(controller.signal.aborted?'gecko-timeout':'gecko-unavailable',controller.signal.aborted?504:502,{'Retry-After':'6'});
+   const reason=['invalid-gecko-format','gecko-response-too-large','empty-gecko-response','invalid-gecko-data'].includes(cause?.message)?cause.message:'gecko-network-error';
+   return error(controller.signal.aborted?'gecko-timeout':reason,controller.signal.aborted?504:502,{'Retry-After':'6'});
   }finally{clearTimeout(timeout);controller.abort();}
  }
  cooldown(until){

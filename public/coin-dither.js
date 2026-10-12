@@ -96,19 +96,42 @@ export function ditherReveal(canvas,source,width,height,host=canvas.parentElemen
  return ()=>{cancelAnimationFrame(raf);host.removeEventListener('pointerenter',enter);host.removeEventListener('pointerleave',leave);host.removeEventListener('focusin',enter);host.removeEventListener('focusout',leave);};
 }
 export function attachArtworkDither(img){
+ if(img.dataset.artworkDitherAttached==='true')return;
+ img.dataset.artworkDitherAttached='true';
  img.draggable=false;img.addEventListener('dragstart',e=>e.preventDefault());
- const host=img.parentElement;host.classList.add('dither-artwork');
+ const host=img.parentElement;host.classList.add('dither-artwork','dither-pending');
+ // Hide the original in this same render task, before a cached image can flash.
+ // The local mark also covers missing images or a provider that never responds.
+ const fallback=document.createElement('span'),mark=document.createElement('img');
+ fallback.className='artwork-fallback';fallback.setAttribute('aria-hidden','true');
+ mark.src=new URL('./upic-logo-transparent.svg?v=116',import.meta.url).href;mark.alt='';mark.draggable=false;fallback.append(mark);host.append(fallback);
+ let processing=false,finished=false,timeout,decoded;
+ function cleanup(){clearTimeout(timeout);img.removeEventListener('load',ready);img.removeEventListener('error',failed);if(decoded){decoded.onload=null;decoded.onerror=null;}}
+ function failed(){
+  if(finished)return;finished=true;cleanup();host.classList.remove('dither-pending');
+  // Canvas access may fail while the source itself is usable. Retain that
+  // artwork in monochrome; a missing source keeps the local placeholder.
+  if(img.naturalWidth&&img.getAttribute('src')){img.style.filter='grayscale(1)';fallback.remove();}
+ }
  function ready(){
-  if(!img.naturalWidth||!img.isConnected||host.querySelector('.artwork-dither'))return;
-  const decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
-  let relayed=false;decoded.onerror=()=>{if(relayed)return;try{const url=new URL(img.currentSrc||img.src);if(!['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io'].includes(url.hostname))return;relayed=true;decoded.src='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(url.href);}catch{}};
-  decoded.onload=()=>{if(!img.isConnected)return;try{
-   const size=Math.max(32,Math.min(240,Math.round(img.clientWidth||200))),canvas=document.createElement('canvas');canvas.width=canvas.height=size;canvas.className='artwork-dither';canvas.setAttribute('aria-hidden','true');
+  if(finished||processing||!img.naturalWidth||!img.isConnected)return;
+  processing=true;timeout=setTimeout(failed,12000);
+  decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
+  let relayed=false;
+  function relayOrFail(){
+   if(finished)return;
+   if(!relayed){try{const url=new URL(img.currentSrc||img.src);if(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io'].includes(url.hostname)){relayed=true;decoded.src='https://upic-insightx.nchrl01.workers.dev/artwork?url='+encodeURIComponent(url.href);return;}}catch{}}
+   failed();
+  }
+  decoded.onerror=relayOrFail;
+  decoded.onload=()=>{if(finished)return;if(!img.isConnected){finished=true;cleanup();return;}let canvas;try{
+   const size=Math.max(32,Math.min(240,Math.round(img.clientWidth||200)));canvas=document.createElement('canvas');canvas.width=canvas.height=size;canvas.className='artwork-dither';canvas.setAttribute('aria-hidden','true');
    const ctx=canvas.getContext('2d',{willReadFrequently:true}),scale=Math.max(size/decoded.naturalWidth,size/decoded.naturalHeight);
    ctx.drawImage(decoded,(size-decoded.naturalWidth*scale)/2,(size-decoded.naturalHeight*scale)/2,decoded.naturalWidth*scale,decoded.naturalHeight*scale);
-   const data=ctx.getImageData(0,0,size,size).data;host.append(canvas);ditherReveal(canvas,data,size,size,host.closest('.collection-card')||host);host.classList.add('dither-ready');
-  }catch{/* Keep the image when its host disallows canvas access. */}};
+   const data=ctx.getImageData(0,0,size,size).data;ditherReveal(canvas,data,size,size,host.closest('.collection-card')||host);host.append(canvas);host.classList.add('dither-ready');host.classList.remove('dither-pending');fallback.remove();finished=true;cleanup();
+  }catch{canvas?.remove();relayOrFail();}};
   decoded.src=img.currentSrc||img.src;
  }
- img.addEventListener('load',ready);if(img.complete)ready();
+ img.addEventListener('load',ready);img.addEventListener('error',failed);
+ if(img.complete){if(img.naturalWidth)ready();else failed();}
 }

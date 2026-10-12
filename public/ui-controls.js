@@ -3,32 +3,18 @@
 export function createUIControls(){
  const $=id=>document.getElementById(id),states=new Map(),loaders=new Map(),timers=new Map();
  const input=$('master'),panel=$('volume-panel'),time=$('coin-time');
- let components,volume,clock,dateClock,lastClock=null,sequence=0;
- const dial=document.createElement('div');dial.id='volume-dial';dial.hidden=true;input.before(dial);
+ let components,clock,dateClock,lastClock=null,sequence=0;
  const volumeButton=$('volume-button'),mobile=matchMedia('(max-width:760px)');
  let volumeOpen=false;
- function positionVolumePanel(){
-  if(!volumeOpen)return;
-  const edge=12,gap=8,button=volumeButton.getBoundingClientRect();
-  const viewport=window.visualViewport,width=viewport?.width||window.innerWidth,height=viewport?.height||window.innerHeight;
-  panel.style.maxWidth=Math.max(0,width-edge*2)+'px';panel.style.maxHeight=Math.max(0,height-edge*2)+'px';
-  const popup=panel.getBoundingClientRect();
-  const leftEdge=(viewport?.offsetLeft||0)+edge,topEdge=(viewport?.offsetTop||0)+edge;
-  const rightEdge=leftEdge+width-edge*2,bottomEdge=topEdge+height-edge*2;
-  const left=Math.max(leftEdge,Math.min(button.right-popup.width,rightEdge-popup.width));
-  const below=button.bottom+gap,above=button.top-popup.height-gap;
-  const top=Math.max(topEdge,Math.min(below+popup.height<=bottomEdge?below:above,bottomEdge-popup.height));
-  panel.style.left=left+'px';panel.style.top=top+'px';
- }
  function setVolumeOpen(open,focus=false){
   volumeOpen=Boolean(open);panel.hidden=!volumeOpen;
   volumeButton.hidden=false;volumeButton.setAttribute('aria-expanded',String(volumeOpen));
-  volume?.setOpen(mobile.matches?volumeOpen:true);
-  if(mobile.matches&&volumeOpen)positionVolumePanel();
-  if(mobile.matches&&volumeOpen)requestAnimationFrame(()=>{if(!volumeOpen)return;positionVolumePanel();if(focus&&!volume?.focus())input.focus({preventScroll:true});});
+  if(volumeOpen&&focus)input.focus({preventScroll:true});
  }
  function volumeLabel(){
   const amount=Math.round(Number(input.value)*100);
+  input.style.setProperty('--range-fill',amount+'%');
+  const value=$('master-value');if(value)value.textContent=amount+'%';
   volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);volumeButton.dataset.volumeLevel=amount>50?"high":"low";
  }
  volumeButton.addEventListener('click',()=>setVolumeOpen(mobile.matches?!volumeOpen:true,true));
@@ -38,10 +24,6 @@ export function createUIControls(){
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&volumeOpen){event.preventDefault();setVolumeOpen(false);volumeButton.focus({preventScroll:true});}});
  volumeButton.parentElement.addEventListener('focusout',event=>{if(volumeOpen&&event.relatedTarget&&!volumeButton.parentElement.contains(event.relatedTarget))setVolumeOpen(false);});
  mobile.addEventListener('change',()=>setVolumeOpen(false));
- window.addEventListener('resize',()=>requestAnimationFrame(positionVolumePanel));
- document.addEventListener('scroll',positionVolumePanel,true);
- window.visualViewport?.addEventListener('resize',positionVolumePanel);
- window.visualViewport?.addEventListener('scroll',positionVolumePanel);
  input.addEventListener('input',volumeLabel);setVolumeOpen(false);volumeLabel();
  const dateNode=$('coin-date');
  const clockFallback=document.createElement('span'),clockHost=document.createElement('span');
@@ -71,12 +53,6 @@ export function createUIControls(){
  }
  import('./vendor/ui/upic-ui.js?v=235').then(module=>{
   components=module;
-  try{
-   volume=components.mountVolume(dial,input);panel.dataset.volumeUi='true';
-   dial.addEventListener('ui-component-error',()=>{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;});
-   volume.setOpen(mobile.matches?volumeOpen:true);
-   if(mobile.matches&&volumeOpen)requestAnimationFrame(positionVolumePanel);
-  }catch{panel.dataset.volumeUi='false';dial.hidden=true;volume=null;}
   try{
    clock=components.mountClock(clockHost);dateClock=components.mountClock(dateNode);if(lastClock)dateClock.update({...lastClock,dateOnly:true});time.dataset.clockUi='true';
    clockHost.addEventListener('ui-component-error',()=>{time.dataset.clockUi='false';clockHost.hidden=true;clock=null;});

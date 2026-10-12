@@ -1,4 +1,4 @@
-import {attachArtworkDither} from './coin-dither.js?v=274';
+import {attachArtworkDither} from './coin-dither.js?v=276';
 import {fetchGecko} from './gecko.js?v=275';
 const REFRESH_MS=30000;
 const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom',cro:'cronos'};
