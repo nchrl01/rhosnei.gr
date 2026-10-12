@@ -210,9 +210,9 @@ body.inspecting .audio-visualizer{display:none}
 .playback-speed button{height:26px;min-height:26px;padding:2px 7px;border:1px solid transparent;background:transparent;color:#bbb;font:inherit;line-height:1;white-space:nowrap}
 .playback-speed button[aria-pressed="true"]{border-color:#f2f2f2;color:#f2f2f2}
 .playback-speed button:focus-visible{outline:2px solid #f2f2f2;outline-offset:2px}
-#coin-name{transition:color .18s ease}
-#coin-name[data-direction="up"]{color:#51d77b}
-#coin-name[data-direction="down"]{color:#ff6672}
+#coin-cap{transition:color .18s ease}
+#coin-cap[data-direction="up"]{color:#51d77b}
+#coin-cap[data-direction="down"]{color:#ff6672}
 
 /* Address, transport and score share straight edges and aligned rows. */
 .address-row{align-items:stretch}
@@ -328,7 +328,7 @@ input{caret-color:#fff}
  .chart-status{margin-top:12px;padding-top:12px;gap:6px 12px}
  .chart-status #tempo{max-width:145px}
 }
-@media(prefers-reduced-motion:reduce){#coin-name{transition:none}}
+@media(prefers-reduced-motion:reduce){#coin-cap{transition:none}}
 
 /* Loading remains visible in place while the current player stays available. */
 #lookup[data-state=loading]{color:#f2f2f2}
@@ -441,6 +441,7 @@ body.visual-expanded{overflow:hidden}
    contribute different synthetic baselines to the wrapping readings row. */
 .coin-live-readings #coin-date,.coin-live-readings #coin-time{display:inline-flex;align-items:center;align-self:center;min-height:20px;font-size:var(--font-size-body);line-height:1;white-space:nowrap}
 .coin-live-readings .clock-island,.coin-live-readings .market-clock{align-items:center;line-height:1}
+.coin-live-readings>div:first-child{column-gap:14px}
 
 /* Four stable market slots; small screens scroll this strip instead of wrapping. */
 .instrument-page .readings{display:grid;grid-template-columns:repeat(4,minmax(max-content,1fr));width:100%;min-width:0;max-width:none;margin-top:8px;padding:8px 0;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}

@@ -33,6 +33,11 @@ wallet SDK's scoped theme tokens; provider UI stays inside the SDK.
 
 ## Behavior ownership
 
+- `src/site/page-entry.js` and `intro.html`: the shared horizontal split/fade
+  reveal. The build inlines the arrival decision before page paint, with no
+  runtime request. Direct visits, external links and reloads reveal; internal
+  navigation and back/forward skip. A one-use same-tab link marker supplements
+  same-app referrers. Reduced-motion users skip the reveal.
 - `shared-header.js`: common UI entry, current navigation state, range fills,
   viewing-only artwork drag policy and retired local sample migration. It independently loads
   footer prices and wallet UI once on pages with a footer. A failed optional module

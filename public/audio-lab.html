@@ -1,17 +1,76 @@
 <!doctype html>
-<html lang="en"><head><link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090909"><title>UPIC · Audio engine lab</title><link rel="icon" href="upic-favicon.svg"><!-- site-shell:styles:start -->
-<link rel="stylesheet" href="foundation.css?v=281">
-<link rel="stylesheet" href="visual-lab.css?v=281">
-<link rel="stylesheet" href="audio-lab.css?v=281">
-<link rel="stylesheet" href="typography.css?v=281">
-<link rel="stylesheet" href="shared-navigation.css?v=281">
+<html lang="en"><head><link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#090909"><title>UPIC · Audio engine lab</title><link rel="icon" href="upic-favicon.svg"><!-- site-shell:entry:start -->
+<script>
+// Runs inline after each page's <base>, before its content is painted.
+(() => {
+  const appRoot = new URL('./', document.baseURI);
+  const markerKey = 'av-internal-arrival';
+  const isInternal = url => url.origin === appRoot.origin && (
+    url.pathname === appRoot.pathname.replace(/\/$/, '') ||
+    url.pathname.startsWith(appRoot.pathname)
+  );
+  const destination = url => {
+    const normalized = new URL(url);
+    normalized.hash = '';
+    return normalized.href;
+  };
+  let internalClick = false;
+  try {
+    const marker = JSON.parse(sessionStorage.getItem(markerKey) || 'null');
+    sessionStorage.removeItem(markerKey);
+    const age = marker ? Date.now() - marker.time : -1;
+    internalClick = age >= 0 && age < 60000 && marker.to === destination(location.href);
+  } catch { /* Referrer detection still works when storage is unavailable. */ }
+
+  let internalReferrer = false;
+  try {
+    internalReferrer = Boolean(document.referrer) && isInternal(new URL(document.referrer));
+  } catch { /* Missing or invalid referrers count as direct arrivals. */ }
+  const navigation = performance.getEntriesByType?.('navigation')[0]?.type;
+  const shouldReveal = navigation !== 'back_forward' && (
+    navigation === 'reload' || (!internalClick && !internalReferrer)
+  );
+  if (shouldReveal) document.documentElement.dataset.pageEntry = 'arrival';
+
+  document.addEventListener('click', event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey ||
+        event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest?.('a[href]');
+    if (!link || link.hasAttribute('download') ||
+        (link.target && link.target.toLowerCase() !== '_self')) return;
+    const target = new URL(link.href, document.baseURI);
+    if (!isInternal(target) || destination(target) === destination(location.href)) return;
+    try {
+      sessionStorage.setItem(markerKey, JSON.stringify({ to: destination(target), time: Date.now() }));
+    } catch { /* The same-app referrer remains the fallback. */ }
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) delete document.documentElement.dataset.pageEntry;
+  });
+})();
+</script>
+<!-- site-shell:entry:end -->
+<!-- site-shell:styles:start -->
+<link rel="stylesheet" href="foundation.css?v=282">
+<link rel="stylesheet" href="visual-lab.css?v=282">
+<link rel="stylesheet" href="audio-lab.css?v=282">
+<link rel="stylesheet" href="typography.css?v=282">
+<link rel="stylesheet" href="shared-navigation.css?v=282">
+<link rel="stylesheet" href="intro.css?v=282">
 <!-- site-shell:styles:end -->
 </head>
-<body><!-- site-shell:header:start -->
+<body>
+<!-- site-shell:intro:start -->
+<div class="site-intro" aria-hidden="true" inert>
+  <span class="site-intro__veil"></span>
+  <span class="site-intro__curtain site-intro__curtain--top"></span>
+  <span class="site-intro__curtain site-intro__curtain--bottom"></span>
+</div>
+<!-- site-shell:intro:end --><!-- site-shell:header:start -->
 <header class="site-navigation" aria-label="$AV navigation"><div class="header-main"><a class="upic-brand site-navigation-brand" href="./" aria-label="$AV home" title="$AV"><span class="brand-icon" aria-hidden="true"><img src="upic-logo-transparent.svg?v=116" alt="" width="125" height="173" decoding="async" draggable="false"></span><span class="brand-name">$AV <span class="brand-beta">(BETA)</span></span></a><nav class="header-links" aria-label="Primary navigation"><a class="header-link" href="./">Instrument</a><a class="header-link" href="upic/marketplace/">Marketplace</a><a class="header-link" href="about.html">About</a></nav></div></header>
 <!-- site-shell:header:end --><header class="lab-toolbar-header"><a href="av-lab.html" class="lab-link">Combined AV lab ↗</a><a href="./">UPIC ↗</a><a class="lab-link" href="visual-lab.html">Visual lab</a><span>AUDIO LAB <small>01</small></span><button id="play">Start audio</button></header>
 <main><section class="stage"><div class="audio-display"><p class="eyebrow">ACTUAL ENGINE OUTPUT</p><h1 id="instrument">Your sound.<br>Your controls.</h1><p id="harmony">Press Start audio to load the instruments.</p><canvas id="scope" aria-label="Audio waveform"></canvas><div class="meter" aria-label="Output level"><div id="meter-fill"></div></div><div class="stage-caption"><span id="meter-text">Silent</span><span id="clock">00:00</span></div><div id="engines" aria-live="polite"></div><p id="last-note">No notes yet</p></div><div class="stage-tools"><button id="chord" disabled>Play chord</button><button id="trade" disabled>Send trade</button><button id="restart">Restart score</button></div><p id="status" role="status">Synthetic market inputs · real UPIC engines · no trading API calls.</p></section>
 <aside><div class="intro"><h1>Hear the mappings.</h1><p>Drag knobs, use arrow keys, or type a value. AUTO follows the engine; turn a knob to override it. Your changes stay in this lab. Start audio is required before anything plays.</p></div><div class="actions"><button id="note">Export change note</button><button id="save">Save preset</button><label class="upload">Load preset<input id="load" type="file" accept="application/json,.json"></label><button id="reset">Reset all</button></div><label class="notes">Notes for changes<textarea id="notes" placeholder="What should change in the main website’s audio?"></textarea></label><div id="controls"></div><details class="inactive"><summary>What this lab covers</summary><p>GeneralUser sampled harmony and arpeggios with Kraken bass, ENVION’s market-mapped controls, data sonification, and optional AI arpeggios. Tempo is limited to the existing melodic engine’s 20–200 BPM range.</p><p>It simulates market inputs; it does not fetch trades or reproduce a historical recording. The arpeggio model downloads only when you request it. ENVION sample replacement, internal Pd patch wiring, model weights and convolution impulse lengths are not editable here. Exported notes and presets do not change the main website.</p></details><p class="footer">Audio Lab 01 · Uses UPIC’s shared audio engines. Drafts are stored in this browser. Attach an exported note here to request changes.</p></aside></main><div id="envion-host" hidden></div><script type="module" src="audio-lab.js?v=258"></script><!-- site-shell:scripts:start -->
-<script type="module" src="shared-header.js?v=281"></script>
+<script type="module" src="shared-header.js?v=282"></script>
 <!-- site-shell:scripts:end -->
 </body></html>

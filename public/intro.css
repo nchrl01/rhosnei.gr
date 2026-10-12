@@ -1,4 +1,4 @@
-/* One decorative reveal at document entry; never gates data, audio or input. */
+/* Direct/external arrivals only; never gates data, audio or input. */
 .site-intro {
   position: fixed;
   inset: 0;
@@ -8,7 +8,6 @@
   user-select: none;
   visibility: hidden;
   contain: strict;
-  animation: upic-intro-dismiss 800ms step-end both;
 }
 .site-intro > span {
   position: absolute;
@@ -18,24 +17,35 @@
 .site-intro__veil {
   inset: 0;
   background: #000;
-  animation: upic-intro-veil 700ms 80ms cubic-bezier(.2, 0, .2, 1) both;
 }
 .site-intro__curtain {
   left: 0;
   width: 100%;
   height: calc(50% + 1px);
   background: #000;
+}
+.site-intro__curtain--top {
+  top: 0;
+}
+.site-intro__curtain--bottom {
+  bottom: 0;
+}
+html[data-page-entry="arrival"] .site-intro {
+  animation: upic-intro-dismiss 800ms step-end both;
+}
+html[data-page-entry="arrival"] .site-intro__veil {
+  animation: upic-intro-veil 700ms 80ms cubic-bezier(.2, 0, .2, 1) both;
+}
+html[data-page-entry="arrival"] .site-intro__curtain {
   animation-duration: 780ms;
   animation-delay: 20ms;
   animation-timing-function: cubic-bezier(.4, 0, .2, 1);
   animation-fill-mode: both;
 }
-.site-intro__curtain--top {
-  top: 0;
+html[data-page-entry="arrival"] .site-intro__curtain--top {
   animation-name: upic-intro-top;
 }
-.site-intro__curtain--bottom {
-  bottom: 0;
+html[data-page-entry="arrival"] .site-intro__curtain--bottom {
   animation-name: upic-intro-bottom;
 }
 @keyframes upic-intro-dismiss {
@@ -57,6 +67,6 @@
   to { opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .site-intro { display: none; animation: none; }
-  .site-intro > span { animation: none; }
+  html[data-page-entry="arrival"] .site-intro { display: none; animation: none; }
+  html[data-page-entry="arrival"] .site-intro > span { animation: none; }
 }

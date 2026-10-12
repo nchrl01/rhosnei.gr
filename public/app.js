@@ -79,7 +79,7 @@ createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>piano?.setArpeggioPattern(pattern)});
 const displaySettings={dither:false};
-const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-name').dataset.direction]||0})});
+const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
 $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>event.preventDefault());
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image),onUnavailable:()=>{if(market)void loadCoinImage(market,{fallback:true});}});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
@@ -781,17 +781,17 @@ function shareSnapshot(){
 }
 const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
 const rollCap=rollingText($('coin-cap'));
-let titleMovement={key:null,price:null,at:0,until:0,direction:''};
+let marketMovement={key:null,price:null,at:0,until:0,direction:''};
 function updateCoinReadout(m){
- const title=$('coin-name'),key=(market?.baseToken?.address||'')+':'+replay.state.active;
+ const capReadout=$('coin-cap'),key=(market?.baseToken?.address||'')+':'+replay.state.active;
  const price=Number(replay.state.active?m.replay?.price:currentPrice());
  const position=replay.state.active?replay.state.cursor:Date.now(),now=performance.now();
- if(key!==titleMovement.key||position<titleMovement.at){titleMovement={key,price:null,at:position,until:0,direction:''};}
+ if(key!==marketMovement.key||position<marketMovement.at){marketMovement={key,price:null,at:position,until:0,direction:''};}
  if(price>0&&Number.isFinite(price)){
-  if(titleMovement.price>0&&price!==titleMovement.price){titleMovement.direction=price>titleMovement.price?'up':'down';titleMovement.until=now+1200;}
-  titleMovement.price=price;
+  if(marketMovement.price>0&&price!==marketMovement.price){marketMovement.direction=price>marketMovement.price?'up':'down';marketMovement.until=now+1200;}
+  marketMovement.price=price;
  }
- titleMovement.at=position;title.dataset.direction=now<titleMovement.until?titleMovement.direction:'';
+ marketMovement.at=position;capReadout.dataset.direction=now<marketMovement.until?marketMovement.direction:'';
 
  const at=replay.state.active?replay.state.cursor:Date.now(),date=new Date(at),cap=m.context?.latestCap;
  ui.clock({timestamp:at,rate:replay.state.active?Number(replay.state.speed)||1:1,replay:replay.state.active,seeking:replay.state.dragging,label:replay.state.active?'Playback time':'Local time'});

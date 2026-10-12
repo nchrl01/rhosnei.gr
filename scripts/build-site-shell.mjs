@@ -7,9 +7,9 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const publicRoot = path.join(root, 'public');
 const partialRoot = path.join(root, 'src/site');
-const version = 281;
+const version = 282;
 const pages = [
-  { file: 'index.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'intro.css?v=256', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
+  { file: 'index.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
   { file: 'about.html', type: 'public', active: 'about', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
   { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'marketplace.css'] },
   { file: 'credits.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css'] },
@@ -20,8 +20,9 @@ const pages = [
 ];
 
 const partials = Object.fromEntries(await Promise.all(
-  ['header', 'footer', 'volume', 'home-trending'].map(async name => [name, (await readFile(path.join(partialRoot, name + '.html'), 'utf8')).trim()]),
+  ['header', 'footer', 'volume', 'home-trending', 'intro'].map(async name => [name, (await readFile(path.join(partialRoot, name + '.html'), 'utf8')).trim()]),
 ));
+const pageEntryScript = (await readFile(path.join(partialRoot, 'page-entry.js'), 'utf8')).trim();
 function region(name, content) {
   return `<!-- site-shell:${name}:start -->\n${content}\n<!-- site-shell:${name}:end -->`;
 }
@@ -58,6 +59,13 @@ for (const page of pages) {
   const file = path.join(publicRoot, page.file);
   let html = await readFile(file, 'utf8');
   if (page.type === 'technology') html = prepareTechnologyDocument(html);
+  if (html.includes('<!-- site-shell:intro:start -->')) {
+    html = replaceRegion(html, 'intro', partials.intro);
+  } else {
+    // Migrate the homepage's original curtain before adding the shared one.
+    html = html.replace(/<div class="site-intro"[^>]*>[\s\S]*?<\/div>/, '');
+    html = html.replace(/<body\b[^>]*>/, match => match + '\n' + region('intro', partials.intro));
+  }
   html = replaceRegion(html, 'header', header(page), /<header\b[^>]*>[\s\S]*?<\/header>/);
   if (page.type === 'lab') {
     // The navigation is one header; the lab's transport/actions are another.
@@ -70,13 +78,21 @@ for (const page of pages) {
   }
   // Stylesheet order is deliberate: common controls, page layout, typography,
   // then shared navigation. Each page declares only the styles it uses.
-  const styles = ['foundation.css', ...page.styles, 'typography.css', 'shared-navigation.css']
+  const styles = ['foundation.css', ...page.styles, 'typography.css', 'shared-navigation.css', 'intro.css']
     .map(href => `<link rel="stylesheet" href="${href.includes('?') ? href : href + '?v=' + version}">`).join('\n');
   if (html.includes('<!-- site-shell:styles:start -->')) {
     html = replaceRegion(html, 'styles', styles);
   } else {
     html = html.replace(/<link\b(?=[^>]*\brel=["']stylesheet["'])[^>]*>\s*/g, '');
     html = html.replace('</head>', region('styles', styles) + '\n</head>');
+  }
+  // Inline the tiny arrival decision before styles/body paint. It must not wait
+  // for page modules or introduce another network request during startup.
+  const entry = `<script>\n${pageEntryScript}\n</script>`;
+  if (html.includes('<!-- site-shell:entry:start -->')) {
+    html = replaceRegion(html, 'entry', entry);
+  } else {
+    html = html.replace('<!-- site-shell:styles:start -->', region('entry', entry) + '\n<!-- site-shell:styles:start -->');
   }
   const sharedScripts = `<script type="module" src="shared-header.js?v=${version}"></script>`;
   if (html.includes('<!-- site-shell:scripts:start -->')) {
