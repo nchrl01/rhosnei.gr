@@ -1,5 +1,6 @@
 // One shared free-provider budget: foreground chart/live work precedes backfill.
 // Provider docs differ (10 vs 30 requests/min); use the conservative 10/min rate.
+function providerURL(value){const source=new URL(value);if(source.origin!=='https://api.geckoterminal.com'||!source.pathname.startsWith('/api/v2/'))throw Error('Unsupported market data source');const relay=new URL('https://upic-insightx.nchrl01.workers.dev/gecko');relay.searchParams.set('path',source.pathname.slice('/api/v2'.length));for(const [key,value]of source.searchParams)relay.searchParams.append(key,value);return relay.href;}
 const SPACING=6000,queue=[],jobs=new Map();let nextRequest=0,timer;
 function retryDelay(response){
  const header=response.headers.get('Retry-After'),seconds=Number(header);
@@ -10,13 +11,22 @@ function drain(){
  const wait=nextRequest-Date.now();if(wait>0){timer=setTimeout(drain,wait);return;}
  const now=Date.now();queue.sort((a,b)=>(b.priority+Math.min(30,(now-b.queuedAt)/1000))-(a.priority+Math.min(30,(now-a.queuedAt)/1000))||a.queuedAt-b.queuedAt);
  const job=queue.shift();if(!job.consumers.size){drain();return;}
- job.started=true;nextRequest=Date.now()+SPACING;
- fetch(job.url,{signal:job.controller.signal}).then(response=>{
-  if(response.status===429)nextRequest=Math.max(nextRequest,Date.now()+retryDelay(response));
+ job.started=true;nextRequest=Date.now()+SPACING;let retry=false;
+ // URL validation and request setup share the same rejection/cleanup path.
+ Promise.resolve().then(()=>fetch(providerURL(job.url),{signal:job.controller.signal})).then(response=>{
+  const delay=!response.ok&&(response.status===429||response.headers.has('Retry-After'))?retryDelay(response):null;
+  if(delay!==null)nextRequest=Math.max(nextRequest,Date.now()+delay);
+  // A short shared-relay quota wait is normal. Keep this job and its joined
+  // consumers queued, with the same six-second budget and cancellation signal.
+  if(response.status===429&&delay<=10000&&job.retries<3&&job.consumers.size&&!job.controller.signal.aborted){
+   job.retries++;retry=true;response.body?.cancel().catch(()=>{});return;
+  }
   if(jobs.get(job.url)===job)jobs.delete(job.url);
   for(const consumer of job.consumers){consumer.cleanup();consumer.resolve(response.clone());}
- },error=>{if(jobs.get(job.url)===job)jobs.delete(job.url);for(const consumer of job.consumers){consumer.cleanup();consumer.reject(error);}}).finally(()=>{
-  job.consumers.clear();if(jobs.get(job.url)===job)jobs.delete(job.url);drain();
+ }).catch(error=>{retry=false;if(jobs.get(job.url)===job)jobs.delete(job.url);for(const consumer of job.consumers){consumer.cleanup();consumer.reject(error);}}).finally(()=>{
+  if(retry&&job.consumers.size&&!job.controller.signal.aborted){job.started=false;queue.push(job);}
+  else{job.consumers.clear();if(jobs.get(job.url)===job)jobs.delete(job.url);}
+  drain();
  });
  drain();
 }
@@ -24,7 +34,7 @@ export function fetchGecko(url,{signal,priority=40}={}){
  return new Promise((resolve,reject)=>{
   if(signal?.aborted){reject(new DOMException('Aborted','AbortError'));return;}
   let job=jobs.get(url);
-  if(!job){job={url,priority,queuedAt:Date.now(),started:false,controller:new AbortController(),consumers:new Set()};jobs.set(url,job);queue.push(job);}
+  if(!job){job={url,priority,queuedAt:Date.now(),started:false,retries:0,controller:new AbortController(),consumers:new Set()};jobs.set(url,job);queue.push(job);}
   job.priority=Math.max(job.priority,priority);
   const consumer={resolve,reject,cleanup:()=>signal?.removeEventListener('abort',cancel)};
   const cancel=()=>{
