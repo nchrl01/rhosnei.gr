@@ -1,0 +1,3 @@
+Network icons: Trust Wallet Assets https://github.com/trustwallet/assets
+Robinhood Chain icon: https://docs.robinhood.com/chain/brand-guidelines/
+Dithering is rendered locally by the existing thumbnail engine.
