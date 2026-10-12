@@ -29,7 +29,7 @@ export function createUIControls(){
  }
  function volumeLabel(){
   const amount=Math.round(Number(input.value)*100);
-  volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);
+  volumeButton.setAttribute('aria-label','Volume '+amount+'%');volumeButton.dataset.muted=String(amount===0);volumeButton.dataset.volumeLevel=amount>50?"high":"low";
  }
  volumeButton.addEventListener('click',()=>setVolumeOpen(!volumeOpen,true));
  volumeButton.parentElement.addEventListener('pointerenter',()=>{if(!mobile.matches)setVolumeOpen(true);});

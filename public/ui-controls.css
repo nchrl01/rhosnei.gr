@@ -7,14 +7,14 @@
 #volume-button[data-muted=true] .volume-muted{display:block}
 #volume-button[data-muted=true] .volume-waves{display:none}
 #volume-panel{position:fixed;top:12px;left:12px;right:auto;display:flex;flex-direction:column;align-items:center;gap:12px;width:168px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;padding:16px;border:1px solid #777;background:#080808;box-shadow:0 8px 24px #0009;z-index:120}
-#volume-panel>label{display:block;margin:0;font-size:14px;font-weight:400;letter-spacing:0}
+#volume-panel>label{display:block;margin:0;font-size:var(--font-size-body);font-weight:400;letter-spacing:0}
 #volume-panel #master{width:100%;min-height:44px}
 #volume-panel #volume-dial{width:128px;max-width:100%;flex:0 0 128px;margin:0}
 #volume-dial .comet-dial{max-width:100%;height:auto;aspect-ratio:1;--cd-size:128px!important;--cd-figure:22px!important}
 #volume-dial .comet-dial__ring{border-radius:50%!important}
 #volume-dial .comet-dial__ring:focus-visible{outline:1px solid #aaa;outline-offset:2px}
 #volume-panel[data-volume-ui=true] #master,#volume-panel[data-volume-ui=true] #master-value{display:none}
-#volume-panel>span{margin:0;font-size:12px;color:#f5f5f5}
+#volume-panel>span{margin:0;font-size:var(--font-size-small);color:#f5f5f5}
 .visual-volume-control{position:fixed;left:60px;top:calc(var(--visual-full-top,64px) + 8px);z-index:120;pointer-events:auto}
 @media(min-width:761px){
  #volume-panel{position:static;display:flex;width:52px;max-width:none;max-height:none;overflow:visible;gap:0;padding:0;border:0;background:transparent;box-shadow:none}
@@ -38,7 +38,7 @@
 .transport:has(#audio-loader[data-ui-ready=true]) #play[aria-busy=true]::after{display:none}
 #lookup.is-loading::after,#history-loading.is-loading::after{display:none}
 #audio-loader{grid-column:1/-1;max-width:100%}
-#audio-loader .lattice-loader{--ll-font:12px!important;column-gap:5px}
+#audio-loader .lattice-loader{--ll-font:var(--font-size-small)!important;column-gap:5px}
 @media(min-width:761px){#audio-loader{width:76px;overflow-wrap:anywhere}}
 #trending-loader{margin:0 12px;height:32px;align-content:center;pointer-events:none}
 #trending-list:has(#trending-loader[data-ui-ready=true][data-load-state=working]:not([hidden])) .trending-empty{display:none}
@@ -66,7 +66,7 @@
 /* Desktop exposes the real master slider directly beside About. */
 @media(min-width:761px){
  .header-links #volume-panel{width:150px;flex-direction:row;gap:8px}
- .header-links #volume-panel>label{display:block;font-size:12px;margin:0}
+ .header-links #volume-panel>label{display:block;font-size:var(--font-size-small);margin:0}
  .header-links #volume-panel #volume-dial{display:none!important}
  .header-links #volume-panel #master{display:block!important;width:90px;min-height:24px;height:24px;margin:0;accent-color:#f5f5f5}
 }
@@ -93,3 +93,5 @@
 }
 
 .lattice-loader__timer{font-family:inherit}
+
+#volume-button[data-volume-level=low] .volume-wave-high{display:none}

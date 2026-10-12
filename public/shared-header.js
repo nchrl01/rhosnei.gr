@@ -4,7 +4,7 @@ const input=document.getElementById('master'),button=document.getElementById('vo
 if(input){try{const saved=localStorage.getItem('av-listening-volume');if(saved!==null)input.value=String(Math.max(0,Math.min(1,Number(saved)||0)));}catch{}input.addEventListener('input',()=>{try{localStorage.setItem('av-listening-volume',input.value);}catch{}});}
 if(input&&button&&panel&&!document.getElementById('market-chart')){
  const value=document.getElementById('master-value');
- const update=()=>{const amount=Math.round(Number(input.value)*100);value.textContent=amount+'%';button.setAttribute('aria-label','Volume '+amount+'%');button.dataset.muted=String(amount===0);};
+ const update=()=>{const amount=Math.round(Number(input.value)*100);value.textContent=amount+'%';button.setAttribute('aria-label','Volume '+amount+'%');button.dataset.muted=String(amount===0);button.dataset.volumeLevel=amount>50?"high":"low";};
  const open=state=>{panel.hidden=!state;button.setAttribute('aria-expanded',String(state));if(state&&matchMedia('(max-width:760px)').matches){const rect=button.getBoundingClientRect();panel.style.left=Math.max(12,Math.min(innerWidth-180,rect.right-168))+'px';panel.style.top=rect.bottom+8+'px';}};
  button.parentElement.addEventListener('pointerenter',()=>{if(matchMedia('(min-width:761px)').matches)open(true);});
  button.parentElement.addEventListener('pointerleave',()=>{if(matchMedia('(min-width:761px)').matches&&!button.parentElement.contains(document.activeElement))open(false);});

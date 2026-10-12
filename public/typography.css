@@ -1,0 +1,5 @@
+/* Shared type scale across the instrument, marketplace and labs. */
+:root{--font-size-small:12px;--font-size-body:16px;--font-size-title:24px}
+body,input,button,select,textarea{font-size:var(--font-size-body)}
+h1,h2,h3{font-size:var(--font-size-title)}
+small{font-size:var(--font-size-small)}
