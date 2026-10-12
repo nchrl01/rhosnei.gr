@@ -1,5 +1,5 @@
 import {attachArtworkDither} from './coin-dither.js?v=276';
-import {fetchGecko} from './gecko.js?v=275';
+import {fetchGecko} from './gecko.js?v=277';
 const REFRESH_MS=30000;
 const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom',cro:'cronos'};
 const money=value=>value!=null&&value!==''&&Number.isFinite(Number(value))&&Number(value)>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(Number(value)):null;

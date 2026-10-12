@@ -1,5 +1,4 @@
 import {marketplace} from './marketplace.js';
-import {relayGecko,GeckoProvider} from './gecko.js';
 import {DurableObject} from 'cloudflare:workers';
 
 const HOUR=3600000,DAY=24*HOUR,TTL=6*HOUR;
@@ -84,7 +83,6 @@ export default {
    }catch{return json({state:'sharing-unavailable'},503,headers);}
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
-  if(url.pathname==='/gecko')return relayGecko(request,env,headers);
   if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
@@ -113,10 +111,6 @@ export class HolderCache extends DurableObject {
   this.sql.exec('CREATE TABLE IF NOT EXISTS cooldown (id INTEGER PRIMARY KEY, until_ms INTEGER)');
  }
  async fetch(request){
-  if(new URL(request.url).pathname==='/gecko'){
-   this.gecko??=new GeckoProvider(this.ctx);
-   return this.gecko.fetch(request);
-  }
   const url=new URL(request.url),network=url.searchParams.get('network'),address=url.searchParams.get('address'),key=network+':'+address;
   if(this.inflight.has(key))return json(await this.inflight.get(key));
   const pending=this.load(key,network,address);this.inflight.set(key,pending);
