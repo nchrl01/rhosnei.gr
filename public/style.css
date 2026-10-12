@@ -606,3 +606,39 @@ body{padding-bottom:0}
 :root{--navigation-row-height:44px}
 .market-header .header-main{min-height:var(--navigation-row-height)}
 @media(min-width:1101px){body{--footer-height:calc(var(--navigation-row-height) + 1px)}}
+
+/* Keep identity, transport and playback controls on a consistent rhythm. */
+@media(min-width:761px){
+ .instrument-page .instrument-top{gap:16px;margin-top:8px}
+ .instrument-page .transport{align-self:center}
+ .instrument-page .coin-title{align-items:flex-start;gap:12px}
+ .instrument-page .coin-title>.coin-avatar{width:64px;height:64px;flex:0 0 64px}
+ .instrument-page .coin-live-readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+ .instrument-page .coin-live-readings>div{min-width:0;align-content:start}
+ .instrument-page .coin-live-readings small{line-height:1.4}
+ .instrument-page .playback-speed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;max-width:none;gap:6px}
+ .instrument-page .playback-speed button{width:100%;min-width:0;flex:initial}
+ .instrument-page .readings>div{display:block}
+ .instrument-page .readings strong{display:block;margin-top:4px;text-align:left}
+}
+@media(max-width:760px){
+ .instrument-page .instrument-top{max-width:none;gap:16px;margin-bottom:16px}
+ .instrument-page .coin-context{gap:6px 12px;margin-bottom:12px;align-items:center}
+ .instrument-page .coin-context .eyebrow{min-width:0;overflow-wrap:anywhere;flex:1}
+ .instrument-page .coin-title{gap:12px 10px}
+ .instrument-page .coin-title>.audio-visualizer:not(.is-expanded){width:100%;max-width:none;height:auto!important;aspect-ratio:16/9;margin:0}
+ .instrument-page .coin-title>.visual-placeholder{width:100%;aspect-ratio:16/9}
+ .instrument-page .coin-live-readings{gap:10px;margin:0}
+ .instrument-page .coin-live-readings>div{min-width:0}
+ .instrument-page .coin-live-readings small{line-height:1.4;letter-spacing:0}
+ .instrument-page .compact-chart-toolbar{gap:8px;flex-wrap:wrap}
+ .instrument-page .replay-actions{gap:6px}
+ .instrument-page .replay-actions>button{min-height:40px;padding-inline:10px}
+ .instrument-page .playback-speed{width:100%;max-width:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+ .instrument-page .playback-speed button{width:100%;min-width:0;min-height:40px}
+ .instrument-page #market-chart{height:140px}
+ .instrument-page .tick-heading{flex-wrap:wrap;gap:4px 8px;line-height:1.4}
+ .instrument-page #tick-reading{min-width:0;overflow-wrap:anywhere}
+ .instrument-page .readings{max-width:none;gap:12px;padding-block:12px}
+ .instrument-page .transport{gap:14px}
+}
