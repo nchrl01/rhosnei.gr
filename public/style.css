@@ -601,3 +601,8 @@ body{padding-bottom:0}
 @media(min-width:1050px){
  .instrument-page main{grid-template-columns:minmax(430px,min(44%,780px)) minmax(0,1fr);column-gap:28px}
 }
+
+/* Navigation and footer share the same desktop row height. */
+:root{--navigation-row-height:44px}
+.market-header .header-main{min-height:var(--navigation-row-height)}
+@media(min-width:1101px){body{--footer-height:calc(var(--navigation-row-height) + 1px)}}
