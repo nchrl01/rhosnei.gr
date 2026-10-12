@@ -7,7 +7,7 @@ Object.assign(mime,{'.otf':'font/otf','.ttf':'font/ttf'});
 http.createServer(async(req,res)=>{
  try{
   const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
-  const file=resolve(root,'.'+(path==='/'?'/index.html':path));
+  const file=resolve(root,'.'+(path.endsWith('/')?path+'index.html':path));
   if(!file.startsWith(root+'/')){res.writeHead(403);res.end();return;}
   const data=await readFile(file);res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','X-Content-Type-Options':'nosniff','Cache-Control':'no-cache'});res.end(data);
  }catch(error){res.writeHead(error.code==='ENOENT'?404:400);res.end(error.code==='ENOENT'?'File not found':'Invalid request');}
