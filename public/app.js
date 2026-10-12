@@ -269,6 +269,7 @@ function syncLevels(m){
  $('market-cap-context').textContent=c.latestCap?cash(c.latestCap)+(m.replay?.source==='candles'?' estimated historical cap':c.capEstimated?' estimated latest cap':' snapshot market cap')+(c.impliedBaselineCap?' · typical '+cash(c.impliedBaselineCap)+' (price-based estimate)':''):'Market cap unavailable';
  $('market-context-note').textContent=m.replay?$('replay-info').textContent:!market?'Loading the highest-ranked trending market':c.historyAvailable?'Fixed 5-minute market history + latest received price. Typical cap is inferred from price using snapshot supply, not observed historical market cap. Recent moves cool over time; chart zoom and pan do not affect sound.':'Loading fixed historical context · latest observations and available provider changes drive the orchestra.';
  updateSignalMap(m);
+ document.querySelectorAll('.footer-networks [data-network]').forEach(node=>{const selected=node.dataset.network===market?.chainId;node.dataset.state=selected?(streamConnected?'active':'connecting'):'available';node.querySelector('small').textContent=selected?(streamConnected?'Active':'Connecting'):'Available';});
  updateReplayUI(m);
 }
 function setupStream(){
@@ -480,7 +481,7 @@ function display(){
  $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
  $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
- document.querySelectorAll('.footer-networks [data-network]').forEach(node=>{node.dataset.current=String(node.dataset.network===market?.chainId);});
+
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
  const exchangeMarket=isExchangeMarket(market),firstTrade=tradeEvents[0];
  const exchangeChange=firstTrade?.priceUsd>0?(currentPrice()/firstTrade.priceUsd-1)*100:null;
