@@ -533,3 +533,12 @@ html body,html body *,html body *::before,html body *::after{font-family:Unifont
 @media(max-width:760px){.site-footer{margin-inline:-20px;padding-inline:20px}}
 @media(min-width:701px) and (max-width:760px){.about-page .site-footer{margin-inline:-16px;padding-inline:16px}}
 @media(max-width:700px){.about-page .site-footer{margin-inline:-20px}}
+
+/* Compact, persistent marketplace-style utility bar. */
+body{--footer-height:40px;padding-bottom:calc(var(--footer-height) + env(safe-area-inset-bottom))}
+.site-footer,.about-page .site-footer{position:fixed;inset:auto 0 0;z-index:101;display:flex;align-items:center;justify-content:space-between;width:100%;height:calc(var(--footer-height) + env(safe-area-inset-bottom));min-height:0;margin:0;padding:0 16px env(safe-area-inset-bottom);border-top:1px solid #292929;background:#090909;font-size:11px;line-height:1.2;gap:16px}
+.site-footer nav{display:flex;align-items:center;justify-content:flex-start;flex-wrap:nowrap;gap:20px;min-width:0}
+.site-footer .footer-tools{margin-left:auto;justify-content:flex-end}
+.site-footer a{display:inline-flex;align-items:center;min-height:32px;white-space:nowrap}
+.footer-upcoming{align-items:center;white-space:nowrap;gap:6px}.footer-upcoming small{font-size:9px;color:#666}.footer-wallet svg{flex:none}
+@media(max-width:600px){body{--footer-height:64px}.site-footer,.about-page .site-footer{display:grid;grid-template-columns:minmax(0,1fr) auto;align-content:center;padding-inline:12px;gap:2px 12px;font-size:10px}.site-footer .footer-links{flex-wrap:wrap;gap:2px 14px}.site-footer .footer-tools{gap:12px}.site-footer .footer-brand{display:none}.site-footer .footer-wallet{display:flex;flex-wrap:wrap;justify-content:center;max-width:106px;gap:3px 5px}.site-footer .footer-wallet small{flex-basis:100%;text-align:center}}
