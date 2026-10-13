@@ -183,6 +183,15 @@ function coinLandmarks(key){
  if(!liveLandmarks.has(key)){liveLandmarks.set(key,createMarketLandmarks());if(liveLandmarks.size>8)liveLandmarks.delete(liveLandmarks.keys().next().value);}
  return liveLandmarks.get(key);
 }
+const liquiditySnapshotMaxAge=20000;
+function currentLiquidity(now=Date.now()){
+ if(!market)return null;
+ if(isExchangeMarket(market))return now-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null;
+ // Pool liquidity comes from the market snapshot. Once that snapshot is older
+ // than the normal freshness grace, do not let its old depth keep shaping the
+ // visual lattice or reverb.
+ return now-lastSnapshot<liquiditySnapshotMaxAge?market.liquidity?.usd:null;
+}
 function liveMetrics(){
  if(!market)return contextualizeMarket({motion:0,activity:0,balance:.5,texture:0,volume:0,fresh:0,snapshotFresh:0,snapshotAge:Infinity},{price:0,history:[],interval:1000});
  const livePrice=currentPrice(),liveCap=Number(market.marketCap)>0&&Number(market.priceUsd)>0?Number(market.marketCap)*livePrice/Number(market.priceUsd):null;
@@ -194,7 +203,7 @@ function liveMetrics(){
  const first=tradeEvents[0],last=tradeEvents.at(-1),movement=first&&last?Math.abs((last.priceQuote/first.priceQuote-1)*100):0;
  const buys=tradeEvents.filter(e=>e.side==='buy').length,knownSides=tradeEvents.filter(e=>['buy','sell'].includes(e.side)).length;
  const book=isExchangeMarket(market)&&Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook:null;
- const liquidity=isExchangeMarket(market)?book?.depth:market.liquidity?.usd;
+ const liquidity=currentLiquidity();
  const observedVolume=tradeEvents.reduce((sum,e)=>sum+(e.usdVolume||0),0);
  const rate=decoded?tradeEvents.length/30:streamConnected&&streamKind==='pool'?poolEvents.length/10:total/300;
  const volumeRate=decoded?observedVolume/30:(Number(market.volume?.m5)||0)/300;
@@ -205,7 +214,7 @@ function liveMetrics(){
  return {...contextualizeMarket(raw,{price:livePrice,moodMovement,marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(liquidity),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:book?.balance!=null||(decoded?knownSides>0:total>0),liquidity:liquidity!=null&&Number.isFinite(Number(liquidity)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
 }
 function metrics(){
- const live=liveMetrics();live.observation={liquidity:isExchangeMarket(market)?(Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null):market?.liquidity?.usd,trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
+ const live=liveMetrics();live.observation={liquidity:currentLiquidity(),trades:market?.txns?.m5,change:market?.priceChange?.m5,volume:market?.volume?.m5};
  if(market)replay.record(live,currentPrice());
  const ended=replay.advance(chart.renderedBars||[],chart.interval,playing&&ctx?.state==='running');
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
@@ -259,7 +268,7 @@ function syncLevels(m){
  $('volume').textContent=m.replay?cash(m.replay.volume):market?cash(m.decoded?m.observedVolume:market.volume?.m5):'—';
  $('volume-window').textContent=m.replay?'REPLAY USD VOLUME':m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
  $('signal-source').textContent=isExchangeMarket(market)?'Public exchange trades / observed 30 sec; depth is top 25 book levels within 1% of midpoint, not pool liquidity. Market cap is unavailable.'+(market.dexId==='coinbaseexchange'?' Coinbase depth uses public 5-second snapshots.':'')+(market.quoteApproximate?' '+market.quoteToken.symbol+' is used as a USD proxy.':''):m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll','exchange'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Loading the highest-ranked trending market';
- if(market&&m.snapshotAge>20000)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity held at last value'+(m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
+ if(market&&m.snapshotAge>liquiditySnapshotMaxAge)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity unavailable until a fresh snapshot arrives'+(m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
  const c=m.context;
  $('market-pressure').textContent=Math.round(m.pressure*100)+'%';
  $('market-baseline').textContent=c.ratio?c.ratio.toFixed(2)+'× typical loaded price':'History context pending';
@@ -488,9 +497,10 @@ function display(){
  const tx=historical?recorded?historical.observation?.trades:null:market?.txns?.m5;
  $('trades').textContent=!historical&&exchangeMarket?tradeEvents.length:tx?(tx.buys||0)+(tx.sells||0):'—';
  $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':exchangeMarket?'TRADES · OBSERVED 30 SEC':'TRADES · 5 MIN';
- const liquidity=historical?historical.observation?.liquidity:exchangeMarket?(Date.now()-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null):market?.liquidity?.usd;
- $('liquidity-label').textContent=exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY';
- $('liquidity').textContent=liquidity!=null?cash(liquidity):'—';
+ const liquidity=historical?historical.observation?.liquidity:currentLiquidity();
+ const liquidityAvailable=liquidity!=null&&Number.isFinite(Number(liquidity));
+ $('liquidity-label').textContent=(exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY')+(liquidityAvailable?'':' · UNAVAILABLE');
+ $('liquidity').textContent=liquidityAvailable?cash(liquidity):'Unavailable';
  updateContext();
 }
 function updateContext(){
