@@ -6,7 +6,7 @@ export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,bar.observedTh
 export function createMarketReplay(){
  const recordings=new Map(),archives=new Map();let key='demo';
  function archive(){if(!archives.has(key))archives.set(key,{controls:new Map(),scores:new Map()});return archives.get(key);}
- const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null};
+ const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,jumpHold:null,ended:false,frozen:null};
  function frames(){return recordings.get(key)||[];}
  return {
   state,
@@ -23,9 +23,9 @@ export function createMarketReplay(){
    rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,path:[]}})});
    if(rows.length>3600)rows.shift();recordings.set(key,rows);
   },
-  seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.ended=false;state.controls=null;},
-  release(){state.dragging=false;state.clock=performance.now();},
-  live(){Object.assign(state,{active:false,cursor:null,dragging:false,clock:null,source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null});},
+  seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.jumpHold=null;state.ended=false;state.controls=null;},
+  release(){state.dragging=false;state.clock=performance.now();state.jumpHold=null;},
+  live(){Object.assign(state,{active:false,cursor:null,dragging:false,clock:null,source:null,price:null,bar:null,controls:null,endHold:null,jumpHold:null,ended:false,frozen:null});},
   advance(bars,interval,running,now=performance.now()){
    if(state.frozen){bars=state.frozen.bars;interval=state.frozen.interval;}
    if(!state.active||!bars.length)return false;
@@ -37,12 +37,19 @@ export function createMarketReplay(){
    const end=candleEnd(bars.at(-1),interval);
    if(state.speed==='jump'&&running&&!state.dragging){
     const current=bars.findLast(bar=>candleEnd(bar,interval)<=state.cursor);
-    const active=bar=>Number(bar.volume)>0||(bar.volume==null&&Number(bar.open)>0&&Math.abs(Number(bar.close)/Number(bar.open)-1)>1e-7);
-    if(!current||!active(current)){
-     const next=bars.find(bar=>candleEnd(bar,interval)>state.cursor&&active(bar));
-     state.cursor=next?candleEnd(next,interval):end;state.controls=null;
+    // Historical market cap is estimated from each candle's price and the
+    // loaded snapshot. Jump visits only the 20% cap landmarks in that score.
+    const capChange=bar=>Boolean(state.score?.frames.get(bar.time)?.music?.movement?.event);
+    if(!current||!capChange(current)){
+     const next=bars.find(bar=>candleEnd(bar,interval)>state.cursor&&capChange(bar));
+     state.cursor=next?candleEnd(next,interval):end;state.controls=null;state.jumpHold=now;
+    }else if(state.jumpHold==null){
+     state.jumpHold=now;
+    }else if(now-state.jumpHold>=1000){
+     const next=bars.find(bar=>candleEnd(bar,interval)>candleEnd(current,interval)&&capChange(bar));
+     state.cursor=next?candleEnd(next,interval):end;state.controls=null;state.jumpHold=now;
     }
-   }
+   }else state.jumpHold=null;
    if(state.cursor>=end){state.cursor=end;if(!running||state.dragging){state.endHold=null;return false;}state.endHold??=now;if(now-state.endHold>=1000){state.ended=true;return true;}return false;}
    state.endHold=null;
    return false;
