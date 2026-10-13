@@ -499,7 +499,7 @@ function display(){
  $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':exchangeMarket?'TRADES · OBSERVED 30 SEC':'TRADES · 5 MIN';
  const liquidity=historical?historical.observation?.liquidity:currentLiquidity();
  const liquidityAvailable=liquidity!=null&&Number.isFinite(Number(liquidity));
- $('liquidity-label').textContent=(exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY')+(liquidityAvailable?'':' · UNAVAILABLE');
+ $('liquidity-label').textContent=exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY';
  $('liquidity').textContent=liquidityAvailable?cash(liquidity):'Unavailable';
  updateContext();
 }
