@@ -37,20 +37,15 @@ export function createMarketReplay(){
    const end=candleEnd(bars.at(-1),interval);
    if(state.speed==='jump'&&running&&!state.dragging){
     const current=bars.findLast(bar=>candleEnd(bar,interval)<=state.cursor);
-    // Historical market cap is estimated from each candle's price and the
-    // loaded snapshot. Jump visits every candle where that estimate changes.
+    // Estimated cap follows candle close price. Compare prices directly so
+    // missing snapshot cap cannot make every historical change disappear.
     const capChange=bar=>{
-     const index=bars.indexOf(bar),cap=Number(state.score?.frames.get(bar.time)?.cap);
-     const previous=Number(index>0?state.score?.frames.get(bars[index-1].time)?.cap:null);
-     return index>0&&cap>0&&previous>0&&cap!==previous;
+     const index=bars.indexOf(bar),price=Number(bar.close);
+     const previous=Number(index>0?bars[index-1].close:bar.open);
+     return price>0&&previous>0&&Number.isFinite(price)&&Number.isFinite(previous)&&price!==previous;
     };
     if(!current||!capChange(current)){
      const next=bars.find(bar=>candleEnd(bar,interval)>state.cursor&&capChange(bar));
-     state.cursor=next?candleEnd(next,interval):end;state.controls=null;state.jumpHold=now;
-    }else if(state.jumpHold==null){
-     state.jumpHold=now;
-    }else if(now-state.jumpHold>=1000){
-     const next=bars.find(bar=>candleEnd(bar,interval)>candleEnd(current,interval)&&capChange(bar));
      state.cursor=next?candleEnd(next,interval):end;state.controls=null;state.jumpHold=now;
     }
    }else state.jumpHold=null;
