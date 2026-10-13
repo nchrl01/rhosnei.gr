@@ -38,8 +38,12 @@ export function createMarketReplay(){
    if(state.speed==='jump'&&running&&!state.dragging){
     const current=bars.findLast(bar=>candleEnd(bar,interval)<=state.cursor);
     // Historical market cap is estimated from each candle's price and the
-    // loaded snapshot. Jump visits only the 20% cap landmarks in that score.
-    const capChange=bar=>Boolean(state.score?.frames.get(bar.time)?.music?.movement?.event);
+    // loaded snapshot. Jump visits every candle where that estimate changes.
+    const capChange=bar=>{
+     const index=bars.indexOf(bar),cap=Number(state.score?.frames.get(bar.time)?.cap);
+     const previous=Number(index>0?state.score?.frames.get(bars[index-1].time)?.cap:null);
+     return index>0&&cap>0&&previous>0&&cap!==previous;
+    };
     if(!current||!capChange(current)){
      const next=bars.find(bar=>candleEnd(bar,interval)>state.cursor&&capChange(bar));
      state.cursor=next?candleEnd(next,interval):end;state.controls=null;state.jumpHold=now;
