@@ -1,9 +1,9 @@
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
-import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-2';
-import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-2';
-import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-2';
+import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-3';
+import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-3';
+import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-3';
 import {preparePixelIdentity,samplePixelIdentity} from './pixel-identity.js?v=276';
-import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-2';
+import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-3';
 const fract=x=>x-Math.floor(x),mix=(a,b,t)=>a+(b-a)*t,clamp=x=>Math.max(0,Math.min(1,x));
 const hash=n=>fract(Math.sin(n)*43758.5453),fade=x=>x*x*x*(x*(x*6-15)+10);
 const b2=(x,y)=>fract(Math.floor(x)/2+Math.floor(y)**2*.75);
@@ -63,7 +63,7 @@ export function createEarthboundRenderer(host){
  function cpu(w,h,time,seed,inputs,identity,color,reduced,pixelPresence,inkColor){
   if(!ctx)return;
   ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
-  const frame=earthboundFrame(inputs.coinKey,time),offset=(seed%65521)/65521*173.6,guide=new Float32Array(5),side=.82*Math.min(w,h);
+  const frame=earthboundFrame(inputs.coinKey,time),offset=(seed%65521)/65521*173.6,guide=new Float32Array(5),side=(.28+.36*identity)*Math.min(w,h);
   const flow=(.028-.014*identity)*(reduced?0:.3),phase=time*.65+offset*.013;
   const palette=(mask?.palette||[[1,1,1],[1,1,1]]).map(c=>'rgb('+c.map(v=>Math.round(255*inkColor*mix(1,v,color))).join(',')+')');
   for(const m of layout.marks){
@@ -106,7 +106,7 @@ export function createEarthboundRenderer(host){
    else{
     gl.useProgram(program);gl.viewport(0,0,w,h);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);
-    Object.assign(uniforms,{uIdentityImage:0,uPixelPresence:pixelPresence,uInkColor:inkColor,uResolution:[w,h],uCanvasScale:[1,1],uIdentity:identity,uIdentityMotion:reducedMotion?0:.3,uTime:time,uSeed:(seed%65521)/65521*173.6,uArtworkColor:artworkColor,uArtworkColorA:mask?.palette[0]||[1,1,1],uArtworkColorB:mask?.palette[1]||[1,1,1]});
+    Object.assign(uniforms,{uIdentityImage:0,uImageSide:(.28+.36*identity)*Math.min(w,h),uPixelPresence:pixelPresence,uInkColor:inkColor,uResolution:[w,h],uCanvasScale:[1,1],uIdentity:identity,uIdentityMotion:reducedMotion?0:.3,uTime:time,uSeed:(seed%65521)/65521*173.6,uArtworkColor:artworkColor,uArtworkColorA:mask?.palette[0]||[1,1,1],uArtworkColorB:mask?.palette[1]||[1,1,1]});
     bindEarthboundUniforms({uniforms},{time,inputs,settings:{mode:'earthbound'}});
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
     for(const [index,size,offset]of [[0,2,0],[1,2,2],[2,1,4],[3,2,5]]){gl.enableVertexAttribArray(index);gl.vertexAttribPointer(index,size,gl.FLOAT,false,28,offset*4);}

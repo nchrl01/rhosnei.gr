@@ -1,8 +1,8 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-2';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-3';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
-import {normalizeIdentity} from './upic-identity.js?v=earthbound-2';
+import {normalizeIdentity} from './upic-identity.js?v=earthbound-3';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
 // the legacy audio/metadata-driven visual parameter path.
@@ -52,13 +52,18 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let staleElapsed=0,colorElapsed=0,last=0,lastRender=0,raf=0,closed=false,visible=true,width=0,height=0,sourceCursor=null;
  let sourceValue=null,sourceAt=0,imageCoinKey='';
  function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderer.clear();}
- function size(){const box=canvas.getBoundingClientRect();width=Math.max(0,Math.round(box.width));height=Math.max(0,Math.round(box.height));}
+ function size(){
+  const form=document.getElementById('coin-form');
+  const top=mobile.matches?0:Math.max(0,Math.round((form?.getBoundingClientRect().top??0)+scrollY-(parseFloat(getComputedStyle(form||host).marginTop)||0)+(parseFloat(getComputedStyle(host).marginTop)||0)));
+  host.style.setProperty('--visual-top',top+'px');
+  host.style.setProperty('--visual-height',Math.max(180,Math.round(mobile.matches?innerHeight*.56:innerHeight-top))+'px');
+  const box=canvas.getBoundingClientRect();width=Math.max(0,Math.round(box.width));height=Math.max(0,Math.round(box.height));}
  function arrange(){
   const title=document.querySelector('.coin-title');
   if(!host.classList.contains('is-expanded')){if(mobile.matches&&title){if(host.parentElement!==title)title.prepend(host);}else anchor.parentNode?.insertBefore(host,anchor);}
   size();
  }
- const resize=new ResizeObserver(size);resize.observe(host);
+ const resize=new ResizeObserver(size);resize.observe(host);const header=document.querySelector('.market-header');if(header)resize.observe(header);
  const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting??true;last=0;}):null;observer?.observe(host);
  const visibility=()=>{last=0;size();};
  mobile.addEventListener('change',arrange);window.addEventListener('resize',size);document.addEventListener('visibilitychange',visibility);arrange();
