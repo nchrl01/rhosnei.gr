@@ -1,9 +1,9 @@
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
-import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-4';
-import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-4';
-import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-4';
+import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-5';
+import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-5';
+import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-5';
 import {preparePixelIdentity,samplePixelIdentity} from './pixel-identity.js?v=276';
-import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-4';
+import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-5';
 const fract=x=>x-Math.floor(x),mix=(a,b,t)=>a+(b-a)*t,clamp=x=>Math.max(0,Math.min(1,x));
 const hash=n=>fract(Math.sin(n)*43758.5453),fade=x=>x*x*x*(x*(x*6-15)+10);
 const b2=(x,y)=>fract(Math.floor(x)/2+Math.floor(y)**2*.75);
@@ -57,7 +57,13 @@ export function createEarthboundRenderer(host){
   Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
   if(useSoftware)return;
   const data=new Float32Array(layout.marks.length*42),corners=[[-.5,-.5],[.5,-.5],[-.5,.5],[-.5,.5],[.5,-.5],[.5,.5]];let at=0;
-  for(const mark of layout.marks)for(const [x,y]of corners){data.set([mark.x+x*mark.diameter,mark.y+y*mark.diameter,mark.x,mark.y,mark.diameter,mark.column,mark.row],at);at+=7;}
+  for(const mark of layout.marks){
+   // Match earthboundMark's pixel-aligned origin. After edge shrink, the
+   // reserved centre and final diameter can have opposite parity; unsnapped
+   // quads then cut off the shape's last pixel row or column.
+   const left=Math.floor(mark.x-mark.diameter/2+.5),bottom=Math.floor(mark.y-mark.diameter/2+.5);
+   for(const [x,y]of corners){data.set([left+(x+.5)*mark.diameter,bottom+(y+.5)*mark.diameter,mark.x,mark.y,mark.diameter,mark.column,mark.row],at);at+=7;}
+  }
   gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);vertexCount=data.length/7;
  }
  function cpu(w,h,time,seed,inputs,identity,color,reduced,pixelPresence,inkColor){
