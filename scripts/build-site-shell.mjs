@@ -7,7 +7,7 @@ import path from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const publicRoot = path.join(root, 'public');
 const partialRoot = path.join(root, 'src/site');
-const version = 289;
+const version = 290;
 const pages = [
   { file: 'index.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
   { file: 'about.html', type: 'public', active: 'about', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },

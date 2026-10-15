@@ -1,6 +1,6 @@
 import {pixelIdentityGLSL} from './pixel-identity.js?v=276';
-import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-3';
-const guideGLSL=pixelIdentityGLSL.replace(/\btexture\(/g,'texture2D(').replace('float side=.82*min(viewSize.x,viewSize.y);','float side=uImageSide;');
+import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-4';
+const guideGLSL=pixelIdentityGLSL.replace(/\btexture\(/g,'texture2D(').replace('float side=.82*min(viewSize.x,viewSize.y);','vec2 side=uImageSize;');
 export const markVertex=`
 precision highp float;
 attribute vec2 position;
@@ -18,7 +18,7 @@ void main(){
 export const fragment=`
 precision highp float;
 uniform sampler2D uIdentityImage;
-uniform float uImageSide;
+uniform vec2 uImageSize;
 uniform vec2 uResolution;
 uniform vec2 uCanvasScale;
 uniform float uIdentity;
@@ -49,7 +49,7 @@ void main(){
   vec4 imageGuide=vec4(0.);
   float imagePalette=-1.;
   if(uIdentity>0.||uArtworkColor>0.)imageGuide=identityGuide(squarePoint,imagePalette);
-  vec2 samplePoint=squarePoint+imageGuide.ba*uIdentity*.045*uImageSide;
+  vec2 samplePoint=squarePoint+imageGuide.ba*uIdentity*.045*uImageSize;
   float feed=.5;
   if(uFieldMode>.5)feed=earthboundFeed(samplePoint/uResolution.y,feed);
   // These occupancy and Bayer formulas are the current UPIC renderer's.
