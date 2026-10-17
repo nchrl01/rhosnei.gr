@@ -5,8 +5,8 @@ import path from 'node:path';
 // This is a static rendering step. Published pages need no template fetch or
 // client-side shell mount; application startup can query its controls directly.
 const root = fileURLToPath(new URL('../', import.meta.url));
-const publicRoot = path.join(root, 'apps/web/public');
-const partialRoot = path.join(root, 'apps/web/legacy/site');
+const publicRoot = path.join(root, 'public');
+const partialRoot = path.join(root, 'src/site');
 const version = 287;
 const pages = [
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },

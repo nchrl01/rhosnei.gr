@@ -1,0 +1,21 @@
+Earthbound visual port — 2026-10-16
+
+Main UPIC instrument now uses the Earthbound study renderer, with both layers,
+contract/chain identity, mathematical motifs capped at two repetitions, and
+WebGL plus Canvas fallback. Legacy lab renderers remain available.
+
+Market cap controls minimum empty spacing and irregular edge shrink.
+Liquidity controls nominal mark size. Observed per-wallet percentages from
+current holder cluster snapshots control relative size, sampled up to 128
+wallets. These samples are not claimed to cover all holders. Missing balances
+use equal nominal sizes; missing liquidity uses a neutral size. Historical
+replay does not borrow today's holder balances.
+
+Rising prices use +, falling prices use x, unchanged prices use circles.
+Audio gain, meters, notes, and pulses have no visual effect. Transport pauses motion and retains the original dim, sparse resting field,
+with the original fast Play return and market-cap-scaled Pause release. Native UPIC image contour guidance spans $10M to $50M.
+Artwork colour adaptation and declining feed presence update once per second.
+
+No synthetic test data or study sliders are included in the production path.
+Source integration reviewed; build, runtime and browser tests were not run.
+Deployment is handled by the existing GitHub Pages workflow.
