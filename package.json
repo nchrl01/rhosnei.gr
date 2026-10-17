@@ -3,10 +3,29 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node scripts/build-site-shell.mjs && node server.mjs",
+    "start": "npm run dev:web",
     "build:site": "node scripts/build-site-shell.mjs",
     "build:ccxt": "node scripts/build-ccxt.mjs",
-    "build:ui": "node scripts/build-ui.mjs"
+    "build:ui": "node scripts/build-ui.mjs",
+    "dev:web": "npm run dev -w @upic/web",
+    "dev:api": "npm run dev -w @upic/api",
+    "build": "npm run build:site && npm run build -w @upic/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "infra:up": "docker compose -f infra/compose.yml up -d postgres postgrest anvil ipfs fixtures",
+    "infra:down": "docker compose -f infra/compose.yml down",
+    "db:migrate": "node infra/migrate.mjs",
+    "renderer": "npm run start -w @upic/renderer",
+    "contracts:test": "cd contracts && forge test",
+    "contracts:deploy:local": "node infra/deploy-local.mjs",
+    "contracts:deploy:testnet": "cd contracts && forge script script/Deploy.s.sol:Deploy --rpc-url \"$RH_RPC_URL\" --broadcast",
+    "contracts:abi": "node scripts/export-contracts.mjs",
+    "start:legacy": "node scripts/build-site-shell.mjs && node server.mjs",
+    "renderer:bundle": "esbuild apps/renderer/src/browser.ts --bundle --platform=browser --outfile=apps/renderer/dist/renderer.js",
+    "local:setup": "node infra/local-setup.mjs",
+    "local:onboard": "node infra/onboard-fixture.mjs",
+    "local:tick": "node infra/tick-local.mjs --fixture",
+    "test:lifecycle": "node --experimental-strip-types scripts/platform-lifecycle.ts"
   },
   "dependencies": {
     "@reown/appkit": "^1.8.24",
@@ -19,6 +38,16 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "esbuild": "0.28.2"
-  }
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "vitest": "^3.2.4",
+    "@openzeppelin/contracts": "5.4.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
 }

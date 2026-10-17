@@ -2,7 +2,7 @@
    Uses FluidSynth's SoundFont synthesis before baking notes. No synth/model runtime is shipped to the browser. */
 const fs=require('node:fs'),path=require('node:path');
 const pkg=path.resolve(process.argv[2]),JSSynth=require(pkg),fluid=require(path.join(pkg,'externals/libfluidsynth-2.4.6.js'));
-const dest=path.resolve(__dirname,'../public/samples/generaluser');fs.mkdirSync(dest,{recursive:true});
+const dest=path.resolve(__dirname,'../apps/web/public/samples/generaluser');fs.mkdirSync(dest,{recursive:true});
 const presets=[[13,8,81,'Doctor Solo'],[23,0,48,'Fast Strings'],[24,0,49,'Slow Strings'],[30,0,73,'Flute'],[31,0,78,'Whistle'],[34,8,80,'Sine Wave'],[35,8,80,'Sine Wave'],[36,0,80,'Square Lead'],[37,0,81,'Saw Lead'],[139,0,99,'Atmosphere'],[147,0,50,'Synth Strings 1'],[169,0,16,'Tonewheel Organ']];
 JSSynth.Synthesizer.initializeWithFluidSynthModule(fluid);
 (async()=>{

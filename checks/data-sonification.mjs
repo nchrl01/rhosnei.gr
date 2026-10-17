@@ -2,7 +2,7 @@
 // No browser, GUI, microphone, speakers or audio device is opened.
 import assert from 'node:assert/strict';
 import {createEnvionHarness} from './envion.mjs';
-import {createDataSonification} from '../public/data-sonification.js';
+import {createDataSonification} from '../apps/web/public/data-sonification.js';
 const entry='orchestra/check-data.pd';
 const source=`#N canvas 0 0 800 600 12;
 #X obj 20 20 av-conductor;

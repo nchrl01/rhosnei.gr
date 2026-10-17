@@ -1,0 +1,19 @@
+ADMIN_TOKEN=replace-with-a-random-secret-at-least-32-characters
+RENDERER_TOKEN=replace-with-a-different-random-secret-at-least-32-characters
+SESSION_SECRET=replace-with-a-different-random-secret-at-least-32-characters
+POSTGREST_TOKEN=local-service-role-jwt-from-infra-setup
+RH_RPC_URL=http://127.0.0.1:8545
+DEPLOYMENT_JSON={}
+# Keys must match the signers in the deployment. Never use real-money wallets.
+MINT_PRIVATE_KEY=
+VERIFIER_PRIVATE_KEY=
+RELAYER_PRIVATE_KEY=
+OKX_API_KEY=
+OKX_SECRET=
+OKX_PASSPHRASE=
+SOURCE_RPC_JSON={}
+# Example: {"ethereum":["https://provider-a.example","https://provider-b.example"]}
+PINATA_JWT=
+PINATA_GATEWAY=http://127.0.0.1:8080
+IPFS_API=http://127.0.0.1:5001
+PUBLIC_APP_URL=http://localhost:5173

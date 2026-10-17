@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {createMusicContext,unlockPlayback,stopLegacyPlayback} from '../public/audio-unlock.js';
+import {createMusicContext,unlockPlayback,stopLegacyPlayback} from '../apps/web/public/audio-unlock.js';
 let steps=[],constructed,playCount=0,pauseCount=0;
 Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:'iPhone',audioSession:{type:'auto'}}});
 class Context{

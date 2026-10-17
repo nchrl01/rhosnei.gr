@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
-import {ENVION_CONTROLS,ENVION_FIXED} from './public/envion-market.js';
-import {buildPerformanceCatalog,CHANCE_LABELS} from './public/envion-performance.js';
-const root=new URL('./public/patches/envion/',import.meta.url);
+import {ENVION_CONTROLS,ENVION_FIXED} from './apps/web/public/envion-market.js';
+import {buildPerformanceCatalog,CHANCE_LABELS} from './apps/web/public/envion-performance.js';
+const root=new URL('./apps/web/public/patches/envion/',import.meta.url);
 const model=JSON.parse(await fs.readFile(new URL('model.json',root),'utf8'));
 const {banks}=JSON.parse(await fs.readFile(new URL('performance-catalog.json',root),'utf8'));
 const catalog=buildPerformanceCatalog(model,banks),controls=[];

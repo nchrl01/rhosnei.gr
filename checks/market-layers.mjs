@@ -1,7 +1,7 @@
 // Validate the active host graph, rather than deleted legacy instruments.
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
-const base=new URL('../public/patches/orchestra/',import.meta.url);
+const base=new URL('../apps/web/public/patches/orchestra/',import.meta.url);
 const manifest=JSON.parse(await fs.readFile(new URL('manifest.json',base),'utf8'));
 for(const removed of ['av-hardstyle.pd','av-holder-drone.pd','av-strings.pd','av-zero100.pd'])assert.ok(!manifest.files.includes(removed),'Removed source is absent: '+removed);
 for(const name of manifest.files){

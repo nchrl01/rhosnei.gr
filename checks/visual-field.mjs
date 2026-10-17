@@ -2,7 +2,7 @@ import {fileURLToPath} from 'node:url';
 import {tmpdir} from 'node:os';
 const {chromium,webkit}=await import(process.env.AV_PLAYWRIGHT_MODULE||'playwright');
 import http from 'node:http';import fs from 'node:fs/promises';import path from 'node:path';import assert from 'node:assert/strict';
-const root=fileURLToPath(new URL('../public/',import.meta.url));
+const root=fileURLToPath(new URL('../apps/web/public/',import.meta.url));
 const fixture=`<!doctype html><html><head><link rel="stylesheet" href="/style.css"></head><body><main><aside class="audio-visualizer"><canvas id="audio-dots"></canvas></aside></main><script type="module">
 import {createAudioDots} from '/audio-dots.js';
 let playing=true;const audio={context:{state:'running'}};

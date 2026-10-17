@@ -37,5 +37,5 @@ for path in files:
    fallback.update(intervals)
    for a,b,c in zip(intervals,intervals[1:],intervals[2:]):transitions[f'{a},{b}'][c]+=1
 model={'version':1,'notes':note_count,'sources':[p.name for p in files],'fallback':sorted(fallback.items()),'transitions':{k:sorted(v.items()) for k,v in sorted(transitions.items())}}
-(root/'public/motif-model.js').write_text('// Second-order interval counts. See native/music-training/SOURCES.txt.\nexport const MOTIF_MODEL='+json.dumps(model,separators=(',',':'))+';\n')
+(root/'apps/web/public/motif-model.js').write_text('// Second-order interval counts. See native/music-training/SOURCES.txt.\nexport const MOTIF_MODEL='+json.dumps(model,separators=(',',':'))+';\n')
 print('Trained',note_count,'note onsets into',len(transitions),'interval contexts')

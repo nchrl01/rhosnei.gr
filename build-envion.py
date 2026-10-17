@@ -3,7 +3,7 @@ from pathlib import Path
 import re,json,hashlib,shutil,struct
 BASE=Path(__file__).resolve().parent
 SOURCE=Path('/Users/nikoscharalampous/Downloads/envion-main')
-DEST=BASE/'public/patches/envion'
+DEST=BASE/'apps/web/public/patches/envion'
 DEST.mkdir(parents=True,exist_ok=True)
 original=SOURCE/'___ Envion_v5.2_Plugdata.pd'
 if not original.exists():

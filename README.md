@@ -50,7 +50,13 @@ browser must download them to run the site.
 - `native/` — standalone ENVION and browser MusicRNN build sources
 - `scripts/` — static shell and asset build helpers
 - `src/site/` — shared header and footer templates
-- `cloudflare/` — optional InsightX data worker
+- `cloudflare/` — optional InsightX worker and the market backend foundation
+- `supabase/` — market observation database migration
+
+The new market backend uses server-side GeckoTerminal/CoinGecko access and
+Supabase storage, with optional QuickNode block context. See
+[its setup guide](cloudflare/market/README.md). It can start with free development
+access; NFT minting and permanent milestone verification are subsequent stages.
 
 Third-party license and attribution notices remain with their corresponding
 assets and libraries.

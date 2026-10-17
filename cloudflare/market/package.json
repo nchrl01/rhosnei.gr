@@ -1,0 +1,7 @@
+{
+  "name": "upic-market",
+  "private": true,
+  "type": "module",
+  "scripts": { "typecheck": "tsc --noEmit" },
+  "devDependencies": { "typescript": "5.9.3", "wrangler": "4.76.0" }
+}

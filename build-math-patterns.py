@@ -11,7 +11,7 @@ BASE = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE / 'scripts'))
 import pd_patch
 
-pd_patch.ROOT = BASE / 'public' / 'patches' / 'orchestra'
+pd_patch.ROOT = BASE / 'apps/web/public' / 'patches' / 'orchestra'
 pd_patch.ROOT.mkdir(parents=True, exist_ok=True)
 
 

@@ -1,9 +1,9 @@
 import {build} from 'esbuild';
 import {mkdir,copyFile,readFile,writeFile} from 'node:fs/promises';
-const out='public/vendor/ui';
+const out='apps/web/public/vendor/ui';
 await mkdir(out,{recursive:true});
-await build({entryPoints:['src/ui/interface.jsx'],outfile:out+'/upic-ui.js',bundle:true,format:'esm',platform:'browser',target:['safari16','chrome110','firefox115'],jsx:'automatic',minify:true,legalComments:'eof',define:{'process.env.NODE_ENV':'"production"'}});
-await copyFile('src/ui/reactbits/LICENSE.md',out+'/REACT-BITS-LICENSE.md');
+await build({entryPoints:['apps/web/legacy/ui/interface.jsx'],outfile:out+'/upic-ui.js',bundle:true,format:'esm',platform:'browser',target:['safari16','chrome110','firefox115'],jsx:'automatic',minify:true,legalComments:'eof',define:{'process.env.NODE_ENV':'"production"'}});
+await copyFile('apps/web/legacy/ui/reactbits/LICENSE.md',out+'/REACT-BITS-LICENSE.md');
 const licenses=[];
 for(const pkg of ['react','react-dom','scheduler','motion','framer-motion','motion-dom','motion-utils','tslib']){
  const manifest=JSON.parse(await readFile('node_modules/'+pkg+'/package.json','utf8'));

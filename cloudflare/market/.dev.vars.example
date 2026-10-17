@@ -1,0 +1,9 @@
+# Copy to .dev.vars locally. Never put these values in public/ or commit secrets.
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_SECRET_KEY=YOUR_SERVER_ONLY_SECRET_OR_LEGACY_SERVICE_ROLE_KEY
+ADMIN_TOKEN=REPLACE_WITH_A_RANDOM_SECRET_AT_LEAST_32_CHARACTERS
+# Required only when MARKET_PROVIDER=coingecko-pro or coingecko-demo.
+COINGECKO_API_KEY=
+# Optional JSON map. Use complete HTTPS URLs from your QuickNode dashboard.
+# HyperEVM uses /nanoreth for historical reads. Tron uses its HTTP API route.
+QUICKNODE_RPC_URLS={}

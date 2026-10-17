@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {MATH_FAMILIES,mathIdentity,createMathPatterns} from '../public/math-patterns.js';
+import {MATH_FAMILIES,mathIdentity,createMathPatterns} from '../apps/web/public/math-patterns.js';
 import {createEnvionHarness} from './envion.mjs';
 const byId=new Map(MATH_FAMILIES.map(p=>[p.id,p]));
 const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-8,`${actual} != ${expected}`);

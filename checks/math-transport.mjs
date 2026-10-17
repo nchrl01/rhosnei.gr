@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {createMathPatterns,mathIdentity,MATH_THRESHOLDS} from '../public/math-patterns.js';
-import {rankCoinMatches} from '../public/coin-search.js';
+import {createMathPatterns,mathIdentity,MATH_THRESHOLDS} from '../apps/web/public/math-patterns.js';
+import {rankCoinMatches} from '../apps/web/public/coin-search.js';
 for(let seed=0;seed<1000;seed++){const chosen=mathIdentity(seed);assert.equal(chosen.length,5);assert.equal(new Set(chosen.map(p=>p.id)).size,5);assert.deepEqual(chosen.map(p=>p.threshold),MATH_THRESHOLDS);}
 const market=cap=>({context:{latestCap:cap},fresh:1,music:{intensity:.8,tempo:120},replay:{}});
 let sent=new Map();const patterns=createMathPatterns({send:(key,value)=>sent.set(key,value)});patterns.setSeed(91);

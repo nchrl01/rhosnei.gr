@@ -1,0 +1,43 @@
+name: upic
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment: {POSTGRES_DB: upic, POSTGRES_USER: upic, POSTGRES_PASSWORD: local-upic-only}
+    ports: ["127.0.0.1:54322:5432"]
+    volumes: ["postgres:/var/lib/postgresql/data", "./bootstrap.sql:/docker-entrypoint-initdb.d/001-bootstrap.sql:ro"]
+    healthcheck: {test: [CMD-SHELL, "pg_isready -U upic"], interval: 3s, timeout: 3s, retries: 20}
+  postgrest:
+    image: postgrest/postgrest:v13.0.7
+    depends_on: {postgres: {condition: service_healthy}}
+    environment:
+      PGRST_DB_URI: postgres://upic:local-upic-only@postgres:5432/upic
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: local-development-secret-only-at-least-32-characters
+      PGRST_SERVER_PORT: 3000
+    ports: ["127.0.0.1:54321:3000"]
+  anvil:
+    image: ghcr.io/foundry-rs/foundry:stable
+    entrypoint: ["anvil", "--host", "0.0.0.0", "--chain-id", "31337"]
+    ports: ["127.0.0.1:8545:8545"]
+  fixtures:
+    image: node:22-bookworm-slim
+    working_dir: /repo
+    command: [node, infra/fixtures.mjs]
+    volumes: ["..:/repo:ro"]
+    ports: ["127.0.0.1:3890:3890", "127.0.0.1:3891:3891"]
+  ipfs:
+    image: ipfs/kubo:v0.38.2
+    ports: ["127.0.0.1:5001:5001", "127.0.0.1:8080:8080"]
+    volumes: ["ipfs:/data/ipfs"]
+  renderer:
+    profiles: [media]
+    build: {context: .., dockerfile: apps/renderer/Dockerfile}
+    env_file: [{path: .env.renderer, required: false}]
+    environment: {UPIC_API_URL: "http://host.docker.internal:8787", IPFS_API: "http://ipfs:5001"}
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    volumes: ["../artifacts:/artifacts"]
+    depends_on: [ipfs]
+volumes:
+  postgres:
+  ipfs:

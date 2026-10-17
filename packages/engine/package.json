@@ -1,0 +1,14 @@
+{
+  "name": "@upic/engine",
+  "exports": "./src/index.ts",
+  "dependencies": {
+    "@upic/domain": "*"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "version": "0.1.0",
+  "private": true,
+  "type": "module"
+}

@@ -6,9 +6,9 @@ import os from 'node:os';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import assert from 'node:assert/strict';
 import {performance} from 'node:perf_hooks';
-import {createPd} from '../public/vendor/libpd-wasm.js';
-import {decodePdBytes,decodeWave,applyEnvionMarket} from '../public/envion.js';
-const PUBLIC=new URL('../public/',import.meta.url),ROOT='orchestra/envion/';
+import {createPd} from '../apps/web/public/vendor/libpd-wasm.js';
+import {decodePdBytes,decodeWave,applyEnvionMarket} from '../apps/web/public/envion.js';
+const PUBLIC=new URL('../apps/web/public/',import.meta.url),ROOT='orchestra/envion/';
 export async function createEnvionHarness({sampleRate=44100,entry,extraFiles={}}={}) {
  const events=[],requests=[],times=[];let Processor,nodePort,namespace=0,pd;
  const context=vm.createContext({console,performance,TextDecoder,TextEncoder,setTimeout,clearTimeout,sampleRate,

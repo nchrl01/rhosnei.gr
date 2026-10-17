@@ -7,7 +7,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const {chromium}=await import(process.env.AV_PLAYWRIGHT_MODULE||'playwright');
-const root=fileURLToPath(new URL('../public/',import.meta.url)),cap=Number(process.argv[2])||1e6,mode=process.argv[3]||'normal';
+const root=fileURLToPath(new URL('../apps/web/public/',import.meta.url)),cap=Number(process.argv[2])||1e6,mode=process.argv[3]||'normal';
 const server=http.createServer(async(req,res)=>{
  try{const name=decodeURIComponent(new URL(req.url,'http://offline').pathname);if(name==='/render'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>EarthBound offline measurement</title>');return;}const file=path.resolve(root,'.'+name);if(!file.startsWith(root)){res.writeHead(403).end();return;}res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.json')?'application/json':'application/octet-stream');res.end(await fs.readFile(file));}catch{res.writeHead(404).end();}
 });

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {MarketChart} from '../public/chart.js';
-import {signalFreshness} from '../public/market-controls.js';
-import {createOrchestraConductor} from '../public/orchestra.js';
+import {MarketChart} from '../apps/web/public/chart.js';
+import {signalFreshness} from '../apps/web/public/market-controls.js';
+import {createOrchestraConductor} from '../apps/web/public/orchestra.js';
 
 function chartWith(history){
  const chart=Object.create(MarketChart.prototype);

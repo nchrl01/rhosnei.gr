@@ -16,7 +16,7 @@ def rows(tag,fmt):return list(struct.iter_unpack(fmt,chunks[tag]))
 ph=rows(b'phdr','<20sHHHIII');pb=rows(b'pbag','<HH');pg=rows(b'pgen','<HH')
 ins=rows(b'inst','<20sH');ib=rows(b'ibag','<HH');ig=rows(b'igen','<HH')
 headers=rows(b'shdr','<20sIIIIIBbHH')
-dest=Path(__file__).resolve().parents[1]/'public/samples/earthbound'
+dest=Path(__file__).resolve().parents[1]/'apps/web/public/samples/earthbound'
 dest.mkdir(parents=True,exist_ok=True)
 files=[]
 base_programs={13,23,24,30,31,34,35,36,37}

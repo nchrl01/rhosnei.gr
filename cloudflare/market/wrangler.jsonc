@@ -1,0 +1,17 @@
+{
+  "name": "upic-market",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "triggers": { "crons": ["* * * * *"] },
+  "vars": {
+    "ALLOWED_ORIGIN": "https://nchrl01.github.io",
+    "MARKET_PROVIDER": "geckoterminal",
+    "INGEST_ENABLED": "false",
+    "PUBLIC_MARKET_DATA": "false",
+    "DAILY_MARKET_REQUEST_LIMIT": "100",
+    "MIN_REQUEST_SPACING_SECONDS": "60",
+    "MAX_TRACKED_ASSETS": "10"
+  },
+  "observability": { "enabled": false }
+}

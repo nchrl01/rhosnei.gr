@@ -1,10 +1,10 @@
 // Offline libpd renders; no browser, desktop control, audio device or speakers.
 import fs from 'node:fs/promises';
 import assert from 'node:assert/strict';
-import {buildPerformanceCatalog,createEnvionPerformance} from '../public/envion-performance.js';
-import {applyEnvionMarket} from '../public/envion-market.js';
+import {buildPerformanceCatalog,createEnvionPerformance} from '../apps/web/public/envion-performance.js';
+import {applyEnvionMarket} from '../apps/web/public/envion-market.js';
 import {createEnvionHarness} from './envion.mjs';
-const root=new URL('../public/patches/envion/',import.meta.url);
+const root=new URL('../apps/web/public/patches/envion/',import.meta.url);
 const model=JSON.parse(await fs.readFile(new URL('model.json',root),'utf8'));
 const {banks}=JSON.parse(await fs.readFile(new URL('performance-catalog.json',root),'utf8'));
 const catalog=buildPerformanceCatalog(model,banks);

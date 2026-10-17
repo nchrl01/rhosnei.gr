@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import sys
 BASE=Path(__file__).resolve().parent
-ROOT=BASE/'public'/'patches'/'orchestra'
+ROOT=BASE/'apps/web/public'/'patches'/'orchestra'
 ROOT.mkdir(exist_ok=True)
 sys.path.insert(0,str(BASE/'scripts'))
 import pd_patch

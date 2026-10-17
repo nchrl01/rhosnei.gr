@@ -15,5 +15,5 @@ for index in range(327):
   d=data[0xF708+slot*17:0xF708+(slot+1)*17]
   effects.append([d[2] if d[2] in (1,3) else 2,int.from_bytes(d[:2],'little'),i16(d,3),i16(d,5),i16(d,8),i16(d,10),i16(d,12),d[14],i16(d,15)])
  rows.append([b[0],b[1],b[2],*b[3:9],effects])
-Path('public/earthbound-layer-metadata.js').write_text('// Numeric metadata adapted from Earthbound-Battle-Backgrounds-JS.\n// [graphics,palette,bpp,cycleType,start1,end1,start2,end2,cycleSpeed,effects]\n// effect: [type,duration,frequency,amplitude,compression,freqAccel,ampAccel,speed,compressionAccel]\n// See licenses/earthbound-backgrounds.txt. No game textures.\nexport const backgroundMetadata='+json.dumps(rows,separators=(',',':'))+';\n')
+Path('apps/web/public/earthbound-layer-metadata.js').write_text('// Numeric metadata adapted from Earthbound-Battle-Backgrounds-JS.\n// [graphics,palette,bpp,cycleType,start1,end1,start2,end2,cycleSpeed,effects]\n// effect: [type,duration,frequency,amplitude,compression,freqAccel,ampAccel,speed,compressionAccel]\n// See licenses/earthbound-backgrounds.txt. No game textures.\nexport const backgroundMetadata='+json.dumps(rows,separators=(',',':'))+';\n')
 print('Extracted',len(rows),'background metadata records.')

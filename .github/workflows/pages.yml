@@ -23,9 +23,11 @@ jobs:
           node-version: 22
       - name: Build shared page shell
         run: node scripts/build-site-shell.mjs
+      - name: Preserve existing instrument homepage
+        run: cp apps/web/public/instrument.html apps/web/public/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: apps/web/public
       - uses: actions/deploy-pages@v4
         id: deployment

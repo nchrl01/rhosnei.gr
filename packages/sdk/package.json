@@ -1,0 +1,1 @@
+{"name":"@upic/sdk","version":"0.1.0","private":true,"type":"module","exports":"./src/index.ts","dependencies":{"viem":"^2.38.0","@upic/domain":"*"},"scripts":{"typecheck":"tsc --noEmit"}}

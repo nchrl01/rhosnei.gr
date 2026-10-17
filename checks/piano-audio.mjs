@@ -7,7 +7,7 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const {chromium}=await import(process.env.AV_PLAYWRIGHT_MODULE||'playwright');
-const root=fileURLToPath(new URL('../public/',import.meta.url));
+const root=fileURLToPath(new URL('../apps/web/public/',import.meta.url));
 const server=http.createServer(async(req,res)=>{
  try{
   const name=decodeURIComponent(new URL(req.url,'http://offline').pathname);

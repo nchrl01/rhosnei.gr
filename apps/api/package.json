@@ -1,0 +1,22 @@
+{
+  "name": "@upic/api",
+  "dependencies": {
+    "@upic/domain": "*",
+    "@upic/sdk": "*",
+    "hono": "^4.10.0",
+    "viem": "^2.38.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20251011.0",
+    "wrangler": "4.76.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev --local --port 8787",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "deploy:testnet": "wrangler deploy --env testnet"
+  },
+  "version": "0.1.0",
+  "private": true,
+  "type": "module"
+}
