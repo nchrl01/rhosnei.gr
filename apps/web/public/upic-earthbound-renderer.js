@@ -135,8 +135,9 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   render({width,height,time=0,seed=0,inputs,identity=0,artworkColor=0,presence=1,pixelPresence=1,inkColor=1,reducedMotion=false}){
    if(closed)return;
    // Keep enough raster cells for 10,000 holders even in a small mobile panel.
-   const scale=Math.max(Math.min(1,maxDimension/Math.max(1,width,height)),512/Math.max(1,Math.min(width,height))),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
-   for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;c.style.opacity=String(clamp(presence));}
+   const side=Math.max(1,Math.min(width,height));
+   const w=Math.max(512,Math.min(maxDimension,Math.round(side))),h=w;
+   for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;Object.assign(c.style,{width:side+'px',height:side+'px',left:(width-side)/2+'px',top:(height-side)/2+'px',right:'auto',bottom:'auto',opacity:String(clamp(presence))});}
    updateImageDetail(inputs);prepare(inputs,w,h);identity=0;artworkColor=mask?artworkColor:0;
    canvas.hidden=useSoftware;software.hidden=!useSoftware;host.dataset.pixelBlast=useSoftware?'canvas':'ready';
    if(useSoftware)cpu(w,h,time,seed,inputs,identity,artworkColor,reducedMotion,pixelPresence,inkColor);
