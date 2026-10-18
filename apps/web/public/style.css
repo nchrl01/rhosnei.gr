@@ -504,3 +504,18 @@ body.visual-expanded{overflow:hidden}
 
 .dither-artwork{position:relative}.collection-artwork{display:block;aspect-ratio:1;width:100%;overflow:hidden}.artwork-dither{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;image-rendering:pixelated;pointer-events:none}.dither-pending>img,.dither-ready>img{visibility:hidden}.trending-avatar.dither-artwork{display:inline-block;overflow:hidden}.trending-avatar .artwork-dither{display:block}
 .artwork-fallback{position:absolute;inset:0;display:grid;place-items:center;background:#000;pointer-events:none}.dither-artwork .artwork-fallback>img{display:block;width:28%;height:auto;max-width:64px;max-height:70%;aspect-ratio:auto;object-fit:contain;background:transparent;opacity:.4;image-rendering:pixelated}
+
+/* Preview ownership metadata stays directly beneath the audiovisual player. */
+.nft-owner-preview{display:flex;align-items:center;gap:12px;min-width:0;padding:12px 0;margin:0;color:var(--control-ink,#fff);border-top:1px solid var(--line,#292929)}
+.nft-owner-preview[hidden]{display:none}
+.nft-owner-avatar{display:block;flex:none;width:40px;height:40px;color:#bdbdbd}
+.nft-owner-copy{min-width:0;display:grid;gap:4px}
+.nft-owner-copy p{margin:0;font-weight:400;line-height:1.35}
+.nft-owner-label,.nft-owner-wallet,.nft-owner-edition{font-size:var(--font-size-small);color:var(--muted,#aaa)}
+.nft-owner-label span{color:var(--control-ink,#fff)}
+.nft-owner-name{font-size:var(--font-size-body);color:var(--control-ink,#fff)}
+.nft-owner-edition{overflow-wrap:anywhere}
+@media(min-width:761px){.nft-owner-preview{grid-column:2;grid-row:2/-1;align-self:end;width:100%;margin:0}.instrument-page main.has-nft-owner-preview>.audio-visualizer:not(.is-expanded){height:calc(var(--visual-height,calc(100svh - 160px)) - var(--nft-owner-height,100px))}}
+@media(max-width:760px){.coin-title>.nft-owner-preview{grid-column:1/-1;grid-row:2;width:100%;padding:12px 0;margin-bottom:4px;align-self:start}.nft-owner-avatar{width:32px;height:32px}.nft-owner-wallet{overflow-wrap:anywhere}}
+
+@media(max-width:760px){.coin-title.has-owner-preview>.coin-avatar,.coin-title.has-owner-preview #coin-name{grid-row:3}.coin-title.has-owner-preview .coin-live-readings{grid-row:4}}
