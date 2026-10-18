@@ -1,6 +1,5 @@
-import {pixelIdentityGLSL} from './pixel-identity.js?v=276';
-import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-4';
-const guideGLSL=pixelIdentityGLSL.replace(/\btexture\(/g,'texture2D(').replace('float side=.82*min(viewSize.x,viewSize.y);','vec2 side=uImageSize;');
+import {colourGLSL} from './upic-artwork-detail.js?v=earthbound-7';
+import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-7';
 export const markVertex=`
 precision highp float;
 attribute vec2 position;
@@ -36,31 +35,20 @@ varying vec2 vMarkId;
 float Bayer2(vec2 a){a=floor(a);return fract(a.x/2.+a.y*a.y*.75);}
 #define Bayer4(a) (Bayer2(.5*(a))*.25+Bayer2(a))
 #define Bayer8(a) (Bayer4(.5*(a))*.25+Bayer2(a))
-${guideGLSL}
+${colourGLSL}
 ${EARTHBOUND_GLSL}
 void main(){
   // Mark bounds are packed using their actual holder-driven diameters.
-  // Artwork changes pattern sampling/occupancy inside those reserved bounds;
+  // Artwork changes colour/brightness inside those reserved bounds;
   // it never pushes marks into the required empty gaps.
   vec2 origin=floor(uResolution*.5);
   vec2 rasterPoint=floor(gl_FragCoord.xy);
   vec2 pixelId=floor(vMarkId+.5);
   vec2 squarePoint=vMarkCenter-origin;
-  vec4 imageGuide=vec4(0.);
-  float imagePalette=-1.;
-  if(uIdentity>0.||uArtworkColor>0.)imageGuide=identityGuide(squarePoint,imagePalette);
-  vec2 samplePoint=squarePoint+imageGuide.ba*uIdentity*.045*uImageSize;
-  float feed=.5;
-  if(uFieldMode>.5)feed=earthboundFeed(samplePoint/uResolution.y,feed);
-  // These occupancy and Bayer formulas are the current UPIC renderer's.
-  float imageOccupancy=.04+.88*imageGuide.r;
-  feed=mix(feed,imageOccupancy+clamp(feed-.5,-.5,.5)*.16,uIdentity);
-  float bw=step(.5,feed+Bayer8(pixelId)-.5);
+  float feed=earthboundFeed(squarePoint/uResolution.y,.5);
+  // Pattern changes brightness, never deletes allocated holder dots.
+  float bw=mix(.65,1.,step(.5,feed+Bayer8(pixelId)-.5));
   float survival=step(fract(sin(pixelId.x*73.17+pixelId.y*193.41+7.3)*43758.5453),uPixelPresence);
-  bw*=survival*earthboundMark(rasterPoint,vMarkCenter,vMarkSize*sqrt(uPixelPresence),imageGuide.g);
-  float h=fract(sin(dot(pixelId,vec2(127.1,311.7)))*43758.5453);
-  float colorIndex=imagePalette<0.?step(.5,h):imagePalette;
-  vec3 artworkInk=mix(uArtworkColorA,uArtworkColorB,colorIndex);
-  gl_FragColor=vec4(bw*uInkColor*mix(vec3(1.),artworkInk,uArtworkColor),1.);
+  bw*=survival*earthboundMark(rasterPoint,vMarkCenter,vMarkSize*sqrt(uPixelPresence),1.);
+  gl_FragColor=vec4(bw*uInkColor*coinInk(vMarkCenter/uResolution),1.);
 }`;
-

@@ -1,9 +1,10 @@
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
-import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-5';
-import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-5';
-import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-5';
-import {preparePixelIdentity,samplePixelIdentity} from './pixel-identity.js?v=276';
-import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-5';
+import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-7';
+import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-7';
+import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-7';
+import {imageDetailRules} from './upic-image-detail.js?v=earthbound-7';
+import {artworkBackground} from './upic-artwork-detail.js?v=earthbound-7';
+import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-7';
 const fract=x=>x-Math.floor(x),mix=(a,b,t)=>a+(b-a)*t,clamp=x=>Math.max(0,Math.min(1,x));
 const hash=n=>fract(Math.sin(n)*43758.5453),fade=x=>x*x*x*(x*(x*6-15)+10);
 const b2=(x,y)=>fract(Math.floor(x)/2+Math.floor(y)**2*.75);
@@ -18,6 +19,8 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  for(const c of [canvas,software]){c.className='pixel-blast-layer';c.setAttribute('aria-hidden','true');Object.assign(c.style,{width:'100%',height:'100%'});host.append(c);}
  const ctx=software.getContext('2d'),gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:true});
  let program,buffer,texture,uniforms,mask=null,layoutKey='',layout=null,vertexCount=0,useSoftware=!gl,closed=false;
+ let originalImage=null,imageCells=0,imagePixels=null,background=[1,1,1,1];
+ const detailCanvas=document.createElement('canvas');
  const stats={renderer:'earthbound',markCount:0,holderSamples:0};
  function init(){
   const shaders=[];
@@ -48,7 +51,30 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,mask?.width||1,mask?.height||1,0,gl.RGBA,gl.UNSIGNED_BYTE,mask?.texture||new Uint8Array(4));
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,imageCells||1,imageCells||1,0,gl.RGBA,gl.UNSIGNED_BYTE,imagePixels||new Uint8Array(4));
+ }
+ function updateImageDetail(inputs){
+  const detail=imageDetailRules(inputs);stats.imageDetail=detail;
+  if(!originalImage||imageCells===detail.cells)return;
+  imageCells=detail.cells;detailCanvas.width=detailCanvas.height=imageCells;
+  const context=detailCanvas.getContext('2d');
+  context.imageSmoothingEnabled=true;context.imageSmoothingQuality='high';
+  context.drawImage(originalImage,0,0,imageCells,imageCells);
+  imagePixels=context.getImageData(0,0,imageCells,imageCells).data;
+  if(gl&&!useSoftware)uploadImage();
+ }
+ function coinInk(u,v,color){
+  if(!imagePixels)return [1,1,1];
+  const x=Math.min(imageCells-1,Math.max(0,Math.floor(u*imageCells)));
+  const y=Math.min(imageCells-1,Math.max(0,Math.floor(v*imageCells)));
+  const i=((imageCells-1-y)*imageCells+x)*4;
+  const rgb=[imagePixels[i]/255,imagePixels[i+1]/255,imagePixels[i+2]/255];
+  const separation=Math.max(...rgb.map((c,j)=>Math.abs(c-background[j])));
+  const t=clamp((separation-.06)/.32);
+  let foreground=mix(1,t*t*(3-2*t),background[3]);
+  foreground=clamp(Math.floor(foreground*3+b4(x,y))/3);
+  const peak=Math.max(...rgb),alpha=imagePixels[i+3]/255*color;
+  return rgb.map(c=>mix(1,mix(.3,mix(1,peak>.06?c/peak:1,.65),foreground),alpha));
  }
  function prepare(inputs,w,h){
   const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances,Math.sign(inputs.change)]);
@@ -69,26 +95,22 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  function cpu(w,h,time,seed,inputs,identity,color,reduced,pixelPresence,inkColor){
   if(!ctx)return;
   ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;
-  const frame=earthboundFrame(inputs.coinKey,time),offset=(seed%65521)/65521*173.6,guide=new Float32Array(5),imageWidth=w,imageHeight=h;
-  const flow=(.028-.014*identity)*(reduced?0:.3),phase=time*.65+offset*.013;
-  const palette=(mask?.palette||[[1,1,1],[1,1,1]]).map(c=>'rgb('+c.map(v=>Math.round(255*inkColor*mix(1,v,color))).join(',')+')');
+  const frame=earthboundFrame(inputs.coinKey,time),offset=(seed%65521)/65521*173.6;
   for(const m of layout.marks){
    if(hash(m.column*73.17+m.row*193.41+7.3)>pixelPresence)continue;
-   const x=m.x-Math.floor(w/2),y=m.y-Math.floor(h/2);guide.fill(0);guide[4]=-1;
-   if(mask&&(identity>0||color>0))samplePixelIdentity(mask,x/imageWidth,y/imageHeight,1,flow,phase,guide);
-   const u=(x+guide[2]*identity*.045*imageWidth)/h,v=(y+guide[3]*identity*.045*imageHeight)/h;
+   const x=m.x-Math.floor(w/2),y=m.y-Math.floor(h/2);
+   const u=x/h,v=y/h;
    let sum=1,freq=1;
    for(let i=0;i<5;i++){sum+=noise((u*.25+offset)*freq,(v*.25+offset*.317)*freq,time*.05*freq);freq*=1.25;}
    let base=(sum*.5+.5)*.5-.65+(1.225-.5)*.3;
    base+=.28*noise(u*6+offset*.19,v*6+offset*.41,time*.04);base=Math.max(base,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
    let feed=battlePatternFeed(u,v,time,frame,base);
-   feed=mix(feed,.04+.88*guide[0]+Math.max(-.5,Math.min(.5,feed-.5))*.16,identity);
-   if(feed+b8(m.column,m.row)-.5<.5)continue;
-   const direction=Math.sign(inputs.change);let diameter=Math.max(1,Math.floor(m.diameter*Math.sqrt(pixelPresence)*mix(1,.76+.24*guide[1],identity)+.5));
+   const brightness=feed+b8(m.column,m.row)-.5<.5?.65:1;
+   const direction=Math.sign(inputs.change);let diameter=Math.max(1,Math.floor(m.diameter*Math.sqrt(pixelPresence)+.5));
    if(direction)diameter=Math.max(3,2*Math.floor((diameter-1)/2)+1);
    diameter=Math.min(m.diameter,diameter);
    const left=Math.floor(m.x-diameter/2+.5),bottom=Math.floor(m.y-diameter/2+.5),half=diameter/2,stroke=Math.max(1,Math.floor(diameter*.23+.5))*.5;
-   const colorIndex=guide[4]<0?(hash(m.column*127.1+m.row*311.7)>=.5?1:0):guide[4];ctx.fillStyle=palette[colorIndex];
+   ctx.fillStyle='rgb('+coinInk(m.x/w,m.y/h,color).map(c=>Math.round(255*c*inkColor*brightness)).join(',')+')';
    for(let dy=0;dy<diameter;dy++)for(let dx=0;dx<diameter;dx++){
     const px=dx+.5-half,py=dy+.5-half;
     const inside=direction>0?Math.min(Math.abs(px),Math.abs(py))<=stroke:direction<0?Math.abs(Math.abs(px)-Math.abs(py))*.70710678<=stroke:px*px+py*py<=half*half;
@@ -102,18 +124,27 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  return {
   get kind(){return useSoftware?'canvas':'webgl';},
   get surface(){return useSoftware?software:canvas;},
-  setImage(source){mask=preparePixelIdentity(source);if(gl&&!useSoftware)uploadImage();},
+  setImage(source){
+   mask=source;originalImage=null;imageCells=0;imagePixels=null;
+   if(source){
+    background=artworkBackground(source);originalImage=document.createElement('canvas');
+    originalImage.width=source.width;originalImage.height=source.height;
+    originalImage.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(source.originalPixels||source.pixels),source.width,source.height),0,0);
+   }
+   if(gl&&!useSoftware)uploadImage();
+  },
   render({width,height,time=0,seed=0,inputs,identity=0,artworkColor=0,presence=1,pixelPresence=1,inkColor=1,reducedMotion=false}){
    if(closed)return;
-   const scale=Math.min(1,maxDimension/Math.max(1,width,height)),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+   // Keep enough raster cells for 10,000 holders even in a small mobile panel.
+   const scale=Math.max(Math.min(1,maxDimension/Math.max(1,width,height)),512/Math.max(1,Math.min(width,height))),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;c.style.opacity=String(clamp(presence));}
-   prepare(inputs,w,h);identity=mask?identity:0;artworkColor=mask?artworkColor:0;
+   updateImageDetail(inputs);prepare(inputs,w,h);identity=0;artworkColor=mask?artworkColor:0;
    canvas.hidden=useSoftware;software.hidden=!useSoftware;host.dataset.pixelBlast=useSoftware?'canvas':'ready';
    if(useSoftware)cpu(w,h,time,seed,inputs,identity,artworkColor,reducedMotion,pixelPresence,inkColor);
    else{
     gl.useProgram(program);gl.viewport(0,0,w,h);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);
-    Object.assign(uniforms,{uIdentityImage:0,uImageSize:[w,h],uPixelPresence:pixelPresence,uInkColor:inkColor,uResolution:[w,h],uCanvasScale:[1,1],uIdentity:identity,uIdentityMotion:reducedMotion?0:.3,uTime:time,uSeed:(seed%65521)/65521*173.6,uArtworkColor:artworkColor,uArtworkColorA:mask?.palette[0]||[1,1,1],uArtworkColorB:mask?.palette[1]||[1,1,1]});
+    Object.assign(uniforms,{uIdentityImage:0,uImageSize:[w,h],uPixelPresence:pixelPresence,uInkColor:inkColor,uResolution:[w,h],uCanvasScale:[1,1],uIdentity:identity,uIdentityMotion:reducedMotion?0:.3,uTime:time,uSeed:(seed%65521)/65521*173.6,uArtworkColor:artworkColor,uArtworkBackground:background,uImageCells:imageCells||4});
     bindEarthboundUniforms({uniforms},{time,inputs,settings:{mode:'earthbound'}});
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
     for(const [index,size,offset]of [[0,2,0],[1,2,2],[2,1,4],[3,2,5]]){gl.enableVertexAttribArray(index);gl.vertexAttribPointer(index,size,gl.FLOAT,false,28,offset*4);}

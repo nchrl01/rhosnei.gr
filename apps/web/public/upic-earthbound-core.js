@@ -52,7 +52,7 @@ float earthboundFeed(vec2 point,float source){
 float earthboundMark(vec2 rasterPoint,vec2 centre,float diameter,float guideDensity){
  // Geometry supplies holder-driven diameters and preserves the required gap.
  // Keep UPIC's image-guide size response inside that already allocated space.
- float size=max(1.,floor(diameter*mix(1.,.76+.24*guideDensity,uIdentity)+.5));
+ float size=max(1.,floor(diameter+.5));
  bool directional=abs(uFieldMark)>.5&&abs(uFieldMark)<1.5;
  if(directional)size=max(3.,2.*floor((size-1.)*.5)+1.);
  vec2 start=floor(centre-size*.5+.5),local=rasterPoint-start+vec2(.5)-vec2(size*.5);

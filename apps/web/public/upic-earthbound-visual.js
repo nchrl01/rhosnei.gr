@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-6';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-7';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -23,17 +23,22 @@ export function observedHolderBalances(m){
  const audience=m.audience||{},relations=audience.relationships,records=[];
  if(Array.isArray(audience.holderBalances)&&audience.weight>0)records.push(...audience.holderBalances);
  else if(relations?.weight>0)for(const cluster of relations.clusters||[])for(const wallet of cluster.wallets||[]){
-  records.push({id:wallet.address,balance:wallet.percentage});
+  records.push({id:wallet.address,percentage:wallet.percentage});
  }
  const wallets=new Map();
  for(const record of records){
-  const id=String(record.id??record.address??'').trim(),balance=finite(record.balance);
+  const id=String(record.id??record.address??'').trim();
+  const cap=finite(m.context?.latestCap),pct=finite(record.percentage);
+  // Explicit USD values take priority; relationship percentages are supply shares.
+  const balance=finite(record.balanceUsd??record.balanceUSD??record.usdValue)
+   ??(pct!==null&&cap>0?cap*pct/100:null)
+   ??(audience.holderBalanceUnit==='usd'?finite(record.balance):null);
   if(!id||id.length>512||!(balance>0))continue;
   // Repeated appearances of one address are not extra wallets or extra funds.
   const key=/^0x[0-9a-f]{40}$/i.test(id)?id.toLowerCase():id;
   wallets.set(key,Math.max(balance,wallets.get(key)||0));
  }
- return [...wallets].map(([id,balance])=>({id,balance})).sort((a,b)=>b.balance-a.balance||a.id.localeCompare(b.id)).slice(0,128);
+ return [...wallets].map(([id,balance])=>({id,balance})).sort((a,b)=>b.balance-a.balance||a.id.localeCompare(b.id)).slice(0,10000);
 }
 export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
@@ -46,6 +51,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const host=canvas?.closest('.audio-visualizer');
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(host),fullscreen=createVisualFullscreen(host);
+ const holderNotice=document.createElement('p');holderNotice.className='earthbound-holder-status';
+ holderNotice.setAttribute('role','status');holderNotice.hidden=true;
+ Object.assign(holderNotice.style,{position:'absolute',left:'1rem',bottom:'1rem',zIndex:'2',fontSize:'.8rem',color:'#aaa',pointerEvents:'none'});
+ host.append(holderNotice);
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let latest=null,settings={},key='',seed=0,clock=0,presence=0,transportPresence=0,identity=0,identityInput=0,color=0,colorTarget=0;
@@ -101,7 +110,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   overlay?.clearRect(0,0,canvas.width,canvas.height);
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
   host.dataset.visible='true';
-  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable-equal-sizes',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
+  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
  }
  raf=requestAnimationFrame(draw);
  return {
@@ -113,7 +122,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(changed&&imageCoinKey!==key)renderer.setImage(null);
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
-   const target=latest.marketCap>=1e8?1:0;if(target!==colorTarget){colorTarget=target;colorElapsed=0;}
+   const target=1;if(target!==colorTarget){colorTarget=target;colorElapsed=0;}
+   holderNotice.hidden=!latest.hasMarket||latest.holderBalances.length>0;
+   holderNotice.textContent=m.replay?'Historical wallet balances unavailable.':'Waiting for individual wallet balances.';
    if(!latest.hasMarket)renderer.clear();
   },
   // Keep the app's audio callback interface without coupling sound to ink.
@@ -121,6 +132,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   setImage(image){identitySource=image;renderer.setImage(image);imageCoinKey=identityKey(getState().coinKey);},
   createCapture(){
    if(!latest?.hasMarket)throw Error('Load a coin and choose a test milestone first.');
+   if(!latest.holderBalances.length)throw Error('Individual wallet balances are required to export this holder-based visual.');
    // Use the exact player renderer, with an independent fixed-size surface.
    // The on-page layout and live canvas are never resized or screen-captured.
    const holder=document.createElement('div'),capture=createEarthboundRenderer(holder,{maxDimension:2048});
@@ -130,7 +142,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const frozen=structuredClone(latest),phase=clock,coinSeed=seed;
    // Offscreen player canvases intentionally stop their animation. A media
    // export must instead start in the selected milestone's playing state.
-   const targetIdentity=marketCapIdentity(frozen.marketCap),targetColour=frozen.marketCap>=1e8?1:0;
+   const targetIdentity=marketCapIdentity(frozen.marketCap),targetColour=1;
    const manifest={renderer:'earthbound-player',backend:capture.kind,phase,seed:coinSeed,
     inputs:frozen,imageAvailable:Boolean(identitySource&&imageCoinKey===key),
     identity:targetIdentity,identityInput:targetIdentity,artworkColor:targetColour,transportPresence:1,presence:1,
@@ -142,7 +154,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
      const dt=Math.max(0,seconds-previous);previous=seconds;
      imageInput+=(marketCapIdentity(frozen.marketCap)-imageInput)*(1-Math.exp(-dt/.16));
      imageAmount+=(imageInput-imageAmount)*(1-Math.exp(-dt/1.4));
-     const colourTarget=frozen.marketCap>=1e8?1:0;
+     const colourTarget=1;
      colourElapsed+=dt;const steps=Math.floor(colourElapsed);
      if(steps){colourElapsed-=steps;colour+=(colourTarget-colour)*(1-Math.exp(-steps/1.4));}
      transport+=(1-transport)*(1-Math.exp(-dt/.08));
@@ -157,6 +169,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();holderNotice.remove();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }
