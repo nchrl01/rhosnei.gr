@@ -562,3 +562,16 @@ body.visual-expanded{overflow:hidden}
  .instrument-page .transport{gap:12px}
  .instrument-page .instrument>.nft-owner-preview{margin-block:24px 16px}
 }
+
+/* Keep speed, Replay and Live together as a single control row. */
+.instrument-page .replay-actions{display:flex;flex-wrap:nowrap;align-items:center;gap:6px;max-width:100%}
+.instrument-page .replay-actions .playback-speed{display:flex;flex:0 0 auto;flex-wrap:nowrap;width:auto;max-width:none;gap:4px;margin:0 8px 0 0}
+.instrument-page .replay-actions .playback-speed.is-live{display:none}
+.instrument-page .replay-actions .playback-speed button{width:auto;min-width:32px;flex:none;min-height:32px;height:32px;padding:6px 8px}
+.instrument-page .replay-actions>button{min-height:32px;height:32px;padding:6px 8px}
+@media(max-width:760px){
+ .instrument-page .compact-chart-toolbar>.transport-readout{flex:1 0 100%}
+ .instrument-page .replay-actions{width:100%;margin-left:0;gap:4px}
+ .instrument-page .replay-actions .playback-speed{margin-right:auto;gap:4px}
+ .instrument-page .replay-actions .playback-speed button,.instrument-page .replay-actions>button{min-height:40px;height:40px;padding:6px;font-size:var(--font-size-small)}
+}
