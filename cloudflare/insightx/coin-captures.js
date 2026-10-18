@@ -53,7 +53,7 @@ export function validateCapturePayload(body,now=Date.now()){
 }
 function publicMetadata(raw,origin){const metadata=typeof raw==='string'?JSON.parse(raw):raw;const imageURL='/coin-captures/image?'+new URLSearchParams({key:metadata.key,v:String(metadata.capturedAt)});return {...metadata,imageURL,snapshot:new URL(imageURL,origin).href};}
 export class CoinCaptures{
- constructor(ctx){this.ctx=ctx;this.sql=ctx.storage.sql;this.sql.exec('CREATE TABLE IF NOT EXISTS live_coin_captures (key TEXT PRIMARY KEY, metadata TEXT NOT NULL, captured INTEGER NOT NULL, image BLOB NOT NULL, bytes INTEGER NOT NULL)');}
+ constructor(ctx){this.ctx=ctx;this.sql=ctx.storage.sql;this.sql.exec('CREATE TABLE IF NOT EXISTS live_coin_captures (key TEXT PRIMARY KEY, metadata TEXT NOT NULL, captured INTEGER NOT NULL, image BLOB NOT NULL, bytes INTEGER NOT NULL)');for(const row of this.sql.exec('SELECT key FROM live_coin_captures').toArray())if(!identities.has(row.key))this.sql.exec('DELETE FROM live_coin_captures WHERE key=?',row.key);}
  async fetch(request){
   const url=new URL(request.url);
   try{

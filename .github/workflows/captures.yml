@@ -24,7 +24,7 @@ jobs:
   capture:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 95
+    timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
         with:
