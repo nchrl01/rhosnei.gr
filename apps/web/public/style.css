@@ -595,3 +595,8 @@ body.visual-expanded{overflow:hidden}
  .mobile-coin-search .coin-search-result>span{display:grid;gap:4px;font-weight:400}
  .mobile-coin-search .coin-search-result strong{font-weight:400}
 }
+@media(max-width:760px){
+ .instrument-page .compact-chart-toolbar>.transport{display:flex;flex:1 0 100%;width:100%;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:12px;margin:0;padding:0}
+ .instrument-page .compact-chart-toolbar>.transport>.transport-readout{flex:1 1 auto;min-width:0;margin:0}
+ .instrument-page .compact-chart-toolbar>.transport :is(#play,#share,.visual-fullscreen){flex:none}
+}

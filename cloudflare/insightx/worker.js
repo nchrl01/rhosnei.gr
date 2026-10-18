@@ -1,3 +1,4 @@
+import {SharedHistoryCache,historyRequest} from './history-cache.js';
 import {fetchHolderCount,fetchBlockscoutCount} from './holder-count.js';
 import {marketplace} from './marketplace.js';
 import {DurableObject} from 'cloudflare:workers';
@@ -97,9 +98,14 @@ export default {
    }catch{return json({state:'sharing-unavailable'},503,headers);}
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
+  if(url.pathname==='/history'){
+   if(!historyRequest(url))return json({error:'Invalid history request'},400,headers);
+   try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-chart-history-v1'));const result=await store.fetch(new Request(url));const out=new Response(result.body,result);for(const [key,value] of Object.entries(headers))out.headers.set(key,value);out.headers.set('Access-Control-Expose-Headers','X-UPIC-History-Cache, X-UPIC-Fetched-At, X-UPIC-History-Retention, Retry-After');return out;}
+   catch{return json({error:'Shared history unavailable'},503,headers);}
+  }
   if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/holders')return holderCount(url,headers,env);
-  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
+  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
   if(!['sol','eth','base'].includes(network))return json({state:'unsupported-network'},422,headers);
@@ -120,7 +126,7 @@ export default {
 // each spend a separate allowance. API credentials never leave this Worker.
 export class HolderCache extends DurableObject {
  constructor(ctx,env){
-  super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();
+  super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS holder_counts (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
@@ -129,6 +135,7 @@ export class HolderCache extends DurableObject {
   this.sql.exec('CREATE TABLE IF NOT EXISTS cooldown (id INTEGER PRIMARY KEY, until_ms INTEGER)');
  }
  async fetch(request){
+  if(new URL(request.url).pathname==='/history')return this.history.fetch(new URL(request.url));
   const url=new URL(request.url),network=url.searchParams.get('network'),address=url.searchParams.get('address'),key=network+':'+address;
   if(url.pathname==='/holders'){
    const countKey='count:'+key;if(this.inflight.has(countKey))return json(await this.inflight.get(countKey));

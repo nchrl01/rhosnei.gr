@@ -11,7 +11,7 @@ export function loadHistory(market,onUpdate,options={}){
  const interval={minute:60000,hour:3600000,day:86400000}[timeframe]*aggregate;
  const key='av-history-v2:'+market.chainId+':'+market.pairAddress+':'+market.baseToken.address+':'+timeframe+':'+aggregate;
  const network=aliases[market.chainId]||market.chainId;
- const base='https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/pools/'+encodeURIComponent(market.pairAddress)+'/ohlcv/'+timeframe;
+ const base='https://upic-insightx.nchrl01.workers.dev/history';
  let before=Math.floor(Date.now()/1000)+1,pages=0,failures=0,cachedComplete=false,cachedLatest=null,cacheGap=false,pendingGap=null,latestSaved=0,freshCache=false;
  function report(state,message,detail={}){if(!closed)onUpdate({candles:[...rows.values()].sort((a,b)=>a.time-b.time),interval,timeframe,state,message,created,error:null,retrying:false,...detail});}
  function save(state,complete=false){void writeSavedHistory(key,{saved:Date.now(),latestSaved,candles:[...rows.values()].slice(-20000),state,timeframe,complete,gap:pendingGap});}
@@ -19,11 +19,15 @@ export function loadHistory(market,onUpdate,options={}){
   if(closed)return;if(options.shouldFetch?.()===false){timer=setTimeout(page,1000);return;}controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=0;
   if(failures)report('loading','Retrying market history…',{retrying:true});
   try{
-   const query=new URLSearchParams({aggregate:String(aggregate),limit:String(pages===0&&cachedLatest!==null?Math.min(1000,Math.max(10,Math.ceil((Date.now()-cachedLatest)/interval)+3)):1000),currency:'usd',token:market.baseToken.address,include_empty_intervals:'false'});
+   const query=new URLSearchParams({network,pool:market.pairAddress,timeframe,aggregate:String(aggregate),limit:String(pages===0&&cachedLatest!==null?Math.min(1000,Math.max(10,Math.ceil((Date.now()-cachedLatest)/interval)+3)):1000),currency:'usd',token:market.baseToken.address,include_empty_intervals:'false'});
    // A stable latest-page URL coalesces simultaneous chart/music requests.
    if(pages>0)query.set('before_timestamp',String(before));
-   const r=await fetchGecko(base+'?'+query,{signal:controller.signal,priority:pages===0?(options.priority??80):20});if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
-   const data=await r.json();if(closed)return;const observedAt=Date.now();const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
+   let r;try{r=await fetch(base+'?'+query,{signal:controller.signal,credentials:'omit'});}catch(error){if(controller.signal.aborted)throw error;r=new Response(null,{status:503});}
+   // Keep chart loading available while the backend deploy rolls out. Never
+   // bypass a real upstream/quota cooldown (429).
+   if(r.status===404||r.status===503){const fallback=new URL('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/pools/'+encodeURIComponent(market.pairAddress)+'/ohlcv/'+timeframe);for(const [key,value] of query)if(!['network','pool','timeframe'].includes(key))fallback.searchParams.set(key,value);r=await fetchGecko(fallback.href,{signal:controller.signal,priority:pages===0?(options.priority??80):20});}
+   if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
+   const data=await r.json();if(closed)return;const observedAt=Number(r.headers.get('X-UPIC-Fetched-At'))||Date.now();const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
    const validTimes=[];
    for(const row of list){if(row.length<6||!row.every(v=>Number.isFinite(Number(v))))continue;const [seconds,open,high,low,close,volume]=row.map(Number);if(seconds<=0||open<=0||close<=0||low<=0||high<Math.max(open,close)||low>Math.min(open,close)||volume<0)continue;const bar={time:seconds*1000,open,high,low,close,volume,observedThrough:Math.min(seconds*1000+interval,observedAt)};validTimes.push(bar.time);rows.set(bar.time,bar);}
    if(list.length&&!validTimes.length)throw Error('History page contains no valid candles');

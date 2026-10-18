@@ -40,7 +40,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=277';
 import {MarketChart} from './chart.js?v=234';
-import {loadHistory} from './history.js?v=325';
+import {loadHistory} from './history.js?v=326';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
 const ui=createUIControls();

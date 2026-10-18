@@ -83,3 +83,13 @@ if(headerWallet){
   finally{walletOpening=false;headerWallet.disabled=false;headerWallet.removeAttribute('aria-busy');}
  });
 }
+
+function bindMobilePlayerOrder(){
+ const transport=document.querySelector('.instrument-page .transport'),readout=document.querySelector('.compact-chart-toolbar>.transport-readout'),toolbar=document.querySelector('.compact-chart-toolbar'),play=document.getElementById('play');
+ if(!transport||!readout||!toolbar||!play)return;
+ const transportHome=document.createComment('transport position'),readoutHome=document.createComment('transport readout position');transport.before(transportHome);readout.before(readoutHome);
+ const mobile=matchMedia('(max-width:760px)');
+ const arrange=()=>{if(mobile.matches){toolbar.prepend(transport);play.after(readout);}else{readoutHome.after(readout);transportHome.after(transport);}};
+ mobile.addEventListener('change',arrange);arrange();
+}
+bindMobilePlayerOrder();
