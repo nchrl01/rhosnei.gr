@@ -2,7 +2,7 @@ import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
  const canonical=path=>path.replace(/\/index\.html$/,'/').replace(/\/$/,'')||'/';
- for(const link of document.querySelectorAll('.header-links a')){
+ for(const link of document.querySelectorAll('.header-links a,.footer-links a')){
   const target=new URL(link.href);
   if(target.origin===location.origin&&canonical(target.pathname)===canonical(location.pathname))link.setAttribute('aria-current','page');
  }
@@ -57,3 +57,21 @@ if(document.querySelector('.site-footer')){
   if(status)status.textContent='Wallet unavailable. Reload to try again.';
  });
 }
+
+function bindMobileSearch(){
+ const button=document.querySelector('button.header-search'),form=document.querySelector('#coin-form'),results=document.querySelector('#coin-search-results');
+ if(!button||!form)return;
+ const mobile=matchMedia('(max-width:760px)'),nodes=[form,results].filter(Boolean);
+ const anchors=nodes.map(node=>{const anchor=document.createComment('search position');node.before(anchor);return anchor;});
+ const panel=document.createElement('section');panel.id='mobile-coin-search';panel.className='mobile-coin-search';panel.hidden=true;panel.setAttribute('aria-label','Search coins');
+ const close=document.createElement('button');close.type='button';close.className='mobile-search-close';close.textContent='Close';close.setAttribute('aria-label','Close search');panel.append(close);document.body.append(panel);
+ const setOpen=(open,focus=false)=>{panel.hidden=!open;button.setAttribute('aria-expanded',String(open));if(open){panel.style.top=document.querySelector('.market-header').getBoundingClientRect().bottom+'px';if(focus)form.querySelector('input')?.focus();}};
+ const sync=()=>{setOpen(false);nodes.forEach((node,i)=>{if(mobile.matches)panel.append(node);else anchors[i].after(node);});};
+ button.addEventListener('click',()=>setOpen(panel.hidden,true));close.addEventListener('click',()=>{setOpen(false);button.focus();});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!panel.hidden){setOpen(false);button.focus();}});
+ document.addEventListener('pointerdown',event=>{if(!panel.hidden&&!panel.contains(event.target)&&!button.contains(event.target))setOpen(false);});
+ document.addEventListener('upic:market-selected',()=>setOpen(false));
+ mobile.addEventListener('change',sync);sync();
+ if(location.hash==='#search'&&mobile.matches)setOpen(true,true);
+}
+bindMobileSearch();

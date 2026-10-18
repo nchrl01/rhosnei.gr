@@ -771,6 +771,7 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
+ document.dispatchEvent(new CustomEvent('upic:market-selected'));
  testNftExport.cancel('Export cancelled because the selected coin changed.');
  liveConnection?.abort();liveConnection=null;pendingHistoryReplay=false;
  void takeShare.finish();takeShare.reset();

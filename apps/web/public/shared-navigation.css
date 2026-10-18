@@ -377,3 +377,25 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
 .marketplace-content>button:is(:disabled,[aria-disabled=true]),.marketplace-networks button:is(:disabled,[aria-disabled=true]){
  cursor:default;opacity:.35;pointer-events:none;
 }
+
+/* Mobile navigation uses a search drawer and a footer with readable groups. */
+.header-search{display:none}
+.mobile-coin-search[hidden]{display:none}
+@media(max-width:760px){
+ .header-search{display:inline-flex;align-items:center;justify-content:center;flex:none;width:36px;height:44px;min-height:44px;padding:8px;border:0;background:transparent;color:var(--control-ink);box-sizing:border-box}
+ .header-search svg{width:20px;height:20px}
+ .instrument-page>main>#coin-form{display:none}
+ .mobile-coin-search{position:fixed;inset:44px 0 auto;z-index:99;max-height:calc(100svh - 72px);overflow:auto;padding:12px var(--site-gutter) 20px;border-bottom:1px solid var(--line);background:var(--bg,#000);color:var(--control-ink)}
+ .mobile-coin-search #coin-form{display:block;margin:12px 0}
+ .mobile-search-close{display:block;margin-left:auto;padding:6px 0;border:0;background:transparent;color:inherit;font:inherit;font-size:var(--font-size-small)}
+ .mobile-coin-search #coin-search-results{margin:12px 0 0}
+ .site-footer{display:grid;grid-template-columns:1fr;gap:16px;height:auto;min-height:0;overflow:visible;padding:20px var(--site-gutter) calc(20px + env(safe-area-inset-bottom));align-items:start}
+ .site-footer nav{flex-wrap:wrap;gap:8px 20px;width:100%;justify-content:flex-start}
+ .site-footer .footer-links{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+ .site-footer .footer-links .footer-brand{grid-column:1/-1;margin-bottom:4px}
+ .site-footer .footer-upcoming{white-space:normal;min-height:32px}
+ .site-footer .footer-prices{display:flex;justify-content:flex-start;gap:24px;padding-block:12px;border-block:1px solid var(--line)}
+ .site-footer .footer-tools{justify-content:flex-start;gap:8px 20px}
+ .site-footer .footer-wallet{flex-basis:100%;justify-content:center;min-height:44px;margin-top:8px;border:1px solid var(--line);padding:8px;box-sizing:border-box}
+ .site-footer .wallet-status:empty{display:none}
+}
