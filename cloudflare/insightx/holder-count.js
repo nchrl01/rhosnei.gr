@@ -17,11 +17,11 @@ export async function fetchHolderCount(network,address){
   const path=solana?'solana/token_security':'token_security/'+chain;
   const response=await fetch('https://api.gopluslabs.io/api/v1/'+path+'?'+new URLSearchParams({contract_addresses:address}),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
   if(response.ok){
-   const body=await response.json(),row=body.result?.[address]||body.result?.[address.toLowerCase()],count=body.code===1?countValue(row?.holder_count):null;
-   reason=body.code===1?'unavailable':'goplus-code-'+String(body.code);
+   const body=await response.json(),row=body.result?.[address]||body.result?.[address.toLowerCase()],count=[1,2].includes(body.code)?countValue(row?.holder_count):null;
+   reason=body.code===4029?'rate-limited':[1,2].includes(body.code)?'unavailable':'goplus-code-'+String(body.code);
    // Some unsupported GoPlus tokens report zero; do not present that as a verified total.
    if(count!==null&&count>0)return {state:'snapshot',holders:count,lastUpdated:null,image_url,source:'GoPlus',approximate:true,fetchedAt:Date.now()};
-  }else reason='goplus-http-'+response.status;
+  }else reason=response.status===429?'rate-limited':'goplus-http-'+response.status;
  }catch{reason='goplus-unavailable';}
  return {state:reason,holders:null};
 }

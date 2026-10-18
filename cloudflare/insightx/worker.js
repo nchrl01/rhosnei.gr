@@ -160,6 +160,7 @@ export class HolderCache extends DurableObject {
   if(result.holders!==null){
    this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,JSON.stringify(result),now,now+30*60000);return result;
   }
+  if(result.state==='rate-limited')this.sql.exec('UPDATE holder_count_budget SET next=MAX(next,?) WHERE day=?',Date.now()+60000,day);
   const retry=now+(result.state==='rate-limited'?5*60000:30*60000);
   this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,cached?.payload||null,cached?.fetched||now,retry);
   return fallback(result.state,retry);
