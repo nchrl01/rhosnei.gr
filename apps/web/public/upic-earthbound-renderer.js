@@ -4,7 +4,7 @@ import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-10'
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
 import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-13';
 import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-10';
-import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-12';
+import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-16';
 import {imageDetailRules} from './upic-image-detail.js?v=earthbound-12';
 import {artworkBackground} from './upic-artwork-detail.js?v=earthbound-10';
 import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-10';
@@ -17,7 +17,7 @@ function noise(x,y,z){
  const a=fade(fract(x)),b=fade(fract(y)),c=fade(fract(z));
  return mix(mix(mix(hash(n),hash(n+1),a),mix(hash(n+57),hash(n+58),a),b),mix(mix(hash(n+113),hash(n+114),a),mix(hash(n+170),hash(n+171),a),b),c)*2-1;
 }
-export function createEarthboundRenderer(host,{maxDimension=1024}={}){
+export function createEarthboundRenderer(host,{maxDimension=1024,initialAllocation=null}={}){
  const canvas=document.createElement('canvas'),software=document.createElement('canvas');
  for(const c of [canvas,software]){c.className='pixel-blast-layer';c.setAttribute('aria-hidden','true');Object.assign(c.style,{width:'100%',height:'100%'});host.append(c);}
  const ctx=software.getContext('2d'),gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:true});
@@ -27,8 +27,9 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const stats={renderer:'earthbound',markCount:0,holderSamples:0};
  const eased=t=>{t=clamp(t);return t*t*(3-2*t);};
  const shapeFor=direction=>direction>0?[0,1,0]:direction<0?[0,0,1]:[1,0,0];
+ const glideSeconds=.32,recoverySeconds=.08;
  let shapeWeights=[1,0,0],shapeFrom=[1,0,0],shapeTarget=null,shapeStarted=0;
- let layoutCoin=null,layoutWidth=0,layoutHeight=0,sizeStarted=0,sizeMoving=false,positionStarted=0,positionMoving=false;
+ let layoutCoin=null,layoutWidth=0,layoutHeight=0,sizeStarted=0,sizeMoving=false,positionStarted=0,positionMoving=false,protectMotion=false;
  let geometryDirty=true,geometryData=new Float32Array(0),bufferBytes=-1,lastTransitionTime=null,displaySide=0;
  function contentBounds(){
   if(!layout||!layoutWidth)return {current:null,target:null};
@@ -49,22 +50,26 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  }
  function advanceGeometry(now,instant=false){
   if(!layout||(!sizeMoving&&!positionMoving))return;
-  const sizeT=instant?1:eased((now-sizeStarted)/.35);
-  const elapsed=now-positionStarted,moveT=instant?1:eased(elapsed/.45);
-  const settleT=instant?1:eased((elapsed-.45)/.12);
+  const sizeT=instant?1:eased((now-sizeStarted)/glideSeconds);
+  const elapsed=now-positionStarted,moveT=instant?1:eased(elapsed/glideSeconds);
+  const settleT=instant||!protectMotion?1:eased((elapsed-glideSeconds)/recoverySeconds);
   for(const mark of layout.marks){
    const desiredDiameter=mix(mark.fromDiameter,mark.targetDiameter,sizeT);
    if(positionMoving){
     mark.x=mix(mark.fromX,mark.targetX,moveT);mark.y=mix(mark.fromY,mark.targetY,moveT);
-    if(moveT>=1){
+    if(moveT>=1&&protectMotion){
      // Restore holder sizes gently once all centres are back on the safe grid.
      if(mark.recoveryDiameter===null)mark.recoveryDiameter=Math.min(mark.diameter,layout.rules.cellDiameterLimit??0);
      mark.diameter=mix(mark.recoveryDiameter,desiredDiameter,settleT);
     }else mark.diameter=desiredDiameter;
    }else mark.diameter=desiredDiameter;
   }
-  if(positionMoving&&moveT<1)protectMovingMarks(layout.marks);
-  sizeMoving=sizeT<1;positionMoving=positionMoving&&settleT<1;geometryDirty=true;
+  if(positionMoving&&protectMotion&&moveT<1)protectMovingMarks(layout.marks,Math.min(2,layout.rules.layoutGap??2));
+  sizeMoving=sizeT<1;positionMoving=positionMoving&&(moveT<1||settleT<1);geometryDirty=true;
+ }
+ function allocation(){
+  return layout?{coinKey:layoutCoin,columns:layout.rules.columns,rows:layout.rules.rows,
+   cells:layout.marks.map(({id,row,column})=>({id,row,column}))}:initialAllocation;
  }
  function advanceShape(direction,now,instant=false,reset=false){
   if(shapeTarget!==null){
@@ -137,10 +142,9 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   advanceShape(Math.sign(inputs.change),now,reduced,newCoin);
   const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances]);
   if(layoutKey!==key){
-   const target=buildMarkLayout(inputs,{mode:'earthbound',mark:'auto'},w,h);
+   const target=buildMarkLayout(inputs,{mode:'earthbound',mark:'auto'},w,h,allocation());
    const instant=!layout||newCoin||layoutWidth!==w||layoutHeight!==h||reduced;
    const previous=new Map((layout?.marks||[]).map(mark=>[mark.id,mark]));
-   const safeLimit=target.rules.cellDiameterLimit??0;
    const retargetPosition=!instant&&target.marks.some(mark=>{
     const old=previous.get(mark.id);
     return old&&(Math.abs(old.targetX-mark.x)>.001||Math.abs(old.targetY-mark.y)>.001);
@@ -148,26 +152,34 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const keepSizePhase=!instant&&!retargetPosition&&target.marks.every(mark=>{
     const old=previous.get(mark.id);return old&&old.targetDiameter===mark.diameter;
    });
-   const restartRecovery=!instant&&!retargetPosition&&!keepSizePhase&&positionMoving&&now-positionStarted>=.45;
-   if(instant)positionMoving=false;
-   else if(retargetPosition){positionStarted=now;positionMoving=true;}
-   else if(restartRecovery)positionStarted=now-.45;
+   // During a shared grid glide, retarget size and position from the same
+   // displayed frame. Their common progress keeps shrinking cells separated.
+   const retargetGeometry=retargetPosition||(!instant&&positionMoving&&!keepSizePhase);
+   if(instant){positionMoving=false;protectMotion=false;}
+   else if(retargetGeometry){
+    // Scaling the same grid is a shared glide and needs no squeeze effect.
+    // Guard only real cell changes / arrivals, or an interrupted guarded move.
+    protectMotion=(positionMoving&&protectMotion)||target.marks.some(mark=>{
+     const old=previous.get(mark.id);return !old||old.row!==mark.row||old.column!==mark.column;
+    });
+    positionStarted=now;positionMoving=true;
+   }
    if(!keepSizePhase)sizeMoving=false;
    for(const mark of target.marks){
     const old=previous.get(mark.id);
     mark.targetX=mark.x;mark.targetY=mark.y;
-    mark.fromX=instant?mark.x:retargetPosition?(old?.x??mark.x):(old?.fromX??mark.x);
-    mark.fromY=instant?mark.y:retargetPosition?(old?.y??mark.y):(old?.fromY??mark.y);
-    mark.recoveryDiameter=instant||retargetPosition?null:restartRecovery?(old?.diameter??0):(old?.recoveryDiameter??null);
+    mark.fromX=instant?mark.x:retargetGeometry?(old?.x??mark.x):(old?.fromX??mark.x);
+    mark.fromY=instant?mark.y:retargetGeometry?(old?.y??mark.y):(old?.fromY??mark.y);
+    mark.recoveryDiameter=instant||retargetGeometry?null:(old?.recoveryDiameter??null);
     if(!instant&&positionMoving&&old){mark.x=old.x;mark.y=old.y;}
     mark.targetDiameter=mark.diameter;
-    mark.fromDiameter=keepSizePhase?old.fromDiameter:instant?mark.diameter:Math.min(safeLimit,old?.diameter??0);
+    mark.fromDiameter=keepSizePhase?old.fromDiameter:instant?mark.diameter:(old?.diameter??0);
     mark.diameter=keepSizePhase?old.diameter:mark.fromDiameter;
     if(!keepSizePhase&&Math.abs(mark.fromDiameter-mark.targetDiameter)>.0001)sizeMoving=true;
    }
    layout=target;layoutKey=key;layoutCoin=inputs.coinKey;layoutWidth=w;layoutHeight=h;
    if(!keepSizePhase)sizeStarted=now;geometryDirty=true;
-   if(positionMoving&&now-positionStarted<.45)protectMovingMarks(layout.marks);
+   if(positionMoving&&protectMotion&&now-positionStarted<glideSeconds)protectMovingMarks(layout.marks,Math.min(2,layout.rules.layoutGap??2));
    Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
   }
   if(useSoftware||!geometryDirty)return;
@@ -222,6 +234,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   get kind(){return useSoftware?'canvas':'webgl';},
   get surface(){return useSoftware?software:canvas;},
   get contentBounds(){return contentBounds();},
+  get allocation(){return allocation();},
   setImage(source){
    mask=source;palette=source?originalArtworkPalette(source.originalPixels||source.pixels,{includeNeutrals:true}):[[1,1,1],[1,1,1]];originalImage=null;imageCells=0;imagePixels=null;
    if(source){

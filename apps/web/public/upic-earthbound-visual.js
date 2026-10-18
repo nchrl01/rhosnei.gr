@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-15';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-16';
 import {createContentFrame} from './upic-content-frame.js?v=1';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=142';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
@@ -185,7 +185,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(!latest.holderBalances.length)throw Error('Individual wallet balances are required to export this holder-based visual.');
    // Use the exact player renderer, with an independent fixed-size surface.
    // The on-page layout and live canvas are never resized or screen-captured.
-   const holder=document.createElement('div'),capture=createEarthboundRenderer(holder,{maxDimension:2048});
+   const holderAllocation=renderer.allocation;
+   const holder=document.createElement('div'),capture=createEarthboundRenderer(holder,{maxDimension:2048,initialAllocation:holderAllocation});
    if(imageCoinKey===key)capture.setImage(identitySource);
    const output=document.createElement('canvas'),context=output.getContext('2d');
    if(!context){capture.close();throw Error('Canvas export is unavailable in this browser.');}
@@ -193,7 +194,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    // Offscreen player canvases intentionally stop their animation. A media
    // export must instead start in the selected milestone's playing state.
    const targetIdentity=marketCapIdentity(frozen.marketCap),targetColour=frozen.marketCap>=5e7?1:0;
-   const manifest={renderer:'earthbound-player',backend:capture.kind,phase,seed:coinSeed,
+   const manifest={renderer:'earthbound-player',backend:capture.kind,phase,seed:coinSeed,holderAllocation,
     inputs:frozen,imageAvailable:Boolean(identitySource&&imageCoinKey===key),
     identity:targetIdentity,identityInput:targetIdentity,artworkColor:targetColour,transportPresence:1,presence:1,
     renderState:'settled-milestone-playing'};

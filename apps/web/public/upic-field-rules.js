@@ -1,6 +1,7 @@
 // Shared rules for this local study. Balances are either supplied snapshots
 // or an explicitly labeled simulation, never random size variation inside
 // the renderer. All sizes are raster pixels.
+import {assignHoldersToCells} from './upic-local-allocation.js?v=1';
 export const MAX_HOLDER_BALANCES=10000;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
@@ -125,7 +126,7 @@ function smoothstep(value){const t=clamp(value,0,1);return t*t*(3-2*t);}
 function hash(text){let value=2166136261;for(const c of text)value=Math.imul(value^c.charCodeAt(0),16777619);return value>>>0;}
 
 /** Regular Earthbound lattice: holdings change size/brightness, never positions. */
-export function buildMarkLayout(inputs,settings={},width=512,height=512){
+export function buildMarkLayout(inputs,settings={},width=512,height=512,previous=null){
   const rules=deriveFieldRules(inputs),count=rules.balances.length;
   if(!count)return {marks:[],rules:{...rules,allocatedDots:0}};
   const referenceScale=Math.min(width,height)/512;
@@ -151,8 +152,9 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512){
   }
   cells.sort((a,b)=>a.rank-b.rank||a.priority-b.priority);cells.length=count;
   // Identity order is stable and independent of wealth: no whale strips.
-  const holders=rules.balances.map((h,i)=>({...h,brightness:rules.markBrightness[i]}))
+  const orderedHolders=rules.balances.map((h,i)=>({...h,brightness:rules.markBrightness[i]}))
     .sort((a,b)=>hash(inputs.coinKey+':'+a.id)-hash(inputs.coinKey+':'+b.id)||a.id.localeCompare(b.id));
+  const holders=assignHoldersToCells(cells,orderedHolders,previous,columns,rows,inputs.coinKey);
   // Address-derived edge contour: fixed in space, with no random flicker.
   // Only mark bounds/brightness taper; centres and clear gaps stay intact.
   const phase=n=>hash(inputs.coinKey+':edge:'+n)/4294967295*Math.PI*2;
@@ -177,5 +179,5 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512){
     return {...cell,id:holder.id,diameter:diameter*edgeScale,normalDiameter:diameter,
       brightness:holder.brightness*edgeScale,edgeScale};
   });
-  return {marks,rules:{...rules,layoutMode:'regular-holder-grid',cellPitch:pitch,cellDiameterLimit:limit,layoutGap:gap,sizeScale:1,allocatedDots:count}};
+  return {marks,rules:{...rules,layoutMode:'regular-holder-grid',columns,rows,cellPitch:pitch,cellDiameterLimit:limit,layoutGap:gap,sizeScale:1,allocatedDots:count}};
 }
