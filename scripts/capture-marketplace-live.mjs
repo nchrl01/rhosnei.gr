@@ -11,13 +11,14 @@ import {HOLDER_NETWORKS} from '../apps/web/public/holder-count-providers.js';
 
 const project=resolve(dirname(fileURLToPath(import.meta.url)),'..'),root=resolve(project,'apps/web/public');
 const endpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures',kind='live-player-frame-v1';
-const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,publish:['true','1'].includes(process.env.CI),dryRun:false};
+const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false};
 for(let i=2;i<process.argv.length;i++){
  const arg=process.argv[i];
  if(arg==='--all'||arg==='--all1000'){options.all=true;continue;}
  if(arg==='--publish'){options.publish=true;continue;}
+ if(arg==='--check-publisher'){options.checkPublisher=true;options.publish=true;continue;}
  if(arg==='--dry-run'){options.dryRun=true;continue;}
- if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
+ if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
  const name=arg.slice(2);if(!arg.startsWith('--')||!['limit','ids','timeout','concurrency','port'].includes(name)||process.argv[i+1]===undefined)throw Error('Unknown or incomplete option: '+arg);
  const value=process.argv[++i];options[name]=name==='ids'?value.split(',').map(v=>v.trim()).filter(Boolean):Number(value);
 }
@@ -84,9 +85,6 @@ const supportedCatalogueIDs=new Set([...identities.values()].filter(supported).m
 const unsupportedCoins=catalogue.coins.filter(c=>!supportedCatalogueIDs.has(c.id)).map(c=>({id:c.id,symbol:c.symbol,reason:c.contractStatus==='off-chain'?'Off-chain exchange product':c.address||c.platforms?.length?'No observed-holder provider for the listed identifiers':'Native coin without an issued token identifier'}));
 if(options.dryRun){await new Promise(done=>process.stdout.write(JSON.stringify({catalogueCoins:catalogue.coins.length,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,existingCaptures:manifest.size,requested:queue.length,publishing:options.publish,selected:queue.map(c=>({id:c.id,key:c.key,capturedAt:manifest.get(c.key)?.capturedAt??null})),unsupported:unsupported.length},null,2)+'\n',done));process.exit(0);}
 if(options.publish&&(!process.env.ACTIONS_ID_TOKEN_REQUEST_URL||!process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN))throw Error('Publishing requires GitHub Actions OIDC credentials; use a local run without --publish for development.');
-const output=process.env.UPIC_CAPTURE_OUTPUT_DIR?resolve(process.env.UPIC_CAPTURE_OUTPUT_DIR):await mkdtemp(join(tmpdir(),'upic-live-captures-'));
-await mkdir(output,{recursive:true});
-const report={startedAt:new Date().toISOString(),publishing:options.publish,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,requested:queue.length,unsupported,unsupportedCoins,results:[]};
 let oidc=null;
 async function publisherToken(force=false){
  if(!force&&oidc?.until>Date.now())return oidc.value;
@@ -98,16 +96,42 @@ async function publisherToken(force=false){
  let expiry=Date.now()+240000;try{expiry=Math.min(expiry,JSON.parse(Buffer.from(body.value.split('.')[1],'base64url').toString()).exp*1000-60000);}catch{}
  oidc={value:body.value,until:expiry};return oidc.value;
 }
+async function serverError(response){
+ // Only expose a small JSON error from our endpoint, never an HTML response,
+ // credentials, response headers, or an unbounded server body.
+ if(!response.headers.get('content-type')?.includes('application/json'))return '';
+ const reader=response.body?.getReader();if(!reader)return '';
+ try{
+  const chunks=[];let size=0;
+  while(true){const {value,done}=await reader.read();if(done)break;size+=value.byteLength;if(size>8192){await reader.cancel();return '';}chunks.push(value);}
+  const data=JSON.parse(Buffer.concat(chunks).toString('utf8'));if(typeof data.error!=='string')return '';
+  let message=data.error;for(const value of [oidc?.value,process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN])if(value)message=message.split(value).join('[redacted]');
+  message=message.replace(/Bearer\s+\S+/gi,'Bearer [redacted]').replace(/\beyJ[\w-]+\.[\w-]+\.[\w-]+\b/g,'[redacted]').replace(/[\u0000-\u001f\u007f-\u009f]/g,' ').replace(/\s+/g,' ').trim().slice(0,180);
+  return message?': '+message:'';
+ }catch{return '';}
+ finally{reader.releaseLock();}
+}
+async function checkPublisher(){
+ const token=await publisherToken(),response=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(30000)});
+ // Authentication runs before payload validation. An empty body must reach
+ // validation (400), without writing an image or requiring a browser.
+ if(response.status!==400)throw Error('Cloud publisher preflight failed (HTTP '+response.status+')'+await serverError(response));
+ console.log('Cloud publisher preflight passed: authenticated request reached capture validation.');
+}
 async function publish(metadata,bytes){
  for(let attempt=0;attempt<2;attempt++){
   const token=await publisherToken(attempt>0),response=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({metadata,imageBase64:bytes.toString('base64')}),signal:AbortSignal.timeout(30000)});
   if(response.status===401&&attempt===0)continue;
   if(response.status===409)return {state:'retained-newer'};
-  if(!response.ok)throw Error('Cloud publication failed (HTTP '+response.status+')');
+  if(!response.ok)throw Error('Cloud publication failed (HTTP '+response.status+')'+await serverError(response));
   return {state:'published'};
  }
  throw Error('Cloud publisher identity rejected');
 }
+if(options.checkPublisher){await checkPublisher();process.exit(0);}
+const output=process.env.UPIC_CAPTURE_OUTPUT_DIR?resolve(process.env.UPIC_CAPTURE_OUTPUT_DIR):await mkdtemp(join(tmpdir(),'upic-live-captures-'));
+await mkdir(output,{recursive:true});
+const report={startedAt:new Date().toISOString(),publishing:options.publish,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,requested:queue.length,unsupported,unsupportedCoins,results:[]};
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.woff':'font/woff','.woff2':'font/woff2','.wasm':'application/wasm','.mp3':'audio/mpeg','.wav':'audio/wav'};
 const server=createServer(async(req,res)=>{
  try{

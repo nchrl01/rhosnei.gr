@@ -32,6 +32,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Check cloud publisher before rendering
+        run: node scripts/capture-marketplace-live.mjs --check-publisher
       - name: Install isolated capture browser
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/upic-browsers

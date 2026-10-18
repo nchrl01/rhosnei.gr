@@ -20,7 +20,15 @@ let cachedKeys=null,keysAt=0,keysPending;
 async function githubKeys(){
  if(cachedKeys&&Date.now()-keysAt<300000)return cachedKeys;
  if(keysPending)return keysPending;
- keysPending=(async()=>{const response=await fetch(JWKS,{redirect:'error',signal:AbortSignal.timeout(10000),headers:{Accept:'application/json'}});if(!response.ok)fail('Publisher keys unavailable',503);const data=JSON.parse(await boundedText(response,65536));if(!Array.isArray(data.keys)||!data.keys.length||data.keys.length>20)fail('Publisher keys unavailable',503);cachedKeys=data.keys;keysAt=Date.now();return cachedKeys;})();
+ keysPending=(async()=>{
+  let response;
+  try{response=await fetch(JWKS,{redirect:'manual',signal:AbortSignal.timeout(10000),headers:{Accept:'application/json'}});}
+  catch(error){const name=['AbortError','TimeoutError','TypeError'].includes(error?.name)?error.name:'other';fail('Publisher keys fetch failed ('+name+')',503);}
+  if(!response.ok)fail('Publisher keys HTTP '+response.status,503);
+  let data;try{data=JSON.parse(await boundedText(response,65536));}catch{fail('Publisher keys response invalid',503);}
+  if(!Array.isArray(data?.keys)||!data.keys.length||data.keys.length>20||data.keys.some(key=>!key||typeof key!=='object'||Array.isArray(key)))fail('Publisher keys response invalid',503);
+  cachedKeys=data.keys;keysAt=Date.now();return cachedKeys;
+ })();
  try{return await keysPending;}finally{keysPending=null;}
 }
 export async function verifyCapturePublisher(token,{now=Math.floor(Date.now()/1000),jwks}={}){
