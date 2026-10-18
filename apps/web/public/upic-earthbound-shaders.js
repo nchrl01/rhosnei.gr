@@ -1,5 +1,5 @@
-import {colourGLSL} from './upic-artwork-detail.js?v=earthbound-9';
-import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-9';
+import {colourGLSL} from './upic-artwork-detail.js?v=earthbound-10';
+import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-10';
 export const markVertex=`
 precision highp float;
 attribute vec2 position;
@@ -50,8 +50,8 @@ void main(){
   vec2 squarePoint=vMarkCenter-origin;
   float feed=earthboundFeed(squarePoint/uResolution.y,.5);
   // Pattern changes brightness, never deletes allocated holder dots.
-  float bw=mix(.65,1.,step(.5,feed+Bayer8(pixelId)-.5));
+  float bw=mix(.8,1.,step(.5,feed+Bayer8(pixelId)-.5));
   float survival=step(fract(sin(pixelId.x*73.17+pixelId.y*193.41+7.3)*43758.5453),uPixelPresence);
   bw*=survival*earthboundMark(rasterPoint,vMarkCenter,vMarkSize*sqrt(uPixelPresence),1.);
-  gl_FragColor=vec4(bw*vMarkBrightness*uInkColor*coinInk(vMarkCenter/uResolution),1.);
+  gl_FragColor=vec4(bw*min(1.,vMarkBrightness*1.6)*uInkColor*coinInk(vMarkCenter/uResolution),1.);
 }`;

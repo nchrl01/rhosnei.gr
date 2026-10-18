@@ -127,9 +127,11 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512){
   const rules=deriveFieldRules(inputs),count=rules.balances.length;
   if(!count)return {marks:[],rules:{...rules,allocatedDots:0}};
   const zoom=rules.zoomScale,referenceScale=Math.min(width,height)/512;
-  const columns=Math.ceil(Math.sqrt(count)),rows=Math.ceil(count/columns);
+  // Match the grid to the actual panel rather than centring a square inside it.
+  const columns=Math.max(1,Math.min(count,Math.round(Math.sqrt(count*width/height)))),rows=Math.ceil(count/columns);
   const fieldWidth=width*rules.fieldSpan,fieldHeight=height*rules.fieldSpan;
-  const fitPitch=Math.min(fieldWidth/columns,fieldHeight/rows);
+  const pitchX=fieldWidth/columns,pitchY=fieldHeight/rows;
+  const fitPitch=Math.min(pitchX,pitchY);
   const desiredGap=rules.gapPx*referenceScale*rules.fieldSpan;
   // Holder count sets a field-filling regular lattice, not a fixed pixel pitch.
   const pitch=fitPitch;
@@ -137,12 +139,12 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512){
   const gap=count===1?0:Math.min(desiredGap,pitch*.25);
   const available=count===1?Math.min(fieldWidth,fieldHeight):Math.max(0,pitch-gap);
   const limit=available>=1?2*Math.floor((available-1)/2)+1:available;
-  const startX=(width-(columns-1)*pitch)/2;
-  const startY=(height-(rows-1)*pitch)/2;
+  const startX=(width-(columns-1)*pitchX)/2;
+  const startY=(height-(rows-1)*pitchY)/2;
   const cells=[];
   for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
     const dx=column-(columns-1)/2,dy=row-(rows-1)/2;
-    cells.push({x:startX+column*pitch,y:startY+row*pitch,row,column,
+    cells.push({x:startX+column*pitchX,y:startY+row*pitchY,row,column,
       rank:dx*dx+dy*dy,priority:hash(inputs.coinKey+':cell:'+row+':'+column)});
   }
   cells.sort((a,b)=>a.rank-b.rank||a.priority-b.priority);cells.length=count;

@@ -24,7 +24,8 @@ vec3 coinInk(vec2 uv){
  vec3 primary=mix(uArtworkColorA,uArtworkColorB,step(distanceB,distanceA));
  // Keep dark primary ink visible on the black canvas without changing holder brightness.
  float primaryPeak=max(primary.r,max(primary.g,primary.b));
- vec3 visiblePrimary=primary+vec3(max(0.,.18-primaryPeak));
+ // Lift palette luminance without flattening holder-driven size or faintness.
+ vec3 visiblePrimary=primaryPeak>.001?primary/primaryPeak*max(.4,sqrt(primaryPeak)):vec3(.4);
  return mix(vec3(1.),visiblePrimary,image.a*uArtworkColor);
 }
 `;

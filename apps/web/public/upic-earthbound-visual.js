@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-9';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-10';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));

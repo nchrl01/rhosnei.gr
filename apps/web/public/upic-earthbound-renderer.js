@@ -1,11 +1,11 @@
-import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-9';
+import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-10';
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
-import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-9';
-import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-9';
-import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-9';
-import {imageDetailRules} from './upic-image-detail.js?v=earthbound-9';
-import {artworkBackground} from './upic-artwork-detail.js?v=earthbound-9';
-import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-9';
+import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-10';
+import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-10';
+import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-10';
+import {imageDetailRules} from './upic-image-detail.js?v=earthbound-10';
+import {artworkBackground} from './upic-artwork-detail.js?v=earthbound-10';
+import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-10';
 const fract=x=>x-Math.floor(x),mix=(a,b,t)=>a+(b-a)*t,clamp=x=>Math.max(0,Math.min(1,x));
 const hash=n=>fract(Math.sin(n)*43758.5453),fade=x=>x*x*x*(x*(x*6-15)+10);
 const b2=(x,y)=>fract(Math.floor(x)/2+Math.floor(y)**2*.75);
@@ -72,8 +72,8 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   const rgb=[imagePixels[i]/255,imagePixels[i+1]/255,imagePixels[i+2]/255];
   const distance=colour=>rgb.reduce((sum,c,j)=>sum+(c-colour[j])**2,0);
   const primary=distance(palette[0])<distance(palette[1])?palette[0]:palette[1];
-  const lift=Math.max(0,.18-Math.max(...primary));
-  return primary.map(c=>mix(1,c+lift,imagePixels[i+3]/255*color));
+  const peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
+  return primary.map(c=>mix(1,peak>.001?c/peak*level:.4,imagePixels[i+3]/255*color));
  }
  function prepare(inputs,w,h){
   const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances,Math.sign(inputs.change)]);
@@ -104,12 +104,12 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    let base=(sum*.5+.5)*.5-.65+(1.225-.5)*.3;
    base+=.28*noise(u*6+offset*.19,v*6+offset*.41,time*.04);base=Math.max(base,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
    let feed=battlePatternFeed(u,v,time,frame,base);
-   const brightness=feed+b8(m.column,m.row)-.5<.5?.65:1;
+   const brightness=feed+b8(m.column,m.row)-.5<.5?.8:1;
    const direction=Math.sign(inputs.change);let diameter=Math.max(1,Math.floor(m.diameter*Math.sqrt(pixelPresence)+.5));
    if(direction)diameter=Math.max(3,2*Math.floor((diameter-1)/2)+1);
    diameter=Math.min(m.diameter,diameter);
    const left=Math.floor(m.x-diameter/2+.5),bottom=Math.floor(m.y-diameter/2+.5),half=diameter/2,stroke=Math.max(1,Math.floor(diameter*.23+.5))*.5;
-   ctx.fillStyle='rgb('+coinInk(m.x/w,m.y/h,color).map(c=>Math.round(255*c*inkColor*brightness*(m.brightness??1))).join(',')+')';
+   ctx.fillStyle='rgb('+coinInk(m.x/w,m.y/h,color).map(c=>Math.round(255*c*inkColor*brightness*Math.min(1,(m.brightness??1)*1.6))).join(',')+')';
    for(let dy=0;dy<diameter;dy++)for(let dx=0;dx<diameter;dx++){
     const px=dx+.5-half,py=dy+.5-half;
     const inside=direction>0?Math.min(Math.abs(px),Math.abs(py))<=stroke:direction<0?Math.abs(Math.abs(px)-Math.abs(py))*.70710678<=stroke:px*px+py*py<=half*half;
