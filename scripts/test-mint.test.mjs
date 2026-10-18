@@ -59,6 +59,9 @@ test('controls isolate coins, restore real mode, retain highest tested milestone
   assert.equal(timers.size, 0);
   button.click(); preset('$1M').click();
   assert.equal(control.simulation().cap, 1_000_000);
+  control.setLocked(true); preset('$100K').click(); button.click();
+  assert.equal(control.simulation().cap, 1_000_000, 'recording locks cap and test-mint changes');
+  control.setLocked(false);
   preset('$100K').click(); assert.equal(control.simulation().highestCap, 1_000_000);
   const direction = controls.querySelector('.test-direction'); direction.value = 'down'; direction.handlers.change();
   assert.equal(control.simulation().direction, 'down');

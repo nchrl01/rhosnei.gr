@@ -8,7 +8,7 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
   try { storage ??= globalThis.localStorage; } catch {}
   const style = document.createElement('link');
   style.rel = 'stylesheet';
-  style.href = new URL('./test-mint.css?v=2', import.meta.url).href;
+  style.href = new URL('./test-mint.css?v=3', import.meta.url).href;
   document.head.append(style);
   const panel = document.createElement('div');
   panel.className = 'test-mint';
@@ -28,6 +28,9 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
   const direction = controls.querySelector('.test-direction');
   const activity = controls.querySelector('.test-activity');
   const presets = controls.querySelector('.test-milestones');
+  const exportHost = document.createElement('div');
+  exportHost.className = 'test-nft-export';
+  controls.querySelector('.test-evolution-body').append(exportHost);
   const dollars = value => '$' + Number(value).toLocaleString('en', {maximumFractionDigits: 0});
   const compact = value => value >= 1e9 ? '$1B' : value >= 1e6 ? '$' + value / 1e6 + 'M' : '$' + value / 1000 + 'K';
   const presetButtons = TEST_CAPS.map(cap => {
@@ -53,7 +56,7 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
       records = Object.fromEntries(Object.entries(saved).filter(([key, value]) => key.length < 300 && typeof value === 'boolean').slice(-100));
     }
   } catch {}
-  let coin = null, playing = false, elapsed = 0, startedAt = null, timer = null;
+  let coin = null, playing = false, elapsed = 0, startedAt = null, timer = null, locked = false;
   const tested = () => coin && Object.hasOwn(records, coin.key);
   const minted = () => tested() && records[coin.key] === true;
   const settings = () => coin ? evolution[coin.key] : null;
@@ -81,7 +84,10 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
     }, Math.max(0, PREVIEW_MS - elapsed));
   }
   function render() {
-    toggle.disabled = !coin;
+    toggle.disabled = locked || !coin;
+    reset.disabled = locked;
+    for (const input of [slider, direction, activity, ...presetButtons.map(p => p.button),
+      controls.querySelector('.test-cap-real'), controls.querySelector('.test-cap-restart')]) input.disabled = locked;
     toggle.setAttribute('aria-checked', String(Boolean(minted())));
     toggle.textContent = tested() ? 'Test mint · ' + (minted() ? 'ON' : 'OFF') : 'Test mint';
     toggle.title = coin ? 'Simulate minting for ' + coin.name + ' in this browser' : 'Load a coin first';
@@ -107,7 +113,7 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
   }
   function selectCap(value, restart = false) {
     const cap = validTestCap(value);
-    if (!minted() || cap === null) return;
+    if (locked || !minted() || cap === null) return;
     const previous = settings();
     evolution[coin.key] = {sampleActivity: true, direction: 'up', ...previous, cap,
       referenceCap: restart ? cap : previous?.referenceCap || cap,
@@ -116,33 +122,33 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
   }
   slider.addEventListener('input', () => selectCap(Math.round(10 ** Number(slider.value))));
   direction.addEventListener('change', () => {
-    if (!minted()) return;
+    if (locked || !minted()) return;
     const value = direction.value;
     if (!settings()?.cap) selectCap(10_000);
     evolution[coin.key].direction = value === 'down' ? 'down' : 'up';
     save(); render(); publish();
   });
   activity.addEventListener('change', () => {
-    if (!minted()) return;
+    if (locked || !minted()) return;
     const checked = activity.checked;
     if (!settings()?.cap) selectCap(10_000);
     evolution[coin.key].sampleActivity = checked;
     save(); render(); publish();
   });
   controls.querySelector('.test-cap-real').addEventListener('click', () => {
-    if (!coin) return;
+    if (locked || !coin) return;
     delete evolution[coin.key]; save(); render(); publish();
   });
   controls.querySelector('.test-cap-restart').addEventListener('click', () => selectCap(10_000, true));
   toggle.addEventListener('click', () => {
-    if (!coin) return;
+    if (locked || !coin) return;
     accountTime();
     records[coin.key] = !minted();
     elapsed = 0;
     save(); render(); publish(); arm();
   });
   reset.addEventListener('click', () => {
-    if (!coin) return;
+    if (locked || !coin) return;
     accountTime(); clearTimer();
     delete records[coin.key];
     delete evolution[coin.key];
@@ -151,6 +157,8 @@ export function createTestMint(host, {onPreviewEnd, onChange, storage, now = () 
   });
   render();
   return {
+    exportHost,
+    setLocked(value) {locked = Boolean(value); render();},
     simulation,
     setMarket(value) {
       if (value?.key === coin?.key) return;

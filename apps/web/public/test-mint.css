@@ -20,3 +20,9 @@
 .test-milestones { display:flex; flex-wrap:wrap; gap:6px; }
 .test-milestones button[aria-pressed="true"] { background:#fff; color:#000; border-color:#fff; }
 .test-milestones button[data-reached="true"] { border-color:#fff; }
+.test-nft-export { display:grid; gap:10px; padding-top:12px; border-top:1px solid #333; }
+.test-export-actions, .test-export-files { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; }
+.test-export-files a, .test-export-files summary { color:#fff; text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+.test-export-files a:hover, .test-export-files a:focus-visible { color:#000; background:#fff; }
+.test-export-files details { flex-basis:100%; min-width:0; }
+.test-export-files video { display:block; width:100%; max-width:360px; height:auto; margin-top:10px; background:#000; }

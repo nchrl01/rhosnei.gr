@@ -13,7 +13,7 @@ function noise(x,y,z){
  const a=fade(fract(x)),b=fade(fract(y)),c=fade(fract(z));
  return mix(mix(mix(hash(n),hash(n+1),a),mix(hash(n+57),hash(n+58),a),b),mix(mix(hash(n+113),hash(n+114),a),mix(hash(n+170),hash(n+171),a),b),c)*2-1;
 }
-export function createEarthboundRenderer(host){
+export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const canvas=document.createElement('canvas'),software=document.createElement('canvas');
  for(const c of [canvas,software]){c.className='pixel-blast-layer';c.setAttribute('aria-hidden','true');Object.assign(c.style,{width:'100%',height:'100%'});host.append(c);}
  const ctx=software.getContext('2d'),gl=canvas.getContext('webgl',{alpha:true,antialias:false,preserveDrawingBuffer:true});
@@ -101,10 +101,11 @@ export function createEarthboundRenderer(host){
  canvas.addEventListener('webglcontextlost',lost);canvas.addEventListener('webglcontextrestored',restored);if(gl)init();
  return {
   get kind(){return useSoftware?'canvas':'webgl';},
+  get surface(){return useSoftware?software:canvas;},
   setImage(source){mask=preparePixelIdentity(source);if(gl&&!useSoftware)uploadImage();},
   render({width,height,time=0,seed=0,inputs,identity=0,artworkColor=0,presence=1,pixelPresence=1,inkColor=1,reducedMotion=false}){
    if(closed)return;
-   const scale=Math.min(1,1024/Math.max(1,width,height)),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
+   const scale=Math.min(1,maxDimension/Math.max(1,width,height)),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
    for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;c.style.opacity=String(clamp(presence));}
    prepare(inputs,w,h);identity=mask?identity:0;artworkColor=mask?artworkColor:0;
    canvas.hidden=useSoftware;software.hidden=!useSoftware;host.dataset.pixelBlast=useSoftware?'canvas':'ready';

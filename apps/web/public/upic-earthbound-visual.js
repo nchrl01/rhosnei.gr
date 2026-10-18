@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-5';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-6';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -50,7 +50,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let latest=null,settings={},key='',seed=0,clock=0,presence=0,transportPresence=0,identity=0,identityInput=0,color=0,colorTarget=0;
  let staleElapsed=0,colorElapsed=0,last=0,lastRender=0,raf=0,closed=false,visible=true,width=0,height=0,sourceCursor=null;
- let sourceValue=null,sourceAt=0,imageCoinKey='';
+ let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null;
  function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderer.clear();}
  function size(){
   const form=document.getElementById('coin-form');
@@ -118,7 +118,43 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   // Keep the app's audio callback interface without coupling sound to ink.
   event(){},pulse(){},piano(){},
-  setImage(image){renderer.setImage(image);imageCoinKey=identityKey(getState().coinKey);},
+  setImage(image){identitySource=image;renderer.setImage(image);imageCoinKey=identityKey(getState().coinKey);},
+  createCapture(){
+   if(!latest?.hasMarket)throw Error('Load a coin and choose a test milestone first.');
+   // Use the exact player renderer, with an independent fixed-size surface.
+   // The on-page layout and live canvas are never resized or screen-captured.
+   const holder=document.createElement('div'),capture=createEarthboundRenderer(holder,{maxDimension:2048});
+   if(imageCoinKey===key)capture.setImage(identitySource);
+   const output=document.createElement('canvas'),context=output.getContext('2d');
+   if(!context){capture.close();throw Error('Canvas export is unavailable in this browser.');}
+   const frozen=structuredClone(latest),phase=clock,coinSeed=seed;
+   // Offscreen player canvases intentionally stop their animation. A media
+   // export must instead start in the selected milestone's playing state.
+   const targetIdentity=marketCapIdentity(frozen.marketCap),targetColour=frozen.marketCap>=1e8?1:0;
+   const manifest={renderer:'earthbound-player',backend:capture.kind,phase,seed:coinSeed,
+    inputs:frozen,imageAvailable:Boolean(identitySource&&imageCoinKey===key),
+    identity:targetIdentity,identityInput:targetIdentity,artworkColor:targetColour,transportPresence:1,presence:1,
+    renderState:'settled-milestone-playing'};
+   let previous=0,imageAmount=targetIdentity,imageInput=targetIdentity,colour=targetColour,colourElapsed=0,transport=1;
+   return {
+    canvas:output,manifest,
+    frame(seconds,size=720){
+     const dt=Math.max(0,seconds-previous);previous=seconds;
+     imageInput+=(marketCapIdentity(frozen.marketCap)-imageInput)*(1-Math.exp(-dt/.16));
+     imageAmount+=(imageInput-imageAmount)*(1-Math.exp(-dt/1.4));
+     const colourTarget=frozen.marketCap>=1e8?1:0;
+     colourElapsed+=dt;const steps=Math.floor(colourElapsed);
+     if(steps){colourElapsed-=steps;colour+=(colourTarget-colour)*(1-Math.exp(-steps/1.4));}
+     transport+=(1-transport)*(1-Math.exp(-dt/.08));
+     capture.render({width:size,height:size,time:phase+seconds*1.35*frozen.tempo/100,seed:coinSeed,inputs:frozen,
+      identity:imageAmount,artworkColor:colour,presence:1,pixelPresence:Math.max(.32,transport),inkColor:.18+.82*transport,reducedMotion:false});
+     if(output.width!==size)output.width=size;if(output.height!==size)output.height=size;
+     context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;
+     context.globalAlpha=frozen.fresh;context.drawImage(capture.surface,0,0,size,size);context.globalAlpha=1;
+    },
+    close(){capture.close();output.width=output.height=1;},
+   };
+  },
   snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
