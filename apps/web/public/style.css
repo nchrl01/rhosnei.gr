@@ -219,12 +219,13 @@ body.inspecting .audio-visualizer{display:none}
 #load{align-self:stretch;height:auto;min-height:0;aspect-ratio:1;display:grid;place-items:center;line-height:1}
 .transport button,.replay-actions>button{display:inline-flex;align-items:center;justify-content:center;line-height:1;padding-block:0}
 @media(min-width:761px){
- .instrument-page main{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);column-gap:32px;align-items:start}
+ .instrument-page main{display:grid;grid-template-columns:minmax(0,600px) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr);column-gap:32px;align-items:start}
  #coin-form{grid-column:1;grid-row:2;width:100%;max-width:none}
- #coin-search-results{grid-column:1;width:100%;max-width:none}
- .instrument{grid-column:1;width:100%;min-width:0;margin-top:0}
+ #coin-search-results{grid-column:1;grid-row:3;width:100%;max-width:none}
+ .instrument{grid-column:1;grid-row:4;width:100%;min-width:0;margin-top:0}
  .instrument-top,.readings{width:100%;max-width:none}
- .audio-visualizer{grid-column:2;grid-row:2/span 3;position:sticky;top:var(--visual-top,80px);align-self:start;width:calc(100% + 16px);height:calc(100vh - var(--visual-top,80px));height:calc(100svh - var(--visual-top,80px));min-height:0;aspect-ratio:auto;margin:12px 0 0;z-index:0}
+ .audio-visualizer{grid-column:2;grid-row:2/span 3;position:relative;align-self:stretch;width:calc(100% + 16px);height:auto;min-height:0;aspect-ratio:auto;margin:12px 0 0;z-index:0}
+ .instrument-page .site-footer{position:fixed;inset:auto 0 0;z-index:10;margin:0}
  #load{width:32px;flex-basis:32px;font-size:var(--font-size-title)}
  .transport{align-self:start;padding-top:28px}
  .transport button{height:32px;min-height:32px}
@@ -361,8 +362,6 @@ input{caret-color:#fff}
 /* Shared market clock drives both the horizontal score and PixelBlast field. */
 .audio-visualizer .pixel-blast-layer{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;z-index:1}
 
-/* Stable pixel dimensions, independent of scrolling and browser chrome. */
-.audio-visualizer{height:var(--visual-height,56svh)!important}
 #replay-hint,.chart-status{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%);white-space:nowrap;border:0!important}
 .transport #play,.transport #share{width:52px;height:52px;min-width:52px;min-height:52px;padding:0;border-radius:50%!important;display:inline-flex;align-items:center;justify-content:center;flex:none;align-self:center}
 .transport .transport-icon{display:block;width:24px;height:24px}
@@ -443,7 +442,7 @@ body.visual-expanded{overflow:hidden}
 .coin-live-readings .clock-island,.coin-live-readings .market-clock{align-items:center;line-height:1}
 .coin-live-readings>div:first-child{column-gap:14px}
 
-/* Four stable market slots; small screens scroll this strip instead of wrapping. */
+/* Stable market slots; small screens scroll this strip instead of wrapping. */
 .instrument-page .readings{display:grid;grid-template-columns:repeat(5,minmax(max-content,1fr));width:100%;min-width:0;max-width:none;margin-top:8px;padding:8px 0;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
 .instrument-page .readings>div{display:grid;justify-content:start;align-content:start;min-width:0;gap:4px}
 .instrument-page .readings small{font-size:var(--font-size-small);line-height:1.25;white-space:nowrap;color:#aaa}
@@ -455,7 +454,8 @@ body.visual-expanded{overflow:hidden}
  .instrument-page .coin-identity{grid-column:1;grid-row:1;min-width:0}
  .instrument-page .transport{grid-column:2;grid-row:1;flex-direction:row;align-items:center;gap:10px;padding-top:0}
  .instrument-page .chart-panel{grid-column:1/-1;grid-row:2;width:100%;min-width:0}
- .instrument-page #market-chart{height:clamp(180px,28svh,300px)}
+ .instrument-page #market-chart{height:clamp(110px,18svh,180px)}
+ .instrument-page .playback-speed.is-live{display:none}
  .instrument-page .coin-title{margin-top:12px;gap:16px}
  .instrument-page .coin-title h2{overflow-wrap:anywhere;line-height:1.3}
  .instrument-page .tick-heading{flex-wrap:wrap;gap:6px 12px;line-height:1.4}
@@ -476,6 +476,10 @@ body.visual-expanded{overflow:hidden}
  .instrument-page .coin-live-readings small{line-height:1.4}
  .instrument-page .playback-speed{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;max-width:none;gap:6px}
  .instrument-page .playback-speed button{width:100%;min-width:0;flex:initial}
+}
+@media(min-width:761px) and (max-height:700px){
+ .instrument-page .instrument-top{gap:8px 16px;margin:4px 0 8px}
+ .instrument-page #market-chart{height:96px}
 }
 @media(max-width:760px){
  .instrument-page .instrument-top{max-width:none;gap:16px;margin-bottom:16px}

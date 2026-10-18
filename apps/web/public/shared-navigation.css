@@ -4,6 +4,8 @@
 body:is(.instrument-page,.marketplace-page,.about-page)>main {
   padding:0 var(--site-gutter) 28px;
 }
+body.instrument-page>main { min-height:100svh;padding-bottom:0; }
+@media(min-width:761px){ body.instrument-page>main { padding-bottom:var(--navigation-row-height); } }
 body.about-page>main { padding-bottom:0; }
 .marketplace-page main,.about-page main { align-items:stretch; }
 
@@ -278,7 +280,9 @@ body.credits-page>.site-footer { margin-inline:0; }
   .site-footer .footer-prices { justify-content:flex-start;gap:20px; }
 }
 @media(max-width:760px) {
-  body:is(.instrument-page,.marketplace-page)>main { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+  body.marketplace-page>main { padding-bottom:calc(24px + env(safe-area-inset-bottom)); }
+  body.instrument-page>main { display:flex;flex-direction:column; }
+  body.instrument-page .site-footer { margin-top:auto; }
   .market-header { margin-bottom:12px; }
   .about-page .market-header { margin-bottom:0; }
   :is(.market-header,.site-navigation) .header-link { min-height:44px; }
