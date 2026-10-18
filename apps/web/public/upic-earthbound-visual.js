@@ -58,7 +58,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(host),fullscreen=createVisualFullscreen(host);
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
- const loadingNote=document.createElement('div');loadingNote.className='visual-holder-loading';loadingNote.hidden=true;host.append(loadingNote);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
  function syncHolderLoading(rendered=false,now=performance.now()){
   if(latest?.liveHolders&&latest.holderSnapshotReady&&!initialHoldersReady){
@@ -78,9 +77,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const loading=Boolean(latest?.liveHolders&&(waiting||awaitingHolderRender));
   if(loading)initialLoadShown=true;
   host.dataset.holderLoading=String(loading);host.setAttribute('aria-busy',String(loading));
-  loadingNote.hidden=!loading;
-  const label=initialHoldersReady?'Preparing live visual…':state==='loading'?'Loading holder balances…':'Holder data delayed · retrying…';
-  if(loading&&loadingNote.textContent!==label)loadingNote.textContent=label;
  }
 
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -203,6 +199,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();loadingNote.remove();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

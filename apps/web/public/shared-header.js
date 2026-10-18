@@ -51,7 +51,7 @@ removeRetiredSampleStorage();
 // Optional footer features cannot prevent navigation or volume from starting.
 if(document.querySelector('.site-footer')){
  void import('./footer-prices.js?v=240').catch(()=>{});
- void import('./wallet-connect.js?v=281').catch(()=>{
+ void import('./wallet-connect.js?v=317').catch(()=>{
   const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
   if(button)button.disabled=true;
   if(status)status.textContent='Wallet unavailable. Reload to try again.';
