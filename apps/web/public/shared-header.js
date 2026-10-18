@@ -51,7 +51,7 @@ removeRetiredSampleStorage();
 // Optional footer features cannot prevent navigation or volume from starting.
 if(document.querySelector('.site-footer')){
  void import('./footer-prices.js?v=240').catch(()=>{});
- void import('./wallet-connect.js?v=317').catch(()=>{
+ if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=317').catch(()=>{
   const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
   if(button)button.disabled=true;
   if(status)status.textContent='Wallet unavailable. Reload to try again.';
@@ -76,20 +76,25 @@ function bindMobileSearch(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindMobileSearch,{once:true});else bindMobileSearch();
 
-function bindMobileNavigation(){
- const toggle=document.querySelector('.header-menu'),links=[...document.querySelectorAll('.header-links>.header-link')],mobile=matchMedia('(max-width:760px)');
- if(!toggle)return;
- const menu=document.createElement('nav');menu.id='site-mobile-menu';menu.className='site-mobile-menu';menu.hidden=true;menu.setAttribute('aria-label','Site navigation');document.body.append(menu);
- const anchors=links.map(link=>{const a=document.createComment('navigation link');link.before(a);return a;});
- const close=()=>{menu.hidden=true;toggle.setAttribute('aria-expanded','false');};
- toggle.addEventListener('click',()=>{const open=menu.hidden;menu.hidden=!open;toggle.setAttribute('aria-expanded',String(open));menu.style.top=document.querySelector('.header-main').getBoundingClientRect().bottom+'px';});
- const footer=document.querySelector('.site-footer'),more=footer?.querySelector('.footer-mobile-more'),panel=more?.querySelector('.footer-mobile-panel'),groups=footer?[footer.querySelector('.footer-links'),footer.querySelector('.footer-tools')].filter(Boolean):[];
- const network=footer?.querySelector('.footer-networks');const footAnchors=groups.map(group=>{const a=document.createComment('footer group');group.before(a);return a;});
+function bindMobileFooter(){
+ const mobile=matchMedia('(max-width:760px)'),footer=document.querySelector('.site-footer'),more=footer?.querySelector('.footer-mobile-more'),panel=more?.querySelector('.footer-mobile-panel');
+ if(!panel)return;
+ const groups=[footer.querySelector('.footer-links'),footer.querySelector('.footer-tools')].filter(Boolean),network=footer.querySelector('.footer-networks');
+ const anchors=groups.map(group=>{const a=document.createComment('footer group');group.before(a);return a;});
  const networkAnchor=document.createComment('network position');if(network)network.before(networkAnchor);
- const sync=()=>{close();links.forEach((link,i)=>mobile.matches?menu.append(link):anchors[i].after(link));if(panel){more.open=false;groups.forEach((group,i)=>mobile.matches?panel.append(group):footAnchors[i].after(group));if(network){if(mobile.matches)footer.insertBefore(network,more);else networkAnchor.after(network);}}};
- document.querySelector('.header-wallet')?.addEventListener('click',()=>document.querySelector('.footer-wallet')?.click());
- document.addEventListener('pointerdown',event=>{if(!menu.hidden&&!menu.contains(event.target)&&!toggle.contains(event.target))close();if(more?.open&&!more.contains(event.target))more.open=false;});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'){if(!menu.hidden){close();toggle.focus();}if(more?.open){more.open=false;more.querySelector('summary').focus();}}});
+ const sync=()=>{more.open=false;groups.forEach((group,i)=>mobile.matches?panel.append(group):anchors[i].after(group));if(network){if(mobile.matches)footer.insertBefore(network,more);else networkAnchor.after(network);}};
+ document.addEventListener('pointerdown',event=>{if(more.open&&!more.contains(event.target))more.open=false;});
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&more.open){more.open=false;more.querySelector('summary').focus();}});
  mobile.addEventListener('change',sync);sync();
 }
-bindMobileNavigation();
+bindMobileFooter();
+const headerWallet=document.querySelector('.header-wallet');
+if(headerWallet){
+ let walletOpening=false;
+ headerWallet.addEventListener('click',async()=>{
+  if(walletOpening)return;walletOpening=true;headerWallet.disabled=true;headerWallet.setAttribute('aria-busy','true');
+  try{const {openWalletConnection}=await import('./wallet-session.js?v=317');await openWalletConnection();headerWallet.title='Wallet';}
+  catch(error){headerWallet.title=error.message||'Could not connect. Try again.';}
+  finally{walletOpening=false;headerWallet.disabled=false;headerWallet.removeAttribute('aria-busy');}
+ });
+}
