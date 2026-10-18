@@ -1,3 +1,4 @@
+import {rememberRecentCoin} from './coin-catalogue.js?v=325';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=323';
 import {createTestMint} from './test-mint.js?v=3';
 import {createTestNftExporter} from './test-nft-export.js?v=1';
@@ -8,9 +9,9 @@ import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=281';
-import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=206';
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=325';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=91';
+import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=325';
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,loadSharedScore} from './take-share.js?v=220';
 import {pianoHarmony} from './music-context.js?v=208';
@@ -39,7 +40,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=277';
 import {MarketChart} from './chart.js?v=234';
-import {loadHistory} from './history.js?v=277';
+import {loadHistory} from './history.js?v=325';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
 const ui=createUIControls();
@@ -772,6 +773,7 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
+ rememberRecentCoin({key:imageKey(pair),chain:pair.chainId,address:pair.source==='ccxt'?null:pair.baseToken.address,query:pair.source==='ccxt'?pair.exchangeSymbol:undefined,symbol:pair.baseToken.symbol,name:pair.baseToken.name,image:pair.info?.imageUrl||pair.baseToken.imageUrl});
  document.dispatchEvent(new CustomEvent('upic:market-selected'));
  testNftExport.cancel('Export cancelled because the selected coin changed.');
  liveConnection?.abort();liveConnection=null;pendingHistoryReplay=false;
@@ -840,6 +842,11 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
   if(autoPlay&&!playing)await $('play').onclick();
  }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
 }
+document.addEventListener('upic:search-coin',event=>{
+ const coin=event.detail;if(!coin||typeof(coin.address||coin.query)!=='string')return;
+ requestedNetwork=coin.address?coin.chain:null;requestedAutoplay=false;
+ $('address').value=coin.address||coin.query;syncAddressLabel();$('coin-form').requestSubmit();
+});
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.querySelector('.inspector-display').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}

@@ -1,3 +1,4 @@
+import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=325';
 // Browser-safe public exchange adapter. No account, API key or trading calls.
 let worker=null,serial=0;
 const pending=new Map(),streams=new Map();
@@ -49,18 +50,8 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
  const interval={minute:60000,hour:3600000,day:86400000}[timeframe]*aggregate;
  const frame=String(aggregate)+({minute:'m',hour:'h',day:'d'}[timeframe]);
  const key='upic-ccxt-history-v1:'+id+':'+symbol+':'+frame;
- let bars=[],before=Date.now(),lastOldest=Infinity,freshCache=false;
+ let bars=[],before=Date.now(),lastOldest=Infinity,freshCache=false,cachedPages=0,cachedLatest=null;
  function report(state,message,detail={}){if(!closed)onUpdate({candles:bars,interval,timeframe,state,message,created:null,error:null,retrying:false,...detail});}
- try{
-  const cached=JSON.parse(localStorage.getItem(key));
-  if(cached?.saved>Date.now()-86400000&&Array.isArray(cached.bars)){
-   bars=cached.bars.filter(b=>Number.isFinite(b.time)&&b.open>0&&b.high>=b.close&&b.low>0&&b.close>0).slice(-1200);
-   freshCache=bars.length>0&&(options.maxPages===1||cached.pages>=Math.min(3,options.maxPages||3))&&Date.now()-cached.saved<Math.min(60000,Math.max(0,options.cacheAge??5000));
-   report(freshCache?'partial':'cached',freshCache?'Recently fetched exchange history':'Saved exchange history · refreshing');
-  }
- }catch{}
- if(freshCache)return()=>{closed=true;};
- if(!bars.length)report('loading','Loading '+pair.exchangeName+' history');
  async function load(){
   const saved=bars,limit=Math.min(3,Math.max(1,options.maxPages||3));
   let obtained=false,pagesLoaded=0;
@@ -84,16 +75,26 @@ export function loadExchangeHistory(pair,onUpdate,options={}){
     bars=[...merged.values()].sort((a,b)=>a.time-b.time).slice(-1200);obtained=true;pagesLoaded++;
     report(page+1<limit?'loading':'partial','Exchange history · estimated quote volume · available coverage only');
     before=oldest;
-    if(valid.length<300||id==='kraken')break;
+    if(valid.length<300||id==='kraken'||cachedPages>=limit&&cachedLatest!==null&&oldest<=cachedLatest)break;
    }
    if(!obtained&&!bars.length)throw Error('Exchange returned no candles for this pair');
    report('partial','Exchange history · base volume × close estimate · launch coverage not assumed');
-   try{
-    localStorage.setItem(key,JSON.stringify({saved:Date.now(),bars,pages:pagesLoaded}));
-    const keys=Object.keys(localStorage).filter(k=>k.startsWith('upic-ccxt-history-v1:'));
-    while(keys.length>12){const old=keys.shift();if(old!==key)localStorage.removeItem(old);}
-   }catch{}
+   void writeSavedHistory(key,{saved:Date.now(),bars,pages:Math.max(cachedPages,pagesLoaded)});
   }catch(error){report(bars.length?'partial':'unavailable','Exchange history: '+error.message,{error:error.message||'Exchange history refresh failed'});}
  }
- void load();return()=>{closed=true;};
+ async function start(){
+ try{
+  const cached=await readSavedHistory(key);if(closed)return;
+  if(cached?.saved>Date.now()-HISTORY_RETENTION_MS&&Array.isArray(cached.bars)){
+   bars=cached.bars.filter(b=>Number.isFinite(b.time)&&b.open>0&&b.high>=b.close&&b.low>0&&b.close>0).slice(-1200);
+   freshCache=bars.length>0&&(options.maxPages===1||cached.pages>=Math.min(3,options.maxPages||3))&&Date.now()-cached.saved<Math.min(60000,Math.max(0,options.cacheAge??60000));
+   cachedPages=Number(cached.pages)||0;cachedLatest=bars.length?Math.max(...bars.map(b=>b.time)):null;
+   report(freshCache?'partial':'cached',freshCache?'Recently fetched exchange history':'Saved exchange history · refreshing');
+  }
+ }catch{}
+ if(closed||freshCache)return;
+ if(!bars.length)report('loading','Loading '+pair.exchangeName+' history');
+ void load();
+ }
+ void start();return()=>{closed=true;};
 }

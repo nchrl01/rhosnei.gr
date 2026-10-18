@@ -586,3 +586,12 @@ body.visual-expanded{overflow:hidden}
  .instrument-page .coin-title>.audio-visualizer[data-content-aware="true"]:not(.is-expanded){border:0}
  .audio-visualizer[data-content-aware="true"]:not(.is-expanded) .visual-content-frame{outline:0}
 }
+
+.coin-search-thumbnail{display:none}
+@media(max-width:760px){
+ .mobile-coin-search .coin-search-result{grid-template-columns:40px minmax(0,1fr);gap:5px 12px}
+ .mobile-coin-search .coin-search-thumbnail{display:block;grid-column:1;grid-row:1/4;align-self:center;width:40px;height:40px;object-fit:cover;border-radius:5px}
+ .mobile-coin-search .coin-search-result>span,.mobile-coin-search .coin-search-result>small{grid-column:2}
+ .mobile-coin-search .coin-search-result>span{display:grid;gap:4px;font-weight:400}
+ .mobile-coin-search .coin-search-result strong{font-weight:400}
+}
