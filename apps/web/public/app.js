@@ -1,5 +1,5 @@
 import {rememberRecentCoin} from './coin-catalogue.js?v=325';
-import {archivePlayerFrames} from './coin-snapshot-store.js?v=323';
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=329';
 import {createTestMint} from './test-mint.js?v=3';
 import {createTestNftExporter} from './test-nft-export.js?v=1';
 import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';

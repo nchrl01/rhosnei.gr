@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=326';
+import {bindMobileCoinSearch} from './mobile-search.js?v=329';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -78,7 +78,7 @@ if(headerWallet){
  let walletOpening=false;
  headerWallet.addEventListener('click',async()=>{
   if(walletOpening)return;walletOpening=true;headerWallet.disabled=true;headerWallet.setAttribute('aria-busy','true');
-  try{const {openWalletConnection}=await import('./wallet-session.js?v=317');await openWalletConnection();headerWallet.title='Wallet';}
+  try{const {openWalletConnection}=await import('./wallet-session.js?v=317');await openWalletConnection();headerWallet.title='Wallet account';}
   catch(error){headerWallet.title=error.message||'Could not connect. Try again.';}
   finally{walletOpening=false;headerWallet.disabled=false;headerWallet.removeAttribute('aria-busy');}
  });

@@ -26,3 +26,14 @@ The timestamped public catalogue contains 1,000 distinct coins ordered by curren
 At most 40 cards render initially; Load more adds another 40. Filters and search operate on the cached catalogue, not 1,000 live API requests. Each card's market snapshot/capture time is visible. Refresh with `python3 scripts/build-coin-catalogue.py`; four bounded market pages, one optional fill page for moving-rank duplicates, a contract-list request, a trending request and a verified Jean Phil query. No periodic automation was installed. The as-of timestamp describes a fetched cohort, not atomic real-time ranks.
 
 Mobile filters live in the full-screen search menu. The network/sort controls move there on phones and return to the gallery toolbar on desktop. Search covers the complete cached catalogue and the newest available captured frames, with additional results loaded in batches. A missing capture uses labelled coin artwork; it is never portrayed as an actual player frame.
+
+
+## Neutral seed studies and captures
+
+Catalogue cards prefer a saved neutral UPIC frame, then the supplied neutral real-data preview, then a labelled Seed preview. Earlier directional (+/×) saved frames are excluded. New player captures wait for neutral dot weights.
+
+The 1,001 seed studies use the existing EarthBound renderer at a fixed phase with each catalogue coin key and market cap. Their benchmark is explicitly simulated: 1,024 equal USD balances, $100,000 reference liquidity, 100 BPM, no directional change. They are monochrome comparative studies, not actual wallet holdings, live screenshots, or predictions. Hover text explains this distinction; the Captured filter excludes them. Market snapshot dates describe the catalogue data, not a live capture.
+
+Regenerate with `UPIC_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs node scripts/render-marketplace-seeds.mjs` from the repository root. The generator uses an isolated local browser and blocks external requests. Static WebP files are lazy-loaded; no per-card visual engine runs in the gallery.
+
+Gallery batches append automatically near the bottom, retaining Load more as a fallback. Trending discovery requires at least $1M market cap.

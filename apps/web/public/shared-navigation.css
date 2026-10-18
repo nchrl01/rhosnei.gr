@@ -490,3 +490,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .mobile-coin-search .coin-gallery-filter{display:grid}
  .marketplace-page .coin-gallery-toolbar{display:none}
 }
+
+.header-wallet{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small)}
+.header-wallet>svg{display:none}
+@media(max-width:760px){.header-wallet{width:28px;min-height:44px}.header-wallet>svg{display:block}.header-signin-label{display:none}}

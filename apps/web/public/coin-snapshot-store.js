@@ -2,7 +2,7 @@
 const DB='upic-coin-snapshots-v1',LIMIT=24;
 let database;
 function open(){return database??=new Promise((resolve,reject)=>{const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore('frames',{keyPath:'key'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
-export async function readCoinSnapshots(){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction('frames'),r=tx.objectStore('frames').getAll();r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
+export async function readCoinSnapshots(){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction('frames'),r=tx.objectStore('frames').getAll();r.onsuccess=()=>resolve(r.result.filter(frame=>frame.neutral===true));r.onerror=()=>reject(r.error);});}
 export async function saveCoinSnapshot(frame){
  if(!frame.key||!(frame.blob instanceof Blob)||frame.blob.size>750000)return;
  const db=await open();await new Promise((resolve,reject)=>{const tx=db.transaction('frames','readwrite'),store=tx.objectStore('frames');store.put(frame);const r=store.getAll();r.onsuccess=()=>{for(const row of r.result.sort((a,b)=>b.capturedAt-a.capturedAt).slice(LIMIT))store.delete(row.key);};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
@@ -13,6 +13,7 @@ export function archivePlayerFrames({getMarket,getVisual,eligible}){
   if(busy||document.hidden||!eligible())return;
   const market=getMarket(),visual=getVisual(),state=visual?.snapshot();
   if(!market||!state?.totalHolders||state.holderSource==='unavailable'||state.holderLoading)return;
+  if(!state.shapeWeights||state.shapeWeights[0]<.995||state.shapeWeights[1]>.005||state.shapeWeights[2]>.005)return;
   const address=market.baseToken.address,key=market.chainId+':'+(/^0x/i.test(address)?address.toLowerCase():address);
   if(key===lastKey&&Date.now()-lastAt<60000)return;
   busy=true;let frame;
@@ -20,7 +21,7 @@ export function archivePlayerFrames({getMarket,getVisual,eligible}){
    frame=visual.captureStill(512);
    const blob=await new Promise(resolve=>frame.toBlob(resolve,'image/webp',.86));
    if(!blob||getMarket()!==market)return;
-   await saveCoinSnapshot({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:Date.now(),source:'Saved UPIC player frame',coverage:state.holderCoverage,blob});
+   await saveCoinSnapshot({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:Date.now(),source:'Saved UPIC player frame',coverage:state.holderCoverage,neutral:true,blob});
    lastKey=key;lastAt=Date.now();
   }catch{}finally{if(frame)frame.width=frame.height=1;busy=false;}
  }

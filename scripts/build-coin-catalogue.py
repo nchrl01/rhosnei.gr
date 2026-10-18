@@ -50,5 +50,8 @@ if pairs:
  existing=next((c for c in coins if c['key']==key),None)
  if existing:existing.update(featured=True,emerging=True)
  else:coins.append({'key':key,'id':'jean-phil','chain':'solana','address':address,'platforms':[{'chain':'solana','address':address}],'symbol':'JEANPHIL','name':'Jean Phil','image':pair.get('info',{}).get('imageUrl'),'marketCap':pair.get('marketCap'),'volume':pair.get('volume',{}).get('h24'),'liquidity':pair.get('liquidity',{}).get('usd'),'change':pair.get('priceChange',{}).get('h24'),'marketAt':int((raw/'jean-phil.json').stat().st_mtime*1000),'source':'DexScreener','top1000':False,'featured':True,'emerging':True})
+for c in coins:
+ if (c.get('marketCap') or 0)<1e6:c['trendingRank']=None;c['featured']=False
+coins=[c for c in coins if c.get('top1000') or (c.get('marketCap') or 0)>=1e6]
 data={'asOf':now,'ranking':'current-market-cap','source':'CoinGecko','trendingSource':'CoinGecko trending searches; explicitly featured emerging tokens','coins':coins}
 path=ROOT/'apps/web/public/marketplace-coin-catalogue.json';path.write_text(json.dumps(data,separators=(',',':'),ensure_ascii=False)+'\n');print('Wrote',len(coins),'coins,',sum(bool(c.get('trendingRank') or c.get('featured')) for c in coins),'trending / featured entries')

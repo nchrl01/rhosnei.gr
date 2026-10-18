@@ -11,12 +11,13 @@
     "capturedAt": 1792348873573,
     "holders": 595999,
     "image": "images/marketplace/pepe-coin.png",
-    "snapshot": "images/marketplace/pepe-snapshot.png",
+    "snapshot": "images/marketplace/pepe-snapshot.png?v=neutral-1",
     "pairAddress": "0xA43fe16908251ee70EF74718545e4FE6C5cCEc9f",
     "source": "DexScreener + Blockscout",
     "coverage": "top 50 indexed wallets",
     "renderPhase": 12,
     "renderer": "earthbound-player",
+    "neutral": true,
     "sampleWallets": 50
   },
   {
@@ -31,12 +32,13 @@
     "capturedAt": 1792348874188,
     "holders": 1848918,
     "image": "images/marketplace/shib-coin.png",
-    "snapshot": "images/marketplace/shib-snapshot.png",
+    "snapshot": "images/marketplace/shib-snapshot.png?v=neutral-1",
     "pairAddress": "0xCF6dAAB95c476106ECa715D48DE4b13287ffDEAa",
     "source": "DexScreener + Blockscout",
     "coverage": "top 50 indexed wallets",
     "renderPhase": 12,
     "renderer": "earthbound-player",
+    "neutral": true,
     "sampleWallets": 50
   },
   {
@@ -51,12 +53,13 @@
     "capturedAt": 1792348927080,
     "holders": 908840,
     "image": "images/marketplace/brett-coin.png",
-    "snapshot": "images/marketplace/brett-snapshot.png",
+    "snapshot": "images/marketplace/brett-snapshot.png?v=neutral-1",
     "pairAddress": "0xBA3F945812a83471d709BCe9C3CA699A19FB46f7",
     "source": "DexScreener + GoPlus",
     "coverage": "top 10 reported wallets",
     "renderPhase": 12,
     "renderer": "earthbound-player",
+    "neutral": true,
     "sampleWallets": 10
   },
   {
@@ -71,12 +74,13 @@
     "capturedAt": 1792348928085,
     "holders": 1182340,
     "image": "images/marketplace/degen-coin.png",
-    "snapshot": "images/marketplace/degen-snapshot.png",
+    "snapshot": "images/marketplace/degen-snapshot.png?v=neutral-1",
     "pairAddress": "0x0cA6485b7e9cF814A3Fd09d81672B07323535b64",
     "source": "DexScreener + GoPlus",
     "coverage": "top 10 reported wallets",
     "renderPhase": 12,
     "renderer": "earthbound-player",
+    "neutral": true,
     "sampleWallets": 10
   },
   {
@@ -91,12 +95,13 @@
     "capturedAt": 1792348928991,
     "holders": 93451,
     "image": "images/marketplace/floki-coin.png",
-    "snapshot": "images/marketplace/floki-snapshot.png",
+    "snapshot": "images/marketplace/floki-snapshot.png?v=neutral-1",
     "pairAddress": "0xca7c2771D248dCBe09EABE0CE57A62e18dA178c0",
     "source": "DexScreener + Blockscout",
     "coverage": "top 50 indexed wallets",
     "renderPhase": 12,
     "renderer": "earthbound-player",
+    "neutral": true,
     "sampleWallets": 50
   },
   {
@@ -111,12 +116,13 @@
     "capturedAt": 1792348929816,
     "holders": 70762,
     "image": "images/marketplace/turbo-coin.png",
-    "snapshot": "images/marketplace/turbo-snapshot.png",
+    "snapshot": "images/marketplace/turbo-snapshot.png?v=neutral-1",
     "pairAddress": "0x7baecE5d47f1BC5E1953FBE0E9931D54DAB6D810",
     "source": "DexScreener + Blockscout",
     "coverage": "top 50 indexed wallets",
     "renderPhase": 12,
     "renderer": "earthbound-player",
+    "neutral": true,
     "sampleWallets": 50
   }
 ]
