@@ -1,0 +1,409 @@
+{
+  "indexedAt": 1792351670556,
+  "source": "CoinGecko asset IDs + platform index, not ticker search",
+  "coins": 1001,
+  "primaryContractCoins": 886,
+  "platformIdentifiers": 2414,
+  "nativeCoins": [
+    "bitcoin",
+    "ethereum",
+    "binancecoin",
+    "ripple",
+    "solana",
+    "tron",
+    "dogecoin",
+    "monero",
+    "cardano",
+    "near",
+    "stellar",
+    "bitcoin-cash",
+    "litecoin",
+    "avalanche-2",
+    "sui",
+    "the-open-network",
+    "hedera-hashgraph",
+    "polkadot",
+    "ethereum-classic",
+    "cosmos",
+    "aptos"
+  ],
+  "notIndexed": [
+    {
+      "id": "zcash",
+      "symbol": "ZEC"
+    },
+    {
+      "id": "canton-network",
+      "symbol": "CC"
+    },
+    {
+      "id": "bittensor",
+      "symbol": "TAO"
+    },
+    {
+      "id": "bfusd",
+      "symbol": "BFUSD"
+    },
+    {
+      "id": "kucoin-shares",
+      "symbol": "KCS"
+    },
+    {
+      "id": "algorand",
+      "symbol": "ALGO"
+    },
+    {
+      "id": "kaspa",
+      "symbol": "KAS"
+    },
+    {
+      "id": "pi-network",
+      "symbol": "PI"
+    },
+    {
+      "id": "filecoin",
+      "symbol": "FIL"
+    },
+    {
+      "id": "pearl-2",
+      "symbol": "PRL"
+    },
+    {
+      "id": "blockstack",
+      "symbol": "STX"
+    },
+    {
+      "id": "xdce-crowd-sale",
+      "symbol": "XDC"
+    },
+    {
+      "id": "dash",
+      "symbol": "DASH"
+    },
+    {
+      "id": "vechain",
+      "symbol": "VET"
+    },
+    {
+      "id": "flare-networks",
+      "symbol": "FLR"
+    },
+    {
+      "id": "hash-2",
+      "symbol": "HASH"
+    },
+    {
+      "id": "sei-network",
+      "symbol": "SEI"
+    },
+    {
+      "id": "bitcoin-cash-sv",
+      "symbol": "BSV"
+    },
+    {
+      "id": "plasma",
+      "symbol": "XPL"
+    },
+    {
+      "id": "tezos",
+      "symbol": "XTZ"
+    },
+    {
+      "id": "conflux-token",
+      "symbol": "CFX"
+    },
+    {
+      "id": "kaia",
+      "symbol": "KAIA"
+    },
+    {
+      "id": "decred",
+      "symbol": "DCR"
+    },
+    {
+      "id": "terra-luna",
+      "symbol": "LUNC"
+    },
+    {
+      "id": "monad",
+      "symbol": "MON"
+    },
+    {
+      "id": "arweave",
+      "symbol": "AR"
+    },
+    {
+      "id": "thorchain",
+      "symbol": "RUNE"
+    },
+    {
+      "id": "sonic-3",
+      "symbol": "S"
+    },
+    {
+      "id": "theta-token",
+      "symbol": "THETA"
+    },
+    {
+      "id": "grx-chain",
+      "symbol": "GRX"
+    },
+    {
+      "id": "neo",
+      "symbol": "NEO"
+    },
+    {
+      "id": "vaulta",
+      "symbol": "A"
+    },
+    {
+      "id": "gusd",
+      "symbol": "GUSD"
+    },
+    {
+      "id": "ecash",
+      "symbol": "XEC"
+    },
+    {
+      "id": "ozone-chain",
+      "symbol": "OZO"
+    },
+    {
+      "id": "elrond-erd-2",
+      "symbol": "EGLD"
+    },
+    {
+      "id": "quantum-resistant-ledger",
+      "symbol": "QRL"
+    },
+    {
+      "id": "mina-protocol",
+      "symbol": "MINA"
+    },
+    {
+      "id": "wemix-token",
+      "symbol": "WEMIX"
+    },
+    {
+      "id": "qtum",
+      "symbol": "QTUM"
+    },
+    {
+      "id": "pharos-network",
+      "symbol": "PROS"
+    },
+    {
+      "id": "nervos-network",
+      "symbol": "CKB"
+    },
+    {
+      "id": "theta-fuel",
+      "symbol": "TFUEL"
+    },
+    {
+      "id": "digibyte",
+      "symbol": "DGB"
+    },
+    {
+      "id": "vethor-token",
+      "symbol": "VTHO"
+    },
+    {
+      "id": "qubic-network",
+      "symbol": "QUBIC"
+    },
+    {
+      "id": "story-2",
+      "symbol": "DATA"
+    },
+    {
+      "id": "berachain-bera",
+      "symbol": "BERA"
+    },
+    {
+      "id": "babylon",
+      "symbol": "BABY"
+    },
+    {
+      "id": "nexpace",
+      "symbol": "NXPC"
+    },
+    {
+      "id": "ontology",
+      "symbol": "ONT"
+    },
+    {
+      "id": "flow",
+      "symbol": "FLOW"
+    },
+    {
+      "id": "pirate-chain",
+      "symbol": "ARRR"
+    },
+    {
+      "id": "aria-chain",
+      "symbol": "ARIAX"
+    },
+    {
+      "id": "concordium",
+      "symbol": "CCD"
+    },
+    {
+      "id": "nano",
+      "symbol": "XNO"
+    },
+    {
+      "id": "polymesh",
+      "symbol": "POLYX"
+    },
+    {
+      "id": "ronin",
+      "symbol": "RON"
+    },
+    {
+      "id": "hydradx",
+      "symbol": "HDX"
+    },
+    {
+      "id": "fractal-bitcoin",
+      "symbol": "FB"
+    },
+    {
+      "id": "verge",
+      "symbol": "XVG"
+    },
+    {
+      "id": "casper-network",
+      "symbol": "CSPR"
+    },
+    {
+      "id": "abey",
+      "symbol": "ABEY"
+    },
+    {
+      "id": "electroneum",
+      "symbol": "ETN"
+    },
+    {
+      "id": "siacoin",
+      "symbol": "SC"
+    },
+    {
+      "id": "pay-coin",
+      "symbol": "PCI"
+    },
+    {
+      "id": "bitkub-coin",
+      "symbol": "KUB"
+    },
+    {
+      "id": "ong",
+      "symbol": "ONG"
+    },
+    {
+      "id": "ark",
+      "symbol": "ARK"
+    },
+    {
+      "id": "chia",
+      "symbol": "XCH"
+    },
+    {
+      "id": "somnia",
+      "symbol": "SOMI"
+    },
+    {
+      "id": "zelcash",
+      "symbol": "FLUX"
+    },
+    {
+      "id": "steem",
+      "symbol": "STEEM"
+    },
+    {
+      "id": "tcy",
+      "symbol": "TCY"
+    },
+    {
+      "id": "geode-chain",
+      "symbol": "GEODE"
+    },
+    {
+      "id": "xphere",
+      "symbol": "XP"
+    },
+    {
+      "id": "hive",
+      "symbol": "HIVE"
+    },
+    {
+      "id": "ergo",
+      "symbol": "ERG"
+    },
+    {
+      "id": "ardor",
+      "symbol": "ARDR"
+    },
+    {
+      "id": "mantra",
+      "symbol": "MANTRA"
+    },
+    {
+      "id": "ethereum-pow-iou",
+      "symbol": "ETHW"
+    },
+    {
+      "id": "constellation-labs",
+      "symbol": "DAG"
+    },
+    {
+      "id": "stratis",
+      "symbol": "STRAX"
+    },
+    {
+      "id": "ao-computer",
+      "symbol": "AO"
+    },
+    {
+      "id": "ravencoin",
+      "symbol": "RVN"
+    },
+    {
+      "id": "harmony",
+      "symbol": "ONE"
+    },
+    {
+      "id": "playnance",
+      "symbol": "GCOIN"
+    },
+    {
+      "id": "tx",
+      "symbol": "TX"
+    },
+    {
+      "id": "fogo",
+      "symbol": "FOGO"
+    },
+    {
+      "id": "zcoin",
+      "symbol": "FIRO"
+    },
+    {
+      "id": "qie",
+      "symbol": "QIE"
+    },
+    {
+      "id": "tensorcash",
+      "symbol": "TSC"
+    },
+    {
+      "id": "epic-cash",
+      "symbol": "EPIC"
+    },
+    {
+      "id": "bityuan",
+      "symbol": "BTY"
+    }
+  ],
+  "note": "Source-listed identifiers are not an independent on-chain audit; absent identifiers are not guessed. Native coins do not require token contracts."
+}

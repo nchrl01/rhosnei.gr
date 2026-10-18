@@ -491,6 +491,17 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .marketplace-page .coin-gallery-toolbar{display:none}
 }
 
-.header-wallet{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small)}
-.header-wallet>svg{display:none}
-@media(max-width:760px){.header-wallet{width:28px;min-height:44px}.header-wallet>svg{display:block}.header-signin-label{display:none}}
+/* Sign in uses the same account icon on desktop and mobile. */
+.header-wallet{display:inline-flex;font:inherit;font-size:var(--font-size-small)}
+.header-wallet>svg{display:block}
+.header-signin-label{display:none}
+
+/* Shared header geometry: one row and one control scale on every page. */
+:is(.market-header,.site-navigation) .header-main{box-sizing:border-box;width:100%;max-width:none}
+:is(.market-header,.site-navigation) .header-links{align-self:stretch;align-items:center}
+:is(.market-header,.site-navigation) :is(.header-wallet,.header-search,.header-marketplace){box-sizing:border-box;align-items:center;justify-content:center;flex:none;width:28px;height:44px;min-height:44px;padding:0;color:var(--control-ink);border:0;background:transparent;text-decoration:none}
+:is(.market-header,.site-navigation) :is(.header-wallet,.header-search,.header-marketplace)>svg{width:20px;height:20px;flex:none}
+:is(.market-header,.site-navigation) :is(.header-wallet,.header-search,.header-marketplace):focus-visible{outline:1px solid currentColor;outline-offset:2px}
+@media(hover:hover){:is(.market-header,.site-navigation) :is(.header-wallet,.header-search,.header-marketplace):hover{color:#fff;opacity:.7}}
+@media(min-width:761px){:is(.market-header,.site-navigation) .header-link{min-height:44px}.header-marketplace,.header-search{display:none}}
+@media(max-width:760px){:is(.market-header,.site-navigation) .header-main{padding-inline:var(--header-gutter,16px)}:is(.market-header,.site-navigation) .header-links{gap:12px}}

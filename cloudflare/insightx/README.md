@@ -37,3 +37,8 @@ CoinGecko CDN allowlist so both the coin avatar and visual field can read
 image pixels. Successful responses are cached for one day. Requests validate each redirect against the same CDN allowlist and reject
 credentials, explicit ports and non-image content, and are bounded
 to 2 MiB and 12 seconds. No InsightX requests or secrets are involved.
+
+### Compact coin summaries
+`GET /coin-summary?network=ethereum&address=0x…` (or `?id=coingecko-id`) summarizes the indexed project description using the `AI` Workers AI binding. Contract lookups must resolve to the same platform/address; unknown tokens return no description. This is not an independent safety or social investigation. Sources and an AI/DYOR hint accompany the displayed text.
+
+Shared SQLite storage retains successful summaries for 30 days and missing descriptions for 30 minutes. Coalesced requests, a global 10-second miss spacing, and a maximum of 200 new attempts per UTC day bound this endpoint; no per-trade polling. Inputs are bounded; inference uses a small fixed model and 110 output tokens. Workers AI's account-wide free allowance is shared with any other AI use, so this endpoint's cap is not a guarantee of zero account-wide billing. Keys remain unnecessary in browser code.

@@ -21,21 +21,23 @@ contracts={r['id']:r.get('platforms',{}) for r in fetch('https://api.coingecko.c
 if not args.input_dir:time.sleep(7)
 trending=fetch('https://api.coingecko.com/api/v3/search/trending','trending.json')
 trends={r['item']['id']:i+1 for i,r in enumerate(trending.get('coins',[]))}
-aliases={'binance-smart-chain':'bsc','polygon-pos':'polygon','arbitrum-one':'arbitrum','avalanche':'avalanche','optimistic-ethereum':'optimism','zksync':'zksync','tron':'tron','ethereum':'ethereum','solana':'solana','base':'base','ronin':'ronin','fantom':'fantom','celo':'celo','cronos':'cronos','sui':'sui','aptos':'aptos','near-protocol':'near','ton':'ton','hedera-hashgraph':'hedera'}
+aliases={'binance-smart-chain':'bsc','polygon-pos':'polygon','arbitrum-one':'arbitrum','avalanche':'avalanche','optimistic-ethereum':'optimism','zksync':'zksync','tron':'tron','ethereum':'ethereum','solana':'solana','base':'base','ronin':'ronin','fantom':'fantom','celo':'celo','cronos':'cronos','sui':'sui','aptos':'aptos','near-protocol':'near','ton':'ton','hedera-hashgraph':'hedera','robinhood':'robinhood','the-open-network':'ton','xdai':'gnosis','harmony-shard-0':'harmony','hyperevm':'hyperevm','plume-network':'plume','morph-l2':'morph','klay-token':'kaia','sei-v2':'seiv2'}
 priority=['ethereum','solana','base','bsc','arbitrum','polygon','avalanche','optimism']
-natives={'bitcoin':'bitcoin','ethereum':'ethereum','solana':'solana','binancecoin':'bsc','ripple':'xrp','dogecoin':'dogecoin','cardano':'cardano','tron':'tron','avalanche-2':'avalanche','sui':'sui','the-open-network':'ton','polkadot':'polkadot','litecoin':'litecoin','monero':'monero','stellar':'stellar','near':'near','aptos':'aptos','bitcoin-cash':'bitcoin-cash','ethereum-classic':'ethereum-classic','cosmos':'cosmos','hedera-hashgraph':'hedera'}
+natives={'bitcoin':'bitcoin','ethereum':'ethereum','solana':'solana','binancecoin':'bsc','ripple':'xrp','dogecoin':'dogecoin','cardano':'cardano','tron':'tron','avalanche-2':'avalanche','sui':'sui','the-open-network':'ton','polkadot':'polkadot','litecoin':'litecoin','monero':'monero','stellar':'stellar','near':'near','aptos':'aptos','bitcoin-cash':'bitcoin-cash','ethereum-classic':'ethereum-classic','cosmos':'cosmos','hedera-hashgraph':'hedera','robinhood':'robinhood','the-open-network':'ton','xdai':'gnosis','harmony-shard-0':'harmony','hyperevm':'hyperevm','plume-network':'plume','morph-l2':'morph','klay-token':'kaia','sei-v2':'seiv2'}
 now=int(max(p.stat().st_mtime for p in raw.glob('markets-*.json'))*1000);coins=[];seen=set()
 for m in markets:
  if m['id'] in seen:continue
  seen.add(m['id']);platforms=[]
  for platform,address in contracts.get(m['id'],{}).items():
-  chain=aliases.get(platform)
-  if chain and isinstance(address,str) and (re.fullmatch(r'0x[0-9a-fA-F]{40}',address) or chain=='solana' and re.fullmatch(r'[1-9A-HJ-NP-Za-km-z]{32,44}',address)):
-   platforms.append({'chain':chain,'address':address.lower() if address.startswith('0x') else address})
+  chain=aliases.get(platform,platform)
+  # Preserve provider-native identifiers (Move types, Tron, TON, Cosmos denoms),
+  # not only 20-byte EVM addresses. Match by immutable provider ID, never ticker.
+  if isinstance(address,str) and address and len(address)<=256 and not re.search(r'[\s<>"\\]',address):
+   platforms.append({'chain':chain,'platform':platform,'address':address.lower() if re.fullmatch(r'0x[0-9a-fA-F]{40}',address) else address})
  platforms.sort(key=lambda p:priority.index(p['chain']) if p['chain'] in priority else 99)
- primary=platforms[0] if platforms else {'chain':natives.get(m['id'],'unknown'),'address':None}
+ primary=platforms[0] if platforms and m['id'] not in natives else {'chain':natives.get(m['id'],'unknown'),'address':None}
  key=primary['chain']+':'+primary['address'] if primary['address'] else 'coingecko:'+m['id']
- coins.append({'key':key,'id':m['id'],'symbol':m['symbol'].upper(),'name':m['name'],**primary,'platforms':platforms[:5],'query':m['name'] if primary['chain']=='unknown' else m['symbol'].upper()+'/USD','image':m['image'],'marketCap':m.get('market_cap'),'rank':m.get('market_cap_rank'),'volume':m.get('total_volume'),'change':m.get('price_change_percentage_24h'),'marketAt':int(__import__('datetime').datetime.fromisoformat(m['last_updated'].replace('Z','+00:00')).timestamp()*1000) if m.get('last_updated') else now,'trendingRank':trends.get(m['id']),'top1000':True,'source':'CoinGecko'})
+ coins.append({'key':key,'id':m['id'],'symbol':m['symbol'].upper(),'name':m['name'],**primary,'platforms':platforms,'contractStatus':'native' if m['id'] in natives else 'source-listed' if platforms else 'not-indexed','contractSource':'https://api.coingecko.com/api/v3/coins/list?include_platform=true','contractIndexedAt':int((raw/'contracts.json').stat().st_mtime*1000),'query':m['name'] if primary['chain']=='unknown' else m['symbol'].upper()+'/USD','image':m['image'],'marketCap':m.get('market_cap'),'rank':m.get('market_cap_rank'),'volume':m.get('total_volume'),'change':m.get('price_change_percentage_24h'),'marketAt':int(__import__('datetime').datetime.fromisoformat(m['last_updated'].replace('Z','+00:00')).timestamp()*1000) if m.get('last_updated') else now,'trendingRank':trends.get(m['id']),'top1000':True,'source':'CoinGecko'})
 coins.sort(key=lambda c:c.get('marketCap') or 0,reverse=True)
 coins=coins[:1000]
 for index,c in enumerate(coins):c['catalogueRank']=index+1

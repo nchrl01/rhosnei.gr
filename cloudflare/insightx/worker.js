@@ -1,3 +1,4 @@
+import {CoinSummary,summaryIdentity} from './coin-summary.js';
 import {SharedHistoryCache,historyRequest} from './history-cache.js';
 import {fetchHolderCount,fetchBlockscoutCount} from './holder-count.js';
 import {marketplace} from './marketplace.js';
@@ -98,6 +99,7 @@ export default {
    }catch{return json({state:'sharing-unavailable'},503,headers);}
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
+  if(url.pathname==='/coin-summary'){const identity=summaryIdentity(url);if(!identity)return json({state:'invalid-token'},400,headers);try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-coin-summary-v1'));const result=await store.fetch(new Request(url));return new Response(result.body,{status:result.status,headers:{'Content-Type':'application/json',...headers}});}catch{return json({state:'unavailable'},503,headers);}}
   if(url.pathname==='/history'){
    if(!historyRequest(url))return json({error:'Invalid history request'},400,headers);
    try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-chart-history-v1'));const result=await store.fetch(new Request(url));const out=new Response(result.body,result);for(const [key,value] of Object.entries(headers))out.headers.set(key,value);out.headers.set('Access-Control-Expose-Headers','X-UPIC-History-Cache, X-UPIC-Fetched-At, X-UPIC-History-Retention, Retry-After');return out;}
@@ -126,7 +128,7 @@ export default {
 // each spend a separate allowance. API credentials never leave this Worker.
 export class HolderCache extends DurableObject {
  constructor(ctx,env){
-  super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);
+  super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);this.summaries=new CoinSummary(this.sql,env);
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS holder_counts (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
@@ -135,6 +137,7 @@ export class HolderCache extends DurableObject {
   this.sql.exec('CREATE TABLE IF NOT EXISTS cooldown (id INTEGER PRIMARY KEY, until_ms INTEGER)');
  }
  async fetch(request){
+  if(new URL(request.url).pathname==='/coin-summary'){const identity=summaryIdentity(new URL(request.url));return identity?json(await this.summaries.get(identity)):json({state:'invalid-token'},400);}
   if(new URL(request.url).pathname==='/history')return this.history.fetch(new URL(request.url));
   const url=new URL(request.url),network=url.searchParams.get('network'),address=url.searchParams.get('address'),key=network+':'+address;
   if(url.pathname==='/holders'){

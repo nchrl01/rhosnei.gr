@@ -1,5 +1,5 @@
 import {readCoinSnapshots} from './coin-snapshot-store.js?v=329';
-import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=325';
+import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,rememberRecentCoin} from './coin-catalogue.js?v=331';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {bindSearchField} from './search-field.js?v=265';
 const $=id=>document.getElementById(id),gallery=$('coin-gallery'),browser=$('collection-browser'),grid=$('coin-gallery-grid');
@@ -19,11 +19,11 @@ function render(append=false){
  items.sort(order.value==='name'?(a,b)=>a.symbol.localeCompare(b.symbol):order.value==='recent'?(a,b)=>(b.capturedAt||0)-(a.capturedAt||0)||cap(a,b):order.value==='cap'?cap:(a,b)=>Number(Boolean(b.featured))-Number(Boolean(a.featured))||(a.trendingRank||999)-(b.trendingRank||999)||cap(a,b));
  if(!append)grid.replaceChildren();count.textContent=items.length.toLocaleString()+' coin'+(items.length===1?'':'s');
  for(const item of items.slice(append?grid.children.length:0,visible)){
-  const captured=Boolean(item.localURL||item.snapshot),study=Boolean(!captured&&item.seedPreview),card=element('a',null,'coin-collectible');card.href=coinPlayerURL(item);card.draggable=false;card.addEventListener('click',()=>rememberRecentCoin(item));
+  const captured=Boolean(item.localURL||item.snapshot),study=Boolean(!captured&&item.seedPreview),card=element('a',null,'coin-collectible');const selection=coinOnNetwork(item,network.value);card.href=coinPlayerURL(selection);card.draggable=false;card.addEventListener('click',()=>rememberRecentCoin(selection));
   const art=element('div',null,'coin-collectible-art'+(captured||study?'':' coin-logo-preview')),image=element('img');image.alt=item.symbol+(captured?' · neutral UPIC capture':study?' · neutral seed preview':' · coin artwork');if(item.localURL||item.snapshot||item.seedPreview||item.image)image.src=item.localURL||item.snapshot||item.seedPreview||item.image;image.width=512;image.height=512;image.loading='lazy';image.decoding='async';image.draggable=false;
   const badge=element('span',item.localURL?'Saved neutral frame':captured?'Neutral UPIC preview':study?'Seed preview':item.featured?'Emerging · coin artwork':item.trendingRank?'Trending · coin artwork':'Coin artwork','coin-capture-badge');
   if(study)art.title='Seed preview · fixed simulated holdings and liquidity, not a saved live frame';art.append(image);const info=element('div',null,'coin-collectible-info'),heading=element('div',null,'coin-collectible-heading');heading.append(element('h2',item.symbol),element('span','↗','coin-open'));
-  const chain=element('p',(item.chain==='unknown'?'MARKET SEARCH':item.chain.toUpperCase())+(item.catalogueRank?' · #'+item.catalogueRank:''),'coin-chain'),capRow=element('div',null,'coin-collectible-cap');capRow.append(element('span','Market cap'),element('span',money(item.marketCap)));
+  const chain=element('p',(selection.chain==='unknown'?'MARKET SEARCH':selection.chain.toUpperCase())+(item.catalogueRank?' · #'+item.catalogueRank:''),'coin-chain'),capRow=element('div',null,'coin-collectible-cap');chain.title=selection.address?selection.chain.toUpperCase()+' · '+selection.address:item.contractStatus==='native'?'Native coin · no token contract':'No contract identifier indexed by the source';capRow.append(element('span','Market cap'),element('span',money(item.marketCap)));
   const at=captured?item.capturedAt:item.marketAt,time=element('time',at?new Date(at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—');if(at){time.dateTime=new Date(at).toISOString();time.title=new Date(at).toLocaleString();}
   const meta=element('div',null,'coin-capture-meta');meta.append(element('span',captured?'Last capture':study?'Seed study · market snapshot':'Market snapshot'),time);
   info.append(heading,element('p',item.name,'coin-full-name'),chain,capRow,meta);card.append(art,info);grid.append(card);if(!captured&&!study)attachArtworkDither(image);art.append(badge);
@@ -31,7 +31,7 @@ function render(append=false){
  $('coin-gallery-empty').hidden=items.length>0;more.hidden=items.length<=visible;more.textContent='Load more · '+Math.min(visible,items.length)+' / '+items.length.toLocaleString();
 }
 async function loadFrames(){
- const [catalogue,previews,studies]=await Promise.allSettled([loadCoinCatalogue(),fetch('marketplace-preview-coins.json?v=329').then(r=>r.ok?r.json():[]),fetch('marketplace-seed-previews.json?v=329').then(r=>r.ok?r.json():{coins:[]})]);
+ const [catalogue,previews,studies]=await Promise.allSettled([loadCoinCatalogue(),fetch('marketplace-preview-coins.json?v=329').then(r=>r.ok?r.json():[]),fetch('marketplace-seed-previews.json?v=331').then(r=>r.ok?r.json():{coins:[]})]);
  records=catalogue.status==='fulfilled'?catalogue.value.coins:[];
  if(catalogue.status==='fulfilled')$('coin-gallery-asof').textContent='Catalogue as of '+new Date(catalogue.value.asOf).toLocaleString();
  const byKey=new Map();for(const row of records){byKey.set(row.key,row);for(const p of row.platforms||[])byKey.set(p.chain+':'+p.address,row);}
