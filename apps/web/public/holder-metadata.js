@@ -21,7 +21,7 @@ export function holderCountReadout(info={},historical=false){
  const label=historical?'HOLDERS · LATEST':'HOLDERS';
  const value=available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
  const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
- const title=available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired','age-unknown'].includes(info.state)?' · latest available; updates delayed':'')
+ const title=available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
   :'Waiting for holder data';
  return {label,value,title};
 }
@@ -69,7 +69,7 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
    }catch{if(version===epoch)publish(state.holders===null?{state:'unavailable',holders:null,watchers:null}:{...state,state:'delayed'});}
    finally{clearTimeout(timeout);if(version===epoch)timer=setTimeout(refresh,state.retryAt?Math.max(30000,Math.min(1800000,state.retryAt-Date.now())):state.holders===null?60000:1800000);}
   }
-  if(saved&&Date.now()-saved.receivedAt<30*60000)timer=setTimeout(refresh,30*60000-(Date.now()-saved.receivedAt));
+  if(saved&&Date.now()-saved.receivedAt<30*60000&&(network!=='robinhood'||saved.source==='Blockscout Robinhood index'))timer=setTimeout(refresh,30*60000-(Date.now()-saved.receivedAt));
   else void refresh();
  }
  return {setMarket,snapshot,close(){clusters.close();epoch++;controller?.abort();clearTimeout(timer);}};
