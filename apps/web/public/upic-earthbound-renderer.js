@@ -1,3 +1,4 @@
+import {protectMovingMarks} from './upic-mark-spacing.js?v=earthbound-14';
 import {morphMarkInside} from './upic-mark-morph.js?v=earthbound-13';
 import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-10';
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
@@ -27,13 +28,26 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const eased=t=>{t=clamp(t);return t*t*(3-2*t);};
  const shapeFor=direction=>direction>0?[0,1,0]:direction<0?[0,0,1]:[1,0,0];
  let shapeWeights=[1,0,0],shapeFrom=[1,0,0],shapeTarget=null,shapeStarted=0;
- let layoutCoin=null,layoutWidth=0,layoutHeight=0,sizeStarted=0,sizeMoving=false;
+ let layoutCoin=null,layoutWidth=0,layoutHeight=0,sizeStarted=0,sizeMoving=false,positionStarted=0,positionMoving=false;
  let geometryDirty=true,geometryData=new Float32Array(0),bufferBytes=-1,lastTransitionTime=null;
- function advanceSizes(now,instant=false){
-  if(!layout||!sizeMoving)return;
-  const t=instant?1:eased((now-sizeStarted)/.35);
-  for(const mark of layout.marks)mark.diameter=mix(mark.fromDiameter,mark.targetDiameter,t);
-  sizeMoving=t<1;geometryDirty=true;
+ function advanceGeometry(now,instant=false){
+  if(!layout||(!sizeMoving&&!positionMoving))return;
+  const sizeT=instant?1:eased((now-sizeStarted)/.35);
+  const elapsed=now-positionStarted,moveT=instant?1:eased(elapsed/.45);
+  const settleT=instant?1:eased((elapsed-.45)/.12);
+  for(const mark of layout.marks){
+   const desiredDiameter=mix(mark.fromDiameter,mark.targetDiameter,sizeT);
+   if(positionMoving){
+    mark.x=mix(mark.fromX,mark.targetX,moveT);mark.y=mix(mark.fromY,mark.targetY,moveT);
+    if(moveT>=1){
+     // Restore holder sizes gently once all centres are back on the safe grid.
+     if(mark.recoveryDiameter===null)mark.recoveryDiameter=Math.min(mark.diameter,layout.rules.cellDiameterLimit??0);
+     mark.diameter=mix(mark.recoveryDiameter,desiredDiameter,settleT);
+    }else mark.diameter=desiredDiameter;
+   }else mark.diameter=desiredDiameter;
+  }
+  if(positionMoving&&moveT<1)protectMovingMarks(layout.marks);
+  sizeMoving=sizeT<1;positionMoving=positionMoving&&settleT<1;geometryDirty=true;
  }
  function advanceShape(direction,now,instant=false,reset=false){
   if(shapeTarget!==null){
@@ -101,26 +115,42 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  }
  function prepare(inputs,w,h,now,reduced){
   // Continue from what is currently displayed when a newer snapshot interrupts.
-  advanceSizes(now,reduced);
+  advanceGeometry(now,reduced);
   const newCoin=layoutCoin!==inputs.coinKey;
   advanceShape(Math.sign(inputs.change),now,reduced,newCoin);
   const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances]);
   if(layoutKey!==key){
    const target=buildMarkLayout(inputs,{mode:'earthbound',mark:'auto'},w,h);
    const instant=!layout||newCoin||layoutWidth!==w||layoutHeight!==h||reduced;
-   const previous=new Map((layout?.marks||[]).map(mark=>[mark.id,mark.diameter]));
+   const previous=new Map((layout?.marks||[]).map(mark=>[mark.id,mark]));
    const safeLimit=target.rules.cellDiameterLimit??0;
-   // New cells take their reserved positions immediately. Sizes may ease only
-   // inside those cells, so changing holder counts can never overlap neighbours.
-   sizeMoving=false;
+   const retargetPosition=!instant&&target.marks.some(mark=>{
+    const old=previous.get(mark.id);
+    return old&&(Math.abs(old.targetX-mark.x)>.001||Math.abs(old.targetY-mark.y)>.001);
+   });
+   const keepSizePhase=!instant&&!retargetPosition&&target.marks.every(mark=>{
+    const old=previous.get(mark.id);return old&&old.targetDiameter===mark.diameter;
+   });
+   const restartRecovery=!instant&&!retargetPosition&&!keepSizePhase&&positionMoving&&now-positionStarted>=.45;
+   if(instant)positionMoving=false;
+   else if(retargetPosition){positionStarted=now;positionMoving=true;}
+   else if(restartRecovery)positionStarted=now-.45;
+   if(!keepSizePhase)sizeMoving=false;
    for(const mark of target.marks){
+    const old=previous.get(mark.id);
+    mark.targetX=mark.x;mark.targetY=mark.y;
+    mark.fromX=instant?mark.x:retargetPosition?(old?.x??mark.x):(old?.fromX??mark.x);
+    mark.fromY=instant?mark.y:retargetPosition?(old?.y??mark.y):(old?.fromY??mark.y);
+    mark.recoveryDiameter=instant||retargetPosition?null:restartRecovery?(old?.diameter??0):(old?.recoveryDiameter??null);
+    if(!instant&&positionMoving&&old){mark.x=old.x;mark.y=old.y;}
     mark.targetDiameter=mark.diameter;
-    mark.fromDiameter=instant?mark.diameter:Math.min(safeLimit,previous.get(mark.id)??0);
-    mark.diameter=mark.fromDiameter;
-    if(Math.abs(mark.fromDiameter-mark.targetDiameter)>.0001)sizeMoving=true;
+    mark.fromDiameter=keepSizePhase?old.fromDiameter:instant?mark.diameter:Math.min(safeLimit,old?.diameter??0);
+    mark.diameter=keepSizePhase?old.diameter:mark.fromDiameter;
+    if(!keepSizePhase&&Math.abs(mark.fromDiameter-mark.targetDiameter)>.0001)sizeMoving=true;
    }
    layout=target;layoutKey=key;layoutCoin=inputs.coinKey;layoutWidth=w;layoutHeight=h;
-   sizeStarted=now;geometryDirty=true;
+   if(!keepSizePhase)sizeStarted=now;geometryDirty=true;
+   if(positionMoving&&now-positionStarted<.45)protectMovingMarks(layout.marks);
    Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
   }
   if(useSoftware||!geometryDirty)return;
@@ -190,7 +220,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const w=Math.max(512,Math.min(maxDimension,Math.round(side))),h=w;
    for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;Object.assign(c.style,{width:side+'px',height:side+'px',left:(width-side)/2+'px',top:(height-side)/2+'px',right:'auto',bottom:'auto',opacity:String(clamp(presence))});}
    const now=Number.isFinite(transitionTime)?transitionTime:performance.now()/1000;
-   if(lastTransitionTime!==null&&now<lastTransitionTime){layoutKey='';layout=null;layoutCoin=null;sizeMoving=false;shapeTarget=null;geometryDirty=true;}
+   if(lastTransitionTime!==null&&now<lastTransitionTime){layoutKey='';layout=null;layoutCoin=null;sizeMoving=false;positionMoving=false;shapeTarget=null;geometryDirty=true;}
    lastTransitionTime=now;
    updateImageDetail(inputs);prepare(inputs,w,h,now,reducedMotion);identity=0;artworkColor=mask?artworkColor:0;
    canvas.hidden=useSoftware;software.hidden=!useSoftware;host.dataset.pixelBlast=useSoftware?'canvas':'ready';
@@ -204,9 +234,9 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
     for(const [index,size,offset]of [[0,2,0],[1,2,2],[2,1,4],[3,2,5],[4,1,7]]){gl.enableVertexAttribArray(index);gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset*4);}
     gl.drawArrays(gl.TRIANGLES,0,vertexCount);
    }
-   Object.assign(stats,{backend:this.kind,identity,artworkColor,presence,shapeWeights:shapeWeights.slice(),sizeTransition:sizeMoving});
+   Object.assign(stats,{backend:this.kind,identity,artworkColor,presence,shapeWeights:shapeWeights.slice(),sizeTransition:sizeMoving,positionTransition:positionMoving});
   },
-  clear(){lastTransitionTime=null;layoutKey='';layout=null;layoutCoin=null;sizeMoving=false;shapeTarget=null;geometryDirty=true;if(gl&&!useSoftware){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ctx?.clearRect(0,0,software.width,software.height);},
+  clear(){lastTransitionTime=null;layoutKey='';layout=null;layoutCoin=null;sizeMoving=false;positionMoving=false;shapeTarget=null;geometryDirty=true;if(gl&&!useSoftware){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ctx?.clearRect(0,0,software.width,software.height);},
   snapshot(){return {...stats};},
   close(){closed=true;canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);if(gl){if(buffer)gl.deleteBuffer(buffer);if(texture)gl.deleteTexture(texture);if(program)gl.deleteProgram(program);}canvas.remove();software.remove();}
  };

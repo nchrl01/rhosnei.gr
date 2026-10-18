@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-13';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-14';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -59,17 +59,23 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(host),fullscreen=createVisualFullscreen(host);
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  const loadingNote=document.createElement('div');loadingNote.className='visual-holder-loading';loadingNote.hidden=true;host.append(loadingNote);
- let initialHoldersReady=false,initialLoadShown=false,revealAfter=0;
- function syncHolderLoading(now=performance.now()){
+ let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
+ function syncHolderLoading(rendered=false,now=performance.now()){
   if(latest?.liveHolders&&latest.holderSnapshotReady&&!initialHoldersReady){
    initialHoldersReady=true;
-   // Let the final batch's size animation settle before exposing a sharp field.
-   revealAfter=initialLoadShown&&!reduced.matches?now+350:0;
+   // Wait for the renderer itself: loading may finish while the tab is hidden.
+   awaitingHolderRender=initialLoadShown;holderRevealStarted=null;
+  }
+  if(rendered&&latest?.liveHolders&&awaitingHolderRender){
+   const motion=renderer.snapshot();
+   if(holderRevealStarted===null)holderRevealStarted=now;
+   // New live ticks must not keep a fully received snapshot blurred forever.
+   if((!motion.sizeTransition&&!motion.positionTransition)||now-holderRevealStarted>=650)awaitingHolderRender=false;
   }
   const state=latest?.holderProviderState;
   const waiting=latest?.liveHolders&&!initialHoldersReady
    &&(state==='loading'||state==='snapshot'||state==='rate-limited'||latest.holderBalances.length>0);
-  const loading=Boolean(latest?.liveHolders&&(waiting||now<revealAfter));
+  const loading=Boolean(latest?.liveHolders&&(waiting||awaitingHolderRender));
   if(loading)initialLoadShown=true;
   host.dataset.holderLoading=String(loading);host.setAttribute('aria-busy',String(loading));
   loadingNote.hidden=!loading;
@@ -104,7 +110,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   if(closed)return;raf=requestAnimationFrame(draw);
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
-  syncHolderLoading(now);
+  syncHolderLoading();
   const state=getState(),playing=state.playing&&settings.playing!==false&&!settings.seeking&&!settings.ended;
   // Share the market-cap readout's up/down pulse; price change is not a shape input.
   latest.change=Math.sign(Number(state.markDirection)||0);
@@ -136,6 +142,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   if(now-lastRender<1000/(renderer.kind==='canvas'?15:60))return;lastRender=now;
   overlay?.clearRect(0,0,canvas.width,canvas.height);
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
+  syncHolderLoading(true,now);
   host.dataset.visible='true';
   Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
  }
@@ -145,7 +152,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
-   if(changed){initialHoldersReady=false;initialLoadShown=false;revealAfter=0;}
+   if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;}
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    syncHolderLoading();
    if(changed&&imageCoinKey!==key)renderer.setImage(null);
