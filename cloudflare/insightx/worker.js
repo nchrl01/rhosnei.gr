@@ -65,6 +65,27 @@ async function artwork(url,headers){
  return respond(response);
 }
 
+// Public token metadata only; fixed upstream and bounded inputs prevent an open proxy.
+async function holderCount(url,headers){
+ const network=url.searchParams.get('network')||'',address=url.searchParams.get('address')||'';
+ if(!/^[a-z0-9_-]{1,40}$/.test(network)||! /^[a-zA-Z0-9:_-]{1,128}$/.test(address))return json({state:'invalid-token'},400,headers);
+ const key=new Request(new URL('/holders?'+new URLSearchParams({network,address}),url.origin));
+ const cache=caches.default,cached=await cache.match(key);
+ const respond=response=>{const result=new Response(response.body,response);for(const [k,v] of Object.entries(headers))result.headers.set(k,v);return result;};
+ if(cached)return respond(cached);
+ try{
+  const upstream=await fetch('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/tokens/'+encodeURIComponent(address)+'/info',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)});
+  if(!upstream.ok){
+   const response=Response.json({state:upstream.status===429?'rate-limited':'unavailable'},{status:200,headers:{'Cache-Control':'public, max-age=60'}});
+   await cache.put(key,response.clone());return respond(response);
+  }
+  const body=await upstream.json(),info=body.data?.attributes,raw=info?.holders?.count,count=Number(raw);
+  const valid=raw!==null&&raw!==undefined&&raw!==''&&Number.isSafeInteger(count)&&count>=0;
+  const response=Response.json({state:valid?'snapshot':'unavailable',holders:valid?count:null,lastUpdated:info?.holders?.last_updated||null,image_url:info?.image_url||null},{headers:{'Cache-Control':'public, max-age=600'}});
+  await cache.put(key,response.clone());return respond(response);
+ }catch{return json({state:'unavailable'},503,headers);}
+}
+
 export default {
  async fetch(request,env){
   const origin=request.headers.get('Origin'),allowed=env.ALLOWED_ORIGIN;
@@ -84,6 +105,7 @@ export default {
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
   if(url.pathname==='/artwork')return artwork(url,headers);
+  if(url.pathname==='/holders')return holderCount(url,headers);
   if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);

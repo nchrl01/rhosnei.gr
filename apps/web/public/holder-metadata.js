@@ -1,6 +1,7 @@
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {fetchGecko} from './gecko.js?v=277';
 import {createHolderClusters} from './holder-clusters.js?v=168';
+const RELAY='https://upic-insightx.nchrl01.workers.dev/holders';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
 const cache=new Map(),HOUR=3600000;
 export function holderCountReadout(info={},historical=false){
@@ -37,9 +38,21 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
    if(typeof document!=='undefined'&&document.hidden){timer=setTimeout(refresh,30000);return;}
    controller=new AbortController();const abort=controller,timeout=setTimeout(()=>abort.abort(),120000);
    try{
-    const response=await fetchGecko(url,{signal:abort.signal,priority:45});
-    if(!response.ok)throw Error('Holder metadata unavailable');
-    const body=await response.json(),info=body.data?.attributes;
+    let response,info;
+    try{
+     response=await fetch(RELAY+'?'+new URLSearchParams({network,address}),{signal:abort.signal,credentials:'omit'});
+     if(response.ok){
+      const result=await response.json();
+      if(result.state==='rate-limited'){publish({...state,state:state.holders===null?'rate-limited':'delayed'});return;}
+      info={image_url:result.image_url,holders:{count:result.holders,last_updated:result.lastUpdated}};
+     }
+    }catch(error){if(abort.signal.aborted)throw error;}
+    // Compatibility while the backend deployment is rolling out.
+    if(!info){
+     response=await fetchGecko(url,{signal:abort.signal,priority:45});
+     if(!response.ok)throw Error('Holder metadata unavailable');
+     const body=await response.json();info=body.data?.attributes;
+    }
     if(version!==epoch)return;
     onInfo(info,pair);
     const holder=info?.holders,count=Number(holder?.count),receivedAt=Date.now();
