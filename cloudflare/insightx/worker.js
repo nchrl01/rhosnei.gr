@@ -1,4 +1,4 @@
-import {fetchHolderCount} from './holder-count.js';
+import {fetchHolderCount,fetchBlockscoutCount} from './holder-count.js';
 import {marketplace} from './marketplace.js';
 import {DurableObject} from 'cloudflare:workers';
 
@@ -139,13 +139,13 @@ export class HolderCache extends DurableObject {
   try{return json(await pending);}finally{this.inflight.delete(key);}
  }
  async count(network,address){
-  const now=Date.now(),day=Math.floor(now/DAY),key=network+':'+address;
+  const now=Date.now(),day=Math.floor(now/DAY),key=(network==='robinhood'&&this.env.BLOCKSCOUT_API_KEY?'blockscout-v1:':'')+network+':'+address;
   const cached=this.sql.exec('SELECT * FROM holder_counts WHERE key=?',key).toArray()[0];
   const saved=cached?.payload?JSON.parse(cached.payload):null;
   if(saved?.holders!=null&&now-cached.fetched<30*60000)return {...saved,cached:true};
   const fallback=(reason,retryAt)=>saved?.holders!=null&&now-cached.fetched<7*DAY?{...saved,state:'delayed',reason,retryAt}:{state:reason,holders:null,retryAt};
   if(cached?.retry>now)return fallback('unavailable',cached.retry);
-  // One shared free budget, independent of InsightX credits. At most two upstream calls per miss.
+  // One shared free budget, independent of InsightX credits. At most three upstream calls per miss; Blockscout token lookup is 20 credits.
   const quota=this.ctx.storage.transactionSync(()=>{
    const budget=this.sql.exec('SELECT * FROM holder_count_budget WHERE day=?',day).toArray()[0];
    if(budget?.next>now)return budget.next;
@@ -156,7 +156,8 @@ export class HolderCache extends DurableObject {
    return 0;
   });
   if(quota)return fallback('budget-wait',quota);
-  const result=await fetchHolderCount(network,address);
+  const indexed=await fetchBlockscoutCount(network,address,this.env.BLOCKSCOUT_API_KEY);
+  const result=indexed||await fetchHolderCount(network,address);
   if(result.holders!==null){
    this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,JSON.stringify(result),now,now+30*60000);return result;
   }
