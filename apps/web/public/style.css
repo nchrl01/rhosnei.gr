@@ -444,7 +444,7 @@ body.visual-expanded{overflow:hidden}
 .coin-live-readings>div:first-child{column-gap:14px}
 
 /* Four stable market slots; small screens scroll this strip instead of wrapping. */
-.instrument-page .readings{display:grid;grid-template-columns:repeat(4,minmax(max-content,1fr));width:100%;min-width:0;max-width:none;margin-top:8px;padding:8px 0;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+.instrument-page .readings{display:grid;grid-template-columns:repeat(5,minmax(max-content,1fr));width:100%;min-width:0;max-width:none;margin-top:8px;padding:8px 0;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
 .instrument-page .readings>div{display:grid;justify-content:start;align-content:start;min-width:0;gap:4px}
 .instrument-page .readings small{font-size:var(--font-size-small);line-height:1.25;white-space:nowrap;color:#aaa}
 .instrument-page .readings strong{display:block;margin:0;font-size:var(--font-size-small);line-height:1.25;white-space:nowrap;overflow-wrap:normal;text-align:left}

@@ -20,7 +20,7 @@ import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=earthbound-7';
-import {createHolderMetadata} from './holder-metadata.js?v=277';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=295';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
@@ -88,9 +88,14 @@ $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>even
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image),onUnavailable:()=>{if(market)void loadCoinImage(market,{fallback:true});}});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
 const dataSonification=createDataSonification({send,event});
-const holderMetadata=createHolderMetadata({onInfo:(info,pair)=>{
+const holderMetadata=createHolderMetadata({onChange:info=>displayHolderCount(info),onInfo:(info,pair)=>{
  if(info?.image_url){tokenImages.set(imageKey(pair),info.image_url);if(market&&imageKey(market)===imageKey(pair))displayCoinImage();}
 }});
+function displayHolderCount(info=holderMetadata.snapshot()){
+ const node=$('holders'),label=$('holders-label');if(!node||!label)return;
+ const readout=holderCountReadout(info,replay.state.active);
+ label.textContent=readout.label;node.textContent=readout.value;node.title=readout.title;
+}
 $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
@@ -287,6 +292,7 @@ function metrics(){
 }
 function updateReplayUI(m){
  const active=replay.state.active,source=m.replay?.source;
+ if($('holders-label')?.textContent!==(active?'HOLDERS · LATEST':'HOLDERS'))displayHolderCount();
  $('replay-speed').hidden=false;
  $('replay-speed').classList.toggle('is-live',!active);
  $('replay-speed').inert=!active;
@@ -575,6 +581,7 @@ function display(){
  const liquidityAvailable=liquidity!=null&&Number.isFinite(Number(liquidity));
  $('liquidity-label').textContent=exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY';
  $('liquidity').textContent=liquidityAvailable?cash(liquidity):'Unavailable';
+ displayHolderCount();
  updateContext();
 }
 function updateContext(){

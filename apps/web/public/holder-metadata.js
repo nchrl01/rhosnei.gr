@@ -3,6 +3,15 @@ import {fetchGecko} from './gecko.js?v=277';
 import {createHolderClusters} from './holder-clusters.js?v=168';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
 const cache=new Map(),HOUR=3600000;
+export function holderCountReadout(info={},historical=false){
+ const available=Number.isSafeInteger(info.holders)&&info.holders>=0&&info.state!=='expired';
+ const label=historical?'HOLDERS · LATEST':'HOLDERS';
+ const value=available?info.holders.toLocaleString('en'):info.state==='loading'?'—':'Unavailable';
+ const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
+ const title=available?'Total token-holder wallets · latest provider snapshot'+reported+(info.state==='delayed'?' · updates delayed':'')
+  :info.state==='loading'?'Loading total holder count':info.state==='expired'?'Holder snapshot expired':'Total holder count is unavailable for this coin';
+ return {label,value,title};
+}
 export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
  const clusters=createHolderClusters();
  let key='',state={state:'unavailable',holders:null,watchers:null},controller,timer,epoch=0;
