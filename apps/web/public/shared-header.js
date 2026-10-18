@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=325';
+import {bindMobileCoinSearch} from './mobile-search.js?v=326';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
