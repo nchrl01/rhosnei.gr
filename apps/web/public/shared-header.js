@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=331';
+import {bindMobileCoinSearch} from './mobile-search.js?v=334';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -50,7 +50,7 @@ keepArtworkUndraggable();
 removeRetiredSampleStorage();
 
 // Optional footer features cannot prevent navigation or volume from starting.
-if(document.querySelector('.site-footer')){
+if(document.querySelector('.site-footer')&&new URLSearchParams(location.search).get('capture')!=='live'){
  void import('./footer-prices.js?v=240').catch(()=>{});
  if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=317').catch(()=>{
   const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
@@ -73,7 +73,7 @@ function bindMobileFooter(){
  mobile.addEventListener('change',sync);sync();
 }
 bindMobileFooter();
-const headerWallet=document.querySelector('.header-wallet');
+const headerWallet=new URLSearchParams(location.search).get('capture')==='live'?null:document.querySelector('.header-wallet');
 if(headerWallet){
  let walletOpening=false,walletSession;
  const paintAccount=account=>{

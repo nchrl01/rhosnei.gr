@@ -96,3 +96,6 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 .coin-logo-preview .artwork-fallback>img{width:28%;height:auto;background:transparent}
 .coin-logo-preview{isolation:isolate}.coin-capture-badge{z-index:2}
 @media(max-width:760px){.coin-gallery-views{margin-bottom:16px;gap:8px}.coin-gallery-views button{min-height:40px;padding-inline:10px}}
+
+.coin-collectible-art img[hidden],.coin-capture-badge[hidden],.snapshot-unavailable[hidden]{display:none}
+.snapshot-unavailable{padding:24px;text-align:center;line-height:1.5}

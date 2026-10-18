@@ -1,26 +1,16 @@
-// Original pixels from the live player, with bounded local retention.
+// Temporary pixels for the trusted capture runner. Normal browsing never archives.
 const DB='upic-coin-snapshots-v1',LIMIT=24,KIND='live-player-frame-v1';
-let database;
+let legacyRemoved=false;
+export function clearLegacyCoinSnapshots(){
+ if(legacyRemoved)return;legacyRemoved=true;
+ try{const request=indexedDB.deleteDatabase(DB);request.onerror=()=>{};}catch{}
+}
+clearLegacyCoinSnapshots();
 const keyFor=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
 const validFrame=frame=>frame?.captureKind===KIND&&frame.key===keyFor(frame.chain,frame.address)&&typeof frame.chain==='string'&&typeof frame.address==='string'&&Number.isFinite(frame.capturedAt)&&frame.capturedAt>0&&frame.blob instanceof Blob;
-let channel;
-try{channel=new BroadcastChannel('upic-coin-snapshots-v1');channel.onmessage=event=>{if(event.data?.type==='saved')document.dispatchEvent(new CustomEvent('upic:snapshot-saved',{detail:{key:event.data.key,capturedAt:event.data.capturedAt}}));};}catch{}
-function open(){return database??=new Promise((resolve,reject)=>{
- let settled=false;const timer=setTimeout(()=>{settled=true;reject(Error('Capture storage timed out'));},1500);
- const r=indexedDB.open(DB,1);r.onupgradeneeded=()=>r.result.createObjectStore('frames',{keyPath:'key'});
- r.onsuccess=()=>{clearTimeout(timer);if(settled){r.result.close();return;}settled=true;resolve(r.result);};
- r.onerror=()=>{clearTimeout(timer);settled=true;reject(r.error);};
-}).catch(error=>{database=null;throw error;});}
-export async function readCoinSnapshots(){const db=await open();return new Promise((resolve,reject)=>{const tx=db.transaction('frames'),r=tx.objectStore('frames').getAll();r.onsuccess=()=>resolve(r.result.filter(validFrame));r.onerror=()=>reject(r.error);});}
-export async function saveCoinSnapshot(frame){
+function publishCapture(frame){
  if(!validFrame(frame)||!frame.blob.size||frame.blob.size>750000)return false;
- const db=await open();let saved=false;
- await new Promise((resolve,reject)=>{const tx=db.transaction('frames','readwrite'),store=tx.objectStore('frames'),previous=store.get(frame.key);
-  previous.onsuccess=()=>{if(validFrame(previous.result)&&previous.result.capturedAt>=frame.capturedAt)return;store.put(frame);saved=true;const r=store.getAll();r.onsuccess=()=>{const rows=r.result.filter(validFrame).sort((a,b)=>b.capturedAt-a.capturedAt);for(const row of r.result)if(!validFrame(row))store.delete(row.key);for(const row of rows.slice(LIMIT))store.delete(row.key);};};
-  tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
- });
- if(saved){const detail={key:frame.key,capturedAt:frame.capturedAt};document.dispatchEvent(new CustomEvent('upic:snapshot-saved',{detail}));try{channel?.postMessage({type:'saved',...detail});}catch{}}
- return saved;
+ document.dispatchEvent(new CustomEvent('upic:snapshot-saved',{detail:{key:frame.key,capturedAt:frame.capturedAt,frame}}));return true;
 }
 // Inspect the copied pixels without changing their brightness or geometry.
 export function meaningfulCapture(canvas){
@@ -30,7 +20,8 @@ export function meaningfulCapture(canvas){
  for(let i=0;i<pixels.length;i+=4){const brightness=Math.max(pixels[i],pixels[i+1],pixels[i+2])*pixels[i+3]/255;peak=Math.max(peak,brightness);energy+=brightness;if(brightness>=16)lit++;}
  return peak>=32&&lit>=Math.max(12,Math.ceil(width*height*.0001))&&energy>=width*height*.01;
 }
-export function archivePlayerFrames({getMarket,getVisual,eligible}){
+export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligible}){
+ if(!captureMode)return()=>{};
  let busy=false,closed=false;const lastAt=new Map();
  async function capture(){
   if(closed||busy||document.hidden||!eligible())return;
@@ -44,7 +35,7 @@ export function archivePlayerFrames({getMarket,getVisual,eligible}){
    const blob=await new Promise(resolve=>frame.toBlob(resolve,'image/webp',.86));
    if(closed||!blob||getMarket()!==market||document.hidden||!eligible())return;
    const current=visual.snapshot();if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderLoading)return;
-   const saved=await saveCoinSnapshot({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',coverage:state.holderCoverage,captureKind:KIND,blob});
+   const saved=publishCapture({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',coverage:state.holderCoverage,captureKind:KIND,blob});
    if(saved){lastAt.set(key,state.renderedAt);if(lastAt.size>LIMIT)lastAt.delete(lastAt.keys().next().value);}
   }catch{}finally{if(frame)frame.width=frame.height=1;busy=false;}
  }

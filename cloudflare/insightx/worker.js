@@ -1,3 +1,5 @@
+import {CoinCaptures,authenticateCaptureRequest,captureCapabilities} from './coin-captures.js';
+import {HolderBalanceRelay} from './holder-balance-relay.js';
 import {CoinSummary,summaryIdentity} from './coin-summary.js';
 import {SharedHistoryCache,historyRequest} from './history-cache.js';
 import {fetchHolderCount,fetchBlockscoutCount} from './holder-count.js';
@@ -88,6 +90,10 @@ export default {
   const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   const url=new URL(request.url);
+  if(url.pathname==='/coin-captures'||url.pathname==='/coin-captures/image'){
+   if(!['GET','POST'].includes(request.method)||request.method==='POST'&&url.pathname!=='/coin-captures')return json({error:'Method not allowed'},405,headers);
+   try{if(request.method==='POST')await authenticateCaptureRequest(request);const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-live-coin-captures-v1'));const result=await store.fetch(request);const response=new Response(result.body,result);for(const [key,value] of Object.entries(headers))response.headers.set(key,value);return response;}catch(error){return json({error:error.status?error.message:'Capture service unavailable'},error.status||503,headers);}
+  }
   if(url.pathname.startsWith('/marketplace/'))return marketplace(request,env,headers);
   if(url.pathname==='/takes'||/^\/takes\/[A-Za-z0-9_-]{16}$/.test(url.pathname)){
    if(!['GET','POST'].includes(request.method))return json({state:'method-not-allowed'},405,headers);
@@ -99,6 +105,7 @@ export default {
    }catch{return json({state:'sharing-unavailable'},503,headers);}
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
+  if(url.pathname==='/holder-balances'){try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-holder-balances-v1'));const result=await store.fetch(new Request(url));const response=new Response(result.body,result);for(const [key,value] of Object.entries(headers))response.headers.set(key,value);return response;}catch{return json({state:'unavailable'},503,headers);}}
   if(url.pathname==='/coin-summary'){const identity=summaryIdentity(url);if(!identity)return json({state:'invalid-token'},400,headers);try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-coin-summary-v1'));const result=await store.fetch(new Request(url));return new Response(result.body,{status:result.status,headers:{'Content-Type':'application/json',...headers}});}catch{return json({state:'unavailable'},503,headers);}}
   if(url.pathname==='/history'){
    if(!historyRequest(url))return json({error:'Invalid history request'},400,headers);
@@ -107,7 +114,7 @@ export default {
   }
   if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/holders')return holderCount(url,headers,env);
-  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
+  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
   if(!['sol','eth','base'].includes(network))return json({state:'unsupported-network'},422,headers);
@@ -129,6 +136,7 @@ export default {
 export class HolderCache extends DurableObject {
  constructor(ctx,env){
   super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);this.summaries=new CoinSummary(this.sql,env);
+  this.captures=new CoinCaptures(ctx);this.balanceRelay=new HolderBalanceRelay(this.sql,env);
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS holder_counts (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
@@ -137,6 +145,8 @@ export class HolderCache extends DurableObject {
   this.sql.exec('CREATE TABLE IF NOT EXISTS cooldown (id INTEGER PRIMARY KEY, until_ms INTEGER)');
  }
  async fetch(request){
+  if(['/coin-captures','/coin-captures/image'].includes(new URL(request.url).pathname))return this.captures.fetch(request);
+  if(new URL(request.url).pathname==='/holder-balances')return json(await this.balanceRelay.get(new URL(request.url)));
   if(new URL(request.url).pathname==='/coin-summary'){const identity=summaryIdentity(new URL(request.url));return identity?json(await this.summaries.get(identity)):json({state:'invalid-token'},400);}
   if(new URL(request.url).pathname==='/history')return this.history.fetch(new URL(request.url));
   const url=new URL(request.url),network=url.searchParams.get('network'),address=url.searchParams.get('address'),key=network+':'+address;

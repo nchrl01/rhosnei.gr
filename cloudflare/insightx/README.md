@@ -42,3 +42,9 @@ to 2 MiB and 12 seconds. No InsightX requests or secrets are involved.
 `GET /coin-summary?network=ethereum&address=0x…` (or `?id=coingecko-id`) summarizes the indexed project description using the `AI` Workers AI binding. Contract lookups must resolve to the same platform/address; unknown tokens return no description. This is not an independent safety or social investigation. Sources and an AI/DYOR hint accompany the displayed text.
 
 Shared SQLite storage retains successful summaries for 30 days and missing descriptions for 30 minutes. Coalesced requests, a global 10-second miss spacing, and a maximum of 200 new attempts per UTC day bound this endpoint; no per-trade polling. Inputs are bounded; inference uses a small fixed model and 110 output tokens. Workers AI's account-wide free allowance is shared with any other AI use, so this endpoint's cap is not a guarantee of zero account-wide billing. Keys remain unnecessary in browser code.
+
+## Shared catalogue captures
+
+`GET /coin-captures` returns paginated metadata (`cursor` / `nextCursor`); `GET /coin-captures/image` serves the exact latest WebP. `POST /coin-captures` accepts `{metadata, imageBase64}` only with a verified GitHub Actions OIDC bearer token from `nchrl01/rhosnei.gr/.github/workflows/captures.yml@refs/heads/main`, audience `upic-live-captures`. No new secret or paid binding is required. The existing SQLite Durable Object binding stores only the exact bundled catalogue identities and rejects stale replacement timestamps.
+
+`GET /holder-balances?network=robinhood&address=...` provides a real top-holder sample through the existing private Blockscout key for listed Robinhood tokens. It caches for 15 minutes and reserves at most 1,000 upstream calls/day (two per lookup); old timestamps are preserved on source failure and samples expire after an hour. The API key never reaches the browser.

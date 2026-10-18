@@ -1,4 +1,4 @@
-import {createHolderBalances} from './holder-balances.js?v=332';
+import {createHolderBalances} from './holder-balances.js?v=334';
 import {fetchGoPlusCount} from './holder-count-providers.js?v=306';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {createHolderClusters} from './holder-clusters.js?v=168';

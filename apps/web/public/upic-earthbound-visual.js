@@ -1,7 +1,7 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
 import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-16';
-import {createVisualFullscreen} from './visual-fullscreen.js?v=142';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=334';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
@@ -52,7 +52,7 @@ function observedHolderSnapshot(m){
  const primaryProviderState=holdings?.state||'unavailable';
  const loading=primaryProviderState==='loading'||(selected!==holdings&&!supplied&&relations?.state==='loading');
  const settled=Boolean(holdings||relations||supplied)&&!loading;
- return {balances,source,coverage,providerState:selected?.state||primaryProviderState,primaryProviderState,loading,settled};
+ return {balances,source,coverage,fetchedAt:finite(selected?.fetchedAt),providerState:selected?.state||primaryProviderState,primaryProviderState,loading,settled};
 }
 export function observedHolderBalances(m={}){
  return observedHolderSnapshot(m).balances;
@@ -61,7 +61,7 @@ export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const holders=observedHolderSnapshot(m),holderBalances=holders.balances;
  return {coinKey,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
-  holderBalances,holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
+  holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
@@ -236,7 +236,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };

@@ -1,6 +1,6 @@
-import {createCoinSummary} from './coin-summary.js?v=331';
-import {rememberRecentCoin} from './coin-catalogue.js?v=331';
-import {archivePlayerFrames} from './coin-snapshot-store.js?v=329';
+import {createCoinSummary} from './coin-summary.js?v=334';
+import {rememberRecentCoin} from './coin-catalogue.js?v=334';
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=334';
 import {createTestMint} from './test-mint.js?v=3';
 import {createTestNftExporter} from './test-nft-export.js?v=1';
 import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
@@ -22,8 +22,8 @@ import {createCoinDither} from './coin-dither.js?v=276';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=332';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=332';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=334';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=334';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
@@ -44,17 +44,16 @@ import {MarketChart} from './chart.js?v=234';
 import {loadHistory} from './history.js?v=326';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
-// The catalogue captures this very player silently. Only its visual transport
-// runs; market discovery, observed holdings and live data keep their real paths.
+// The trusted publisher captures this player silently. Normal visits do not
+// capture or store artwork; the catalogue reads the shared cloud archive.
 const captureQuery=new URLSearchParams(location.search),captureMode=captureQuery.get('capture')==='live';
 if(captureMode){
  document.documentElement.classList.add('live-capture-session');
- const style=document.createElement('style');style.textContent='.live-capture-session body{overflow:hidden!important}.live-capture-session .site-intro{display:none!important}.live-capture-session .audio-visualizer{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important;padding:24px!important;z-index:9999!important}.live-capture-session .audio-visualizer-expand{display:none!important}';document.head.append(style);
- document.addEventListener('upic:snapshot-saved',async event=>{
-  if(!event.detail?.key)return;
-  const {readCoinSnapshots}=await import('./coin-snapshot-store.js?v=334');
-  const frame=(await readCoinSnapshots()).find(frame=>frame.key===event.detail.key&&frame.capturedAt===event.detail.capturedAt);
-  if(!frame)return;window.__upicLiveCapture=frame;
+ const style=document.createElement('style');style.textContent='.live-capture-session body{overflow:hidden!important}.live-capture-session .site-intro{display:none!important}.live-capture-session .audio-visualizer{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important;margin:0!important;padding:24px!important;z-index:9999!important}.live-capture-session .visual-fullscreen{display:none!important}';document.head.append(style);
+ document.addEventListener('upic:snapshot-saved',event=>{
+  const frame=event.detail?.frame;
+  if(!frame||frame.key!==event.detail.key||frame.capturedAt!==event.detail.capturedAt||!(frame.blob instanceof Blob))return;
+  window.__upicLiveCapture=frame;
   if(parent!==window)parent.postMessage({type:'upic:live-capture',request:captureQuery.get('captureRequest'),frame},location.origin);
  });
 }
@@ -953,7 +952,8 @@ const requestedCoin=new URLSearchParams(location.search);
 if(!restoredScore&&requestedCoin.get('coin')?.length<=250&&requestedCoin.get('coin')){
  requestedNetwork=requestedCoin.get('network')||null;requestedAutoplay=false;$('address').value=requestedCoin.get('coin');syncAddressLabel();$('coin-form').requestSubmit();
 }
-archivePlayerFrames({getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>(playing||captureMode)&&!replay.state.active&&!testMint.simulation()});
+if(captureMode)window.__upicCaptureStatus=()=>({market:market?{chain:market.chainId,address:market.baseToken.address,symbol:market.baseToken.symbol}:null,visual:dataVisual.snapshot(),holders:holderMetadata.snapshot().holdings?.state,lookup:$('lookup').textContent});
+if(captureMode)archivePlayerFrames({captureMode,getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active&&!testMint.simulation()});
 if(!captureMode)startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');

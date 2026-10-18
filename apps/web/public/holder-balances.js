@@ -3,7 +3,8 @@ import {fetchGoPlusCount,HOLDER_NETWORKS} from './holder-count-providers.js?v=30
 // A bounded, paginated sample is never expanded into invented wallets.
 const EXPLORERS={ethereum:'https://eth.blockscout.com',eth:'https://eth.blockscout.com',base:'https://base.blockscout.com',arbitrum:'https://arbitrum.blockscout.com',optimism:'https://explorer.optimism.io',polygon:'https://polygon.blockscout.com',polygon_pos:'https://polygon.blockscout.com',zksync:'https://zksync.blockscout.com',celo:'https://celo.blockscout.com',robinhood:'https://robinhoodchain.blockscout.com'};
 const ALIASES={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
-const LIMIT=10000,TTL=15*60000,MAX_AGE=60*60000,cache=new Map();
+const RELAY='https://upic-insightx.nchrl01.workers.dev/holder-balances';
+const LIMIT=10000,PAGINATION_BUDGET=30000,TTL=15*60000,MAX_AGE=60*60000,cache=new Map();
 const addressPattern=/^0x[0-9a-f]{40}$/i;
 export function tokenUnits(raw,decimals){
  const value=String(raw??'');
@@ -57,6 +58,15 @@ export function createHolderBalances({onChange=()=>{}}={}){
     if(!response.ok){const error=Error('holder-provider-'+response.status);error.rateLimited=response.status===429;throw error;}
     return response.json();
    }
+   async function sharedSample(){
+    if(pair.chainId!=='robinhood')throw Error('shared-holder-network-unavailable');
+    const target=new URL(RELAY);target.searchParams.set('network',pair.chainId);target.searchParams.set('address',address);
+    const result=await read(target);if(!current())return;
+    if(result.network!==pair.chainId||result.address!==address||!Array.isArray(result.records)||!result.records.length||!Number.isFinite(result.fetchedAt)||Date.now()-result.fetchedAt>=MAX_AGE||result.fetchedAt>Date.now()+1000)throw Error('shared-holder-sample-unavailable');
+    const records=result.records.filter(item=>addressPattern.test(item.id||'')&&Number.isFinite(item.tokenBalance)&&item.tokenBalance>0);
+    if(!records.length)throw Error('shared-holder-sample-unavailable');
+    publish({...result,records,source:'Blockscout shared index',state:result.state==='delayed'?'delayed':'snapshot',coverage:'top-holder-sample',nextAt:Math.max(Date.now()+60000,Number(result.nextAt)||Date.now()+TTL)});
+   }
    async function sample(){
     const result=await fetchGoPlusCount(network,address,{signal});if(!current())return;
     if(!result.holderBalances?.length){const error=Error('holder-sample-unavailable');error.rateLimited=result.state==='rate-limited';throw error;}
@@ -102,14 +112,20 @@ export function createHolderBalances({onChange=()=>{}}={}){
       seenCursors.add(cursorKey);
      }
      const truncated=!finished&&records.size>=LIMIT;
-     const terminal=finished||truncated||pages>=250;
+     const timeLimited=Date.now()-startedAt>=PAGINATION_BUDGET;
+     const terminal=finished||truncated||pages>=250||timeLimited;
      const nextState={...base,state:finished||truncated?'snapshot':terminal?'partial':'loading',records:[...records.values()],pages,invalid,complete:finished&&invalid===0,truncated,nextAt:Date.now()+TTL};
      if(!retained||terminal){publish(nextState);cache.set(key,nextState);if(cache.size>8)cache.delete(cache.keys().next().value);}
-     if(finished||truncated)break;
+     if(terminal)break;
     }while(pages<250);
    }catch(error){
     if(!current())return;
-    if(!retained&&host&&!snapshot().records.length){try{await sample();return;}catch(fallbackError){error=fallbackError;if(!current())return;}}
+    if(pair.chainId==='robinhood'&&host&&(retained||!snapshot().records.length)){
+     try{await sharedSample();return;}catch(fallbackError){error=fallbackError;if(!current())return;}
+    }
+    if(!retained&&host&&!snapshot().records.length){
+     try{await sample();return;}catch(fallbackError){error=fallbackError;if(!current())return;}
+    }
     const nextAt=Date.now()+(error.rateLimited?5*60000:2*60000);
     publish(retained?{...retained,state:'delayed',nextAt}:{...state,state:state.records.length?'delayed':error.rateLimited?'rate-limited':'unavailable',complete:false,nextAt});
    }finally{

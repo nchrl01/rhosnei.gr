@@ -70,8 +70,12 @@ build details.
 
 ## Live marketplace captures
 
-Marketplace artwork is copied from the same live player, using received market and individual-holder data. Paused, replay, test, empty and simulated seed frames are excluded. A single silent player refreshes visible cards; real captures keep their render timestamp and exact network/address. Missing data stays pending instead of receiving substitute artwork.
+Marketplace artwork is copied from the actual live player using received market and individual-holder data. Paused, replay, test, empty and simulated seed frames are excluded. Captures keep their render timestamp and exact network/address. Missing data remains pending.
 
-`node scripts/capture-marketplace-live.mjs --limit 5` gathers shared captures from the actual player. Playwright must be installed or supplied through `UPIC_PLAYWRIGHT_MODULE`. `--all` processes the supported catalogue identities with bounded concurrency; unsupported identities and provider failures are reported without inventing frames.
+Only identities in the bundled catalogue can be stored in Cloudflare. The shared service retains one latest WebP per identity; older results cannot replace newer frames. The gallery reads shared metadata on opening, every minute while visible, and when it regains focus. Visitor browsers do not archive captures or run a background capture player. Legacy browser capture storage is deleted on loading the updated site.
 
-The AI investigator selects source-linked project, market and contract facts. Its public evidence cache lasts 30 minutes. If AI selection is unavailable, the interface labels the unchanged source facts as public evidence. This is not a social investigation or a contract security audit.
+The `Refresh shared live captures` GitHub workflow runs hourly with 40 bounded attempts and two isolated players. It reserves half the batch for old captures and uses remaining slots for coins without captures. Manual runs default to 100 attempts. Publishing uses a short-lived GitHub Actions identity restricted to this repository, workflow and main branch; no public upload key is embedded in the site. Provider failures retain the previous capture and its original timestamp. Refresh is periodic, not guaranteed real time for every coin.
+
+`node scripts/capture-marketplace-live.mjs --limit 5` creates development artifacts in a temporary directory. Playwright must be installed or supplied through `UPIC_PLAYWRIGHT_MODULE`. `--publish` requires the workflow identity. Native assets without issued-token identifiers and networks without an observed-holder source are reported without inventing frames. Current source coverage is 820 catalogue coins across 1,809 supported identities; supported does not guarantee provider availability.
+
+The AI investigator selects source-linked project, market and contract facts. Its public evidence cache lasts 30 minutes. If AI selection is unavailable, the interface labels unchanged source facts as public evidence. This is not a social investigation or a contract security audit.

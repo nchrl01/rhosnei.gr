@@ -1,0 +1,52 @@
+name: Refresh shared live captures
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Maximum exact coin/network identities to capture'
+        required: true
+        default: '100'
+        type: string
+      ids:
+        description: 'Optional comma-separated CoinGecko IDs or chain:address identities'
+        required: false
+        default: ''
+        type: string
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: shared-live-captures
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 95
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install isolated capture browser
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/upic-browsers
+        run: |
+          npm install --prefix "$RUNNER_TEMP/upic-capture-tools" --no-package-lock --no-audit --no-fund playwright@1.56.1
+          node "$RUNNER_TEMP/upic-capture-tools/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Render actual market inputs and publish original frames
+        env:
+          CI: 'true'
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/upic-browsers
+          UPIC_PLAYWRIGHT_MODULE: ${{ runner.temp }}/upic-capture-tools/node_modules/playwright/index.mjs
+          UPIC_CAPTURE_OUTPUT_DIR: ${{ runner.temp }}/upic-capture-report
+          CAPTURE_LIMIT: ${{ inputs.limit || '40' }}
+          CAPTURE_IDS: ${{ inputs.ids || '' }}
+        run: |
+          args=(--publish --limit "$CAPTURE_LIMIT" --timeout 90 --concurrency 2)
+          if [[ -n "$CAPTURE_IDS" ]]; then args+=(--ids "$CAPTURE_IDS"); fi
+          node scripts/capture-marketplace-live.mjs "${args[@]}"
