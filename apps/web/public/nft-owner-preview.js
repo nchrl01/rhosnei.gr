@@ -1,6 +1,22 @@
 // Illustrative UI only. Never reads a wallet or claims an NFT was minted.
-export function createNftOwnerPreview(panel,visual){
+export function createNftOwnerPreview(panel,visual,{onTestMint=()=>false,isEligible=()=>true}={}){
  if(!panel||!visual)return {setMarket(){},close(){}};
+ let market=null;
+ const action=document.createElement('button');action.type='button';action.className='tokenize-coin';action.textContent='Tokenize this coin';action.disabled=true;panel.append(action);
+ const dialog=document.createElement('dialog');dialog.id='tokenize-coin-dialog';dialog.setAttribute('aria-labelledby','tokenize-coin-title');
+ dialog.innerHTML='<form method="dialog"><button aria-label="Close tokenization">×</button></form><p class="tokenize-preview-label">NFT COLLECTION · TEST PREVIEW</p><h2 id="tokenize-coin-title">Tokenize this coin</h2><p>Turn this coin into an evolving audiovisual NFT collection.</p><p data-tokenize-coin></p><p class="tokenize-address" data-tokenize-address></p><p>Real minting is not available yet. This preview sends no transaction.</p><button type="button" data-tokenize-test>Try test mint</button><p data-tokenize-status role="status"></p>';
+ document.querySelector('main').append(dialog);
+ action.addEventListener('click',()=>{
+  if(!market||!isEligible(market))return;
+  dialog.querySelector('h2').textContent='Tokenize '+(market.baseToken?.symbol||market.baseToken?.name||'this coin');
+  dialog.querySelector('[data-tokenize-coin]').textContent=(market.baseToken?.name||market.baseToken?.symbol||'Coin')+' · '+market.chainId;
+  dialog.querySelector('[data-tokenize-address]').textContent=market.baseToken?.address||'';
+  dialog.querySelector('[data-tokenize-status]').textContent='';dialog.showModal();
+ });
+ dialog.querySelector('[data-tokenize-test]').addEventListener('click',()=>{
+  dialog.close();
+  if(!onTestMint()){dialog.showModal();dialog.querySelector('[data-tokenize-status]').textContent='Finish the current operation, then try again.';}
+ });
  const mobile=matchMedia('(max-width:760px)'),anchor=document.createComment('NFT owner preview position');
  panel.parentNode.insertBefore(anchor,panel);
  function arrange(){
@@ -9,6 +25,8 @@ export function createNftOwnerPreview(panel,visual){
   else anchor.parentNode?.insertBefore(panel,anchor.nextSibling);
  }
  function setMarket(pair){
+  market=pair;if(dialog.open)dialog.close();
+  action.disabled=!pair||!isEligible(pair);action.title=action.disabled?'Choose an on-chain coin to tokenize':'Preview an audiovisual NFT collection';
   panel.hidden=!pair;
   if(pair){
    const token=pair.baseToken?.symbol||pair.baseToken?.name||'Coin';
@@ -17,5 +35,5 @@ export function createNftOwnerPreview(panel,visual){
   arrange();
  }
  mobile.addEventListener('change',arrange);arrange();
- return {setMarket,close(){mobile.removeEventListener('change',arrange);anchor.remove();}};
+ return {setMarket,close(){mobile.removeEventListener('change',arrange);dialog.remove();action.remove();anchor.remove();}};
 }

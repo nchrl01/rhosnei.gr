@@ -21,7 +21,7 @@ import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=313';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=306';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=312';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=314';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -86,7 +86,15 @@ const transportIndicator=createTransportIndicator($('transport-status'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>{if(!testExportSession)piano?.setArpeggioPattern(pattern);}});
 const displaySettings={dither:false};
 const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
-const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'),$('audio-dots').closest('.audio-visualizer'));
+const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'),$('audio-dots').closest('.audio-visualizer'),{
+ isEligible:pair=>!isExchangeMarket(pair),
+ onTestMint:()=>{
+  const toggle=document.querySelector('.test-mint-toggle');if(!toggle||toggle.disabled)return false;
+  if(toggle.getAttribute('aria-checked')!=='true')toggle.click();
+  const controls=document.querySelector('.test-evolution');if(controls){controls.open=true;controls.scrollIntoView({block:'nearest'});controls.querySelector('input')?.focus({preventScroll:true});}
+  return true;
+ },
+});
 $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>event.preventDefault());
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image),onUnavailable:()=>{if(market)void loadCoinImage(market,{fallback:true});}});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};

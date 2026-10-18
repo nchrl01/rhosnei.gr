@@ -518,3 +518,15 @@ body.visual-expanded{overflow:hidden}
 @media(min-width:761px){.nft-owner-preview{grid-column:1;grid-row:5;align-self:start;width:100%;margin:8px 0 12px}}
 @media(max-width:760px){.instrument>.nft-owner-preview{width:100%;padding:12px 0;margin:16px 0 4px;align-self:start}.nft-owner-avatar{width:32px;height:32px}.nft-owner-wallet{overflow-wrap:anywhere}}
 
+/* Tokenization begins as an explicit preview until the NFT contracts are connected. */
+.nft-owner-preview{flex-wrap:wrap}
+.tokenize-coin{margin-left:auto;flex:none;min-height:40px;padding:8px 12px;white-space:nowrap;font-size:var(--font-size-body)}
+#tokenize-coin-dialog{width:min(440px,calc(100vw - 32px));max-height:calc(100svh - 32px);overflow:auto;border:1px solid var(--control-ink,#fff);padding:20px;background:var(--bg,#000);color:var(--control-ink,#fff)}
+#tokenize-coin-dialog::backdrop{background:#000b}
+#tokenize-coin-dialog form{float:right}
+#tokenize-coin-dialog h2{font-size:var(--font-size-body);font-weight:400;margin:16px 0}
+#tokenize-coin-dialog p{font-size:var(--font-size-small);line-height:1.5;margin:12px 0}
+#tokenize-coin-dialog button{min-height:40px;padding:8px 12px;font-size:var(--font-size-body)}
+#tokenize-coin-dialog .tokenize-preview-label{color:var(--muted,#aaa);padding-right:32px}
+.tokenize-address{overflow-wrap:anywhere}
+@media(max-width:760px){.tokenize-coin{flex:0 0 100%;width:100%;margin:8px 0 0;min-height:44px}}
