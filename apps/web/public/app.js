@@ -44,6 +44,20 @@ import {MarketChart} from './chart.js?v=234';
 import {loadHistory} from './history.js?v=326';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
+// The catalogue captures this very player silently. Only its visual transport
+// runs; market discovery, observed holdings and live data keep their real paths.
+const captureQuery=new URLSearchParams(location.search),captureMode=captureQuery.get('capture')==='live';
+if(captureMode){
+ document.documentElement.classList.add('live-capture-session');
+ const style=document.createElement('style');style.textContent='.live-capture-session body{overflow:hidden!important}.live-capture-session .site-intro{display:none!important}.live-capture-session .audio-visualizer{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important;padding:24px!important;z-index:9999!important}.live-capture-session .audio-visualizer-expand{display:none!important}';document.head.append(style);
+ document.addEventListener('upic:snapshot-saved',async event=>{
+  if(!event.detail?.key)return;
+  const {readCoinSnapshots}=await import('./coin-snapshot-store.js?v=334');
+  const frame=(await readCoinSnapshots()).find(frame=>frame.key===event.detail.key&&frame.capturedAt===event.detail.capturedAt);
+  if(!frame)return;window.__upicLiveCapture=frame;
+  if(parent!==window)parent.postMessage({type:'upic:live-capture',request:captureQuery.get('captureRequest'),frame},location.origin);
+ });
+}
 const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let envionLoading=null;
@@ -88,7 +102,7 @@ createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>{if(!testExportSession)piano?.setArpeggioPattern(pattern);}});
 const displaySettings={dither:false};
-const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
+const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
 const coinSummary=createCoinSummary($('nft-owner-preview'));
 const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'),$('audio-dots').closest('.audio-visualizer'),{
  isEligible:pair=>!isExchangeMarket(pair),
@@ -114,7 +128,7 @@ function displayHolderCount(info=holderMetadata.snapshot()){
 $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
-const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
+const imageKey=pair=>pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
 let testSimulationActive=false,testRefreshPending=false,lastTestActivityId='';
 const testMint=createTestMint(document.querySelector('.coin-copy'),{
  onPreviewEnd:()=>{if(playing&&!starting)$('play').click();},
@@ -341,7 +355,7 @@ function syncLevels(m){
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1.5:0,ctx.currentTime,.025);}
  updateCoinReadout(m.testMint?.original||m);
  m.dataSignals=dataSonification.frame(m,{playing:playing&&ctx?.state==='running',seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),clock:ctx?.currentTime??0});
- dataVisual.frame(m,{playing,seed,clock:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:!m.testMint&&replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),position:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
+ dataVisual.frame(m,{playing:playing||captureMode,seed,clock:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:!m.testMint&&replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),position:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
  piano?.resonance(m.context?.latestCap);
  piano?.setTempo(m.music?.tempo);
  orchestraState=conductor.update(m,streamConnected);
@@ -775,17 +789,17 @@ function applySnapshot(pair){
  session?.snapshots.push({at:Date.now(),market:pair});
 }
 function chooseMarket(pair,{shared=false}={}){
- rememberRecentCoin({key:imageKey(pair),chain:pair.chainId,address:pair.source==='ccxt'?null:pair.baseToken.address,query:pair.source==='ccxt'?pair.exchangeSymbol:undefined,symbol:pair.baseToken.symbol,name:pair.baseToken.name,image:pair.info?.imageUrl||pair.baseToken.imageUrl});
+ if(!captureMode)rememberRecentCoin({key:imageKey(pair),chain:pair.chainId,address:pair.source==='ccxt'?null:pair.baseToken.address,query:pair.source==='ccxt'?pair.exchangeSymbol:undefined,symbol:pair.baseToken.symbol,name:pair.baseToken.name,image:pair.info?.imageUrl||pair.baseToken.imageUrl});
  document.dispatchEvent(new CustomEvent('upic:market-selected'));
  testNftExport.cancel('Export cancelled because the selected coin changed.');
  liveConnection?.abort();liveConnection=null;pendingHistoryReplay=false;
  void takeShare.finish();takeShare.reset();
- pendingPianoTrade=null;tradePollingAt=0;preloadPianoSamples(hash(pair.chainId+':'+pair.baseToken.address)).catch(error=>engineView.log('Piano preload: '+error.message));
+ pendingPianoTrade=null;tradePollingAt=0;if(!captureMode)preloadPianoSamples(hash(pair.chainId+':'+pair.baseToken.address)).catch(error=>engineView.log('Piano preload: '+error.message));
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  lastMarketActivityAt=0;generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;nftOwnerPreview.setMarket(pair);void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
+ resetEnsemble();mode='live';market=pair;nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
  if(!isExchangeMarket(pair)){const version=generation;void loadPoolLiquidity(pair).then(()=>{if(version===generation)display();});}
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
@@ -846,6 +860,7 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
 }
 document.addEventListener('upic:search-coin',event=>{
  const coin=event.detail;if(!coin||typeof(coin.address||coin.query)!=='string')return;
+ liveConnection?.abort();liveConnection=null;searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
  requestedNetwork=coin.address?coin.chain:null;requestedAutoplay=false;
  $('address').value=coin.address||coin.query;syncAddressLabel();$('coin-form').requestSubmit();
 });
@@ -853,7 +868,8 @@ $('coin-form').onsubmit=async e=>{
  e.preventDefault();
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.querySelector('.inspector-display').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
- const wantedNetwork=requestedNetwork,autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
+ const selectedNetwork=$('coin-form').dataset.searchNetwork;
+ const wantedNetwork=requestedNetwork||(selectedNetwork&&selectedNetwork!=='all'?selectedNetwork:null),autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
  const address=$('address').value.trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
  const revision=++searchRevision,tokenAddress=isTokenIdentifier(address),exchangeOnly=isExchangeQuery(address);
  searchController?.abort();const searchAbort=new AbortController();searchController=searchAbort;
@@ -937,8 +953,8 @@ const requestedCoin=new URLSearchParams(location.search);
 if(!restoredScore&&requestedCoin.get('coin')?.length<=250&&requestedCoin.get('coin')){
  requestedNetwork=requestedCoin.get('network')||null;requestedAutoplay=false;$('address').value=requestedCoin.get('coin');syncAddressLabel();$('coin-form').requestSubmit();
 }
-archivePlayerFrames({getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active&&!testMint.simulation()});
-startTrending((item,options={})=>{
+archivePlayerFrames({getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>(playing||captureMode)&&!replay.state.active&&!testMint.simulation()});
+if(!captureMode)startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
  // Resume in the coin click itself: market discovery completes asynchronously.

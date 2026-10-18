@@ -1,7 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
 import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-16';
-import {createContentFrame} from './upic-content-frame.js?v=1';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=142';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -69,7 +68,10 @@ export function earthboundMarketState(m={},coinKey='unselected'){
 export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const host=canvas?.closest('.audio-visualizer');
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
- const overlay=canvas.getContext('2d'),contentFrame=createContentFrame(host),renderer=createEarthboundRenderer(contentFrame.element),fullscreen=createVisualFullscreen(host,{referenceSide});
+ // Keep the complete renderer square in the page and in fullscreen. The field
+ // does not crop to changing mark bounds, which would hide its outer marks.
+ const field=document.createElement('div');field.className='visual-content-frame';host.append(field);host.dataset.visualFrame='full';
+ const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(field),fullscreen=createVisualFullscreen(host,{referenceSide});
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
  function syncHolderLoading(rendered=false,now=performance.now()){
@@ -95,22 +97,23 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let colorStart=0,colorDuration=2.4;
  let staleElapsed=0,colorElapsed=0,last=0,lastRender=0,raf=0,closed=false,visible=true,width=0,height=0,sourceCursor=null;
  let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null;
- function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderer.clear();contentFrame.reset();}
- function referenceSide(box,expanded){
-  if(expanded)return Math.max(0,Math.min(box.width,box.height));
-  // The fullscreen placeholder supplies the normal page position on collapse.
-  const top=mobile.matches?0:Math.max(0,box.top+scrollY);
-  const footer=document.querySelector('.site-footer');
-  const footerHeight=!mobile.matches&&footer&&getComputedStyle(footer).position==='fixed'?footer.getBoundingClientRect().height:0;
-  const availableHeight=Math.max(180,Math.round(innerHeight-top-footerHeight));
-  return Math.max(0,Math.min(box.width,mobile.matches?box.width:availableHeight));
+ let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
+ function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
+ function referenceSide(box){
+  // CSS owns a stable viewport-sized desktop host. Use its content box so
+  // sticky scrolling cannot change the artwork scale, and retain its soft edges.
+  // On collapse, box is the placeholder with the same outer dimensions.
+  const style=getComputedStyle(host),pixels=name=>parseFloat(style[name])||0;
+  const width=box.width-pixels('paddingLeft')-pixels('paddingRight');
+  const height=box.height-pixels('paddingTop')-pixels('paddingBottom');
+  return Math.max(0,Math.min(width,height));
  }
  function size(){
-  const expanded=host.classList.contains('is-expanded'),box=host.getBoundingClientRect();
-  // Normal height follows the crop, so only independent page width/viewport
-  // dimensions may set the reference lattice. Fullscreen owns its own rectangle.
+  const box=host.getBoundingClientRect();
+  // The CSS host dimensions are independent of the marks. Fullscreen owns its
+  // outer rectangle, while the renderer keeps one uncropped square inside it.
   const movingSide=parseFloat(host.style.getPropertyValue('--visual-motion-side'));
-  width=height=Number.isFinite(movingSide)?movingSide:referenceSide(box,expanded);
+  width=height=Number.isFinite(movingSide)?movingSide:referenceSide(box);
   const pixels=width.toFixed(3)+'px';
   if(host.style.getPropertyValue('--visual-reference-side')!==pixels)host.style.setProperty('--visual-reference-side',pixels);
  }
@@ -120,7 +123,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   size();
  }
  const resize=new ResizeObserver(size);resize.observe(host);const header=document.querySelector('.market-header');if(header)resize.observe(header);const footer=document.querySelector('.site-footer');if(footer)resize.observe(footer);
- const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting??true;last=0;}):null;observer?.observe(host);
+ const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{visible=entries.at(-1)?.isIntersecting??true;last=0;}):null;observer?.observe(host);
  const visibility=()=>{last=0;size();};
  mobile.addEventListener('change',arrange);window.addEventListener('resize',size);document.addEventListener('visibilitychange',visibility);arrange();
  function draw(now){
@@ -129,6 +132,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
   syncHolderLoading();
   const state=getState(),playing=state.playing&&settings.playing!==false&&!settings.seeking&&!settings.ended;
+  // A selection can update app state before its first market frame arrives.
+  // Never attribute the old coin's pixels to the newly selected coin.
+  if(identityKey(state.coinKey)!==key)return;
   // Share the market-cap readout's up/down pulse; price change is not a shape input.
   latest.change=Math.sign(Number(state.markDirection)||0);
   const fresh=latest.fresh>0;
@@ -160,7 +166,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   overlay?.clearRect(0,0,canvas.width,canvas.height);
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
-  contentFrame.fit({side:width,...renderer.contentBounds,now,reduced:reduced.matches,loading:host.dataset.holderLoading==='true'});
+  renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
+  renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&latest.holderBalances.length&&host.dataset.holderLoading!=='true');
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
   Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
@@ -178,13 +185,14 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=latest.marketCap>=5e7?1:0;if(target!==colorTarget){colorStart=color;colorTarget=target;colorElapsed=0;colorDuration=Math.max(1.5,2.4*(1.5-.75*latest.activity));}
-   if(!latest.hasMarket){renderer.clear();contentFrame.reset();}
+   if(!latest.hasMarket){renderer.clear();renderedAt=0;renderedPlaying=false;renderedHolderReady=false;}
   },
   // Keep the app's audio callback interface without coupling sound to ink.
   event(){},pulse(){},piano(){},
   setImage(image){identitySource=image;renderer.setImage(image);imageCoinKey=identityKey(getState().coinKey);},
   captureStill(size=512){
-   if(!latest?.hasMarket||!latest.holderBalances.length)throw Error('No received holder visual to capture.');
+   const state=getState(),age=Date.now()-renderedAt;
+   if(!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99)throw Error('A current live playing holder frame is required to capture.');
    const output=document.createElement('canvas');output.width=output.height=size;
    const context=output.getContext('2d');if(!context)throw Error('Canvas unavailable.');
    context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;
@@ -228,8 +236,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:contentFrame.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',holderBalanceSource:latest?.holderBalanceSource??'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();contentFrame.close();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

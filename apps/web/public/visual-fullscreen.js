@@ -72,7 +72,7 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
    const from=host.getBoundingClientRect(),fromReference=reference(from,false);
    placeholder=document.createElement('div');placeholder.className='visual-placeholder';
    const computed=getComputedStyle(host);
-   Object.assign(placeholder.style,{width:from.width+'px',height:from.height+'px',margin:computed.margin,gridColumn:computed.gridColumn,gridRow:computed.gridRow,alignSelf:'start'});
+   Object.assign(placeholder.style,{width:from.width+'px',height:from.height+'px',margin:computed.margin,gridColumn:computed.gridColumn,gridRow:computed.gridRow,alignSelf:'start',position:computed.position,top:computed.top});
    host.before(placeholder);document.body.append(host);expanded=true;
    document.body.classList.add('visual-expanded');host.classList.add('is-expanded');top();
    savedInert=[...document.querySelector('main').children].filter(node=>node!==header).map(node=>[node,node.inert]);

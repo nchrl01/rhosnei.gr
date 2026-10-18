@@ -1,0 +1,1321 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-10-18",
+  "scope": "All 94 exact CoinGecko IDs previously marked notIndexed",
+  "notes": [
+    "Match overrides by exact provider asset ID, never by name or ticker.",
+    "Native assets retain their native chain and no primary token address. Published system identifiers and wrapped representations remain in platforms.",
+    "Identifier presence does not imply an independent security audit."
+  ],
+  "coins": [
+    {
+      "id": "zcash",
+      "symbol": "ZEC",
+      "classification": "native",
+      "nativeChain": "zcash",
+      "platforms": [],
+      "sourceURLs": [
+        "https://z.cash/learn/what-is-the-difference-between-zcash-and-zec/"
+      ],
+      "reason": "ZEC is the consensus currency of the Zcash blockchain."
+    },
+    {
+      "id": "canton-network",
+      "symbol": "CC",
+      "classification": "native",
+      "nativeChain": "canton-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "canton-network"
+      ]
+    },
+    {
+      "id": "bittensor",
+      "symbol": "TAO",
+      "classification": "native",
+      "nativeChain": "bittensor",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "bittensor",
+        "bittensor-evm"
+      ]
+    },
+    {
+      "id": "bfusd",
+      "symbol": "BFUSD",
+      "classification": "off-chain",
+      "nativeChain": null,
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.binance.com/en/academy/articles/what-is-bfusd"
+      ],
+      "reason": "Issuer explicitly says BFUSD is a Binance account balance product, not a blockchain token, and cannot be withdrawn or transferred outside Binance."
+    },
+    {
+      "id": "kucoin-shares",
+      "symbol": "KCS",
+      "classification": "token",
+      "nativeChain": "kucoin-community-chain",
+      "platforms": [
+        {
+          "chain": "ethereum",
+          "platform": "ethereum",
+          "address": "0xf34960d9d60be18cc1d5afc1a6f012a723a28811",
+          "identifierType": "erc20-contract",
+          "sourceURLs": [
+            "https://www.kucoin.com/announcement/en-kucoin-token"
+          ]
+        }
+      ],
+      "sourceURLs": [
+        "https://www.kucoin.com/price/KCS?lang=en_US",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "KCS is KCC native currency and also has this issuer-published Ethereum contract; provider empty platforms alone is incomplete.",
+      "nativePlatformIDs": [
+        "kucoin-community-chain"
+      ]
+    },
+    {
+      "id": "algorand",
+      "symbol": "ALGO",
+      "classification": "native",
+      "nativeChain": "algorand",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "algorand"
+      ]
+    },
+    {
+      "id": "kaspa",
+      "symbol": "KAS",
+      "classification": "native",
+      "nativeChain": "kaspa",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "KAS is the native Kaspa coin. The registry also uses KAS for Kasplex gas; do not mistake a Kasplex L2 for the original native chain.",
+      "nativePlatformIDs": [
+        "kasplex-2",
+        "kasplex"
+      ]
+    },
+    {
+      "id": "pi-network",
+      "symbol": "PI",
+      "classification": "native",
+      "nativeChain": "pi-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/pi-network"
+      ],
+      "reason": "PI is the network native token; the provider page identifies the own mainnet and its transactions."
+    },
+    {
+      "id": "filecoin",
+      "symbol": "FIL",
+      "classification": "native",
+      "nativeChain": "filecoin",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "filecoin"
+      ]
+    },
+    {
+      "id": "pearl-2",
+      "symbol": "PRL",
+      "classification": "native",
+      "nativeChain": "pearl",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/pearl-research"
+      ],
+      "reason": "Exact API ID pearl-2 identifies the PoW Layer 1 Pearl, with its own explorer; unrelated Oyster/Pearl tokens must not be substituted."
+    },
+    {
+      "id": "blockstack",
+      "symbol": "STX",
+      "classification": "native",
+      "nativeChain": "stacks",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "stacks"
+      ]
+    },
+    {
+      "id": "xdce-crowd-sale",
+      "symbol": "XDC",
+      "classification": "native",
+      "nativeChain": "xdc-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "xdc-network"
+      ]
+    },
+    {
+      "id": "dash",
+      "symbol": "DASH",
+      "classification": "native",
+      "nativeChain": "dash",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.dash.org/en/stable/docs/user/introduction/about.html"
+      ],
+      "reason": "DASH is the currency of the standalone Dash blockchain."
+    },
+    {
+      "id": "vechain",
+      "symbol": "VET",
+      "classification": "native",
+      "nativeChain": "vechain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "vechain"
+      ]
+    },
+    {
+      "id": "flare-networks",
+      "symbol": "FLR",
+      "classification": "native",
+      "nativeChain": "flare-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "flare-network"
+      ]
+    },
+    {
+      "id": "hash-2",
+      "symbol": "HASH",
+      "classification": "native",
+      "nativeChain": "provenance",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "provenance"
+      ]
+    },
+    {
+      "id": "sei-network",
+      "symbol": "SEI",
+      "classification": "native",
+      "nativeChain": "sei-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "sei-network"
+      ]
+    },
+    {
+      "id": "bitcoin-cash-sv",
+      "symbol": "BSV",
+      "classification": "native",
+      "nativeChain": "bitcoin-sv",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/bitcoin-sv"
+      ],
+      "reason": "Exact API ID bitcoin-cash-sv identifies the Bitcoin SV blockchain, not an issued token."
+    },
+    {
+      "id": "plasma",
+      "symbol": "XPL",
+      "classification": "native",
+      "nativeChain": "plasma",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "plasma"
+      ]
+    },
+    {
+      "id": "tezos",
+      "symbol": "XTZ",
+      "classification": "native",
+      "nativeChain": "tezos",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "tezos",
+        "etherlink"
+      ]
+    },
+    {
+      "id": "conflux-token",
+      "symbol": "CFX",
+      "classification": "native",
+      "nativeChain": "conflux",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "conflux"
+      ]
+    },
+    {
+      "id": "kaia",
+      "symbol": "KAIA",
+      "classification": "native",
+      "nativeChain": "kaia",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "klay-token"
+      ]
+    },
+    {
+      "id": "decred",
+      "symbol": "DCR",
+      "classification": "native",
+      "nativeChain": "decred",
+      "platforms": [],
+      "sourceURLs": [
+        "https://decred.org/micar-whitepaper"
+      ],
+      "reason": "Issuer whitepaper explicitly identifies DCR as the native Decred coin."
+    },
+    {
+      "id": "terra-luna",
+      "symbol": "LUNC",
+      "classification": "native",
+      "nativeChain": "terra",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "terra"
+      ]
+    },
+    {
+      "id": "monad",
+      "symbol": "MON",
+      "classification": "native",
+      "nativeChain": "monad",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "monad"
+      ]
+    },
+    {
+      "id": "arweave",
+      "symbol": "AR",
+      "classification": "native",
+      "nativeChain": "arweave",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.arweave.com/blog/endowment-with-arweave"
+      ],
+      "reason": "AR is the Arweave network native storage currency."
+    },
+    {
+      "id": "thorchain",
+      "symbol": "RUNE",
+      "classification": "native",
+      "nativeChain": "thorchain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "thorchain"
+      ]
+    },
+    {
+      "id": "sonic-3",
+      "symbol": "S",
+      "classification": "native",
+      "nativeChain": "sonic",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "sonic"
+      ]
+    },
+    {
+      "id": "theta-token",
+      "symbol": "THETA",
+      "classification": "native",
+      "nativeChain": "theta",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "theta"
+      ]
+    },
+    {
+      "id": "grx-chain",
+      "symbol": "GRX",
+      "classification": "native",
+      "nativeChain": "grx-chain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "grx-chain"
+      ]
+    },
+    {
+      "id": "neo",
+      "symbol": "NEO",
+      "classification": "native-with-identifier",
+      "nativeChain": "neo",
+      "platforms": [
+        {
+          "chain": "neo",
+          "platform": "neo",
+          "address": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5",
+          "identifierType": "neo-n3-native-contract-hash",
+          "sourceURLs": [
+            "https://docs.neo.org/docs/n3/reference/rpc/getcontractstate.html"
+          ]
+        }
+      ],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "NEO is native; its N3 NeoToken system contract has this script hash. This is not an EVM contract.",
+      "nativePlatformIDs": [
+        "neo"
+      ]
+    },
+    {
+      "id": "vaulta",
+      "symbol": "A",
+      "classification": "native-with-identifier",
+      "nativeChain": "vaulta",
+      "platforms": [
+        {
+          "chain": "eos",
+          "platform": "eos",
+          "address": "core.vaulta",
+          "identifierType": "antelope-token-account",
+          "sourceURLs": [
+            "https://docs.vaulta.com/docs/latest/advanced-topics/upgrading-to-vaulta/"
+          ],
+          "symbol": "A"
+        }
+      ],
+      "sourceURLs": [
+        "https://docs.vaulta.com/docs/latest/advanced-topics/upgrading-to-vaulta/"
+      ],
+      "reason": "Vaulta A is managed by the core.vaulta system/token account on the rebranded EOS network; its token symbol is A."
+    },
+    {
+      "id": "gusd",
+      "symbol": "GUSD",
+      "classification": "token",
+      "nativeChain": null,
+      "platforms": [
+        {
+          "chain": "ethereum",
+          "platform": "ethereum",
+          "address": "0xaf6186b3521b60e27396b5d23b48abc34bf585c5",
+          "identifierType": "erc20-contract",
+          "sourceURLs": [
+            "https://api.gateio.ws/api/v4/wallet/currency_chains?currency=GUSD"
+          ]
+        },
+        {
+          "chain": "abstract",
+          "platform": "abstract",
+          "address": "0x12d3e796d1f625eb6131aeb670bcd210bbb0f903",
+          "identifierType": "erc20-contract",
+          "sourceURLs": [
+            "https://api.gateio.ws/api/v4/wallet/currency_chains?currency=GUSD"
+          ]
+        },
+        {
+          "chain": "gatelayer",
+          "platform": "gatelayer",
+          "address": "0xece3f96198a5e6b9b2278edbea8d548f66050d1c",
+          "identifierType": "erc20-contract",
+          "sourceURLs": [
+            "https://api.gateio.ws/api/v4/wallet/currency_chains?currency=GUSD"
+          ]
+        }
+      ],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/coins/gusd?localization=false&tickers=false&market_data=false&community_data=false&developer_data=false&sparkline=false",
+        "https://api.gateio.ws/api/v4/spot/currencies/GUSD",
+        "https://etherscan.io/token/0xaf6186b3521b60e27396b5d23b48abc34bf585c5",
+        "https://www.gatechain.io/docs/GateLayer/Tutorial/X402/"
+      ],
+      "reason": "Exact provider ID gusd identifies Gate GUSD. Issuer currency metadata explicitly names Ethereum, Abstract and Gate Layer and supplies all three contracts. Do not substitute Gemini Dollar or Generic GUSD."
+    },
+    {
+      "id": "ecash",
+      "symbol": "XEC",
+      "classification": "native",
+      "nativeChain": "ecash",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.e.cash/about"
+      ],
+      "reason": "XEC is the eCash network currency; wrapped assets are separate instruments."
+    },
+    {
+      "id": "ozone-chain",
+      "symbol": "OZO",
+      "classification": "native",
+      "nativeChain": "ozone-chain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://whitepaper.ozonechain.io/blockchain-internals"
+      ],
+      "reason": "Official whitepaper identifies OZO as Ozone Chain native currency."
+    },
+    {
+      "id": "elrond-erd-2",
+      "symbol": "EGLD",
+      "classification": "native",
+      "nativeChain": "multiversx",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "elrond"
+      ]
+    },
+    {
+      "id": "quantum-resistant-ledger",
+      "symbol": "QRL",
+      "classification": "native",
+      "nativeChain": "qrl",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.theqrl.org/use/tools/explorer/overview/"
+      ],
+      "reason": "QRL is a standalone chain with native balances, mining payouts and separate issued tokens."
+    },
+    {
+      "id": "mina-protocol",
+      "symbol": "MINA",
+      "classification": "native",
+      "nativeChain": "mina",
+      "platforms": [],
+      "sourceURLs": [
+        "https://minaprotocol.com/get-started-with-mina"
+      ],
+      "reason": "Official onboarding identifies MINA as the network native token."
+    },
+    {
+      "id": "wemix-token",
+      "symbol": "WEMIX",
+      "classification": "native",
+      "nativeChain": "wemix-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "wemix-network"
+      ]
+    },
+    {
+      "id": "qtum",
+      "symbol": "QTUM",
+      "classification": "native",
+      "nativeChain": "qtum",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "qtum"
+      ]
+    },
+    {
+      "id": "pharos-network",
+      "symbol": "PROS",
+      "classification": "native",
+      "nativeChain": "pharos",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "pharos"
+      ]
+    },
+    {
+      "id": "nervos-network",
+      "symbol": "CKB",
+      "classification": "native",
+      "nativeChain": "nervos-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "CKB is native to Nervos. The platform registry also maps CKB to Godwoken gas; the original native chain remains Nervos.",
+      "nativePlatformIDs": [
+        "godwoken"
+      ]
+    },
+    {
+      "id": "theta-fuel",
+      "symbol": "TFUEL",
+      "classification": "native",
+      "nativeChain": "theta",
+      "platforms": [],
+      "sourceURLs": [
+        "https://blog.thetatoken.org/theta-fuel-the-operational-token-of-the-theta-network/"
+      ],
+      "reason": "TFUEL was created as a native operational token on Theta mainnet."
+    },
+    {
+      "id": "digibyte",
+      "symbol": "DGB",
+      "classification": "native",
+      "nativeChain": "digibyte",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.digibyte.org/en/"
+      ],
+      "reason": "DGB is the currency of the DigiByte UTXO blockchain."
+    },
+    {
+      "id": "vethor-token",
+      "symbol": "VTHO",
+      "classification": "native-with-identifier",
+      "nativeChain": "vechain",
+      "platforms": [
+        {
+          "chain": "vechain",
+          "platform": "vechain",
+          "address": "0x0000000000000000000000000000456E65726779",
+          "identifierType": "native-token-contract",
+          "sourceURLs": [
+            "https://docs.vechain.org/introduction-to-vechain/dual-token-economic-model/vethor-vtho"
+          ]
+        }
+      ],
+      "sourceURLs": [
+        "https://docs.vechain.org/developer-resources/evm-compatibility-for-developers/vechain-blockchain-specifications"
+      ],
+      "reason": "VTHO is VeChain gas and has a built-in VIP180/ERC20-compatible contract."
+    },
+    {
+      "id": "qubic-network",
+      "symbol": "QUBIC",
+      "classification": "native",
+      "nativeChain": "qubic",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "qubic"
+      ]
+    },
+    {
+      "id": "story-2",
+      "symbol": "DATA",
+      "classification": "native",
+      "nativeChain": "story",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "story"
+      ]
+    },
+    {
+      "id": "berachain-bera",
+      "symbol": "BERA",
+      "classification": "native",
+      "nativeChain": "berachain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "berachain"
+      ]
+    },
+    {
+      "id": "babylon",
+      "symbol": "BABY",
+      "classification": "native",
+      "nativeChain": "babylon-genesis",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "babylon-genesis"
+      ]
+    },
+    {
+      "id": "nexpace",
+      "symbol": "NXPC",
+      "classification": "native",
+      "nativeChain": "henesys",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms",
+        "https://www.coingecko.com/en/coins/nexpace"
+      ],
+      "reason": "Provider explicitly separates native NXPC on Henesys from id bridged-nxpc; do not merge bridged contracts into the native asset by ticker.",
+      "nativePlatformIDs": [
+        "henesys"
+      ]
+    },
+    {
+      "id": "ontology",
+      "symbol": "ONT",
+      "classification": "native-with-identifier",
+      "nativeChain": "ontology",
+      "platforms": [
+        {
+          "chain": "ontology",
+          "platform": "ontology",
+          "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV",
+          "identifierType": "ontology-native-contract-address",
+          "sourceURLs": [
+            "https://docs.ont.io/support/faq/token-protocols"
+          ],
+          "hexAddress": "0100000000000000000000000000000000000000"
+        }
+      ],
+      "sourceURLs": [
+        "https://docs.ont.io/guides-and-tutorials/integration-guides/exchange-integration/exchange-docking-guide"
+      ],
+      "reason": "ONT is native and has a fixed system contract. Base58 address follows official docs; their hex address is big-endian and must not be reversed without knowing the target API.",
+      "nativePlatformIDs": [
+        "ontology"
+      ]
+    },
+    {
+      "id": "flow",
+      "symbol": "FLOW",
+      "classification": "native",
+      "nativeChain": "flow",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "flow",
+        "flow-evm"
+      ]
+    },
+    {
+      "id": "pirate-chain",
+      "symbol": "ARRR",
+      "classification": "native",
+      "nativeChain": "pirate-chain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.piratechain.com/docs/installation"
+      ],
+      "reason": "ARRR is the shielded currency of the Pirate Chain blockchain."
+    },
+    {
+      "id": "aria-chain",
+      "symbol": "ARIAX",
+      "classification": "native",
+      "nativeChain": "aria-chain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/aria-chain"
+      ],
+      "reason": "Exact API ID aria-chain identifies ARIA NETWORK/ARIAX as a Layer 1 with its own explorer; no issued-token address is listed."
+    },
+    {
+      "id": "concordium",
+      "symbol": "CCD",
+      "classification": "native",
+      "nativeChain": "concordium",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.concordium.com/en/mainnet/learn/tokenomics.html"
+      ],
+      "reason": "Official tokenomics identifies CCD as the Concordium platform native token."
+    },
+    {
+      "id": "nano",
+      "symbol": "XNO",
+      "classification": "native",
+      "nativeChain": "nano",
+      "platforms": [],
+      "sourceURLs": [
+        "https://nano.org/"
+      ],
+      "reason": "XNO is the native balance in the Nano block-lattice network."
+    },
+    {
+      "id": "polymesh",
+      "symbol": "POLYX",
+      "classification": "native",
+      "nativeChain": "polymesh",
+      "platforms": [],
+      "sourceURLs": [
+        "https://developers.polymesh.network/docs/introduction/polyx/"
+      ],
+      "reason": "POLYX is the protocol native utility token of Polymesh."
+    },
+    {
+      "id": "ronin",
+      "symbol": "RON",
+      "classification": "native",
+      "nativeChain": "ronin",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "ronin"
+      ]
+    },
+    {
+      "id": "hydradx",
+      "symbol": "HDX",
+      "classification": "native",
+      "nativeChain": "hydration",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "hydration"
+      ]
+    },
+    {
+      "id": "fractal-bitcoin",
+      "symbol": "FB",
+      "classification": "native",
+      "nativeChain": "fractal-bitcoin",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.fractalbitcoin.io/getting-started/introduction"
+      ],
+      "reason": "FB is the native transaction-fee asset of Fractal Bitcoin."
+    },
+    {
+      "id": "verge",
+      "symbol": "XVG",
+      "classification": "native",
+      "nativeChain": "verge",
+      "platforms": [],
+      "sourceURLs": [
+        "https://vergecurrency.com/static/whitepaper/XVGETH_Whitepaper_v1.pdf"
+      ],
+      "reason": "Official whitepaper distinguishes native XVG from the separate XVGETH ERC-20 token."
+    },
+    {
+      "id": "casper-network",
+      "symbol": "CSPR",
+      "classification": "native",
+      "nativeChain": "casper-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "casper-network"
+      ]
+    },
+    {
+      "id": "abey",
+      "symbol": "ABEY",
+      "classification": "native",
+      "nativeChain": "abey",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.abey.com/whitepaper/abey_whitepaper"
+      ],
+      "reason": "ABEY is the native asset of the Abey chain; official documentation describes its own chain consensus and tokenomics."
+    },
+    {
+      "id": "electroneum",
+      "symbol": "ETN",
+      "classification": "native",
+      "nativeChain": "electroneum",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "electroneum"
+      ]
+    },
+    {
+      "id": "siacoin",
+      "symbol": "SC",
+      "classification": "native",
+      "nativeChain": "sia",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.sia.tech/get-started-with-sia/learn-about-siacoins"
+      ],
+      "reason": "SC is the Sia network utility currency for storage and network operations."
+    },
+    {
+      "id": "pay-coin",
+      "symbol": "PCI",
+      "classification": "native",
+      "nativeChain": "payprotocol",
+      "platforms": [],
+      "sourceURLs": [
+        "https://payprotocol.io/about"
+      ],
+      "reason": "Issuer identifies PCI as issued on the PayProtocol network. Do not substitute the unrelated payprotocol.network service."
+    },
+    {
+      "id": "bitkub-coin",
+      "symbol": "KUB",
+      "classification": "native",
+      "nativeChain": "bitkub-chain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "bitkub-chain"
+      ]
+    },
+    {
+      "id": "ong",
+      "symbol": "ONG",
+      "classification": "native-with-identifier",
+      "nativeChain": "ontology",
+      "platforms": [
+        {
+          "chain": "ontology",
+          "platform": "ontology",
+          "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhfRZMHJ",
+          "identifierType": "ontology-native-contract-address",
+          "sourceURLs": [
+            "https://docs.ont.io/support/faq/token-protocols"
+          ],
+          "hexAddress": "0200000000000000000000000000000000000000"
+        }
+      ],
+      "sourceURLs": [
+        "https://docs.ont.io/guides-and-tutorials/integration-guides/exchange-integration/exchange-docking-guide"
+      ],
+      "reason": "ONG is native and has a fixed system contract. Base58 address follows official docs; their hex address is big-endian and differs from internal byte-order presentations."
+    },
+    {
+      "id": "ark",
+      "symbol": "ARK",
+      "classification": "native",
+      "nativeChain": "ark",
+      "platforms": [],
+      "sourceURLs": [
+        "https://arkvault.io/docs/transactions/features/staking"
+      ],
+      "reason": "Official wallet documentation identifies ARK as the sovereign ARK Public Network native asset."
+    },
+    {
+      "id": "chia",
+      "symbol": "XCH",
+      "classification": "native",
+      "nativeChain": "chia",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "chia"
+      ]
+    },
+    {
+      "id": "somnia",
+      "symbol": "SOMI",
+      "classification": "native",
+      "nativeChain": "somnia",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "somnia"
+      ]
+    },
+    {
+      "id": "zelcash",
+      "symbol": "FLUX",
+      "classification": "native",
+      "nativeChain": "flux",
+      "platforms": [],
+      "sourceURLs": [
+        "https://docs.runonflux.com/fluxnodes/claim-parallel-assets/"
+      ],
+      "reason": "FLUX has a native chain. Its parallel assets on other networks are separate representations; primary native identity remains Flux."
+    },
+    {
+      "id": "steem",
+      "symbol": "STEEM",
+      "classification": "native",
+      "nativeChain": "steem",
+      "platforms": [],
+      "sourceURLs": [
+        "https://steem.com/steem-bluepaper.pdf?t=20250711"
+      ],
+      "reason": "STEEM is a core balance of the Steem blockchain."
+    },
+    {
+      "id": "tcy",
+      "symbol": "TCY",
+      "classification": "native",
+      "nativeChain": "thorchain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://adr28.thorchain.org/"
+      ],
+      "reason": "Official THORChain ledger distinguishes THOR.TCY as a native Cosmos asset, with bank denomination tcy rather than a deployed token contract.",
+      "nativeDenomination": "tcy"
+    },
+    {
+      "id": "geode-chain",
+      "symbol": "GEODE",
+      "classification": "native",
+      "nativeChain": "geode-chain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/geode-chain"
+      ],
+      "reason": "Provider description identifies an independent Layer 1 and native GEODE token. Current provider page has no active trading pairs."
+    },
+    {
+      "id": "xphere",
+      "symbol": "XP",
+      "classification": "native",
+      "nativeChain": "xphere",
+      "platforms": [],
+      "sourceURLs": [
+        "https://whitepaper.x-phere.com/economy/xp"
+      ],
+      "reason": "Official whitepaper identifies XP as the native Xphere coin."
+    },
+    {
+      "id": "hive",
+      "symbol": "HIVE",
+      "classification": "native",
+      "nativeChain": "hive",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.hive.io/"
+      ],
+      "reason": "HIVE is the main network balance in Hive dual-coin economy."
+    },
+    {
+      "id": "ergo",
+      "symbol": "ERG",
+      "classification": "native",
+      "nativeChain": "ergo",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "ergo"
+      ]
+    },
+    {
+      "id": "ardor",
+      "symbol": "ARDR",
+      "classification": "native",
+      "nativeChain": "ardor",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "ardor"
+      ]
+    },
+    {
+      "id": "mantra",
+      "symbol": "MANTRA",
+      "classification": "native",
+      "nativeChain": "mantra",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "mantra-evm"
+      ]
+    },
+    {
+      "id": "ethereum-pow-iou",
+      "symbol": "ETHW",
+      "classification": "native",
+      "nativeChain": "ethereumpow",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "ethereumpow"
+      ]
+    },
+    {
+      "id": "constellation-labs",
+      "symbol": "DAG",
+      "classification": "native",
+      "nativeChain": "constellation-network",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "constellation-network"
+      ]
+    },
+    {
+      "id": "stratis",
+      "symbol": "STRAX",
+      "classification": "native",
+      "nativeChain": "stratis",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "stratis"
+      ]
+    },
+    {
+      "id": "ao-computer",
+      "symbol": "AO",
+      "classification": "token",
+      "nativeChain": null,
+      "platforms": [
+        {
+          "chain": "ao",
+          "platform": "ao",
+          "address": "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc",
+          "identifierType": "ao-process-id",
+          "sourceURLs": [
+            "https://github.com/permaweb/ao-token-docs/blob/main/docs/token-integration.md"
+          ]
+        }
+      ],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/ao-computer"
+      ],
+      "reason": "AO official mainnet integration docs publish this AO Token process ID; this is a process identifier, not an EVM contract."
+    },
+    {
+      "id": "ravencoin",
+      "symbol": "RVN",
+      "classification": "native",
+      "nativeChain": "ravencoin",
+      "platforms": [],
+      "sourceURLs": [
+        "https://ravencoin.org/assets/documents/Ravencoin.pdf"
+      ],
+      "reason": "Official whitepaper describes RVN as the native token used for network rewards."
+    },
+    {
+      "id": "harmony",
+      "symbol": "ONE",
+      "classification": "native",
+      "nativeChain": "harmony",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "harmony-shard-0"
+      ]
+    },
+    {
+      "id": "playnance",
+      "symbol": "GCOIN",
+      "classification": "token",
+      "nativeChain": null,
+      "platforms": [
+        {
+          "chain": "playblock",
+          "platform": "playblock",
+          "address": "0xC3B539972C522d883aaA904aAAdcfE69A2d9F26B",
+          "identifierType": "erc20-contract",
+          "sourceURLs": [
+            "https://topplay.playw3.com/gcoin"
+          ]
+        }
+      ],
+      "sourceURLs": [
+        "https://bitmart.zendesk.com/hc/en-us/articles/51501190839835-G-Coin-GCOIN",
+        "https://explorer.playblock.io/token/0xC3B539972C522d883aaA904aAAdcfE69A2d9F26B"
+      ],
+      "reason": "Issuer ecosystem page publishes GCOIN contract; exchange listing corroborates the same address on Playblock."
+    },
+    {
+      "id": "tx",
+      "symbol": "TX",
+      "classification": "native",
+      "nativeChain": "tx",
+      "platforms": [],
+      "sourceURLs": [
+        "https://www.coingecko.com/en/coins/tx"
+      ],
+      "reason": "Exact provider ID tx identifies the Coreum/Sologenic successor native Layer 1 asset used for fees and staking."
+    },
+    {
+      "id": "fogo",
+      "symbol": "FOGO",
+      "classification": "native",
+      "nativeChain": "fogo",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "fogo"
+      ]
+    },
+    {
+      "id": "zcoin",
+      "symbol": "FIRO",
+      "classification": "native",
+      "nativeChain": "firo",
+      "platforms": [],
+      "sourceURLs": [
+        "https://whatisfiro.firo.org/pillars/ecosystem/"
+      ],
+      "reason": "Official documentation distinguishes native FIRO from Rosen-wrapped FIRO on other chains."
+    },
+    {
+      "id": "qie",
+      "symbol": "QIE",
+      "classification": "native",
+      "nativeChain": "qie-blockchain",
+      "platforms": [],
+      "sourceURLs": [
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ],
+      "reason": "Exact provider native_coin_id matches this asset in the chain registry.",
+      "nativePlatformIDs": [
+        "qie-blockchain"
+      ]
+    },
+    {
+      "id": "tensorcash",
+      "symbol": "TSC",
+      "classification": "native",
+      "nativeChain": "tensorcash",
+      "platforms": [],
+      "sourceURLs": [
+        "https://tensorcash.org/"
+      ],
+      "reason": "TSC is the mined currency of the TensorCash blockchain, confirmed by its exact provider API ID and own explorer."
+    },
+    {
+      "id": "epic-cash",
+      "symbol": "EPIC",
+      "classification": "native",
+      "nativeChain": "epic-cash",
+      "platforms": [],
+      "sourceURLs": [
+        "https://epic.tech/"
+      ],
+      "reason": "EPIC is the currency of the standalone Mimblewimble Layer 1 blockchain."
+    },
+    {
+      "id": "bityuan",
+      "symbol": "BTY",
+      "classification": "native",
+      "nativeChain": "bityuan",
+      "platforms": [],
+      "sourceURLs": [
+        "https://bityuan.com/"
+      ],
+      "reason": "BTY is the native currency of the Bityuan/Chain33 public chain."
+    }
+  ]
+}

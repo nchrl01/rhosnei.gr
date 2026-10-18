@@ -163,6 +163,10 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:var(--font-si
 #audio-dots{display:block;width:100%;height:100%;pointer-events:none}
 .audio-visualizer:not([data-visible=true]) #audio-dots{opacity:0}
 .audio-visualizer[data-visible=true]{background:#000}
+.audio-visualizer[data-visual-frame=full]{display:grid;place-items:center}
+.audio-visualizer[data-visual-frame=full] #audio-dots{position:absolute;inset:0}
+/* Keep the whole logical field centered; outer padding protects soft edges. */
+.visual-content-frame{position:relative;width:var(--visual-reference-side,100%);height:var(--visual-reference-side,100%);min-width:0;min-height:0}
 body.inspecting .audio-visualizer{display:none}
 /* Use the whole window before there is room for a separate right-hand field. */
 @media(min-width:761px) and (max-width:1049px){
@@ -224,7 +228,8 @@ body.inspecting .audio-visualizer{display:none}
  #coin-search-results{grid-column:1;grid-row:3;width:100%;max-width:none}
  .instrument{grid-column:1;grid-row:4;width:100%;min-width:0;margin-top:0}
  .instrument-top,.readings{width:100%;max-width:none}
- .audio-visualizer{grid-column:2;grid-row:2/-1;position:relative;align-self:start;width:calc(100% + 16px);height:var(--visual-height,calc(100svh - 160px));min-height:0;aspect-ratio:auto;margin:12px 0 0;z-index:0}
+ .audio-visualizer{grid-column:2;grid-row:2/-1;position:relative;align-self:start;width:100%;height:calc(100svh - var(--instrument-header-height,calc(var(--navigation-row-height) + 28px)) - var(--instrument-footer-height,var(--navigation-row-height)) - 24px);min-height:0;aspect-ratio:auto;margin:12px 0 0;padding:24px;z-index:0}
+ .audio-visualizer:not(.is-expanded){position:sticky;top:calc(var(--instrument-header-height,calc(var(--navigation-row-height) + 28px)) + 12px)}
  .instrument-page .site-footer{position:fixed;inset:auto 0 0;z-index:10;margin:0}
  #load{width:32px;flex-basis:32px;font-size:var(--font-size-title)}
  .transport{align-self:start;padding-top:28px}
@@ -584,3 +589,8 @@ body.visual-expanded{overflow:hidden}
 .coin-ai-note{color:var(--muted,#aaa)}
 .coin-ai-source{justify-self:start;color:var(--control-ink,#fff);text-underline-offset:3px}
 @media(max-width:760px){.coin-ai-summary{flex-basis:100%;max-width:none;padding-left:0;margin-left:0}}
+.coin-ai-entries{display:grid;gap:7px}
+.coin-ai-summary .coin-ai-entry{font-size:var(--font-size-small);line-height:1.4}
+.coin-ai-entry-label{color:var(--muted,#aaa)}
+.coin-ai-entry .coin-ai-source{display:inline;margin-left:3px}
+.coin-ai-retry{justify-self:start;padding:0;border:0;background:none;color:inherit;font:inherit;font-size:var(--font-size-small);text-decoration:underline;text-underline-offset:3px}

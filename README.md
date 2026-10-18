@@ -67,3 +67,11 @@ All pages share the same navigation, typography and interaction rules. Header an
 footer HTML is generated before deployment, so controls are present at startup.
 See [site architecture](docs/site-architecture.md) for component ownership and
 build details.
+
+## Live marketplace captures
+
+Marketplace artwork is copied from the same live player, using received market and individual-holder data. Paused, replay, test, empty and simulated seed frames are excluded. A single silent player refreshes visible cards; real captures keep their render timestamp and exact network/address. Missing data stays pending instead of receiving substitute artwork.
+
+`node scripts/capture-marketplace-live.mjs --limit 5` gathers shared captures from the actual player. Playwright must be installed or supplied through `UPIC_PLAYWRIGHT_MODULE`. `--all` processes the supported catalogue identities with bounded concurrency; unsupported identities and provider failures are reported without inventing frames.
+
+The AI investigator selects source-linked project, market and contract facts. Its public evidence cache lasts 30 minutes. If AI selection is unavailable, the interface labels the unchanged source facts as public evidence. This is not a social investigation or a contract security audit.

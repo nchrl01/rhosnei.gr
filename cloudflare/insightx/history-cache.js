@@ -3,11 +3,13 @@ const DAY=86400000,RETENTION=30*DAY,MAX_BYTES=64*1024*1024,MAX_PAGES=1000;
 const response=(body,status=200,headers={})=>new Response(typeof body==='string'?body:JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store',...headers}});
 export function historyRequest(url){
  const p=url.searchParams,network=p.get('network')||'',pool=p.get('pool')||'',token=p.get('token')||'',frame=p.get('timeframe')||'minute',aggregate=Number(p.get('aggregate')||1),limit=Number(p.get('limit')||1000),before=p.has('before_timestamp')?Number(p.get('before_timestamp')):null;
- const validID=v=>/^(?:0x[0-9a-fA-F]{40,64}|[1-9A-HJ-NP-Za-km-z]{32,64})$/.test(v);
+ // Identifiers include Move type tags, TON and native pool IDs. Each is encoded
+ // into a fixed provider URL; punctuation cannot add query fields or hosts.
+ const validID=v=>typeof v==='string'&&v.length<=256&&/^[A-Za-z0-9][A-Za-z0-9:_.\/-]*$/.test(v)&&!v.includes('..');
  const allowed={minute:[1,5,15],hour:[1,4,12],day:[1]};
  if(!/^[a-z0-9_-]{1,40}$/.test(network)||!validID(pool)||!validID(token)||!allowed[frame]?.includes(aggregate)||!Number.isInteger(limit)||limit<1||limit>1000||(before!==null&&(!Number.isInteger(before)||before<1||before>Math.floor(Date.now()/1000)+60)))return null;
- const normalize=v=>/^0x/i.test(v)?v.toLowerCase():v,interval=({minute:60,hour:3600,day:86400}[frame])*aggregate;
- return {network,pool:normalize(pool),token:normalize(token),frame,aggregate,limit,before,interval,key:[network,normalize(pool),normalize(token),frame,aggregate,before??'latest'].join(':')};
+ const normalize=v=>/^0x[0-9a-fA-F]{40,64}$/.test(v)?v.toLowerCase():v,interval=({minute:60,hour:3600,day:86400}[frame])*aggregate;
+ return {network,pool:normalize(pool),token:normalize(token),frame,aggregate,limit,before,interval,key:JSON.stringify([network,normalize(pool),normalize(token),frame,aggregate,before??'latest'])};
 }
 export class SharedHistoryCache{
  constructor(sql,env){this.sql=sql;this.env=env;this.pending=new Map();

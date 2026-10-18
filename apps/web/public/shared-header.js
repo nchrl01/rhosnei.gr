@@ -75,12 +75,24 @@ function bindMobileFooter(){
 bindMobileFooter();
 const headerWallet=document.querySelector('.header-wallet');
 if(headerWallet){
- let walletOpening=false;
+ let walletOpening=false,walletSession;
+ const paintAccount=account=>{
+  const label=account?.address?'Wallet account':'Sign in';
+  headerWallet.setAttribute('aria-label',label);headerWallet.title=label;
+ };
+ const loadWalletSession=()=>{
+  if(!walletSession)walletSession=import('./wallet-session.js?v=317').then(session=>{
+   session.subscribeWalletAccount(paintAccount);return session;
+  }).catch(error=>{walletSession=null;throw error;});
+  return walletSession;
+ };
+ headerWallet.setAttribute('aria-haspopup','dialog');
+ void loadWalletSession().catch(()=>{});
  headerWallet.addEventListener('click',async()=>{
-  if(walletOpening)return;walletOpening=true;headerWallet.disabled=true;headerWallet.setAttribute('aria-busy','true');
-  try{const {openWalletConnection}=await import('./wallet-session.js?v=317');await openWalletConnection();headerWallet.title='Wallet account';}
+  if(walletOpening)return;walletOpening=true;headerWallet.setAttribute('aria-busy','true');
+  try{const session=await loadWalletSession();paintAccount(session.getWalletAccount());await session.openWalletConnection();}
   catch(error){headerWallet.title=error.message||'Could not connect. Try again.';}
-  finally{walletOpening=false;headerWallet.disabled=false;headerWallet.removeAttribute('aria-busy');}
+  finally{walletOpening=false;headerWallet.removeAttribute('aria-busy');}
  });
 }
 
@@ -93,3 +105,20 @@ function bindMobilePlayerOrder(){
  mobile.addEventListener('change',arrange);arrange();
 }
 bindMobilePlayerOrder();
+
+function bindVisualizerHeaderOffset(){
+ const header=document.querySelector('.instrument-page .market-header');
+ if(!header)return;
+ const footer=document.querySelector('.site-footer');
+ const measure=()=>{
+  document.documentElement.style.setProperty('--instrument-header-height',Math.ceil(header.getBoundingClientRect().height)+'px');
+  const footerHeight=footer&&getComputedStyle(footer).position==='fixed'?footer.getBoundingClientRect().height:0;
+  document.documentElement.style.setProperty('--instrument-footer-height',Math.ceil(footerHeight)+'px');
+ };
+ measure();
+ if(typeof ResizeObserver==='function'){
+  const observer=new ResizeObserver(measure);observer.observe(header);if(footer)observer.observe(footer);
+ }
+ else window.addEventListener('resize',measure);
+}
+bindVisualizerHeaderOffset();
