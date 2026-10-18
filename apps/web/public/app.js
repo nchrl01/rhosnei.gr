@@ -1,3 +1,4 @@
+import {createTestMint} from './test-mint.js?v=1';
 import {bindSearchField} from './search-field.js?v=265';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
@@ -91,6 +92,7 @@ $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
 const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
+const testMint=createTestMint(document.querySelector('.coin-copy'),{onPreviewEnd:()=>{if(playing&&!starting)$('play').click();}});
 function safeCoinImage(value){
  try{const url=new URL(value);return url.protocol==='https:'&&url.href.length<=2048&&!url.username&&!url.password?url.href:'';}catch{return '';}
 }
@@ -423,6 +425,7 @@ async function closeAudio(){
  if(runtime)await runtime.close();await context?.close();
 }
 function setPlayState(active){
+ testMint.setPlaying(active&&ctx?.state==='running');
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
  button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
@@ -678,7 +681,7 @@ function chooseMarket(pair,{shared=false}={}){
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  lastMarketActivityAt=0;generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
+ resetEnsemble();mode='live';market=pair;testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(shared||isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  sharedMarket=shared;

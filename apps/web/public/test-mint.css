@@ -1,0 +1,10 @@
+.test-mint { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin-top:12px; }
+.test-mint button { font:inherit; font-weight:400; color:#fff; background:#000; border:1px solid #777; padding:5px 8px; cursor:pointer; }
+.test-mint button:hover:not(:disabled), .test-mint button:focus-visible { background:#fff; color:#000; }
+.test-mint button:focus-visible { outline:1px solid #fff; outline-offset:3px; }
+.test-mint button:disabled { opacity:.45; cursor:default; }
+.test-mint-toggle[aria-checked="true"] { color:#000; background:#fff; border-color:#fff; }
+.test-mint .test-mint-reset { border-color:transparent; text-decoration:underline; text-underline-offset:3px; }
+.test-mint-note { flex-basis:100%; color:#aaa; line-height:1.4; }
+.test-mint-note:empty { display:none; }
+.test-mint [hidden] { display:none; }
