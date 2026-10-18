@@ -20,7 +20,7 @@ import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=earthbound-9';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=301';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=302';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
@@ -250,14 +250,14 @@ function coinLandmarks(key){
  if(!liveLandmarks.has(key)){liveLandmarks.set(key,createMarketLandmarks());if(liveLandmarks.size>8)liveLandmarks.delete(liveLandmarks.keys().next().value);}
  return liveLandmarks.get(key);
 }
-const liquiditySnapshotMaxAge=20000;
+const liquiditySnapshotMaxAge=()=>market?.snapshotProvider==='gecko'?90000:45000;
 function currentLiquidity(now=Date.now()){
  if(!market)return null;
  if(isExchangeMarket(market))return now-(market.exchangeBook?.at||0)<15000?market.exchangeBook?.depth:null;
  // Pool liquidity comes from the market snapshot. Once that snapshot is older
  // than the normal freshness grace, do not let its old depth keep shaping the
  // visual lattice or reverb.
- return now-lastSnapshot<liquiditySnapshotMaxAge?market.liquidity?.usd:null;
+ return now-lastSnapshot<liquiditySnapshotMaxAge()?market.liquidity?.usd:null;
 }
 function liveMetrics(){
  if(!market)return contextualizeMarket({motion:0,activity:0,balance:.5,texture:0,volume:0,fresh:0,snapshotFresh:0,snapshotAge:Infinity},{price:0,history:[],interval:1000});
@@ -336,7 +336,7 @@ function syncLevels(m){
  $('volume').textContent=m.replay?cash(m.replay.volume):market?cash(m.decoded?m.observedVolume:market.volume?.m5):'—';
  $('volume-window').textContent=m.replay?'REPLAY USD VOLUME':m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
  $('signal-source').textContent=isExchangeMarket(market)?'Public exchange trades / observed 30 sec; depth is top 25 book levels within 1% of midpoint, not pool liquidity. Market cap is unavailable.'+(market.dexId==='coinbaseexchange'?' Coinbase depth uses public 5-second snapshots.':'')+(market.quoteApproximate?' '+market.quoteToken.symbol+' is used as a USD proxy.':''):m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll','exchange'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Loading the highest-ranked trending market';
- if(market&&m.snapshotAge>liquiditySnapshotMaxAge)$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity unavailable until a fresh snapshot arrives'+(m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
+ if(market&&m.snapshotAge>liquiditySnapshotMaxAge())$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity unavailable until a fresh snapshot arrives'+(m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
  const c=m.context;
  $('market-pressure').textContent=Math.round(m.pressure*100)+'%';
  $('market-baseline').textContent=c.ratio?c.ratio.toFixed(2)+'× typical loaded price':'History context pending';
@@ -577,10 +577,15 @@ function display(){
  const tx=historical?recorded?historical.observation?.trades:null:market?.txns?.m5;
  $('trades').textContent=!historical&&exchangeMarket?tradeEvents.length:tx?(tx.buys||0)+(tx.sells||0):'—';
  $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':exchangeMarket?'TRADES · OBSERVED 30 SEC':'TRADES · 5 MIN';
- const liquidity=historical?historical.observation?.liquidity:currentLiquidity();
+ const snapshotLiquidity=!exchangeMarket&&Date.now()-lastSnapshot<1800000?market?.liquidity?.usd:null;
+ const recordedLiquidity=historical?.observation?.liquidity;
+ const hasRecordedLiquidity=recordedLiquidity!=null&&Number.isFinite(Number(recordedLiquidity));
+ const latestLiquidity=Boolean(historical)&&!hasRecordedLiquidity;
+ const liquidity=historical&&hasRecordedLiquidity?recordedLiquidity:exchangeMarket?currentLiquidity():snapshotLiquidity;
  const liquidityAvailable=liquidity!=null&&Number.isFinite(Number(liquidity));
- $('liquidity-label').textContent=exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY';
+ $('liquidity-label').textContent=(exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY')+(latestLiquidity?' · LATEST':'');
  $('liquidity').textContent=liquidityAvailable?cash(liquidity):'Unavailable';
+ $('liquidity').title=historical&&hasRecordedLiquidity?'Liquidity recorded at this replay point':exchangeMarket?'Current exchange order-book depth':liquidityAvailable?'Selected pool liquidity · snapshot received '+new Date(lastSnapshot).toLocaleTimeString()+(Date.now()-lastSnapshot>liquiditySnapshotMaxAge()?' · updates delayed':'')+(latestLiquidity?' · latest available, not historical liquidity':''): 'Selected pool liquidity is unavailable';
  displayHolderCount();
  updateContext();
 }

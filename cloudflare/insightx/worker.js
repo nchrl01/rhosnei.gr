@@ -1,3 +1,4 @@
+import {fetchHolderCount} from './holder-count.js';
 import {marketplace} from './marketplace.js';
 import {DurableObject} from 'cloudflare:workers';
 
@@ -66,24 +67,15 @@ async function artwork(url,headers){
 }
 
 // Public token metadata only; fixed upstream and bounded inputs prevent an open proxy.
-async function holderCount(url,headers){
+async function holderCount(url,headers,env){
  const network=url.searchParams.get('network')||'',input=url.searchParams.get('address')||'';
  const address=/^0x[0-9a-fA-F]{40}$/.test(input)?input.toLowerCase():input;
  if(!/^[a-z0-9_-]{1,40}$/.test(network)||! /^[a-zA-Z0-9:_-]{1,128}$/.test(address))return json({state:'invalid-token'},400,headers);
- const key=new Request(new URL('/holders?'+new URLSearchParams({network,address}),url.origin));
- const cache=caches.default,cached=await cache.match(key);
- const respond=response=>{const result=new Response(response.body,response);for(const [k,v] of Object.entries(headers))result.headers.set(k,v);return result;};
- if(cached)return respond(cached);
  try{
-  const upstream=await fetch('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/tokens/'+encodeURIComponent(address)+'/info',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)});
-  if(!upstream.ok){
-   const response=Response.json({state:upstream.status===429?'rate-limited':'unavailable'},{status:200,headers:{'Cache-Control':'public, max-age=60'}});
-   await cache.put(key,response.clone());return respond(response);
-  }
-  const body=await upstream.json(),info=body.data?.attributes,raw=info?.holders?.count,count=Number(raw);
-  const valid=raw!==null&&raw!==undefined&&raw!==''&&Number.isSafeInteger(count)&&count>=0;
-  const response=Response.json({state:valid?'snapshot':'unavailable',holders:valid?count:null,lastUpdated:info?.holders?.last_updated||null,image_url:info?.image_url||null},{headers:{'Cache-Control':'public, max-age=600'}});
-  await cache.put(key,response.clone());return respond(response);
+  const object=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-free-budget-v1'));
+  const requestURL=new URL('/holders',url.origin);requestURL.search=new URLSearchParams({network,address}).toString();
+  const result=await object.fetch(new Request(requestURL));
+  const response=new Response(result.body,result);for(const [k,v] of Object.entries(headers))response.headers.set(k,v);return response;
  }catch{return json({state:'unavailable'},503,headers);}
 }
 
@@ -106,7 +98,7 @@ export default {
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
   if(url.pathname==='/artwork')return artwork(url,headers);
-  if(url.pathname==='/holders')return holderCount(url,headers);
+  if(url.pathname==='/holders')return holderCount(url,headers,env);
   if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
@@ -131,13 +123,46 @@ export class HolderCache extends DurableObject {
   super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
+  this.sql.exec('CREATE TABLE IF NOT EXISTS holder_counts (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
+  this.sql.exec('CREATE TABLE IF NOT EXISTS holder_count_budget (day INTEGER PRIMARY KEY, used INTEGER, next INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS cooldown (id INTEGER PRIMARY KEY, until_ms INTEGER)');
  }
  async fetch(request){
   const url=new URL(request.url),network=url.searchParams.get('network'),address=url.searchParams.get('address'),key=network+':'+address;
+  if(url.pathname==='/holders'){
+   const countKey='count:'+key;if(this.inflight.has(countKey))return json(await this.inflight.get(countKey));
+   const pending=this.count(network,address);this.inflight.set(countKey,pending);
+   try{return json(await pending);}finally{this.inflight.delete(countKey);}
+  }
   if(this.inflight.has(key))return json(await this.inflight.get(key));
   const pending=this.load(key,network,address);this.inflight.set(key,pending);
   try{return json(await pending);}finally{this.inflight.delete(key);}
+ }
+ async count(network,address){
+  const now=Date.now(),day=Math.floor(now/DAY),key=network+':'+address;
+  const cached=this.sql.exec('SELECT * FROM holder_counts WHERE key=?',key).toArray()[0];
+  const saved=cached?.payload?JSON.parse(cached.payload):null;
+  if(saved?.holders!=null&&now-cached.fetched<30*60000)return {...saved,cached:true};
+  const fallback=(reason,retryAt)=>saved?.holders!=null&&now-cached.fetched<7*DAY?{...saved,state:'delayed',reason,retryAt}:{state:reason,holders:null,retryAt};
+  if(cached?.retry>now)return fallback('unavailable',cached.retry);
+  // One shared free budget, independent of InsightX credits. At most two upstream calls per miss.
+  const quota=this.ctx.storage.transactionSync(()=>{
+   const budget=this.sql.exec('SELECT * FROM holder_count_budget WHERE day=?',day).toArray()[0];
+   if(budget?.next>now)return budget.next;
+   if((budget?.used||0)>=2000)return (day+1)*DAY;
+   this.sql.exec('INSERT INTO holder_count_budget VALUES (?,1,?) ON CONFLICT(day) DO UPDATE SET used=used+1,next=excluded.next',day,now+4500);
+   this.sql.exec('DELETE FROM holder_count_budget WHERE day<?',day-2);
+   this.sql.exec('DELETE FROM holder_counts WHERE fetched<? AND retry<?',now-7*DAY,now);
+   return 0;
+  });
+  if(quota)return fallback('budget-wait',quota);
+  const result=await fetchHolderCount(network,address);
+  if(result.holders!==null){
+   this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,JSON.stringify(result),now,now+30*60000);return result;
+  }
+  const retry=now+(result.state==='rate-limited'?5*60000:30*60000);
+  this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,cached?.payload||null,cached?.fetched||now,retry);
+  return fallback(result.state,retry);
  }
  async load(key,network,address){
   const now=Date.now(),day=Math.floor(now/DAY);
