@@ -29,7 +29,24 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const shapeFor=direction=>direction>0?[0,1,0]:direction<0?[0,0,1]:[1,0,0];
  let shapeWeights=[1,0,0],shapeFrom=[1,0,0],shapeTarget=null,shapeStarted=0;
  let layoutCoin=null,layoutWidth=0,layoutHeight=0,sizeStarted=0,sizeMoving=false,positionStarted=0,positionMoving=false;
- let geometryDirty=true,geometryData=new Float32Array(0),bufferBytes=-1,lastTransitionTime=null;
+ let geometryDirty=true,geometryData=new Float32Array(0),bufferBytes=-1,lastTransitionTime=null,displaySide=0;
+ function contentBounds(){
+  if(!layout||!layoutWidth)return {current:null,target:null};
+  const current={left:Infinity,top:Infinity,right:-Infinity,bottom:-Infinity},target={...current};
+  const scale=displaySide/layoutWidth;
+  function include(bounds,x,y,diameter){
+   if(!(diameter>0))return;
+   // Include snapped raster edges. Y in the renderer starts at the bottom.
+   const radius=diameter/2+1;
+   bounds.left=Math.min(bounds.left,(x-radius)*scale);bounds.right=Math.max(bounds.right,(x+radius)*scale);
+   bounds.top=Math.min(bounds.top,(layoutHeight-y-radius)*scale);bounds.bottom=Math.max(bounds.bottom,(layoutHeight-y+radius)*scale);
+  }
+  for(const mark of layout.marks){
+   include(current,mark.x,mark.y,mark.diameter);
+   include(target,mark.targetX,mark.targetY,mark.targetDiameter);
+  }
+  return {current:Number.isFinite(current.left)?current:null,target:Number.isFinite(target.left)?target:null};
+ }
  function advanceGeometry(now,instant=false){
   if(!layout||(!sizeMoving&&!positionMoving))return;
   const sizeT=instant?1:eased((now-sizeStarted)/.35);
@@ -204,6 +221,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  return {
   get kind(){return useSoftware?'canvas':'webgl';},
   get surface(){return useSoftware?software:canvas;},
+  get contentBounds(){return contentBounds();},
   setImage(source){
    mask=source;palette=source?originalArtworkPalette(source.originalPixels||source.pixels,{includeNeutrals:true}):[[1,1,1],[1,1,1]];originalImage=null;imageCells=0;imagePixels=null;
    if(source){
@@ -216,7 +234,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   render({width,height,time=0,seed=0,inputs,identity=0,artworkColor=0,presence=1,pixelPresence=1,inkColor=1,reducedMotion=false,transitionTime=null}){
    if(closed)return;
    // Keep enough raster cells for 10,000 holders even in a small mobile panel.
-   const side=Math.max(1,Math.min(width,height));
+   const side=Math.max(1,Math.min(width,height));displaySide=side;
    const w=Math.max(512,Math.min(maxDimension,Math.round(side))),h=w;
    for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;Object.assign(c.style,{width:side+'px',height:side+'px',left:(width-side)/2+'px',top:(height-side)/2+'px',right:'auto',bottom:'auto',opacity:String(clamp(presence))});}
    const now=Number.isFinite(transitionTime)?transitionTime:performance.now()/1000;

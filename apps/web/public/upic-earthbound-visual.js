@@ -1,7 +1,8 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-14';
-import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-15';
+import {createContentFrame} from './upic-content-frame.js?v=1';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=142';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
@@ -56,7 +57,7 @@ export function earthboundMarketState(m={},coinKey='unselected'){
 export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const host=canvas?.closest('.audio-visualizer');
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
- const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(host),fullscreen=createVisualFullscreen(host);
+ const overlay=canvas.getContext('2d'),contentFrame=createContentFrame(host),renderer=createEarthboundRenderer(contentFrame.element),fullscreen=createVisualFullscreen(host,{referenceSide});
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
  function syncHolderLoading(rendered=false,now=performance.now()){
@@ -84,15 +85,25 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let colorStart=0,colorDuration=2.4;
  let staleElapsed=0,colorElapsed=0,last=0,lastRender=0,raf=0,closed=false,visible=true,width=0,height=0,sourceCursor=null;
  let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null;
- function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderer.clear();}
- function size(){
-  const form=document.getElementById('coin-form');
-  const top=mobile.matches?0:Math.max(0,Math.round((form?.getBoundingClientRect().top??0)+scrollY-(parseFloat(getComputedStyle(form||host).marginTop)||0)+(parseFloat(getComputedStyle(host).marginTop)||0)));
-  host.style.setProperty('--visual-top',top+'px');
+ function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderer.clear();contentFrame.reset();}
+ function referenceSide(box,expanded){
+  if(expanded)return Math.max(0,Math.min(box.width,box.height));
+  // The fullscreen placeholder supplies the normal page position on collapse.
+  const top=mobile.matches?0:Math.max(0,box.top+scrollY);
   const footer=document.querySelector('.site-footer');
   const footerHeight=!mobile.matches&&footer&&getComputedStyle(footer).position==='fixed'?footer.getBoundingClientRect().height:0;
-  host.style.setProperty('--visual-height',Math.max(180,Math.round(mobile.matches?innerHeight*.56:innerHeight-top-footerHeight))+'px');
-  const box=canvas.getBoundingClientRect();width=Math.max(0,Math.round(box.width));height=Math.max(0,Math.round(box.height));}
+  const availableHeight=Math.max(180,Math.round(innerHeight-top-footerHeight));
+  return Math.max(0,Math.min(box.width,mobile.matches?box.width:availableHeight));
+ }
+ function size(){
+  const expanded=host.classList.contains('is-expanded'),box=host.getBoundingClientRect();
+  // Normal height follows the crop, so only independent page width/viewport
+  // dimensions may set the reference lattice. Fullscreen owns its own rectangle.
+  const movingSide=parseFloat(host.style.getPropertyValue('--visual-motion-side'));
+  width=height=Number.isFinite(movingSide)?movingSide:referenceSide(box,expanded);
+  const pixels=width.toFixed(3)+'px';
+  if(host.style.getPropertyValue('--visual-reference-side')!==pixels)host.style.setProperty('--visual-reference-side',pixels);
+ }
  function arrange(){
   const title=document.querySelector('.coin-title');
   if(!host.classList.contains('is-expanded')){if(mobile.matches&&title){if(host.parentElement!==title)title.prepend(host);}else anchor.parentNode?.insertBefore(host,anchor);}
@@ -139,6 +150,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   overlay?.clearRect(0,0,canvas.width,canvas.height);
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
+  contentFrame.fit({side:width,...renderer.contentBounds,now,reduced:reduced.matches,loading:host.dataset.holderLoading==='true'});
+  host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
   Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
  }
@@ -155,7 +168,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=latest.marketCap>=5e7?1:0;if(target!==colorTarget){colorStart=color;colorTarget=target;colorElapsed=0;colorDuration=Math.max(1.5,2.4*(1.5-.75*latest.activity));}
-   if(!latest.hasMarket)renderer.clear();
+   if(!latest.hasMarket){renderer.clear();contentFrame.reset();}
   },
   // Keep the app's audio callback interface without coupling sound to ink.
   event(){},pulse(){},piano(){},
@@ -197,8 +210,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:contentFrame.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();contentFrame.close();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

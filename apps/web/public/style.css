@@ -575,3 +575,14 @@ body.visual-expanded{overflow:hidden}
  .instrument-page .replay-actions .playback-speed{margin-right:auto;gap:4px}
  .instrument-page .replay-actions .playback-speed button,.instrument-page .replay-actions>button{min-height:40px;height:40px;padding:6px;font-size:var(--font-size-small)}
 }
+
+/* The frame follows holder marks; the independent reference lattice never resizes to its crop. */
+.audio-visualizer[data-content-aware="true"]:not(.is-expanded){height:auto!important;min-height:60px;aspect-ratio:auto!important;background:transparent;contain:layout;overflow:visible}
+.audio-visualizer[data-content-aware="true"] #audio-dots{position:absolute;inset:0}
+.visual-content-frame{position:relative;margin-inline:auto;width:var(--visual-content-size,var(--visual-reference-side,100%));height:var(--visual-content-size,var(--visual-reference-side,auto));aspect-ratio:1;overflow:hidden;background:#000;isolation:isolate}
+.visual-content-frame .pixel-blast-layer{transform:translate(var(--visual-content-x,0px),var(--visual-content-y,0px))}
+.audio-visualizer.is-expanded .visual-content-frame{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%)}
+@media(max-width:760px){
+ .instrument-page .coin-title>.audio-visualizer[data-content-aware="true"]:not(.is-expanded){border:0}
+ .audio-visualizer[data-content-aware="true"]:not(.is-expanded) .visual-content-frame{outline:1px solid #777;outline-offset:-1px}
+}

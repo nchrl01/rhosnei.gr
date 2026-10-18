@@ -1,5 +1,5 @@
 // Expand the existing renderer, keeping its audio clock and GPU/canvas alive.
-export function createVisualFullscreen(host){
+export function createVisualFullscreen(host,{referenceSide=null}={}){
  const button=document.createElement('button');button.type='button';button.className='visual-fullscreen';host.append(button);
  function icon(expanded){
   const label=expanded?'Collapse visualization':'Expand visualization';
@@ -38,19 +38,30 @@ export function createVisualFullscreen(host){
   host.style.setProperty('--visual-full-top',offset);
   if(expanded)volumeWidget?.style.setProperty('--visual-full-top',offset);
  }
- function motion(from,to){
-  if(reduced.matches)return Promise.resolve();
+ function reference(box,isExpanded){return typeof referenceSide==='function'?referenceSide(box,isExpanded):null;}
+ function motion(from,to,fromReference,toReference){
+  if(reduced.matches){host.style.removeProperty('--visual-motion-side');window.dispatchEvent(new Event('resize'));return Promise.resolve(true);}
   // Animate layout dimensions so the renderer redraws its square lattice at
   // each size. Scaling a finished canvas would stretch the pixels.
   return new Promise(resolve=>{
-   const started=performance.now();let cancelled=false;
-   animation={cancel(){cancelled=true;}};
+   const started=performance.now();let finished=false,frameId=0;
+   const animateReference=Number.isFinite(fromReference)&&fromReference>0&&Number.isFinite(toReference)&&toReference>0;
+   const running={cancel(){finish(false);}};animation=running;
+   function finish(completed){
+    if(finished)return;finished=true;cancelAnimationFrame(frameId);
+    for(const key of ['left','top','width','height'])host.style.removeProperty(key);
+    host.style.removeProperty('--visual-motion-side');
+    if(animation===running)animation=null;
+    window.dispatchEvent(new Event('resize'));resolve(completed);
+   }
    function frame(now){
+    if(finished)return;
     const progress=Math.min(1,(now-started)/440),eased=1-Math.pow(1-progress,3);
     for(const key of ['left','top','width','height'])host.style.setProperty(key,(from[key]+(to[key]-from[key])*eased)+'px','important');
+    if(animateReference)host.style.setProperty('--visual-motion-side',(fromReference+(toReference-fromReference)*eased)+'px');
     window.dispatchEvent(new Event('resize'));
-    if(progress<1&&!cancelled)requestAnimationFrame(frame);
-    else {for(const key of ['left','top','width','height'])host.style.removeProperty(key);animation=null;resolve();}
+    if(progress<1)frameId=requestAnimationFrame(frame);
+    else finish(true);
    }
    frame(started);
   });
@@ -58,7 +69,7 @@ export function createVisualFullscreen(host){
  async function toggle(){
   if(busy||(!expanded&&button.disabled))return;busy=true;
   if(!expanded){
-   const from=host.getBoundingClientRect();
+   const from=host.getBoundingClientRect(),fromReference=reference(from,false);
    placeholder=document.createElement('div');placeholder.className='visual-placeholder';
    const computed=getComputedStyle(host);
    Object.assign(placeholder.style,{width:from.width+'px',height:from.height+'px',margin:computed.margin,gridColumn:computed.gridColumn,gridRow:computed.gridRow,alignSelf:'start'});
@@ -67,10 +78,11 @@ export function createVisualFullscreen(host){
    savedInert=[...document.querySelector('main').children].filter(node=>node!==header).map(node=>[node,node.inert]);
    for(const [node] of savedInert)node.inert=true;
    icon(true);
-   await motion(from,host.getBoundingClientRect());
+   const to=host.getBoundingClientRect(),toReference=reference(to,true);
+   if(!await motion(from,to,fromReference,toReference)){busy=false;return;}
   }else{
    const from=host.getBoundingClientRect(),to=placeholder.getBoundingClientRect();
-   await motion(from,to);
+   if(!await motion(from,to,reference(from,true),reference(to,false))){busy=false;return;}
    placeholder.replaceWith(host);placeholder=null;host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');expanded=false;placeButton();fullscreenVolume();window.dispatchEvent(new Event('resize'));
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
    icon(false);
