@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-12';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-13';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -159,7 +159,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
      colourElapsed+=dt;const steps=Math.floor(colourElapsed);
      if(steps){colourElapsed-=steps;colour+=(colourTarget-colour)*(1-Math.exp(-steps/1.4));}
      transport+=(1-transport)*(1-Math.exp(-dt/.08));
-     capture.render({width:size,height:size,time:phase+seconds*1.35*frozen.tempo/100,seed:coinSeed,inputs:frozen,
+     capture.render({width:size,height:size,transitionTime:seconds,time:phase+seconds*1.35*frozen.tempo/100,seed:coinSeed,inputs:frozen,
       identity:imageAmount,artworkColor:colour,presence:1,pixelPresence:Math.max(.32,transport),inkColor:.18+.82*transport,reducedMotion:false});
      if(output.width!==size)output.width=size;if(output.height!==size)output.height=size;
      context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;

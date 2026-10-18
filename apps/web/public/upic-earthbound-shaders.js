@@ -1,3 +1,4 @@
+import {MARK_MORPH_GLSL} from './upic-mark-morph.js?v=earthbound-13';
 import {colourGLSL} from './upic-artwork-detail.js?v=earthbound-10';
 import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-10';
 export const markVertex=`
@@ -40,6 +41,7 @@ float Bayer2(vec2 a){a=floor(a);return fract(a.x/2.+a.y*a.y*.75);}
 #define Bayer8(a) (Bayer4(.5*(a))*.25+Bayer2(a))
 ${colourGLSL}
 ${EARTHBOUND_GLSL}
+${MARK_MORPH_GLSL}
 void main(){
   // Mark bounds are packed using their actual holder-driven diameters.
   // Artwork changes colour/brightness inside those reserved bounds;
@@ -52,6 +54,8 @@ void main(){
   // Pattern changes brightness, never deletes allocated holder dots.
   float bw=mix(.8,1.,step(.5,feed+Bayer8(pixelId)-.5));
   float survival=step(fract(sin(pixelId.x*73.17+pixelId.y*193.41+7.3)*43758.5453),uPixelPresence);
-  bw*=survival*earthboundMark(rasterPoint,vMarkCenter,vMarkSize*sqrt(uPixelPresence),1.);
+  float coverage=morphMark(rasterPoint,vMarkCenter,vMarkSize*sqrt(uPixelPresence));
+  if(survival<.5||coverage<.5)discard;
+  bw*=coverage;
   gl_FragColor=vec4(bw*min(1.,vMarkBrightness*1.6)*uInkColor*coinInk(vMarkCenter/uResolution),1.);
 }`;

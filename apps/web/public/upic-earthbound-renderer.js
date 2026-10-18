@@ -1,6 +1,7 @@
+import {morphMarkInside} from './upic-mark-morph.js?v=earthbound-13';
 import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-10';
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
-import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-10';
+import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-13';
 import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-10';
 import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-12';
 import {imageDetailRules} from './upic-image-detail.js?v=earthbound-12';
@@ -23,6 +24,29 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  let originalImage=null,imageCells=0,imagePixels=null,background=[1,1,1,1],palette=[[1,1,1],[1,1,1]];
  const detailCanvas=document.createElement('canvas');
  const stats={renderer:'earthbound',markCount:0,holderSamples:0};
+ const eased=t=>{t=clamp(t);return t*t*(3-2*t);};
+ const shapeFor=direction=>direction>0?[0,1,0]:direction<0?[0,0,1]:[1,0,0];
+ let shapeWeights=[1,0,0],shapeFrom=[1,0,0],shapeTarget=null,shapeStarted=0;
+ let layoutCoin=null,layoutWidth=0,layoutHeight=0,sizeStarted=0,sizeMoving=false;
+ let geometryDirty=true,geometryData=new Float32Array(0),bufferBytes=-1,lastTransitionTime=null;
+ function advanceSizes(now,instant=false){
+  if(!layout||!sizeMoving)return;
+  const t=instant?1:eased((now-sizeStarted)/.35);
+  for(const mark of layout.marks)mark.diameter=mix(mark.fromDiameter,mark.targetDiameter,t);
+  sizeMoving=t<1;geometryDirty=true;
+ }
+ function advanceShape(direction,now,instant=false,reset=false){
+  if(shapeTarget!==null){
+   const to=shapeFor(shapeTarget),t=instant?1:eased((now-shapeStarted)/.24);
+   shapeWeights=shapeFrom.map((v,i)=>mix(v,to[i],t));
+  }
+  if(reset||shapeTarget===null||instant){
+   shapeTarget=direction;shapeWeights=shapeFor(direction);shapeFrom=shapeWeights.slice();shapeStarted=now;
+  }else if(shapeTarget!==direction){
+   shapeFrom=shapeWeights.slice();shapeTarget=direction;shapeStarted=now;
+  }
+ }
+
  function init(){
   const shaders=[];
   try{
@@ -43,7 +67,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
     else if(u.type===gl.FLOAT_VEC4)gl.uniform4fv(u.location,value);
     else gl.uniform1f(u.location,value);return true;
    }});
-   buffer=gl.createBuffer();texture=gl.createTexture();uploadImage();layoutKey='';useSoftware=false;
+   buffer=gl.createBuffer();bufferBytes=-1;texture=gl.createTexture();uploadImage();layoutKey='';geometryDirty=true;useSoftware=false;
   }catch(error){useSoftware=true;stats.error=String(error.message||error);if(program)gl.deleteProgram(program);program=null;}
   finally{for(const shader of shaders)gl.deleteShader(shader);}
  }
@@ -75,21 +99,49 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   const peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
   return primary.map(c=>mix(1,peak>.001?c/peak*level:.4,imagePixels[i+3]/255*color));
  }
- function prepare(inputs,w,h){
-  const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances,Math.sign(inputs.change)]);
-  if(layoutKey===key)return;
-  layout=buildMarkLayout(inputs,{mode:'earthbound',mark:'auto'},w,h);layoutKey=key;
-  Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
-  if(useSoftware)return;
-  const data=new Float32Array(layout.marks.length*48),corners=[[-.5,-.5],[.5,-.5],[-.5,.5],[-.5,.5],[.5,-.5],[.5,.5]];let at=0;
-  for(const mark of layout.marks){
-   // Match earthboundMark's pixel-aligned origin. After edge shrink, the
-   // reserved centre and final diameter can have opposite parity; unsnapped
-   // quads then cut off the shape's last pixel row or column.
-   const left=Math.floor(mark.x-mark.diameter/2+.5),bottom=Math.floor(mark.y-mark.diameter/2+.5);
-   for(const [x,y]of corners){data.set([left+(x+.5)*mark.diameter,bottom+(y+.5)*mark.diameter,mark.x,mark.y,mark.diameter,mark.column,mark.row,mark.brightness??1],at);at+=8;}
+ function prepare(inputs,w,h,now,reduced){
+  // Continue from what is currently displayed when a newer snapshot interrupts.
+  advanceSizes(now,reduced);
+  const newCoin=layoutCoin!==inputs.coinKey;
+  advanceShape(Math.sign(inputs.change),now,reduced,newCoin);
+  const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances]);
+  if(layoutKey!==key){
+   const target=buildMarkLayout(inputs,{mode:'earthbound',mark:'auto'},w,h);
+   const instant=!layout||newCoin||layoutWidth!==w||layoutHeight!==h||reduced;
+   const previous=new Map((layout?.marks||[]).map(mark=>[mark.id,mark.diameter]));
+   const safeLimit=target.rules.cellDiameterLimit??0;
+   // New cells take their reserved positions immediately. Sizes may ease only
+   // inside those cells, so changing holder counts can never overlap neighbours.
+   sizeMoving=false;
+   for(const mark of target.marks){
+    mark.targetDiameter=mark.diameter;
+    mark.fromDiameter=instant?mark.diameter:Math.min(safeLimit,previous.get(mark.id)??0);
+    mark.diameter=mark.fromDiameter;
+    if(Math.abs(mark.fromDiameter-mark.targetDiameter)>.0001)sizeMoving=true;
+   }
+   layout=target;layoutKey=key;layoutCoin=inputs.coinKey;layoutWidth=w;layoutHeight=h;
+   sizeStarted=now;geometryDirty=true;
+   Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
   }
-  gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);vertexCount=data.length/8;
+  if(useSoftware||!geometryDirty)return;
+  const length=layout.marks.length*48;
+  if(geometryData.length!==length)geometryData=new Float32Array(length);
+  const corners=[[-.5,-.5],[.5,-.5],[-.5,.5],[-.5,.5],[.5,-.5],[.5,.5]];let at=0;
+  for(const mark of layout.marks){
+   // Padding covers both snapped full-size and transport-shrunken masks.
+   // The shader discards padding so it cannot paint over a neighbouring dot.
+   const left=Math.floor(mark.x-mark.diameter/2)-1,bottom=Math.floor(mark.y-mark.diameter/2)-1;
+   const right=Math.ceil(mark.x+mark.diameter/2)+1,top=Math.ceil(mark.y+mark.diameter/2)+1;
+   for(const [x,y]of corners){
+    geometryData[at++]=left+(x+.5)*(right-left);geometryData[at++]=bottom+(y+.5)*(top-bottom);
+    geometryData[at++]=mark.x;geometryData[at++]=mark.y;geometryData[at++]=mark.diameter;
+    geometryData[at++]=mark.column;geometryData[at++]=mark.row;geometryData[at++]=mark.brightness??1;
+   }
+  }
+  gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+  if(bufferBytes!==geometryData.byteLength){gl.bufferData(gl.ARRAY_BUFFER,geometryData,gl.DYNAMIC_DRAW);bufferBytes=geometryData.byteLength;}
+  else if(geometryData.length)gl.bufferSubData(gl.ARRAY_BUFFER,0,geometryData);
+  vertexCount=geometryData.length/8;geometryDirty=false;
  }
  function cpu(w,h,time,seed,inputs,identity,color,reduced,pixelPresence,inkColor){
   if(!ctx)return;
@@ -105,14 +157,13 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    base+=.28*noise(u*6+offset*.19,v*6+offset*.41,time*.04);base=Math.max(base,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
    let feed=battlePatternFeed(u,v,time,frame,base);
    const brightness=feed+b8(m.column,m.row)-.5<.5?.8:1;
-   const direction=Math.sign(inputs.change);let diameter=Math.max(1,Math.floor(m.diameter*Math.sqrt(pixelPresence)+.5));
-   if(direction)diameter=Math.max(3,2*Math.floor((diameter-1)/2)+1);
-   diameter=Math.min(m.diameter,diameter);
-   const left=Math.floor(m.x-diameter/2+.5),bottom=Math.floor(m.y-diameter/2+.5),half=diameter/2,stroke=Math.max(1,Math.floor(diameter*.23+.5))*.5;
+   const diameter=m.diameter*Math.sqrt(pixelPresence);
+   if(!(diameter>0))continue;
+   const left=Math.floor(m.x-diameter/2+.5),bottom=Math.floor(m.y-diameter/2+.5),half=diameter/2;
    ctx.fillStyle='rgb('+coinInk(m.x/w,m.y/h,color).map(c=>Math.round(255*c*inkColor*brightness*Math.min(1,(m.brightness??1)*1.6))).join(',')+')';
    for(let dy=0;dy<diameter;dy++)for(let dx=0;dx<diameter;dx++){
     const px=dx+.5-half,py=dy+.5-half;
-    const inside=direction>0?Math.min(Math.abs(px),Math.abs(py))<=stroke:direction<0?Math.abs(Math.abs(px)-Math.abs(py))*.70710678<=stroke:px*px+py*py<=half*half;
+    const inside=morphMarkInside(px,py,diameter,shapeWeights);
     if(inside)ctx.fillRect(left+dx,h-1-bottom-dy,1,1);
    }
   }
@@ -132,27 +183,30 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    }
    if(gl&&!useSoftware)uploadImage();
   },
-  render({width,height,time=0,seed=0,inputs,identity=0,artworkColor=0,presence=1,pixelPresence=1,inkColor=1,reducedMotion=false}){
+  render({width,height,time=0,seed=0,inputs,identity=0,artworkColor=0,presence=1,pixelPresence=1,inkColor=1,reducedMotion=false,transitionTime=null}){
    if(closed)return;
    // Keep enough raster cells for 10,000 holders even in a small mobile panel.
    const side=Math.max(1,Math.min(width,height));
    const w=Math.max(512,Math.min(maxDimension,Math.round(side))),h=w;
    for(const c of [canvas,software]){if(c.width!==w)c.width=w;if(c.height!==h)c.height=h;Object.assign(c.style,{width:side+'px',height:side+'px',left:(width-side)/2+'px',top:(height-side)/2+'px',right:'auto',bottom:'auto',opacity:String(clamp(presence))});}
-   updateImageDetail(inputs);prepare(inputs,w,h);identity=0;artworkColor=mask?artworkColor:0;
+   const now=Number.isFinite(transitionTime)?transitionTime:performance.now()/1000;
+   if(lastTransitionTime!==null&&now<lastTransitionTime){layoutKey='';layout=null;layoutCoin=null;sizeMoving=false;shapeTarget=null;geometryDirty=true;}
+   lastTransitionTime=now;
+   updateImageDetail(inputs);prepare(inputs,w,h,now,reducedMotion);identity=0;artworkColor=mask?artworkColor:0;
    canvas.hidden=useSoftware;software.hidden=!useSoftware;host.dataset.pixelBlast=useSoftware?'canvas':'ready';
    if(useSoftware)cpu(w,h,time,seed,inputs,identity,artworkColor,reducedMotion,pixelPresence,inkColor);
    else{
     gl.useProgram(program);gl.viewport(0,0,w,h);gl.disable(gl.BLEND);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
     gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,texture);
-    Object.assign(uniforms,{uIdentityImage:0,uImageSize:[w,h],uPixelPresence:pixelPresence,uInkColor:inkColor,uResolution:[w,h],uCanvasScale:[1,1],uIdentity:identity,uIdentityMotion:reducedMotion?0:.3,uTime:time,uSeed:(seed%65521)/65521*173.6,uArtworkColor:artworkColor,uArtworkBackground:background,uArtworkColorA:palette[0],uArtworkColorB:palette[1],uImageCells:imageCells||4});
+    Object.assign(uniforms,{uMarkShapeWeights:shapeWeights,uIdentityImage:0,uImageSize:[w,h],uPixelPresence:pixelPresence,uInkColor:inkColor,uResolution:[w,h],uCanvasScale:[1,1],uIdentity:identity,uIdentityMotion:reducedMotion?0:.3,uTime:time,uSeed:(seed%65521)/65521*173.6,uArtworkColor:artworkColor,uArtworkBackground:background,uArtworkColorA:palette[0],uArtworkColorB:palette[1],uImageCells:imageCells||4});
     bindEarthboundUniforms({uniforms},{time,inputs,settings:{mode:'earthbound'}});
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
     for(const [index,size,offset]of [[0,2,0],[1,2,2],[2,1,4],[3,2,5],[4,1,7]]){gl.enableVertexAttribArray(index);gl.vertexAttribPointer(index,size,gl.FLOAT,false,32,offset*4);}
     gl.drawArrays(gl.TRIANGLES,0,vertexCount);
    }
-   Object.assign(stats,{backend:this.kind,identity,artworkColor,presence});
+   Object.assign(stats,{backend:this.kind,identity,artworkColor,presence,shapeWeights:shapeWeights.slice(),sizeTransition:sizeMoving});
   },
-  clear(){if(gl&&!useSoftware){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ctx?.clearRect(0,0,software.width,software.height);},
+  clear(){lastTransitionTime=null;layoutKey='';layout=null;layoutCoin=null;sizeMoving=false;shapeTarget=null;geometryDirty=true;if(gl&&!useSoftware){gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);}ctx?.clearRect(0,0,software.width,software.height);},
   snapshot(){return {...stats};},
   close(){closed=true;canvas.removeEventListener('webglcontextlost',lost);canvas.removeEventListener('webglcontextrestored',restored);if(gl){if(buffer)gl.deleteBuffer(buffer);if(texture)gl.deleteTexture(texture);if(program)gl.deleteProgram(program);}canvas.remove();software.remove();}
  };
