@@ -570,33 +570,6 @@ body.visual-expanded{overflow:hidden}
 .instrument-page .replay-actions .playback-speed button{width:auto;min-width:32px;flex:none;min-height:32px;height:32px;padding:6px 8px}
 .instrument-page .replay-actions>button{min-height:32px;height:32px;padding:6px 8px}
 @media(max-width:760px){
- .instrument-page .compact-chart-toolbar>.transport-readout{flex:1 0 100%}
- .instrument-page .replay-actions{width:100%;margin-left:0;gap:4px}
- .instrument-page .replay-actions .playback-speed{margin-right:auto;gap:4px}
- .instrument-page .replay-actions .playback-speed button,.instrument-page .replay-actions>button{min-height:40px;height:40px;padding:6px;font-size:var(--font-size-small)}
-}
-
-/* The frame follows holder marks; the independent reference lattice never resizes to its crop. */
-.audio-visualizer[data-content-aware="true"]:not(.is-expanded){height:auto!important;min-height:60px;aspect-ratio:auto!important;background:transparent;contain:layout;overflow:visible}
-.audio-visualizer[data-content-aware="true"] #audio-dots{position:absolute;inset:0}
-.visual-content-frame{position:relative;margin-inline:auto;width:var(--visual-content-size,var(--visual-reference-side,100%));height:var(--visual-content-size,var(--visual-reference-side,auto));aspect-ratio:1;overflow:hidden;background:#000;isolation:isolate}
-.visual-content-frame .pixel-blast-layer{transform:translate(var(--visual-content-x,0px),var(--visual-content-y,0px))}
-.audio-visualizer.is-expanded .visual-content-frame{position:absolute;left:50%;top:50%;margin:0;transform:translate(-50%,-50%)}
-@media(max-width:760px){
- .instrument-page .coin-title>.audio-visualizer[data-content-aware="true"]:not(.is-expanded){border:0}
- .audio-visualizer[data-content-aware="true"]:not(.is-expanded) .visual-content-frame{outline:0}
-}
-
-.coin-search-thumbnail{display:none}
-@media(max-width:760px){
- .mobile-coin-search .coin-search-result{grid-template-columns:40px minmax(0,1fr);gap:5px 12px}
- .mobile-coin-search .coin-search-thumbnail{display:block;grid-column:1;grid-row:1/4;align-self:center;width:40px;height:40px;object-fit:cover;border-radius:5px}
- .mobile-coin-search .coin-search-result>span,.mobile-coin-search .coin-search-result>small{grid-column:2}
- .mobile-coin-search .coin-search-result>span{display:grid;gap:4px;font-weight:400}
- .mobile-coin-search .coin-search-result strong{font-weight:400}
-}
-@media(max-width:760px){
- .instrument-page .compact-chart-toolbar>.transport{display:flex;flex:1 0 100%;width:100%;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:12px;margin:0;padding:0}
- .instrument-page .compact-chart-toolbar>.transport>.transport-readout{flex:1 1 auto;min-width:0;margin:0}
- .instrument-page .compact-chart-toolbar>.transport :is(#play,#share,.visual-fullscreen){flex:none}
+ .instrument-page .coin-title .transport{display:flex;grid-column:1/-1;grid-row:3;width:100%;flex-direction:row;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:12px;margin:0;padding:0}
+ .instrument-page .coin-title .coin-live-readings{grid-row:4}
 }

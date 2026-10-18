@@ -85,11 +85,11 @@ if(headerWallet){
 }
 
 function bindMobilePlayerOrder(){
- const transport=document.querySelector('.instrument-page .transport'),readout=document.querySelector('.compact-chart-toolbar>.transport-readout'),toolbar=document.querySelector('.compact-chart-toolbar'),play=document.getElementById('play');
- if(!transport||!readout||!toolbar||!play)return;
- const transportHome=document.createComment('transport position'),readoutHome=document.createComment('transport readout position');transport.before(transportHome);readout.before(readoutHome);
+ const transport=document.querySelector('.instrument-page .transport'),readings=document.querySelector('.coin-title .coin-live-readings');
+ if(!transport||!readings)return;
+ const home=document.createComment('transport position');transport.before(home);
  const mobile=matchMedia('(max-width:760px)');
- const arrange=()=>{if(mobile.matches){toolbar.prepend(transport);play.after(readout);}else{readoutHome.after(readout);transportHome.after(transport);}};
+ const arrange=()=>{if(mobile.matches)readings.before(transport);else home.after(transport);};
  mobile.addEventListener('change',arrange);arrange();
 }
 bindMobilePlayerOrder();
