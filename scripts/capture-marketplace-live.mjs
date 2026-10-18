@@ -11,18 +11,19 @@ import {HOLDER_NETWORKS} from '../apps/web/public/holder-count-providers.js';
 
 const project=resolve(dirname(fileURLToPath(import.meta.url)),'..'),root=resolve(project,'apps/web/public');
 const endpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures',kind='live-player-frame-v1';
-const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false};
+const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,top1000:false,part:0,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false};
 for(let i=2;i<process.argv.length;i++){
  const arg=process.argv[i];
- if(arg==='--all'||arg==='--all1000'){options.all=true;continue;}
+ if(arg==='--all'){options.all=true;continue;}
+ if(arg==='--top1000'||arg==='--all1000'){options.top1000=true;options.all=true;continue;}
  if(arg==='--publish'){options.publish=true;continue;}
  if(arg==='--check-publisher'){options.checkPublisher=true;options.publish=true;continue;}
  if(arg==='--dry-run'){options.dryRun=true;continue;}
- if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
- const name=arg.slice(2);if(!arg.startsWith('--')||!['limit','ids','timeout','concurrency','port'].includes(name)||process.argv[i+1]===undefined)throw Error('Unknown or incomplete option: '+arg);
+ if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher] [--top1000 --part 1..4]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
+ const name=arg.slice(2);if(!arg.startsWith('--')||!['limit','ids','timeout','concurrency','port','part'].includes(name)||process.argv[i+1]===undefined)throw Error('Unknown or incomplete option: '+arg);
  const value=process.argv[++i];options[name]=name==='ids'?value.split(',').map(v=>v.trim()).filter(Boolean):Number(value);
 }
-for(const [name,min,max] of [['limit',1,10000],['timeout',1,3600],['concurrency',1,2],['port',1024,65535]])if(!Number.isInteger(options[name])||options[name]<min||options[name]>max)throw Error('Invalid --'+name);
+for(const [name,min,max] of [['limit',1,10000],['timeout',1,3600],['concurrency',1,2],['port',1024,65535],['part',0,4]])if(!Number.isInteger(options[name])||options[name]<min||options[name]>max)throw Error('Invalid --'+name);
 const keyFor=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro','kucoin-community-chain':'kcc'};
 const explorers=new Set(['ethereum','eth','base','arbitrum','optimism','polygon','polygon_pos','zksync','celo','robinhood']);
@@ -39,7 +40,7 @@ for(const coin of catalogue.coins)for(const item of [{chain:coin.chain,address:c
  if(!item.chain||!item.address)continue;const key=keyFor(item.chain,item.address);
  if(!identities.has(key))identities.set(key,{...coin,...item,key});
 }
-let candidates=[...identities.values()];
+let candidates=[...identities.values()].filter(c=>(!options.top1000||c.top1000)&&(!options.part||Math.ceil(c.catalogueRank/250)===options.part));
 if(options.ids){
  const selected=new Map();
  for(const query of options.ids){
@@ -80,10 +81,14 @@ if(process.env.GITHUB_EVENT_NAME==='schedule'&&!options.ids&&!options.all){
  const stale=existing.filter(c=>manifest.get(c.key).capturedAt<Date.now()-3600000),refresh=stale.slice(0,Math.ceil(options.limit/2));
  pending=[...refresh,...missingQueue.slice(0,options.limit-refresh.length),...stale.slice(refresh.length)];
 }
+if(options.top1000){
+ const ordered=[...uncovered,...[...preferred.values()].filter(c=>!uncovered.some(row=>row.id===c.id)).sort((a,b)=>(manifest.get(a.key)?.capturedAt||0)-(manifest.get(b.key)?.capturedAt||0))];
+ pending=ordered;
+}
 const queue=options.all||options.ids&&!process.argv.includes('--limit')?pending:pending.slice(0,options.limit);
 const supportedCatalogueIDs=new Set([...identities.values()].filter(supported).map(c=>c.id));
-const unsupportedCoins=catalogue.coins.filter(c=>!supportedCatalogueIDs.has(c.id)).map(c=>({id:c.id,symbol:c.symbol,reason:c.contractStatus==='off-chain'?'Off-chain exchange product':c.address||c.platforms?.length?'No observed-holder provider for the listed identifiers':'Native coin without an issued token identifier'}));
-if(options.dryRun){await new Promise(done=>process.stdout.write(JSON.stringify({catalogueCoins:catalogue.coins.length,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,existingCaptures:manifest.size,requested:queue.length,publishing:options.publish,selected:queue.map(c=>({id:c.id,key:c.key,capturedAt:manifest.get(c.key)?.capturedAt??null})),unsupported:unsupported.length},null,2)+'\n',done));process.exit(0);}
+const unsupportedCoins=catalogue.coins.filter(c=>(!options.top1000||c.top1000)&&!supportedCatalogueIDs.has(c.id)).map(c=>({id:c.id,symbol:c.symbol,reason:c.contractStatus==='off-chain'?'Off-chain exchange product':c.address||c.platforms?.length?'No observed-holder provider for the listed identifiers':'Native coin without an issued token identifier'}));
+if(options.dryRun){await new Promise(done=>process.stdout.write(JSON.stringify({catalogueCoins:catalogue.coins.filter(c=>!options.top1000||c.top1000).length,unavailableCoins:unsupportedCoins.length,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,existingCaptures:manifest.size,requested:queue.length,publishing:options.publish,selected:queue.map(c=>({id:c.id,key:c.key,capturedAt:manifest.get(c.key)?.capturedAt??null})),unsupported:unsupported.length},null,2)+'\n',done));process.exit(0);}
 if(options.publish&&(!process.env.ACTIONS_ID_TOKEN_REQUEST_URL||!process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN))throw Error('Publishing requires GitHub Actions OIDC credentials; use a local run without --publish for development.');
 let oidc=null;
 async function publisherToken(force=false){
@@ -198,13 +203,13 @@ try{
     await writeFile(resolve(output,name),bytes);await writeFile(resolve(output,name+'.json'),JSON.stringify(metadata,null,2)+'\n');
     outcome={state:'captured',artifact:name};
    }
-   manifest.set(expectedKey,metadata);report.results.push({id:coin.id,key:expectedKey,...outcome,capturedAt:frame.capturedAt,bytes:bytes.length});console.log(coin.symbol+' '+coin.chain+' '+outcome.state);
+   manifest.set(expectedKey,metadata);report.results.push({id:coin.id,key:expectedKey,...outcome,capturedAt:frame.capturedAt,bytes:bytes.length});console.log(coin.symbol+' '+coin.chain+' '+outcome.state);return true;
   }catch(error){
    const previous=manifest.get(expectedKey);report.results.push({id:coin.id,key:expectedKey,state:previous?'retained-previous':'unavailable',capturedAt:previous?.capturedAt??null,error:String(error.message||error).slice(0,500),pageErrors:errors});
-   console.log(coin.symbol+' '+coin.chain+' '+(previous?'retained previous live capture':'no live capture')+': '+String(error.message||error).split('\n')[0]);
+   console.log(coin.symbol+' '+coin.chain+' '+(previous?'retained previous live capture':'no live capture')+': '+String(error.message||error).split('\n')[0]);return false;
   }finally{await context.close();}
  }
- await Promise.all(Array.from({length:options.concurrency},async()=>{while(!stopping){const coin=queue[next++];if(!coin)return;await capture(coin);}}));
+ await Promise.all(Array.from({length:options.concurrency},async()=>{while(!stopping){const coin=queue[next++];if(!coin)return;const captured=await capture(coin);if(options.top1000&&!captured&&!stopping){for(const alternative of supportedCoins.filter(c=>c.id===coin.id&&c.key!==coin.key).slice(0,2)){if(await capture(alternative))break;}}}}));
 }catch(error){console.error(String(error.message||error));process.exitCode=1;}
 finally{
  await browser?.close();if(server.listening)await new Promise(resolve=>server.close(resolve));

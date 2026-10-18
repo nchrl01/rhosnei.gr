@@ -9,6 +9,11 @@ on:
         required: true
         default: '100'
         type: string
+      top1000:
+        description: 'Process every supported top-1000 coin, retrying alternate listed networks'
+        required: false
+        default: false
+        type: boolean
       ids:
         description: 'Optional comma-separated CoinGecko IDs or chain:address identities'
         required: false
@@ -24,7 +29,12 @@ jobs:
   capture:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 330
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        part: ${{ fromJSON(inputs.top1000 && '[1,2,3,4]' || '[0]') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,7 +58,18 @@ jobs:
           UPIC_CAPTURE_OUTPUT_DIR: ${{ runner.temp }}/upic-capture-report
           CAPTURE_LIMIT: ${{ inputs.limit || '40' }}
           CAPTURE_IDS: ${{ inputs.ids || '' }}
+          CAPTURE_TOP1000: ${{ inputs.top1000 || 'false' }}
+          CAPTURE_PART: ${{ matrix.part }}
         run: |
           args=(--publish --limit "$CAPTURE_LIMIT" --timeout 90 --concurrency 2)
+          if [[ "$CAPTURE_TOP1000" == "true" ]]; then args+=(--top1000 --part "$CAPTURE_PART"); fi
           if [[ -n "$CAPTURE_IDS" ]]; then args+=(--ids "$CAPTURE_IDS"); fi
           node scripts/capture-marketplace-live.mjs "${args[@]}"
+      - name: Preserve capture coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-capture-report-${{ matrix.part }}
+          path: ${{ runner.temp }}/upic-capture-report/report.json
+          if-no-files-found: ignore
+          retention-days: 3
