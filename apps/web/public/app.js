@@ -1,4 +1,5 @@
-import {createTestMint} from './test-mint.js?v=1';
+import {createTestMint} from './test-mint.js?v=2';
+import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
 import {bindSearchField} from './search-field.js?v=265';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
@@ -92,7 +93,21 @@ $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',imageController,imageToken='';const tokenImages=new Map();
 const imageKey=pair=>pair.chainId+':'+(/^0x/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
-const testMint=createTestMint(document.querySelector('.coin-copy'),{onPreviewEnd:()=>{if(playing&&!starting)$('play').click();}});
+let testSimulationActive=false,testRefreshPending=false,lastTestActivityId='';
+const testMint=createTestMint(document.querySelector('.coin-copy'),{
+ onPreviewEnd:()=>{if(playing&&!starting)$('play').click();},
+ onChange:()=>{
+  if(testRefreshPending)return;testRefreshPending=true;
+  queueMicrotask(()=>{
+   testRefreshPending=false;
+   const active=Boolean(testMint.simulation());
+   if(active!==testSimulationActive){testSimulationActive=active;lastTestActivityId='';piano?.reset(seed);dataSonification.reset(seed);replayPianoPrimed=false;}
+   if(market){if(playing&&!starting)tick();else syncLevels(metrics());}
+  });
+ },
+});
+function engineMetrics(observed){return testEvolutionMetrics(observed,testMint.simulation());}
+
 function safeCoinImage(value){
  try{const url=new URL(value);return url.protocol==='https:'&&url.href.length<=2048&&!url.username&&!url.password?url.href:'';}catch{return '';}
 }
@@ -151,14 +166,16 @@ function audioStatus(){
  status(parts.join(' · '));
 }
 function flushPianoTrade(){
+ if(testMint.simulation()?.sampleActivity)return;
  if(!piano||!playing||ctx?.state!=='running')return;
  const trade=pendingPianoTrade;pendingPianoTrade=null;
  // Keep only a fresh observation across loading, preserving its source type.
- if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000){const m=liveMetrics();piano[trade.kind==='price-observation'?'observePrice':'trade'](trade,m.context?.latestCap,{...trade.music,tonic:marketRoot(m)});}
+ if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000){const m=engineMetrics(liveMetrics());piano[trade.kind==='price-observation'?'observePrice':'trade'](trade,m.context?.latestCap,{...trade.music,tonic:marketRoot(m)});}
 }
 function observePianoPrice(priceUsd,referencePrice,receivedAt=Date.now(),id='price:'+receivedAt){
+ if(testMint.simulation()?.sampleActivity)return;
  if((!playing&&!starting)||replay.state.active||!(priceUsd>0)||!Number.isFinite(priceUsd))return;
- const m=liveMetrics(),event={id,kind:'price-observation',priceUsd,referencePrice,receivedAt,music:pianoMusic(m)};
+ const m=engineMetrics(liveMetrics()),event={id,kind:'price-observation',priceUsd,referencePrice,receivedAt,music:pianoMusic(m)};
  dataSonification.observePrice(priceUsd,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});
  if(playing&&piano?.observePrice(event,m.context?.latestCap,event.music)){pendingPianoTrade=null;audioStatus();}
  else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=event;
@@ -222,8 +239,8 @@ function metrics(){
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
  const scored=historical&&replay.state.score?.frames.get(replay.state.bar?.time);
  if(scored?.music&&historical.replay?.source==='candles')historical.music={...historical.music,...scored.music};
- if(ended&&playing){$('play').onclick();status('History replay finished');}
- return historical||live;
+ if(ended&&playing&&!testMint.simulation()){$('play').onclick();status('History replay finished');}
+ return engineMetrics(historical||live);
 }
 function updateReplayUI(m){
  const active=replay.state.active,source=m.replay?.source;
@@ -255,11 +272,11 @@ function syncLevels(m){
 
  m={...m,music:{...m.music,tonic:marketRoot(m),harmony:sharedHarmony}};
  // The final candle gets its existing one-second hold to sound before pause.
- const audibleTransport=vinylStopping||(playing&&!replay.state.dragging&&!replay.state.ended);
+ const audibleTransport=vinylStopping||(playing&&(m.testMint||!replay.state.dragging&&!replay.state.ended));
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1.5:0,ctx.currentTime,.025);}
- updateCoinReadout(m);
- m.dataSignals=dataSonification.frame(m,{playing:playing&&ctx?.state==='running',seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,clock:ctx?.currentTime??0});
- dataVisual.frame(m,{playing,seed,clock:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,position:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
+ updateCoinReadout(m.testMint?.original||m);
+ m.dataSignals=dataSonification.frame(m,{playing:playing&&ctx?.state==='running',seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),clock:ctx?.currentTime??0});
+ dataVisual.frame(m,{playing,seed,clock:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:!m.testMint&&replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),position:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
  piano?.resonance(m.context?.latestCap);
  piano?.setTempo(m.music?.tempo);
  orchestraState=conductor.update(m,streamConnected);
@@ -279,7 +296,7 @@ function syncLevels(m){
  $('market-context-note').textContent=m.replay?$('replay-info').textContent:!market?'Loading the highest-ranked trending market':c.historyAvailable?'Fixed 5-minute market history + latest received price. Typical cap is inferred from price using snapshot supply, not observed historical market cap. Recent moves cool over time; chart zoom and pan do not affect sound.':'Loading fixed historical context · latest observations and available provider changes drive the orchestra.';
  updateSignalMap(m);
  document.querySelectorAll('.footer-networks [data-network]').forEach(node=>{const selected=node.dataset.network===market?.chainId;node.dataset.state=selected?(streamConnected?'active':'connecting'):'available';node.querySelector('small').textContent=selected?(streamConnected?'Active':'Connecting'):'Available';});
- updateReplayUI(m);
+ updateReplayUI(m.testMint?.original||m);
 }
 function setupStream(){
  const key=market?.chainId+':'+market?.pairAddress;if(key===streamPool)return;
@@ -309,11 +326,12 @@ function setupStream(){
    const quoteUsd=Number(market.priceUsd)/Number(market.priceNative);
    if(source==='rpc'){e.priceUsd=quoteUsd>0&&Number.isFinite(quoteUsd)?(e.spotQuote||e.priceQuote)*quoteUsd:null;e.usdVolume=e.priceUsd?e.quoteAmount*quoteUsd:0;}
    tradeEvents.push(e);lastTrade=e;receivedTradeCount++;const live=liveMetrics();e.music=pianoMusic(live);
-   if(!replay.state.active){dataSonification.frame(live,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});dataSonification.event(e,{playing:playing&&ctx?.state==='running',replay:false,clock:ctx?.currentTime??0});dataVisual.event(e);}
+   const performed=engineMetrics(live),soundEvent={...e,music:pianoMusic(performed)},sampleActivity=performed.testMint?.sampleActivity;
+   if(!replay.state.active&&!sampleActivity){dataSonification.frame(performed,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});dataSonification.event(soundEvent,{playing:playing&&ctx?.state==='running',replay:false,clock:ctx?.currentTime??0});dataVisual.event(soundEvent);}
    pianoHistory.push({...e,at:e.receivedAt});if(pianoHistory.length>20000)pianoHistory.shift();
-   if((playing||starting)&&!replay.state.active){
-    if(playing&&piano?.trade(e,live.context?.latestCap,{...e.music,tonic:marketRoot(live)})){pendingPianoTrade=null;audioStatus();}
-    else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=e;
+   if((playing||starting)&&!replay.state.active&&!sampleActivity){
+    if(playing&&piano?.trade(soundEvent,performed.context?.latestCap,{...soundEvent.music,tonic:marketRoot(performed)})){pendingPianoTrade=null;audioStatus();}
+    else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=soundEvent;
    }
    if(e.priceUsd)chart.add({at:Number.isFinite(e.occurredAt)?e.occurredAt:e.receivedAt,price:e.priceUsd,volume:e.usdVolume,id:e.id,source:'swap'});
    $('chart-source').textContent=source==='ccxt'?market.exchangeName+' · public WebSocket trades · '+(market.quoteApproximate?market.quoteToken.symbol+' prices used as a USD proxy':'USD trade prices')+' · history volume estimated from base volume':source==='rpc'?(e.protocol==='orca'?'Orca post-swap spot prices · confirmed WebSocket events · USD uses snapshot SOL/quote conversion':e.protocol==='v4'?'Direct Uniswap v4 post-swap prices · RPC polling ≥2s · USD quote conversion uses snapshots':'Streamed swap execution prices · USD estimated using latest quote conversion'):'Observed trade prices · GeckoTerminal / ≥8s polling · upstream cached · provider USD values';
@@ -353,9 +371,18 @@ function tick(){
  if(!replay.state.active)arpeggioAI.setContext(m.music);
  syncLevels(m);envion.market(music,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
- if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
- const historical=replay.state.active,bar=replay.state.bar;
- piano?.frame({...m,music:pianoMusic(m)},{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:(m.decoded&&streamKind!=='trade-poll'&&m.fresh>0)||(tradePollingAt>0&&Date.now()-tradePollingAt<25000),quiet:historical?bar?.volume===0:true});
+ if(m.testMint?.sampleActivity&&playing&&ctx?.state==='running'){
+  const sampleClock=Math.floor(ctx.currentTime),id=imageKey(market)+':'+sampleClock;
+  if(id!==lastTestActivityId){
+   lastTestActivityId=id;
+   const e=testActivityEvent(imageKey(market),m.testMint.cap,sampleClock,Date.now(),m.music.group);e.music=pianoMusic(m);
+   piano?.trade(e,m.context.latestCap,e.music);
+   dataSonification.event(e,{playing:true,replay:false,clock:ctx.currentTime});dataVisual.event(e);
+  }
+ }
+ if(replay.state.active&&!m.testMint)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
+ const historical=replay.state.active&&!m.testMint,bar=replay.state.bar;
+ piano?.frame({...m,music:pianoMusic(m)},{playing,seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:(m.decoded&&streamKind!=='trade-poll'&&m.fresh>0)||(tradePollingAt>0&&Date.now()-tradePollingAt<25000),quiet:historical?bar?.volume===0:true});
  send('tempo',bpm);send('activity',music.activity);send('motion',music.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
 }
@@ -387,7 +414,7 @@ async function initialize(){
   audioErrors.piano='';
   pianoLoading=createTradePiano(context,audioScopes[0]?.input||destination,{initialSeed:seed,onVoice:event=>{if(epoch===audioEpoch){sharedHarmony=event.harmony;if(event.audible!==false)pianoChordCount++;if(event.audible!==false&&event.time!=null)dataVisual.piano(event.time,1);}},onArpeggio:event=>{if(epoch===audioEpoch&&event.time!=null)dataVisual.piano(event.time,.65);}}).then(instrument=>{
    if(epoch!==audioEpoch){instrument.close();throw Error('Audio loading cancelled');}
-   piano=instrument;piano.setArpeggioPattern(arpeggioAI.snapshot());piano.setEnabled(pianoEnabled);piano.setMaster(1);piano.reset(seed);piano.resonance(liveMetrics().context?.latestCap);piano.setRunning(playing);
+   piano=instrument;piano.setArpeggioPattern(arpeggioAI.snapshot());piano.setEnabled(pianoEnabled);piano.setMaster(1);piano.reset(seed);piano.resonance(engineMetrics(liveMetrics()).context?.latestCap);piano.setRunning(playing);
    if(playing){flushPianoTrade();if(replay.state.active)tick();}audioStatus();return piano;
   }).catch(error=>{if(epoch===audioEpoch){audioErrors.piano=error.message;engineView.log('Piano: '+error.message);audioStatus();}throw error;}).finally(()=>{if(epoch===audioEpoch)pianoLoading=null;});
  }

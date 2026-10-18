@@ -8,3 +8,15 @@
 .test-mint-note { flex-basis:100%; color:#aaa; line-height:1.4; }
 .test-mint-note:empty { display:none; }
 .test-mint [hidden] { display:none; }
+.test-evolution { flex-basis:100%; min-width:0; max-width:100%; }
+.test-evolution summary { color:#fff; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }
+.test-evolution-body { display:grid; gap:12px; margin-top:12px; }
+.test-evolution-body label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.test-evolution-body input[type="range"] { width:100%; min-width:0; accent-color:#fff; }
+.test-evolution-body input[type="checkbox"] { accent-color:#fff; }
+.test-evolution-body select { font:inherit; font-weight:400; border:1px solid #777; color:#fff; background:#000; padding:4px; max-width:100%; }
+.test-evolution-body output { color:#fff; }
+.test-evolution-body small { display:block; color:#aaa; line-height:1.4; }
+.test-milestones { display:flex; flex-wrap:wrap; gap:6px; }
+.test-milestones button[aria-pressed="true"] { background:#fff; color:#000; border-color:#fff; }
+.test-milestones button[data-reached="true"] { border-color:#fff; }
