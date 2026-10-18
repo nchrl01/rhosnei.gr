@@ -35,9 +35,9 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   async function refresh(){
    if(version!==epoch)return;
    if(typeof document!=='undefined'&&document.hidden){timer=setTimeout(refresh,30000);return;}
-   controller=new AbortController();const abort=controller,timeout=setTimeout(()=>abort.abort(),45000);
+   controller=new AbortController();const abort=controller,timeout=setTimeout(()=>abort.abort(),120000);
    try{
-    const response=await fetchGecko(url,{signal:abort.signal,priority:0});
+    const response=await fetchGecko(url,{signal:abort.signal,priority:45});
     if(!response.ok)throw Error('Holder metadata unavailable');
     const body=await response.json(),info=body.data?.attributes;
     if(version!==epoch)return;
