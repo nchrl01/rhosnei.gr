@@ -18,9 +18,10 @@ export async function fetchHolderCount(network,address){
   const response=await fetch('https://api.gopluslabs.io/api/v1/'+path+'?'+new URLSearchParams({contract_addresses:address}),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
   if(response.ok){
    const body=await response.json(),row=body.result?.[address]||body.result?.[address.toLowerCase()],count=body.code===1?countValue(row?.holder_count):null;
+   reason=body.code===1?'unavailable':'goplus-code-'+String(body.code);
    // Some unsupported GoPlus tokens report zero; do not present that as a verified total.
    if(count!==null&&count>0)return {state:'snapshot',holders:count,lastUpdated:null,image_url,source:'GoPlus',approximate:true,fetchedAt:Date.now()};
-  }else if(response.status===429)reason='rate-limited';
- }catch{}
+  }else reason='goplus-http-'+response.status;
+ }catch{reason='goplus-unavailable';}
  return {state:reason,holders:null};
 }
