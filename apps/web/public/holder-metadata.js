@@ -1,3 +1,4 @@
+import {createHolderBalances} from './holder-balances.js?v=306';
 import {fetchGoPlusCount} from './holder-count-providers.js?v=303';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {createHolderClusters} from './holder-clusters.js?v=168';
@@ -23,22 +24,24 @@ export function holderCountReadout(info={},historical=false){
  const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
  const title=available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
   :'Waiting for holder data';
- return {label,value,title};
+ const h=info.holdings;const coverage=!historical&&h?.weight>0?' · Visual: '+h.records.length.toLocaleString('en')+' observed balances · '+h.source+(h.complete?' (complete indexed list)':h.truncated?' (10,000 display limit)':h.state==='loading'?' (loading more)':' (partial sample)'):historical?' · Historical balances unavailable':' · Individual balances unavailable';
+ return {label,value,title:title+coverage};
 }
 export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
  const clusters=createHolderClusters();
+ const balances=createHolderBalances({onChange:()=>onChange(snapshot())});
  let key='',state={state:'unavailable',holders:null,watchers:null},controller,timer,epoch=0;
  function publish(next){state=next;onChange(snapshot());}
  function snapshot(now=Date.now()){
-  const relationships=clusters.snapshot(now);
-  if(state.holders===null)return {...state,weight:0,watchers:null,relationships};
+  const relationships=clusters.snapshot(now),holdings=balances.snapshot(now);
+  if(state.holders===null)return {...state,weight:0,watchers:null,relationships,holdings};
   // Provider time measures the snapshot, receipt time bounds our own cache.
   const age=state.countAt?Math.max(0,now-state.countAt,now-state.receivedAt):null;
   const weight=state.countAt?Math.max(0,Math.min(1,1-(age-HOUR)/(5*HOUR))):0;
-  return {...state,age,weight,watchers:null,relationships,state:age===null?'age-unknown':weight===0?'expired':state.state};
+  return {...state,age,weight,watchers:null,relationships,holdings,state:age===null?'age-unknown':weight===0?'expired':state.state};
  }
  function setMarket(pair){
-  clusters.setMarket(pair);
+  clusters.setMarket(pair);balances.setMarket(pair);
   epoch++;controller?.abort();clearTimeout(timer);key='';
   if(!pair){publish({state:'unavailable',holders:null,watchers:null});return;}
   const network=pair.geckoNetwork||aliases[pair.chainId]||pair.chainId,input=pair.baseToken.address;
@@ -72,5 +75,5 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   if(saved&&Date.now()-saved.receivedAt<30*60000&&(network!=='robinhood'||saved.source==='Blockscout Robinhood index'))timer=setTimeout(refresh,30*60000-(Date.now()-saved.receivedAt));
   else void refresh();
  }
- return {setMarket,snapshot,close(){clusters.close();epoch++;controller?.abort();clearTimeout(timer);}};
+ return {setMarket,snapshot,close(){clusters.close();balances.close();epoch++;controller?.abort();clearTimeout(timer);}};
 }

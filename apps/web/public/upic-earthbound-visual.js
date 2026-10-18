@@ -20,20 +20,22 @@ export function observedHolderBalances(m){
  // Counts or aggregate cluster percentages cannot reconstruct individual
  // holdings. Use only actual per-wallet values from the current snapshot.
  if(m.replay)return [];
- const audience=m.audience||{},relations=audience.relationships,records=[];
- if(Array.isArray(audience.holderBalances)&&audience.weight>0)records.push(...audience.holderBalances);
+ const audience=m.audience||{},relations=audience.relationships,holdings=audience.holdings,records=[];
+ if(holdings?.weight>0&&(holdings.complete||holdings.records?.length))records.push(...holdings.records);
+ else if(Array.isArray(audience.holderBalances)&&audience.weight>0)records.push(...audience.holderBalances);
  else if(relations?.weight>0)for(const cluster of relations.clusters||[])for(const wallet of cluster.wallets||[]){
   records.push({id:wallet.address,percentage:wallet.percentage});
  }
  const wallets=new Map();
  for(const record of records){
   const id=String(record.id??record.address??'').trim();
-  const cap=finite(m.context?.latestCap),pct=finite(record.percentage);
+  const cap=finite(m.context?.latestCap),pct=finite(record.percentage),tokens=finite(record.tokenBalance),price=finite(m.context?.latestPrice??m.context?.path?.at(-1)?.close);
   // Explicit USD values take priority; relationship percentages are supply shares.
   const balance=finite(record.balanceUsd??record.balanceUSD??record.usdValue)
+   ??(tokens!==null&&tokens>0&&price>0?tokens*price:null)
    ??(pct!==null&&cap>0?cap*pct/100:null)
    ??(audience.holderBalanceUnit==='usd'?finite(record.balance):null);
-  if(!id||id.length>512||!(balance>0))continue;
+  if(!id||id.length>512||!Number.isFinite(balance)||!(balance>0))continue;
   // Repeated appearances of one address are not extra wallets or extra funds.
   const key=/^0x[0-9a-f]{40}$/i.test(id)?id.toLowerCase():id;
   wallets.set(key,Math.max(balance,wallets.get(key)||0));
@@ -43,7 +45,7 @@ export function observedHolderBalances(m){
 export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  return {coinKey,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
-  holderBalances:observedHolderBalances(m),holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.relationships?.state||'unavailable',change:finite(m.music?.changePct)??0,
+  holderBalances:observedHolderBalances(m),holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.holdings?.state||m.audience?.relationships?.state||'unavailable',holderCoverage:m.audience?.holdings?.complete?'complete-indexed-list':m.audience?.holdings?.truncated?'top-10000':'partial-sample',change:finite(m.music?.changePct)??0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
@@ -162,7 +164,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',audioReactive:false,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
