@@ -1,3 +1,4 @@
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=323';
 import {createTestMint} from './test-mint.js?v=3';
 import {createTestNftExporter} from './test-nft-export.js?v=1';
 import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
@@ -19,7 +20,7 @@ import {createCoinDither} from './coin-dither.js?v=276';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=320';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=323';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=306';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
@@ -922,7 +923,12 @@ async function restoreSharedScore(){
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
 display();
-await restoreSharedScore();
+const restoredScore=await restoreSharedScore();
+const requestedCoin=new URLSearchParams(location.search);
+if(!restoredScore&&requestedCoin.get('coin')?.length<=250&&requestedCoin.get('coin')){
+ requestedNetwork=requestedCoin.get('network')||null;requestedAutoplay=false;$('address').value=requestedCoin.get('coin');syncAddressLabel();$('coin-form').requestSubmit();
+}
+archivePlayerFrames({getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active&&!testMint.simulation()});
 startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');

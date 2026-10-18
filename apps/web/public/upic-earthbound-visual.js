@@ -173,6 +173,13 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   // Keep the app's audio callback interface without coupling sound to ink.
   event(){},pulse(){},piano(){},
   setImage(image){identitySource=image;renderer.setImage(image);imageCoinKey=identityKey(getState().coinKey);},
+  captureStill(size=512){
+   if(!latest?.hasMarket||!latest.holderBalances.length)throw Error('No received holder visual to capture.');
+   const output=document.createElement('canvas');output.width=output.height=size;
+   const context=output.getContext('2d');if(!context)throw Error('Canvas unavailable.');
+   context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;
+   context.drawImage(renderer.surface,0,0,size,size);return output;
+  },
   createCapture(){
    if(!latest?.hasMarket)throw Error('Load a coin and choose a test milestone first.');
    if(!latest.holderBalances.length)throw Error('Individual wallet balances are required to export this holder-based visual.');
