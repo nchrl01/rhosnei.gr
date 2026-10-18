@@ -44,8 +44,12 @@ export function observedHolderBalances(m){
 }
 export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
+ const holdings=m.audience?.holdings,holderBalances=observedHolderBalances(m);
+ const holderSnapshotReady=!m.replay&&holdings?.weight>0&&holdings.state==='snapshot'
+  &&(holdings.complete||holdings.truncated||holdings.coverage==='top-holder-sample')
+  &&(holderBalances.length>0||(holdings.complete&&holdings.records?.length===0));
  return {coinKey,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
-  holderBalances:observedHolderBalances(m),holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.holdings?.state||m.audience?.relationships?.state||'unavailable',holderCoverage:m.audience?.holdings?.complete?'complete-indexed-list':m.audience?.holdings?.truncated?'top-10000':'partial-sample',change:0,
+  holderBalances,holderSnapshotReady,liveHolders:!m.replay,holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.holdings?.state||m.audience?.relationships?.state||'unavailable',holderCoverage:m.audience?.holdings?.complete?'complete-indexed-list':m.audience?.holdings?.truncated?'top-10000':'partial-sample',change:0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
@@ -54,6 +58,25 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(host),fullscreen=createVisualFullscreen(host);
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
+ const loadingNote=document.createElement('div');loadingNote.className='visual-holder-loading';loadingNote.hidden=true;host.append(loadingNote);
+ let initialHoldersReady=false,initialLoadShown=false,revealAfter=0;
+ function syncHolderLoading(now=performance.now()){
+  if(latest?.liveHolders&&latest.holderSnapshotReady&&!initialHoldersReady){
+   initialHoldersReady=true;
+   // Let the final batch's size animation settle before exposing a sharp field.
+   revealAfter=initialLoadShown&&!reduced.matches?now+350:0;
+  }
+  const state=latest?.holderProviderState;
+  const waiting=latest?.liveHolders&&!initialHoldersReady
+   &&(state==='loading'||state==='snapshot'||state==='rate-limited'||latest.holderBalances.length>0);
+  const loading=Boolean(latest?.liveHolders&&(waiting||now<revealAfter));
+  if(loading)initialLoadShown=true;
+  host.dataset.holderLoading=String(loading);host.setAttribute('aria-busy',String(loading));
+  loadingNote.hidden=!loading;
+  const label=initialHoldersReady?'Preparing live visual…':state==='loading'?'Loading holder balances…':'Holder data delayed · retrying…';
+  if(loading&&loadingNote.textContent!==label)loadingNote.textContent=label;
+ }
+
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let latest=null,settings={},key='',seed=0,clock=0,presence=0,transportPresence=0,identity=0,identityInput=0,color=0,colorTarget=0;
  let colorStart=0,colorDuration=2.4;
@@ -81,6 +104,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   if(closed)return;raf=requestAnimationFrame(draw);
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
+  syncHolderLoading(now);
   const state=getState(),playing=state.playing&&settings.playing!==false&&!settings.seeking&&!settings.ended;
   // Share the market-cap readout's up/down pulse; price change is not a shape input.
   latest.change=Math.sign(Number(state.markDirection)||0);
@@ -121,7 +145,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
+   if(changed){initialHoldersReady=false;initialLoadShown=false;revealAfter=0;}
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
+   syncHolderLoading();
    if(changed&&imageCoinKey!==key)renderer.setImage(null);
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
@@ -168,8 +194,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();loadingNote.remove();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

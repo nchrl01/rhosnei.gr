@@ -377,7 +377,12 @@ body.visual-expanded{overflow:hidden}
 .visual-placeholder{pointer-events:none;min-width:0}
 
 /* Keep the pixel lattice hard edged when the render buffer is scaled. */
-.audio-visualizer .pixel-blast-layer{image-rendering:pixelated;filter:none!important}
+/* Initial holder pagination is visible only as a soft preview. */
+.audio-visualizer .pixel-blast-layer{image-rendering:pixelated;filter:blur(0)!important;transition:filter .3s ease-out}
+.audio-visualizer[data-holder-loading="true"] .pixel-blast-layer{filter:blur(8px)!important;transition:none}
+.visual-holder-loading{position:absolute;left:16px;bottom:16px;right:16px;z-index:3;width:fit-content;max-width:calc(100% - 32px);padding:6px 9px;background:rgba(0,0,0,.8);color:#ddd;font-size:var(--font-size-small);line-height:1.4;pointer-events:none}
+.visual-holder-loading[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.audio-visualizer .pixel-blast-layer{transition:none}}
 @media(max-width:760px){
 .transport .visual-fullscreen,.audio-visualizer.is-expanded .visual-fullscreen{width:60px;height:60px;min-width:60px;min-height:60px;border-radius:50%!important;border:1px solid #777;padding:15px;box-sizing:border-box;background:#000;color:#f2f2f2}
 .transport .visual-fullscreen{position:static;flex:none;align-self:center}
