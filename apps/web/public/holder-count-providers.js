@@ -13,6 +13,24 @@ export async function fetchHolderCount(network,address){
  return fetchGoPlusCount(network,address,{image_url,reason});
 }
 
+// GoPlus returns token-unit balances, not raw integer base units.
+export function goPlusBalances(row,solana=false){
+ const accounts=new Map();
+ for(const holder of (Array.isArray(row?.holders)?row.holders:[]).slice(0,1000)){
+  const id=String(solana?holder.account:holder.address),raw=String(holder.balance??'');
+  if(!(solana?/^[1-9A-HJ-NP-Za-km-z]{32,44}$/:/^0x[0-9a-f]{40}$/i).test(id)||!/^\d+(?:\.\d+)?(?:e[+-]?\d+)?$/i.test(raw)||raw.length>100)continue;
+  const tokenBalance=Number(raw);if(!Number.isFinite(tokenBalance)||tokenBalance<=0)continue;
+  const wallet=solana?id:id.toLowerCase(),account=solana?String(holder.token_account||wallet):wallet;
+  // Repeated token-account rows are not extra holdings. Distinct Solana
+  // accounts owned by the same wallet are combined only within this sample.
+  const key=wallet+':'+account,previous=accounts.get(key);
+  if(!previous||previous.tokenBalance<tokenBalance)accounts.set(key,{id:wallet,tokenBalance});
+ }
+ const wallets=new Map();
+ for(const holder of accounts.values())wallets.set(holder.id,(wallets.get(holder.id)||0)+holder.tokenBalance);
+ return [...wallets].filter(([,value])=>Number.isFinite(value)).map(([id,tokenBalance])=>({id,tokenBalance}));
+}
+
 export async function fetchGoPlusCount(network,address,{image_url=null,reason='unavailable',signal}={}){
  const chain=HOLDER_NETWORKS[network],solana=network==='solana';
  if(!solana&&!chain)return {state:reason,holders:null};
@@ -24,7 +42,8 @@ export async function fetchGoPlusCount(network,address,{image_url=null,reason='u
    const body=await response.json(),row=body.result?.[address]||body.result?.[address.toLowerCase()],count=[1,2].includes(body.code)?countValue(row?.holder_count):null;
    reason=body.code===4029?'rate-limited':[1,2].includes(body.code)?'unavailable':'goplus-code-'+String(body.code);
    // Some unsupported GoPlus tokens report zero; do not present that as a verified total.
-   if(count!==null&&count>0)return {state:'snapshot',holders:count,lastUpdated:null,image_url,source:'GoPlus',approximate:true,fetchedAt:Date.now()};
+   const holderBalances=[1,2].includes(body.code)?goPlusBalances(row,solana):[];
+   if((count!==null&&count>0)||holderBalances.length)return {state:'snapshot',holders:count>0?count:null,holderBalances,lastUpdated:null,image_url,source:'GoPlus',approximate:true,fetchedAt:Date.now()};
   }else reason=response.status===429?'rate-limited':'goplus-http-'+response.status;
  }catch{reason='goplus-unavailable';}
  return {state:reason,holders:null};

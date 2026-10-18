@@ -1,6 +1,8 @@
+import {fetchGoPlusCount,HOLDER_NETWORKS} from './holder-count-providers.js?v=306';
 // Actual indexed ERC-20 balances. Public Blockscout reads require no API key.
 // A bounded, paginated sample is never expanded into invented wallets.
 const EXPLORERS={ethereum:'https://eth.blockscout.com',eth:'https://eth.blockscout.com',base:'https://base.blockscout.com',arbitrum:'https://arbitrum.blockscout.com',optimism:'https://explorer.optimism.io',polygon:'https://polygon.blockscout.com',polygon_pos:'https://polygon.blockscout.com',zksync:'https://zksync.blockscout.com',celo:'https://celo.blockscout.com',robinhood:'https://robinhoodchain.blockscout.com'};
+const ALIASES={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
 const LIMIT=10000,TTL=15*60000,MAX_AGE=60*60000,cache=new Map();
 const addressPattern=/^0x[0-9a-f]{40}$/i;
 export function tokenUnits(raw,decimals){
@@ -28,8 +30,9 @@ export function createHolderBalances({onChange=()=>{}}={}){
  function close(){epoch++;controller?.abort();clearTimeout(timer);state=empty('unavailable');}
  function setMarket(pair){
   close();const version=epoch,host=EXPLORERS[pair?.chainId],input=pair?.baseToken?.address;
-  if(!host||!addressPattern.test(input||'')){publish(empty(pair?'unsupported-network':'unavailable'));return;}
-  const address=input.toLowerCase(),key=host+':'+address;
+  const network=pair?.geckoNetwork||ALIASES[pair?.chainId]||pair?.chainId,solana=network==='solana';
+  if((!host&&!HOLDER_NETWORKS[network]&&!solana)||!(solana?/^[1-9A-HJ-NP-Za-km-z]{32,44}$/:addressPattern).test(input||'')){publish(empty(pair?'unsupported-network':'unavailable'));return;}
+  const address=solana?input:input.toLowerCase(),key=network+':'+address;
   const saved=cache.get(key);publish(saved||empty('loading'));
   async function refresh(){
    if(version!==epoch)return;
@@ -45,7 +48,13 @@ export function createHolderBalances({onChange=()=>{}}={}){
     if(!response.ok){const error=Error('holder-provider-'+response.status);error.rateLimited=response.status===429;throw error;}
     return response.json();
    }
+   async function sample(){
+    const result=await fetchGoPlusCount(network,address,{signal});if(!current())return;
+    if(!result.holderBalances?.length){const error=Error('holder-sample-unavailable');error.rateLimited=result.state==='rate-limited';throw error;}
+    publish({source:'GoPlus',network,address,totalHolders:result.holders,fetchedAt:result.fetchedAt,state:'snapshot',coverage:'top-holder-sample',records:result.holderBalances,complete:false,truncated:false,nextAt:Date.now()+TTL});
+   }
    try{
+    if(!host){await sample();return;}
     const token=await read(url);if(!current())return;
     const decimals=token.decimals==null?NaN:Number(token.decimals);
     if(token.type!=='ERC-20'||!Number.isInteger(decimals)||decimals<0||decimals>80)throw Error('unsupported-token');
@@ -91,6 +100,7 @@ export function createHolderBalances({onChange=()=>{}}={}){
     if(!finished&&state.records.length<LIMIT)publish({...state,state:'partial',complete:false});
    }catch(error){
     if(!current())return;
+    if(host&&!snapshot().records.length){try{await sample();return;}catch(fallbackError){error=fallbackError;if(!current())return;}}
     publish({...state,state:state.records.length?'delayed':error.rateLimited?'rate-limited':'unavailable',complete:false,nextAt:Date.now()+(error.rateLimited?5*60000:2*60000)});
    }finally{
     if(current()){cache.set(key,state);timer=setTimeout(refresh,Math.max(60000,(state.nextAt||Date.now()+TTL)-Date.now()));}
