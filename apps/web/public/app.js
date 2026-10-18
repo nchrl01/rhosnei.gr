@@ -20,7 +20,8 @@ import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=earthbound-9';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=302';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=303';
+import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
@@ -257,7 +258,8 @@ function currentLiquidity(now=Date.now()){
  // Pool liquidity comes from the market snapshot. Once that snapshot is older
  // than the normal freshness grace, do not let its old depth keep shaping the
  // visual lattice or reverb.
- return now-lastSnapshot<liquiditySnapshotMaxAge()?market.liquidity?.usd:null;
+ const snapshot=poolLiquiditySnapshot(market,now);
+ return snapshot&&now-snapshot.at<liquiditySnapshotMaxAge()?snapshot.usd:null;
 }
 function liveMetrics(){
  if(!market)return contextualizeMarket({motion:0,activity:0,balance:.5,texture:0,volume:0,fresh:0,snapshotFresh:0,snapshotAge:Infinity},{price:0,history:[],interval:1000});
@@ -577,7 +579,8 @@ function display(){
  const tx=historical?recorded?historical.observation?.trades:null:market?.txns?.m5;
  $('trades').textContent=!historical&&exchangeMarket?tradeEvents.length:tx?(tx.buys||0)+(tx.sells||0):'—';
  $('trades-window').textContent=historical?'HISTORICAL TRADES · 5 MIN':exchangeMarket?'TRADES · OBSERVED 30 SEC':'TRADES · 5 MIN';
- const snapshotLiquidity=!exchangeMarket&&Date.now()-lastSnapshot<1800000?market?.liquidity?.usd:null;
+ const poolSnapshot=!exchangeMarket?poolLiquiditySnapshot(market):null;
+ const snapshotLiquidity=poolSnapshot?.usd;
  const recordedLiquidity=historical?.observation?.liquidity;
  const hasRecordedLiquidity=recordedLiquidity!=null&&Number.isFinite(Number(recordedLiquidity));
  const latestLiquidity=Boolean(historical)&&!hasRecordedLiquidity;
@@ -585,7 +588,7 @@ function display(){
  const liquidityAvailable=liquidity!=null&&Number.isFinite(Number(liquidity));
  $('liquidity-label').textContent=(exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY')+(latestLiquidity?' · LATEST':'');
  $('liquidity').textContent=liquidityAvailable?cash(liquidity):'Unavailable';
- $('liquidity').title=historical&&hasRecordedLiquidity?'Liquidity recorded at this replay point':exchangeMarket?'Current exchange order-book depth':liquidityAvailable?'Selected pool liquidity · snapshot received '+new Date(lastSnapshot).toLocaleTimeString()+(Date.now()-lastSnapshot>liquiditySnapshotMaxAge()?' · updates delayed':'')+(latestLiquidity?' · latest available, not historical liquidity':''): 'Selected pool liquidity is unavailable';
+ $('liquidity').title=historical&&hasRecordedLiquidity?'Liquidity recorded at this replay point':exchangeMarket?'Current exchange order-book depth':liquidityAvailable?'Selected pool liquidity · snapshot received '+new Date(poolSnapshot?.at||lastSnapshot).toLocaleTimeString()+(Date.now()-(poolSnapshot?.at||lastSnapshot)>liquiditySnapshotMaxAge()?' · updates delayed':'')+(latestLiquidity?' · latest available, not historical liquidity':''): 'Selected pool liquidity is unavailable';
  displayHolderCount();
  updateContext();
 }
@@ -693,7 +696,7 @@ async function completeMarketCap(pair,{signal}={}){
 async function freshMarketSnapshot(pair,{signal}={}){
  if(isExchangeMarket(pair))return prepareExchangeMarket(pair);
  const chain=pair.chainId,address=pair.pairAddress,token=pair.baseToken.address;
- if(pair.snapshotProvider!=='gecko'){
+ if(pair.snapshotProvider!=='gecko'||pair.chainId==='robinhood'){
   try{
    const data=await fetchJSON('https://api.dexscreener.com/latest/dex/pairs/'+encodeURIComponent(chain)+'/'+encodeURIComponent(address),{signal});
    const raw=(data.pairs||[]).find(p=>p.chainId===chain&&(/^0x/i.test(address)?p.pairAddress?.toLowerCase()===address.toLowerCase():p.pairAddress===address));
@@ -741,6 +744,7 @@ async function findOnchainMarkets(query,{network,signal}={}){
  }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
 function applySnapshot(pair){
+ if(!isExchangeMarket(pair))rememberPoolLiquidity(pair);
  const previous=currentPrice();
  if(market&&imageKey(pair)===imageKey(market)){
   const oldTx=market.txns?.m5||{},newTx=pair.txns?.m5||{};
@@ -766,6 +770,7 @@ function chooseMarket(pair,{shared=false}={}){
  lastMarketActivityAt=0;generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
  resetEnsemble();mode='live';market=pair;testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
+ if(!isExchangeMarket(pair)){const version=generation;void loadPoolLiquidity(pair).then(()=>{if(version===generation)display();});}
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
  sharedMarket=shared;

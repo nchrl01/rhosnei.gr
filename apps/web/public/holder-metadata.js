@@ -1,8 +1,21 @@
+import {fetchGoPlusCount} from './holder-count-providers.js?v=303';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {createHolderClusters} from './holder-clusters.js?v=168';
 const RELAY='https://upic-insightx.nchrl01.workers.dev/holders';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
 const cache=new Map(),HOUR=3600000;
+let nextDirectAt=0;
+try{for(const [key,value] of JSON.parse(localStorage.getItem('upic-holder-counts-v1')||'[]').slice(-32)){if(Number.isSafeInteger(value?.holders)&&value.holders>=0&&Date.now()-value.receivedAt<30*60000)cache.set(key,value);}}catch{}
+function saveCounts(){try{localStorage.setItem('upic-holder-counts-v1',JSON.stringify([...cache].slice(-32)));}catch{}}
+async function browserCount(network,address,signal){
+ const delay=Math.max(0,nextDirectAt-Date.now());nextDirectAt=Date.now()+delay+6000;
+ if(delay>30000)return {state:'budget-wait',holders:null,retryAt:Date.now()+delay};
+ if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
+ if(signal.aborted)throw new DOMException('Aborted','AbortError');
+ const result=await fetchGoPlusCount(network,address,{signal});
+ if(result.state==='rate-limited')nextDirectAt=Math.max(nextDirectAt,Date.now()+60000);
+ return result;
+}
 export function holderCountReadout(info={},historical=false){
  const available=Number.isSafeInteger(info.holders)&&info.holders>=0;
  const label=historical?'HOLDERS · LATEST':'HOLDERS';
@@ -37,9 +50,13 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
    if(typeof document!=='undefined'&&document.hidden){timer=setTimeout(refresh,30000);return;}
    controller=new AbortController();const abort=controller,timeout=setTimeout(()=>abort.abort(),120000);
    try{
-    const response=await fetch(RELAY+'?'+new URLSearchParams({network,address}),{signal:abort.signal,credentials:'omit'});
-    if(!response.ok)throw Error('Holder metadata unavailable');
-    const result=await response.json();if(version!==epoch)return;
+    let result;
+    try{
+     const response=await fetch(RELAY+'?'+new URLSearchParams({network,address}),{signal:abort.signal,credentials:'omit'});
+     if(response.ok)result=await response.json();
+    }catch{if(abort.signal.aborted)return;}
+    if(result?.holders==null)result=await browserCount(network,address,abort.signal);
+    if(version!==epoch)return;
     const raw=result.holders,count=Number(raw),receivedAt=Date.now();
     if(result.image_url)try{onInfo({image_url:result.image_url},pair);}catch{}
     if(!['number','string'].includes(typeof raw)||String(raw).trim()===''||!Number.isSafeInteger(count)||count<0){
@@ -47,12 +64,13 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
     }else{
      const parsed=Date.parse(result.lastUpdated);
      const next={state:result.state==='delayed'?'delayed':'snapshot',holders:count,countAt:Number.isFinite(parsed)&&parsed<=receivedAt+300000?parsed:null,receivedAt,source:result.source||'GeckoTerminal',approximate:Boolean(result.approximate),retryAt:result.retryAt,watchers:null};
-     cache.set(tokenKey,next);if(cache.size>32)cache.delete(cache.keys().next().value);publish(next);
+     cache.set(tokenKey,next);if(cache.size>32)cache.delete(cache.keys().next().value);saveCounts();publish(next);
     }
    }catch{if(version===epoch)publish(state.holders===null?{state:'unavailable',holders:null,watchers:null}:{...state,state:'delayed'});}
    finally{clearTimeout(timeout);if(version===epoch)timer=setTimeout(refresh,state.retryAt?Math.max(30000,Math.min(1800000,state.retryAt-Date.now())):state.holders===null?60000:1800000);}
   }
-  void refresh();
+  if(saved&&Date.now()-saved.receivedAt<30*60000)timer=setTimeout(refresh,30*60000-(Date.now()-saved.receivedAt));
+  else void refresh();
  }
  return {setMarket,snapshot,close(){clusters.close();epoch++;controller?.abort();clearTimeout(timer);}};
 }
