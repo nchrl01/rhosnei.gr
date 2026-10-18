@@ -17,15 +17,21 @@ function identityKey(raw){
  catch{return JSON.stringify([chain,address]);}
 }
 function seedFor(key){let seed=2166136261;for(const c of key)seed=Math.imul(seed^c.charCodeAt(0),16777619);return seed>>>0;}
-export function observedHolderBalances(m){
+function observedHolderSnapshot(m){
  // Counts or aggregate cluster percentages cannot reconstruct individual
  // holdings. Use only actual per-wallet values from the current snapshot.
- if(m.replay)return [];
+ if(m.replay)return {balances:[],source:'unavailable',providerState:'historical-unavailable',primaryProviderState:'historical-unavailable',coverage:'unavailable',loading:false,settled:false};
  const audience=m.audience||{},relations=audience.relationships,holdings=audience.holdings,records=[];
- if(holdings?.weight>0&&(holdings.complete||holdings.records?.length))records.push(...holdings.records);
- else if(Array.isArray(audience.holderBalances)&&audience.weight>0)records.push(...audience.holderBalances);
- else if(relations?.weight>0)for(const cluster of relations.clusters||[])for(const wallet of cluster.wallets||[]){
-  records.push({id:wallet.address,percentage:wallet.percentage});
+ let selected=null,source='unavailable',coverage='unavailable';
+ const supplied=Array.isArray(audience.holderBalances)&&audience.weight>0;
+ if(holdings?.weight>0&&(holdings.complete||holdings.records?.length)){
+  selected=holdings;source=holdings.source||'indexed-balances';records.push(...(holdings.records||[]));
+  coverage=holdings.complete?'complete-indexed-list':holdings.truncated?'top-10000':holdings.coverage==='top-holder-sample'?'top-holder-sample':'partial-sample';
+ }else if(supplied){
+  selected=audience;source='supplied-balances';coverage='partial-sample';records.push(...audience.holderBalances);
+ }else if(relations?.weight>0){
+  selected=relations;source=relations.source||'relationship-wallets';coverage='partial-sample';
+  for(const cluster of relations.clusters||[])for(const wallet of cluster.wallets||[])records.push({id:wallet.address,percentage:wallet.percentage});
  }
  const wallets=new Map();
  for(const record of records){
@@ -41,16 +47,22 @@ export function observedHolderBalances(m){
   const key=/^0x[0-9a-f]{40}$/i.test(id)?id.toLowerCase():id;
   wallets.set(key,Math.max(balance,wallets.get(key)||0));
  }
- return [...wallets].map(([id,balance])=>({id,balance})).sort((a,b)=>b.balance-a.balance||a.id.localeCompare(b.id)).slice(0,10000);
+ const balances=[...wallets].map(([id,balance])=>({id,balance})).sort((a,b)=>b.balance-a.balance||a.id.localeCompare(b.id)).slice(0,10000);
+ // Fetch completion and coverage are separate: a terminal partial/fallback
+ // sample can sharpen without being presented as a complete holder list.
+ const primaryProviderState=holdings?.state||'unavailable';
+ const loading=primaryProviderState==='loading'||(selected!==holdings&&!supplied&&relations?.state==='loading');
+ const settled=Boolean(holdings||relations||supplied)&&!loading;
+ return {balances,source,coverage,providerState:selected?.state||primaryProviderState,primaryProviderState,loading,settled};
+}
+export function observedHolderBalances(m={}){
+ return observedHolderSnapshot(m).balances;
 }
 export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
- const holdings=m.audience?.holdings,holderBalances=observedHolderBalances(m);
- const holderSnapshotReady=!m.replay&&holdings?.weight>0&&holdings.state==='snapshot'
-  &&(holdings.complete||holdings.truncated||holdings.coverage==='top-holder-sample')
-  &&(holderBalances.length>0||(holdings.complete&&holdings.records?.length===0));
+ const holders=observedHolderSnapshot(m),holderBalances=holders.balances;
  return {coinKey,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
-  holderBalances,holderSnapshotReady,liveHolders:!m.replay,holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.holdings?.state||m.audience?.relationships?.state||'unavailable',holderCoverage:m.audience?.holdings?.complete?'complete-indexed-list':m.audience?.holdings?.truncated?'top-10000':'partial-sample',change:0,
+  holderBalances,holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
@@ -61,7 +73,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
  function syncHolderLoading(rendered=false,now=performance.now()){
-  if(latest?.liveHolders&&latest.holderSnapshotReady&&!initialHoldersReady){
+  if(latest?.liveHolders&&latest.holderFetchSettled&&!initialHoldersReady){
    initialHoldersReady=true;
    // Wait for the renderer itself: loading may finish while the tab is hidden.
    awaitingHolderRender=initialLoadShown;holderRevealStarted=null;
@@ -69,12 +81,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   if(rendered&&latest?.liveHolders&&awaitingHolderRender){
    const motion=renderer.snapshot();
    if(holderRevealStarted===null)holderRevealStarted=now;
-   // New live ticks must not keep a fully received snapshot blurred forever.
+   // New live ticks must not keep a settled provider outcome blurred forever.
    if((!motion.sizeTransition&&!motion.positionTransition)||now-holderRevealStarted>=650)awaitingHolderRender=false;
   }
-  const state=latest?.holderProviderState;
-  const waiting=latest?.liveHolders&&!initialHoldersReady
-   &&(state==='loading'||state==='snapshot'||state==='rate-limited'||latest.holderBalances.length>0);
+  const waiting=latest?.liveHolders&&!initialHoldersReady&&latest.holderFetchLoading;
   const loading=Boolean(latest?.liveHolders&&(waiting||awaitingHolderRender));
   if(loading)initialLoadShown=true;
   host.dataset.holderLoading=String(loading);host.setAttribute('aria-busy',String(loading));
@@ -218,7 +228,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:contentFrame.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:contentFrame.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',holderBalanceSource:latest?.holderBalanceSource??'unavailable',totalHolders:latest?.totalHolders??null,holderProviderState:latest?.holderProviderState??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();contentFrame.close();delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };

@@ -13,6 +13,7 @@ export function tokenUnits(raw,decimals){
  return Number.isFinite(amount)&&amount>0?amount:null;
 }
 const empty=state=>({state,source:'Blockscout',records:[],weight:0,totalHolders:null,complete:false,truncated:false});
+const expired=entry=>Boolean(entry?.fetchedAt)&&Date.now()-entry.fetchedAt>=MAX_AGE;
 const sleep=(ms,signal)=>new Promise((resolve,reject)=>{
  if(signal.aborted){reject(signal.reason);return;}
  const abort=()=>{clearTimeout(timer);reject(signal.reason);};
@@ -33,14 +34,22 @@ export function createHolderBalances({onChange=()=>{}}={}){
   const network=pair?.geckoNetwork||ALIASES[pair?.chainId]||pair?.chainId,solana=network==='solana';
   if((!host&&!HOLDER_NETWORKS[network]&&!solana)||!(solana?/^[1-9A-HJ-NP-Za-km-z]{32,44}$/:addressPattern).test(input||'')){publish(empty(pair?'unsupported-network':'unavailable'));return;}
   const address=solana?input:input.toLowerCase(),key=network+':'+address;
-  const saved=cache.get(key);publish(saved||empty('loading'));
+  const saved=cache.get(key);
+  const reuse=saved&&!expired(saved)&&(saved.records.length||saved.complete||saved.nextAt>Date.now());
+  publish(reuse?saved:empty('loading'));
   async function refresh(){
    if(version!==epoch)return;
    if(document.hidden){timer=setTimeout(refresh,30000);return;}
    const cached=cache.get(key);
-   if(cached?.state!=='loading'&&cached?.nextAt>Date.now()){publish(cached);timer=setTimeout(refresh,cached.nextAt-Date.now());return;}
+   if(cached?.state!=='loading'&&!expired(cached)&&cached?.nextAt>Date.now()){publish(cached);timer=setTimeout(refresh,cached.nextAt-Date.now());return;}
    controller=new AbortController();const signal=controller.signal;
    const current=()=>version===epoch&&!signal.aborted;
+   // Keep a settled, usable snapshot visible while its replacement is paginated.
+   // Its original fetchedAt still controls expiry throughout the refresh.
+   const retained=snapshot().weight>0&&state.state!=='loading'&&(state.records.length||state.complete)?state:null;
+   // A new attempt without usable data must be loading before any page arrives.
+   // Clear expired timestamps so snapshot() cannot turn this back into expired.
+   if(!retained)publish(empty('loading'));
    const url=host+'/api/v2/tokens/'+address;
    async function read(target){
     const timeout=AbortSignal.timeout(20000);
@@ -93,15 +102,16 @@ export function createHolderBalances({onChange=()=>{}}={}){
       seenCursors.add(cursorKey);
      }
      const truncated=!finished&&records.size>=LIMIT;
-     const nextState={...base,state:finished||truncated?'snapshot':'loading',records:[...records.values()],pages,invalid,complete:finished&&invalid===0,truncated,nextAt:Date.now()+TTL};
-     publish(nextState);cache.set(key,nextState);if(cache.size>8)cache.delete(cache.keys().next().value);
+     const terminal=finished||truncated||pages>=250;
+     const nextState={...base,state:finished||truncated?'snapshot':terminal?'partial':'loading',records:[...records.values()],pages,invalid,complete:finished&&invalid===0,truncated,nextAt:Date.now()+TTL};
+     if(!retained||terminal){publish(nextState);cache.set(key,nextState);if(cache.size>8)cache.delete(cache.keys().next().value);}
      if(finished||truncated)break;
     }while(pages<250);
-    if(!finished&&state.records.length<LIMIT)publish({...state,state:'partial',complete:false});
    }catch(error){
     if(!current())return;
-    if(host&&!snapshot().records.length){try{await sample();return;}catch(fallbackError){error=fallbackError;if(!current())return;}}
-    publish({...state,state:state.records.length?'delayed':error.rateLimited?'rate-limited':'unavailable',complete:false,nextAt:Date.now()+(error.rateLimited?5*60000:2*60000)});
+    if(!retained&&host&&!snapshot().records.length){try{await sample();return;}catch(fallbackError){error=fallbackError;if(!current())return;}}
+    const nextAt=Date.now()+(error.rateLimited?5*60000:2*60000);
+    publish(retained?{...retained,state:'delayed',nextAt}:{...state,state:state.records.length?'delayed':error.rateLimited?'rate-limited':'unavailable',complete:false,nextAt});
    }finally{
     if(current()){cache.set(key,state);timer=setTimeout(refresh,Math.max(60000,(state.nextAt||Date.now()+TTL)-Date.now()));}
    }
