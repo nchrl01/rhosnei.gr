@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-11';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-12';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=141';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -45,7 +45,7 @@ export function observedHolderBalances(m){
 export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  return {coinKey,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
-  holderBalances:observedHolderBalances(m),holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.holdings?.state||m.audience?.relationships?.state||'unavailable',holderCoverage:m.audience?.holdings?.complete?'complete-indexed-list':m.audience?.holdings?.truncated?'top-10000':'partial-sample',change:finite(m.music?.changePct)??0,
+  holderBalances:observedHolderBalances(m),holderSource:'observed',totalHolders:finite(m.audience?.holders),holderProviderState:m.audience?.holdings?.state||m.audience?.relationships?.state||'unavailable',holderCoverage:m.audience?.holdings?.complete?'complete-indexed-list':m.audience?.holdings?.truncated?'top-10000':'partial-sample',change:0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
@@ -64,14 +64,16 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const form=document.getElementById('coin-form');
   const top=mobile.matches?0:Math.max(0,Math.round((form?.getBoundingClientRect().top??0)+scrollY-(parseFloat(getComputedStyle(form||host).marginTop)||0)+(parseFloat(getComputedStyle(host).marginTop)||0)));
   host.style.setProperty('--visual-top',top+'px');
-  host.style.setProperty('--visual-height',Math.max(180,Math.round(mobile.matches?innerHeight*.56:innerHeight-top))+'px');
+  const footer=document.querySelector('.site-footer');
+  const footerHeight=!mobile.matches&&footer&&getComputedStyle(footer).position==='fixed'?footer.getBoundingClientRect().height:0;
+  host.style.setProperty('--visual-height',Math.max(180,Math.round(mobile.matches?innerHeight*.56:innerHeight-top-footerHeight))+'px');
   const box=canvas.getBoundingClientRect();width=Math.max(0,Math.round(box.width));height=Math.max(0,Math.round(box.height));}
  function arrange(){
   const title=document.querySelector('.coin-title');
   if(!host.classList.contains('is-expanded')){if(mobile.matches&&title){if(host.parentElement!==title)title.prepend(host);}else anchor.parentNode?.insertBefore(host,anchor);}
   size();
  }
- const resize=new ResizeObserver(size);resize.observe(host);const header=document.querySelector('.market-header');if(header)resize.observe(header);
+ const resize=new ResizeObserver(size);resize.observe(host);const header=document.querySelector('.market-header');if(header)resize.observe(header);const footer=document.querySelector('.site-footer');if(footer)resize.observe(footer);
  const observer=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{visible=entries[0]?.isIntersecting??true;last=0;}):null;observer?.observe(host);
  const visibility=()=>{last=0;size();};
  mobile.addEventListener('change',arrange);window.addEventListener('resize',size);document.addEventListener('visibilitychange',visibility);arrange();
@@ -80,6 +82,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
   const state=getState(),playing=state.playing&&settings.playing!==false&&!settings.seeking&&!settings.ended;
+  // Share the market-cap readout's up/down pulse; price change is not a shape input.
+  latest.change=Math.sign(Number(state.markDirection)||0);
   const fresh=latest.fresh>0;
   // Original transport envelope: fast return on Play, cap-scaled release on
   // Pause, and a dim sparse field left behind. Audio amplitude is not an input.
@@ -117,7 +121,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
-   key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);
+   key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    if(changed&&imageCoinKey!==key)renderer.setImage(null);
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;

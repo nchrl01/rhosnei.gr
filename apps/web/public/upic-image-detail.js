@@ -1,5 +1,7 @@
 // Deliberate calibration for the local study, not token market estimates.
-const capAnchors=[[1,4],[3000,4],[1e5,8],[5e5,16],[2e6,32],[1e7,64]];
+// Full detail now arrives with the field's $1M spatial opening. The independent
+// artwork-colour milestone still receives the real, unclamped market cap.
+const capAnchors=[[1,4],[3000,4],[20000,8],[100000,16],[500000,32],[1e6,64]];
 function resolutionAt(value,anchors){
  const v=Number.isFinite(value)?Math.max(0,value):0;
  for(let i=1;i<anchors.length;i++){

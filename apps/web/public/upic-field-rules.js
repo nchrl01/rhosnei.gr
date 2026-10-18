@@ -56,21 +56,25 @@ export function parseHolderBalances(text){
 }
 
 export function deriveFieldRules(inputs={}){
-  const marketCap=Math.min(1e9,finite(inputs.marketCap)&&inputs.marketCap>0?inputs.marketCap:1);
+  // Spatial/detail maturity is reached at $1M. This local clamp does not alter
+  // the actual cap used by the renderer's independent $50M colour milestone.
+  const marketCap=Math.min(1e6,finite(inputs.marketCap)&&inputs.marketCap>0?inputs.marketCap:1);
   const liquidity=finite(inputs.liquidity)&&inputs.liquidity>=0?inputs.liquidity:0;
-  // Calibration: liquidity $0..$10M for spacing, $1..$50M for gradual field
+  // Calibration: liquidity $0..$10M for spacing, $1..$1M for gradual field
   // opening. Dot sizes use USD holdings as a share of liquidity.
   // These bounded ranges are separate from the permanent mapping directions.
-  const capDepth=clamp((Math.log10(marketCap)-2)/7,0,1);
+  const capDepth=clamp((Math.log10(marketCap)-2)/4,0,1);
   // Lower liquidity tightens a regular grid; higher liquidity widens it.
   const gapPx=1+15*smoothstep(Math.log10(1+liquidity/1000)/4);
   // Keep the surface/image frame fixed. A separate spatial envelope gathers
   // low-cap marks near the centre without scaling image coordinates.
   const canvasSize=2048;
-  const zoomProgress=smoothstep(Math.log10(marketCap/3000)/Math.log10(1e9/3000));
+  const zoomProgress=smoothstep(Math.log10(marketCap/3000)/Math.log10(1e6/3000));
   const zoomScale=4-3*zoomProgress;
-  const densityAnchors=[[1,1],[3000,32],[1e6,256],[1e7,1024],[5e7,2048],[1e9,4096],[1e10,10000]];
-  let dotBudget=10000;
+  // Study diagnostics only: the live lattice always draws the observed holder
+  // records below; this cap calibration must never invent or remove wallets.
+  const densityAnchors=[[1,1],[3000,32],[20000,256],[100000,1024],[500000,2048],[1e6,4096]];
+  let dotBudget=4096;
   for(let i=1;i<densityAnchors.length;i++){
     const [lo,a]=densityAnchors[i-1],[hi,b]=densityAnchors[i];
     if(marketCap<=hi){
@@ -78,8 +82,7 @@ export function deriveFieldRules(inputs={}){
       dotBudget=Math.max(1,Math.round(a*(b/a)**t));break;
     }
   }
-  const fieldRelease=smoothstep(Math.log10(marketCap/1e7)/Math.log10(5));
-  const midCapOpening=smoothstep(Math.log10(marketCap/1e4)/2);
+  const fieldRelease=smoothstep(Math.log10(marketCap/1e5));
   const openingAnchors=[[1,.002],[3000,.08],[20000,.22],[100000,.5],[1000000,1]];
   let fieldSpan=1;
   for(let i=1;i<openingAnchors.length;i++){
@@ -91,7 +94,6 @@ export function deriveFieldRules(inputs={}){
   }
   const edgeShrink=1-fieldSpan;
   const edgePower=1+3*(1-capDepth)**2;
-  const emergence=clamp(Math.log10(marketCap)/Math.log10(50e6),0,1);
   // Field opening is monotonic and finishes at $1M.
   const liquidityDepth=clamp(Math.log10(1+liquidity/1000)/4,0,1);
   const balances=normalizeHolderBalances(inputs.holderBalances);
@@ -126,7 +128,7 @@ function hash(text){let value=2166136261;for(const c of text)value=Math.imul(val
 export function buildMarkLayout(inputs,settings={},width=512,height=512){
   const rules=deriveFieldRules(inputs),count=rules.balances.length;
   if(!count)return {marks:[],rules:{...rules,allocatedDots:0}};
-  const zoom=rules.zoomScale,referenceScale=Math.min(width,height)/512;
+  const referenceScale=Math.min(width,height)/512;
   // Match the grid to the actual panel rather than centring a square inside it.
   const columns=Math.max(1,Math.min(count,Math.round(Math.sqrt(count*width/height)))),rows=Math.ceil(count/columns);
   const fieldWidth=width*rules.fieldSpan,fieldHeight=height*rules.fieldSpan;

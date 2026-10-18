@@ -2,8 +2,8 @@ import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-10'
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
 import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-10';
 import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-10';
-import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-10';
-import {imageDetailRules} from './upic-image-detail.js?v=earthbound-10';
+import {buildMarkLayout} from './upic-field-rules.js?v=earthbound-12';
+import {imageDetailRules} from './upic-image-detail.js?v=earthbound-12';
 import {artworkBackground} from './upic-artwork-detail.js?v=earthbound-10';
 import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-10';
 const fract=x=>x-Math.floor(x),mix=(a,b,t)=>a+(b-a)*t,clamp=x=>Math.max(0,Math.min(1,x));
