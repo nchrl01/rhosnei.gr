@@ -1,4 +1,4 @@
-import {createCoinSummary} from './coin-summary.js?v=335';
+import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=335';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=335';
 import {createTestMint} from './test-mint.js?v=3';
