@@ -29,7 +29,8 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   clusters.setMarket(pair);
   epoch++;controller?.abort();clearTimeout(timer);key='';
   if(!pair){publish({state:'unavailable',holders:null,watchers:null});return;}
-  const network=aliases[pair.chainId]||pair.chainId,address=pair.baseToken.address;
+  const network=aliases[pair.chainId]||pair.chainId,input=pair.baseToken.address;
+  const address=/^0x[0-9a-fA-F]{40}$/.test(input)?input.toLowerCase():input;
   key=network+':'+address;const tokenKey=key,version=epoch;
   const saved=cache.get(key);publish(saved||{state:'loading',holders:null,watchers:null});
   const url='https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/tokens/'+encodeURIComponent(address)+'/info';

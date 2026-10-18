@@ -67,7 +67,8 @@ async function artwork(url,headers){
 
 // Public token metadata only; fixed upstream and bounded inputs prevent an open proxy.
 async function holderCount(url,headers){
- const network=url.searchParams.get('network')||'',address=url.searchParams.get('address')||'';
+ const network=url.searchParams.get('network')||'',input=url.searchParams.get('address')||'';
+ const address=/^0x[0-9a-fA-F]{40}$/.test(input)?input.toLowerCase():input;
  if(!/^[a-z0-9_-]{1,40}$/.test(network)||! /^[a-zA-Z0-9:_-]{1,128}$/.test(address))return json({state:'invalid-token'},400,headers);
  const key=new Request(new URL('/holders?'+new URLSearchParams({network,address}),url.origin));
  const cache=caches.default,cached=await cache.match(key);
