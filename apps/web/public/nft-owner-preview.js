@@ -4,9 +4,9 @@ export function createNftOwnerPreview(panel,visual){
  const mobile=matchMedia('(max-width:760px)'),anchor=document.createComment('NFT owner preview position');
  panel.parentNode.insertBefore(anchor,panel);
  function arrange(){
-  if(mobile.matches&&visual.parentElement?.classList.contains('coin-title'))visual.after(panel);
+  const player=document.querySelector('.instrument');
+  if(mobile.matches&&player)player.append(panel);
   else anchor.parentNode?.insertBefore(panel,anchor.nextSibling);
-  document.querySelector('.coin-title')?.classList.toggle('has-owner-preview',mobile.matches&&!panel.hidden);
  }
  function setMarket(pair){
   panel.hidden=!pair;

@@ -516,6 +516,5 @@ body.visual-expanded{overflow:hidden}
 .nft-owner-name{font-size:var(--font-size-body);color:var(--control-ink,#fff)}
 .nft-owner-edition{overflow-wrap:anywhere}
 @media(min-width:761px){.nft-owner-preview{grid-column:1;grid-row:5;align-self:start;width:100%;margin:8px 0 12px}}
-@media(max-width:760px){.coin-title>.nft-owner-preview{grid-column:1/-1;grid-row:2;width:100%;padding:12px 0;margin-bottom:4px;align-self:start}.nft-owner-avatar{width:32px;height:32px}.nft-owner-wallet{overflow-wrap:anywhere}}
+@media(max-width:760px){.instrument>.nft-owner-preview{width:100%;padding:12px 0;margin:16px 0 4px;align-self:start}.nft-owner-avatar{width:32px;height:32px}.nft-owner-wallet{overflow-wrap:anywhere}}
 
-@media(max-width:760px){.coin-title.has-owner-preview>.coin-avatar,.coin-title.has-owner-preview #coin-name{grid-row:3}.coin-title.has-owner-preview .coin-live-readings{grid-row:4}}
