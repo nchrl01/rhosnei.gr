@@ -56,7 +56,7 @@ export function parseHolderBalances(text){
 }
 
 export function deriveFieldRules(inputs={}){
-  const marketCap=finite(inputs.marketCap)&&inputs.marketCap>0?inputs.marketCap:1e6;
+  const marketCap=Math.min(1e9,finite(inputs.marketCap)&&inputs.marketCap>0?inputs.marketCap:1);
   const liquidity=finite(inputs.liquidity)&&inputs.liquidity>=0?inputs.liquidity:0;
   // Calibration: liquidity $0..$10M for spacing, $1..$50M for gradual field
   // opening. Dot sizes use USD holdings as a share of liquidity.
@@ -67,7 +67,7 @@ export function deriveFieldRules(inputs={}){
   // Keep the surface/image frame fixed. A separate spatial envelope gathers
   // low-cap marks near the centre without scaling image coordinates.
   const canvasSize=2048;
-  const zoomProgress=smoothstep(Math.log10(marketCap/3000)/Math.log10(1e10/3000));
+  const zoomProgress=smoothstep(Math.log10(marketCap/3000)/Math.log10(1e9/3000));
   const zoomScale=4-3*zoomProgress;
   const densityAnchors=[[1,1],[3000,32],[1e6,256],[1e7,1024],[5e7,2048],[1e9,4096],[1e10,10000]];
   let dotBudget=10000;
@@ -80,10 +80,19 @@ export function deriveFieldRules(inputs={}){
   }
   const fieldRelease=smoothstep(Math.log10(marketCap/1e7)/Math.log10(5));
   const midCapOpening=smoothstep(Math.log10(marketCap/1e4)/2);
-  const edgeShrink=(.02+.46*(1-capDepth**2))*(1-.35*midCapOpening)*(1-fieldRelease);
+  const openingAnchors=[[1,.002],[3000,.08],[20000,.22],[100000,.5],[1000000,1]];
+  let fieldSpan=1;
+  for(let i=1;i<openingAnchors.length;i++){
+    const [lo,a]=openingAnchors[i-1],[hi,b]=openingAnchors[i];
+    if(marketCap<=hi){
+      const t=smoothstep(Math.log(Math.max(1,marketCap)/lo)/Math.log(hi/lo));
+      fieldSpan=a+(b-a)*t;break;
+    }
+  }
+  const edgeShrink=1-fieldSpan;
   const edgePower=1+3*(1-capDepth)**2;
   const emergence=clamp(Math.log10(marketCap)/Math.log10(50e6),0,1);
-  const fieldSpan=.02+.98*emergence**4+.9*midCapOpening*(1-emergence);
+  // Field opening is monotonic and finishes at $1M.
   const liquidityDepth=clamp(Math.log10(1+liquidity/1000)/4,0,1);
   const balances=normalizeHolderBalances(inputs.holderBalances);
   // Balances and liquidity are USD. A fourth-root response softens size differences
@@ -91,6 +100,12 @@ export function deriveFieldRules(inputs={}){
   // 1% -> 8px, 4% -> about 11px; cap at 20px. Layout applies raster floors,
   // edge shrink and the minimum clear gap after this calculation.
   const liquidityShares=balances.map(h=>liquidity>0?h.balance/liquidity:null);
+  // Absolute USD ceiling prevents tiny bags from looking dominant in thin liquidity.
+  const markBrightness=liquidityShares.map((share,i)=>{
+    const ratioBrightness=share===null?.01:Math.min(1,Math.max(.01,Math.sqrt(share/.01)));
+    const dollarBrightness=Math.min(1,Math.max(.01,Math.pow(balances[i].balance/1e6,.25)));
+    return Math.min(ratioBrightness,dollarBrightness);
+  });
   const markDiameters=balances.length
     ?liquidityShares.map(share=>share===null?0:Math.min(20,8*Math.pow(share/.01,.25)))
     :[liquidity>0?1:0];
@@ -99,7 +114,7 @@ export function deriveFieldRules(inputs={}){
   const holderStatus=liquidity===0?'No liquidity — ratio unavailable; minimum-size dots'
     :balances.length?balances.length+(inputs.holderSource==='simulated'?' simulated USD holdings':' supplied USD holdings')+' · softened dot sizes from % of liquidity'
     :'No USD holdings supplied — minimum equal marks';
-  return {canvasSize,dotBudget,zoomScale,gapPx,edgeShrink,edgePower,fieldSpan,fieldRelease,baseMarkSize,markDiameters,footprintScale,
+  return {canvasSize,dotBudget,zoomScale,gapPx,edgeShrink,edgePower,fieldSpan,fieldRelease,baseMarkSize,markDiameters,markBrightness,footprintScale,
     holderCount:balances.length,holderStatus,liquidityShares,
     capDepth,liquidityDepth,balances};
 }
@@ -107,48 +122,56 @@ export function deriveFieldRules(inputs={}){
 function smoothstep(value){const t=clamp(value,0,1);return t*t*(3-2*t);}
 function hash(text){let value=2166136261;for(const c of text)value=Math.imul(value^c.charCodeAt(0),16777619);return value>>>0;}
 
-/** One positive USD holding per cell. Market cap sets viewing scale;
- * holding / liquidity sets size. No holder is repeated or collision-culled.
- */
+/** Regular Earthbound lattice: holdings change size/brightness, never positions. */
 export function buildMarkLayout(inputs,settings={},width=512,height=512){
-  const rules=deriveFieldRules(inputs),zoom=rules.zoomScale;
-  const shape=settings.mode==='monogrid'?'square':settings.mark||'auto';
-  const directional=shape==='plus'||shape==='cross'||(shape==='auto'&&inputs.change!==0);
-  const minimum=directional?3:1;
-  const rasterSize=size=>Math.max(minimum,2*Math.floor(Math.max(0,size-1)/2)+1);
-  const count=rules.balances.length;
+  const rules=deriveFieldRules(inputs),count=rules.balances.length;
   if(!count)return {marks:[],rules:{...rules,allocatedDots:0}};
+  const zoom=rules.zoomScale,referenceScale=Math.min(width,height)/512;
   const columns=Math.ceil(Math.sqrt(count)),rows=Math.ceil(count/columns);
-  const fitPitch=Math.floor(Math.min((width-1)/columns,(height-1)/rows));
-  const desiredGap=Math.ceil(rules.gapPx*zoom);
-  const referenceScale=Math.min(width,height)/512;
-  // Intrinsic size comes only from holding / liquidity. Apply the same
-  // camera zoom to marks and cell spacing, with no cap-driven growth phase.
-  const sizes=rules.markDiameters.map(size=>size*referenceScale*zoom);
-  const largest=Math.max(...sizes);
-  // Regular cell pitch follows liquidity spacing, independently of holder sizes.
-  const desiredPitch=Math.ceil(16*referenceScale*zoom+desiredGap);
-  const pitch=Math.min(fitPitch,desiredPitch);
-  // At dense populations scale the gap into the cell, never delete a holder.
-  const gap=Math.min(desiredGap,Math.max(0,pitch-3));
-  // Fit mark bounds inside each cell, preserving a clear gap.
-  const maxDiameter=2*Math.floor(Math.max(0,pitch-gap-1)/2)+1;
-  const sizeScale=largest>0?Math.min(1,maxDiameter/largest):1;
-  const startX=Math.floor((width-(columns-1)*pitch)/2)+.5;
-  const startY=Math.floor((height-(rows-1)*pitch)/2)+.5;
+  const fieldWidth=width*rules.fieldSpan,fieldHeight=height*rules.fieldSpan;
+  const fitPitch=Math.min(fieldWidth/columns,fieldHeight/rows);
+  const desiredGap=rules.gapPx*referenceScale*rules.fieldSpan;
+  // Holder count sets a field-filling regular lattice, not a fixed pixel pitch.
+  const pitch=fitPitch;
+  // A lone holder has the whole field; all other holders share equal cells.
+  const gap=count===1?0:Math.min(desiredGap,pitch*.25);
+  const available=count===1?Math.min(fieldWidth,fieldHeight):Math.max(0,pitch-gap);
+  const limit=available>=1?2*Math.floor((available-1)/2)+1:available;
+  const startX=(width-(columns-1)*pitch)/2;
+  const startY=(height-(rows-1)*pitch)/2;
   const cells=[];
   for(let row=0;row<rows;row++)for(let column=0;column<columns;column++){
     const dx=column-(columns-1)/2,dy=row-(rows-1)/2;
-    const priority=hash(inputs.coinKey+':cell:'+row+':'+column);
-    cells.push({x:startX+column*pitch,y:startY+row*pitch,row,column,priority,rank:dx*dx+dy*dy});
+    cells.push({x:startX+column*pitch,y:startY+row*pitch,row,column,
+      rank:dx*dx+dy*dy,priority:hash(inputs.coinKey+':cell:'+row+':'+column)});
   }
   cells.sort((a,b)=>a.rank-b.rank||a.priority-b.priority);cells.length=count;
-  const order=rules.balances.map((holder,i)=>({id:holder.id,size:sizes[i]}))
+  // Identity order is stable and independent of wealth: no whale strips.
+  const holders=rules.balances.map((h,i)=>({...h,brightness:rules.markBrightness[i]}))
     .sort((a,b)=>hash(inputs.coinKey+':'+a.id)-hash(inputs.coinKey+':'+b.id)||a.id.localeCompare(b.id));
+  // Address-derived edge contour: fixed in space, with no random flicker.
+  // Only mark bounds/brightness taper; centres and clear gaps stay intact.
+  const phase=n=>hash(inputs.coinKey+':edge:'+n)/4294967295*Math.PI*2;
+  const phases=[phase(0),phase(1),phase(2),phase(3)];
+  const edgeStrength=1-smoothstep(rules.fieldSpan);
   const marks=cells.map((cell,i)=>{
-    const holder=order[i],normalDiameter=rasterSize(holder.size);
-    const diameter=Math.min(maxDiameter,rasterSize(holder.size*sizeScale));
-    return {...cell,diameter,normalDiameter,id:holder.id};
+    const holder=holders[i];
+    // Area ceiling scales with dollars: $1 is about one displayed pixel;
+    // $1M unlocks the full field, subject to its cell and liquidity ratio.
+    const dollarDiameter=Math.max(referenceScale,Math.min(width,height)*Math.sqrt(Math.min(1,holder.balance/1e6)));
+    const raw=Math.min(limit*Math.sqrt(holder.brightness),dollarDiameter);
+    // Keep small marks small even when their shape cannot resolve at this scale.
+    const diameter=Math.min(limit,raw>=1?Math.max(1,2*Math.floor((raw-1)/2)+1):raw);
+    const nx=(cell.x-width/2)/Math.max(1,fieldWidth/2);
+    const ny=(cell.y-height/2)/Math.max(1,fieldHeight/2);
+    const angle=Math.atan2(ny,nx),radius=Math.hypot(nx,ny);
+    const boundary=.66+.14*Math.sin(3*angle+phases[0])
+      +.10*Math.sin(5*angle+phases[1])+.06*Math.cos(7*angle+phases[2]);
+    const unevenDistance=radius+.045*Math.sin(nx*11+ny*7+phases[3]);
+    const edgeFade=count===1?1:1-smoothstep((unevenDistance-boundary+.14)/.32);
+    const edgeScale=1-edgeStrength*(1-edgeFade);
+    return {...cell,id:holder.id,diameter:diameter*edgeScale,normalDiameter:diameter,
+      brightness:holder.brightness*edgeScale,edgeScale};
   });
-  return {marks,rules:{...rules,cellPitch:pitch,cellDiameterLimit:maxDiameter,layoutGap:gap,sizeScale,allocatedDots:count}};
+  return {marks,rules:{...rules,layoutMode:'regular-holder-grid',cellPitch:pitch,cellDiameterLimit:limit,layoutGap:gap,sizeScale:1,allocatedDots:count}};
 }

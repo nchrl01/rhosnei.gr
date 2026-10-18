@@ -1,17 +1,19 @@
-import {colourGLSL} from './upic-artwork-detail.js?v=earthbound-7';
-import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-7';
+import {colourGLSL} from './upic-artwork-detail.js?v=earthbound-9';
+import {EARTHBOUND_GLSL} from './upic-earthbound-core.js?v=earthbound-9';
 export const markVertex=`
 precision highp float;
 attribute vec2 position;
 attribute vec2 aMarkCenter;
 attribute float aMarkSize;
 attribute vec2 aMarkId;
+attribute float aMarkBrightness;
 uniform vec2 uResolution;
 varying vec2 vMarkCenter;
 varying float vMarkSize;
 varying vec2 vMarkId;
+varying float vMarkBrightness;
 void main(){
-  vMarkCenter=aMarkCenter;vMarkSize=aMarkSize;vMarkId=aMarkId;
+  vMarkCenter=aMarkCenter;vMarkSize=aMarkSize;vMarkId=aMarkId;vMarkBrightness=aMarkBrightness;
   gl_Position=vec4(position/uResolution*2.-1.,0.,1.);
 }`;
 export const fragment=`
@@ -32,6 +34,7 @@ uniform vec3 uArtworkColorB;
 varying vec2 vMarkCenter;
 varying float vMarkSize;
 varying vec2 vMarkId;
+varying float vMarkBrightness;
 float Bayer2(vec2 a){a=floor(a);return fract(a.x/2.+a.y*a.y*.75);}
 #define Bayer4(a) (Bayer2(.5*(a))*.25+Bayer2(a))
 #define Bayer8(a) (Bayer4(.5*(a))*.25+Bayer2(a))
@@ -50,5 +53,5 @@ void main(){
   float bw=mix(.65,1.,step(.5,feed+Bayer8(pixelId)-.5));
   float survival=step(fract(sin(pixelId.x*73.17+pixelId.y*193.41+7.3)*43758.5453),uPixelPresence);
   bw*=survival*earthboundMark(rasterPoint,vMarkCenter,vMarkSize*sqrt(uPixelPresence),1.);
-  gl_FragColor=vec4(bw*uInkColor*coinInk(vMarkCenter/uResolution),1.);
+  gl_FragColor=vec4(bw*vMarkBrightness*uInkColor*coinInk(vMarkCenter/uResolution),1.);
 }`;

@@ -2,6 +2,7 @@
 export const colourGLSL=`
 uniform vec4 uArtworkBackground;
 uniform float uImageCells;
+
 vec3 coinInk(vec2 uv){
  vec2 cell=min(floor(clamp(uv,0.,1.)*uImageCells),vec2(uImageCells-1.));
  vec2 imageUV=(cell+.5)/uImageCells;
@@ -16,7 +17,15 @@ vec3 coinInk(vec2 uv){
  vec3 hue=peak>.06?image.rgb/peak:vec3(1.);
  // Lift deep colours enough to read on black, retaining their hue.
  vec3 colour=mix(vec3(.3),mix(vec3(1.),hue,.65),foreground);
- return mix(vec3(1.),colour,image.a*uArtworkColor);
+ // Introduce only the two primary colours at the $50M milestone.
+ // Sample image positions without its background-darkening or tone mask.
+ float distanceA=dot(image.rgb-uArtworkColorA,image.rgb-uArtworkColorA);
+ float distanceB=dot(image.rgb-uArtworkColorB,image.rgb-uArtworkColorB);
+ vec3 primary=mix(uArtworkColorA,uArtworkColorB,step(distanceB,distanceA));
+ // Keep dark primary ink visible on the black canvas without changing holder brightness.
+ float primaryPeak=max(primary.r,max(primary.g,primary.b));
+ vec3 visiblePrimary=primary+vec3(max(0.,.18-primaryPeak));
+ return mix(vec3(1.),visiblePrimary,image.a*uArtworkColor);
 }
 `;
 export function artworkBackground(source){
