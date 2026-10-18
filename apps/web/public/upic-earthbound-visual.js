@@ -51,10 +51,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const host=canvas?.closest('.audio-visualizer');
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(host),fullscreen=createVisualFullscreen(host);
- const holderNotice=document.createElement('p');holderNotice.className='earthbound-holder-status';
- holderNotice.setAttribute('role','status');holderNotice.hidden=true;
- Object.assign(holderNotice.style,{position:'absolute',left:'1rem',bottom:'1rem',zIndex:'2',fontSize:'.8rem',color:'#aaa',pointerEvents:'none'});
- host.append(holderNotice);
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let latest=null,settings={},key='',seed=0,clock=0,presence=0,transportPresence=0,identity=0,identityInput=0,color=0,colorTarget=0;
@@ -123,8 +119,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=1;if(target!==colorTarget){colorTarget=target;colorElapsed=0;}
-   holderNotice.hidden=!latest.hasMarket||latest.holderBalances.length>0;
-   holderNotice.textContent=m.replay?'Historical wallet balances unavailable.':'Waiting for individual wallet balances.';
    if(!latest.hasMarket)renderer.clear();
   },
   // Keep the app's audio callback interface without coupling sound to ink.
@@ -169,6 +163,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   snapshot(){return {...renderer.snapshot(),renderer:'earthbound',time:clock,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderBalances.length?'observed-wallet-sample':'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();holderNotice.remove();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }
