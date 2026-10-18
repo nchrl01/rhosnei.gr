@@ -50,8 +50,12 @@ export class HolderBalanceRelay{
     }
     const target=new URL('https://api.blockscout.com/'+CHAINS[network]+'/api/v2/tokens/'+address+suffix);target.searchParams.set('apikey',this.env.BLOCKSCOUT_API_KEY);
     let response;
-    try{response=await fetch(target,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});}
-    catch{throw failure(stage+'-fetch-failed');}
+    try{response=await fetch(target,{headers:{Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(12000)});}
+    catch(error){checks.fetchError=['AbortError','TimeoutError','TypeError'].includes(error?.name)?error.name:'other';throw failure(stage+'-fetch-failed');}
+    if(response.status>=300&&response.status<400){
+     checks.redirectSameHost=false;
+     try{const location=response.headers.get('Location');if(location)checks.redirectSameHost=new URL(location,target).hostname===target.hostname;}catch{}
+    }
     if(!response.ok){const error=failure(stage+'-http-'+response.status);error.rateLimited=response.status===429;throw error;}
     try{return await response.json();}catch{throw failure(stage+'-invalid-json');}
    };

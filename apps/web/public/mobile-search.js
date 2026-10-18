@@ -1,5 +1,5 @@
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=334';
-import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=334';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=335';
+import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=335';
 const money=value=>Number.isFinite(value)&&value>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(value):'—';
 function node(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;}
 const icons={back:'<path d="m15 5-7 7 7 7"/>',paste:'<path d="M8 5H5v16h14V5h-3M9 3h6v4H9zM8 11h8M8 15h6"/>',trash:'<path d="M3 6h18M9 3h6M6 6l1 15h10l1-15M10 10v7M14 10v7"/>'};

@@ -1,4 +1,4 @@
-import {loadCoinCatalogue} from './coin-catalogue.js?v=334';
+import {loadCoinCatalogue} from './coin-catalogue.js?v=335';
 const sourceURL=value=>{try{const url=new URL(value);return url.protocol==='https:'&&['www.coingecko.com','dexscreener.com','api.gopluslabs.io'].includes(url.hostname)?url.href:null;}catch{return null;}};
 export function createCoinSummary(panel){
  if(!panel)return {setMarket(){}};

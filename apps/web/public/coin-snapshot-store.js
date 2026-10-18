@@ -17,18 +17,24 @@ export function meaningfulCapture(canvas){
  const width=canvas.width,height=canvas.height;if(!(width>0&&height>0))return false;
  const pixels=canvas.getContext('2d')?.getImageData(0,0,width,height).data;if(!pixels)return false;
  let lit=0,peak=0,energy=0;
- for(let i=0;i<pixels.length;i+=4){const brightness=Math.max(pixels[i],pixels[i+1],pixels[i+2])*pixels[i+3]/255;peak=Math.max(peak,brightness);energy+=brightness;if(brightness>=16)lit++;}
- return peak>=32&&lit>=Math.max(12,Math.ceil(width*height*.0001))&&energy>=width*height*.01;
+ for(let i=0;i<pixels.length;i+=4){const brightness=Math.max(pixels[i],pixels[i+1],pixels[i+2])*pixels[i+3]/255;peak=Math.max(peak,brightness);energy+=brightness;if(brightness>=32)lit++;}
+ return peak>=64&&lit>=Math.max(64,Math.ceil(width*height*.0005))&&energy>=width*height*.08;
 }
 export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligible}){
  if(!captureMode)return()=>{};
- let busy=false,closed=false;const lastAt=new Map();
+ let busy=false,closed=false,readyKey='',readySince=0;const lastAt=new Map();
+ const resetReady=()=>{readyKey='';readySince=0;};
  async function capture(){
-  if(closed||busy||document.hidden||!eligible())return;
+  if(closed||busy)return;
+  if(document.hidden||!eligible()){resetReady();return;}
   const market=getMarket(),visual=getVisual(),state=visual?.snapshot(),address=market?.baseToken?.address;
-  if(!market||!address||!state)return;const key=keyFor(market.chainId,address),now=Date.now();
-  if(state.sourceCoinKey!==key||state.renderedPlaying!==true||state.holderSnapshotReady!==true||state.holderSource!=='observed-wallet-sample'||state.holderLoading||!(state.markCount>0)||!(state.transportPresence>=.99))return;
-  if(!Number.isFinite(state.renderedAt)||now-state.renderedAt<0||now-state.renderedAt>2000||now-(lastAt.get(key)||0)<60000)return;
+  if(!market||!address||!state){resetReady();return;}const key=keyFor(market.chainId,address),now=Date.now();
+  if(state.sourceCoinKey!==key||state.renderedPlaying!==true||state.holderSnapshotReady!==true||state.holderSource!=='observed-wallet-sample'||state.holderLoading||!(state.markCount>0)||!(state.transportPresence>=.99)){resetReady();return;}
+  if(!Number.isFinite(state.renderedAt)||now-state.renderedAt<0||now-state.renderedAt>2000){resetReady();return;}
+  // Let the actual playing field settle before its first capture. New market
+  // ticks keep this clock running; losing holder or transport readiness resets it.
+  if(readyKey!==key||state.renderedAt<readySince){readyKey=key;readySince=state.renderedAt;}
+  if(state.renderedAt-readySince<5000||now-(lastAt.get(key)||0)<60000)return;
   busy=true;let frame;
   try{
    frame=visual.captureStill(512);if(!meaningfulCapture(frame))return;
