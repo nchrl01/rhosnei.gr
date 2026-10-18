@@ -389,13 +389,22 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .mobile-coin-search #coin-form{display:block;margin:12px 0}
  .mobile-search-close{display:block;margin-left:auto;padding:6px 0;border:0;background:transparent;color:inherit;font:inherit;font-size:var(--font-size-small)}
  .mobile-coin-search #coin-search-results{margin:12px 0 0}
- .site-footer{display:grid;grid-template-columns:1fr;gap:16px;height:auto;min-height:0;overflow:visible;padding:20px var(--site-gutter) calc(20px + env(safe-area-inset-bottom));align-items:start}
- .site-footer nav{flex-wrap:wrap;gap:8px 20px;width:100%;justify-content:flex-start}
- .site-footer .footer-links{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
- .site-footer .footer-links .footer-brand{grid-column:1/-1;margin-bottom:4px}
- .site-footer .footer-upcoming{white-space:normal;min-height:32px}
- .site-footer .footer-prices{display:flex;justify-content:flex-start;gap:24px;padding-block:12px;border-block:1px solid var(--line)}
- .site-footer .footer-tools{justify-content:flex-start;gap:8px 20px}
- .site-footer .footer-wallet{flex-basis:100%;justify-content:center;min-height:44px;margin-top:8px;border:1px solid var(--line);padding:8px;box-sizing:border-box}
+ /* Fixed rows prevent the utility links from wrapping into arbitrary clusters. */
+ .site-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 20px;height:auto;min-height:0;overflow:visible;padding:20px var(--site-gutter) calc(20px + env(safe-area-inset-bottom));align-items:center}
+ .site-footer .footer-links,.site-footer .footer-tools{display:contents}
+ .site-footer .footer-brand{grid-column:1;grid-row:1;min-height:44px}
+ .site-footer .footer-links>a:not(.footer-brand){grid-column:2;grid-row:1;justify-self:end;min-height:44px}
+ .site-footer .footer-wallet{grid-column:1/-1;grid-row:2;justify-content:center;min-height:44px;width:100%;margin:12px 0;padding:10px;border:1px solid var(--line);box-sizing:border-box}
+ .site-footer .footer-networks{grid-column:1;grid-row:3}
+ .site-footer .footer-networks summary{min-height:44px}
+ .site-footer .footer-tools>a{grid-column:2;grid-row:3;justify-self:end;min-height:44px}
+ .site-footer .footer-tools>.footer-upcoming{grid-row:4;min-height:36px}
+ .site-footer .footer-tools>.footer-upcoming:nth-of-type(1){grid-column:1}
+ .site-footer .footer-tools>.footer-upcoming:nth-of-type(2){grid-column:2;justify-self:end}
+ .site-footer .footer-prices{grid-column:1/-1;grid-row:5;width:100%;min-width:0;margin:12px 0 0;padding:14px 0;justify-content:space-between;gap:12px;border-block:1px solid var(--line);box-sizing:border-box}
+ .site-footer .footer-links>.footer-upcoming{grid-column:1/-1;min-height:32px;white-space:normal;gap:8px}
+ .site-footer .footer-links>.footer-upcoming:nth-of-type(1){grid-row:6;margin-top:10px}
+ .site-footer .footer-links>.footer-upcoming:nth-of-type(2){grid-row:7}
+ .site-footer .wallet-status{grid-column:1/-1;grid-row:8;max-width:100%;white-space:normal;overflow-wrap:anywhere}
  .site-footer .wallet-status:empty{display:none}
 }
