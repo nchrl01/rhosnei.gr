@@ -4,6 +4,7 @@ const ALIASES={eth:'ethereum',polygon_pos:'polygon'};
 // Use the existing private index integration when Robinhood's public explorer rejects reads.
 const CHAINS={robinhood:4663};
 const ADDRESS=/^0x[0-9a-f]{40}$/i;
+const failure=reason=>Object.assign(Error('Indexed holder request failed'),{reason});
 function units(raw,decimals){
  const value=String(raw??'');if(!/^\d{1,100}$/.test(value)||!Number.isInteger(decimals)||decimals<0||decimals>80)return null;
  const padded=value.padStart(decimals+1,'0'),amount=Number(decimals?padded.slice(0,-decimals)+'.'+padded.slice(-decimals):padded);
@@ -36,33 +37,44 @@ export class HolderBalanceRelay{
  async load({network,address,key,cached,now}){
   const base={network,address,source:'Blockscout shared index',records:[],totalHolders:null,complete:false,truncated:false,coverage:'top-holder-sample'};
   const save=data=>{this.sql.exec('INSERT OR REPLACE INTO shared_holder_samples(key,data,next_at) VALUES(?,?,?)',key,JSON.stringify(data),data.nextAt);return data;};
-  const failed=(state,nextAt)=>save(cached?.records?.length&&Date.now()-cached.fetchedAt<MAX_AGE?{...cached,state:'delayed',nextAt}:{...base,state,nextAt});
-  if(!this.env.BLOCKSCOUT_API_KEY)return failed('unavailable',now+5*60000);
+  let checks={};
+  const failed=(state,nextAt,reason)=>save(cached?.records?.length&&Date.now()-cached.fetchedAt<MAX_AGE?{...cached,state:'delayed',nextAt,reason,checks}:{...base,state,nextAt,reason,checks});
+  if(!this.env.BLOCKSCOUT_API_KEY)return failed('unavailable',now+5*60000,'missing-configuration');
   try{
    const read=async suffix=>{
+    const stage=suffix?'balances':'metadata';
     const requestedAt=Date.now();
     if(!this.reserveCalls(requestedAt)){
-     const error=Error('Indexed holder budget exhausted');error.rateLimited=true;
+     const error=failure('daily-budget-exhausted');error.rateLimited=true;
      error.nextAt=Date.parse(new Date(requestedAt).toISOString().slice(0,10))+86400000;throw error;
     }
     const target=new URL('https://api.blockscout.com/'+CHAINS[network]+'/api/v2/tokens/'+address+suffix);target.searchParams.set('apikey',this.env.BLOCKSCOUT_API_KEY);
-    const response=await fetch(target,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});
-    if(!response.ok){const error=Error('Indexed holders unavailable');error.rateLimited=response.status===429;throw error;}return response.json();
+    let response;
+    try{response=await fetch(target,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(12000)});}
+    catch{throw failure(stage+'-fetch-failed');}
+    if(!response.ok){const error=failure(stage+'-http-'+response.status);error.rateLimited=response.status===429;throw error;}
+    try{return await response.json();}catch{throw failure(stage+'-invalid-json');}
    };
    const token=await read('');
-   const decimals=token.decimals==null?NaN:Number(token.decimals);
-   if(token.address_hash?.toLowerCase()!==address||token.type!=='ERC-20'||!Number.isInteger(decimals)||decimals<0||decimals>80)throw Error('Invalid indexed token');
-   const data=await read('/holders');if(!Array.isArray(data.items))throw Error('Invalid indexed holders');
+   const decimals=token?.decimals==null?NaN:Number(token.decimals);
+   checks={metadataObject:Boolean(token&&typeof token==='object'&&!Array.isArray(token)),tokenAddressPresent:typeof token?.address_hash==='string',tokenAddressMatches:typeof token?.address_hash==='string'&&token.address_hash.toLowerCase()===address,tokenTypeERC20:token?.type==='ERC-20',tokenDecimalsValid:Number.isInteger(decimals)&&decimals>=0&&decimals<=80};
+   if(!checks.tokenAddressMatches||!checks.tokenTypeERC20||!checks.tokenDecimalsValid)throw failure('invalid-token');
+   const data=await read('/holders');checks.balancesItemsArray=Array.isArray(data?.items);
+   if(!checks.balancesItemsArray)throw failure('invalid-balances-response');
+   checks.examinedItems=Math.min(data.items.length,100);checks.invalidAddresses=0;checks.invalidAmounts=0;checks.zeroBalances=0;
    const records=new Map();let invalid=0;
    for(const item of data.items.slice(0,100)){
-    const id=item.address?.hash,amount=units(item.value,decimals);
-    if(!ADDRESS.test(id||'')){invalid++;continue;}
-    if(amount===null){if(!/^0+$/.test(String(item.value)))invalid++;continue;}
+    const id=item?.address?.hash,amount=units(item?.value,decimals);
+    if(!ADDRESS.test(id||'')){invalid++;checks.invalidAddresses++;continue;}
+    if(amount===null){if(!/^0+$/.test(String(item?.value))){invalid++;checks.invalidAmounts++;}else checks.zeroBalances++;continue;}
     records.set(id.toLowerCase(),{id:id.toLowerCase(),tokenBalance:amount,balanceRaw:String(item.value),decimals,isContract:item.address.is_contract===true});
    }
-   if(!records.size)throw Error('No indexed balances');
+   if(!records.size)throw failure('no-balances');
    const count=token.holders_count==null||token.holders_count===''?NaN:Number(token.holders_count);
    return save({...base,state:'snapshot',records:[...records.values()],decimals,totalHolders:Number.isSafeInteger(count)&&count>=0?count:null,fetchedAt:Date.now(),nextAt:Date.now()+TTL,complete:data.next_page_params==null&&data.items.length<=100&&invalid===0,invalid});
-  }catch(error){return failed(error.rateLimited?'rate-limited':'unavailable',error.nextAt||Date.now()+(error.rateLimited?5:2)*60000);}
+  }catch(error){
+   const reason=/^(?:(?:metadata|balances)-(?:http-[1-5]\d{2}|fetch-failed|invalid-json)|daily-budget-exhausted|invalid-token|invalid-balances-response|no-balances)$/.test(error.reason||'')?error.reason:'invalid-provider-response';
+   return failed(error.rateLimited?'rate-limited':'unavailable',error.nextAt||Date.now()+(error.rateLimited?5:2)*60000,reason);
+  }
  }
 }
