@@ -511,7 +511,7 @@ body.visual-expanded{overflow:hidden}
 /* Desktop ownership metadata sits opposite the visual; mobile keeps it stacked. */
 .nft-owner-preview{display:flex;align-items:center;gap:12px;min-width:0;padding:12px 0;margin:0;color:var(--control-ink,#fff);border-top:1px solid var(--line,#292929)}
 .nft-owner-preview[hidden]{display:none}
-.nft-owner-avatar{display:block;flex:none;width:40px;height:40px;color:#bdbdbd}
+.nft-owner-avatar{display:block;flex:none;width:64px;height:64px;padding:8px;box-sizing:border-box;border:1px solid #aaa;border-radius:50%;overflow:hidden;background:#101010;color:#ddd}
 .nft-owner-copy{min-width:0;display:grid;gap:4px}
 .nft-owner-copy p{margin:0;font-weight:400;line-height:1.35}
 .nft-owner-label,.nft-owner-wallet,.nft-owner-edition{font-size:var(--font-size-small);color:var(--muted,#aaa)}
@@ -519,7 +519,7 @@ body.visual-expanded{overflow:hidden}
 .nft-owner-name{font-size:var(--font-size-body);color:var(--control-ink,#fff)}
 .nft-owner-edition{overflow-wrap:anywhere}
 @media(min-width:761px){.nft-owner-preview{grid-column:1;grid-row:5;align-self:start;width:100%;margin:8px 0 12px}}
-@media(max-width:760px){.instrument>.nft-owner-preview{width:100%;padding:12px 0;margin:16px 0 4px;align-self:start}.nft-owner-avatar{width:32px;height:32px}.nft-owner-wallet{overflow-wrap:anywhere}}
+@media(max-width:760px){.instrument>.nft-owner-preview{width:100%;padding:12px 0;margin:16px 0 4px;align-self:start}.nft-owner-avatar{width:56px;height:56px;padding:7px}.nft-owner-wallet{overflow-wrap:anywhere}}
 
 /* Tokenization begins as an explicit preview until the NFT contracts are connected. */
 .nft-owner-preview{flex-wrap:wrap}
