@@ -12,7 +12,7 @@ import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=281';
-import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=353';
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=354';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=350';
@@ -26,7 +26,7 @@ import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=348';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=353';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=354';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
@@ -44,7 +44,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=345';
 import {MarketChart} from './chart.js?v=234';
-import {loadHistory} from './history.js?v=353';
+import {loadHistory} from './history.js?v=354';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
 // The trusted publisher captures this player silently. Normal visits do not
@@ -727,7 +727,7 @@ async function freshMarketSnapshot(pair,{signal}={}){
  return completeMarketCap(updated,{signal});
 }
 function withNativeCap(pair,snapshot){
- if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.weight>0&&Number(pair.priceUsd)>0){
+ if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.weight>0&&((snapshot.marketAt??snapshot.marketFetchedAt)==null||(Number.isSafeInteger(snapshot.marketAt??snapshot.marketFetchedAt)&&Date.now()-(snapshot.marketAt??snapshot.marketFetchedAt)<6*3600000&&(snapshot.marketAt??snapshot.marketFetchedAt)<=Date.now()+300000))&&Number(pair.priceUsd)>0){
   const supply=Number(snapshot.supply)||Number(snapshot.referenceMarketCap)/Number(snapshot.referencePrice);
   if(Number.isFinite(supply)&&supply>0)return {...pair,marketCap:supply*Number(pair.priceUsd),marketCapSource:snapshot.marketSource||snapshot.source,marketCapEstimated:true};
  }

@@ -1,4 +1,4 @@
-const SOL_RPC='https://solana-rpc.publicnode.com';
+const SOL_RPC='https://public.rpc.solanavibestation.com';
 const XRP_RPC='https://mainnet.xrpl-rpc.com';
 const MAX_SAMPLE=100,MAX_AGE=6*3600000,RIPPLE_EPOCH=946684800;
 const solAddress=value=>typeof value==='string'&&/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value);
@@ -15,8 +15,9 @@ async function rpc(read,url,method,params){
 }
 const sample={totalHolders:null,complete:false,truncated:false,supply:null,referencePrice:null,referenceMarketCap:null};
 
-// PublicNode's free endpoint supports finalized blocks, but its indexed rich-list
-// methods require a token. Keep this sample explicitly scoped to block activity.
+// Vibe Station publishes a keyless public endpoint. Two finalized-block requests
+// per hourly refresh stay bounded; this sample is explicitly scoped to activity.
+// https://docs.solanavibestation.com/getting-started/connection-information
 // https://solana.com/docs/rpc/http/getblock
 export async function loadSolanaNative(read,now=Date.now()){
  const slot=await rpc(read,SOL_RPC,'getSlot',[{commitment:'finalized'}]);
@@ -44,7 +45,7 @@ export async function loadSolanaNative(read,now=Date.now()){
  }
  const records=[...balances].filter(([,value])=>value>0).map(([id,tokenBalance])=>({id,tokenBalance}));
  if(!records.length)throw Error('empty-solana-block-sample');
- return {...sample,records,source:'PublicNode Solana finalized balances',scope:'finalized-block-participants',coverage:'recent-account-sample',sourceAt,sourceSlot:slot,indexCadence:'finalized-block',balanceBasis:'last-post-transaction-balance'};
+ return {...sample,records,source:'Solana Vibe Station finalized balances',scope:'finalized-block-participants',coverage:'recent-account-sample',sourceAt,sourceSlot:slot,indexCadence:'finalized-block',balanceBasis:'last-post-transaction-balance'};
 }
 
 // Ankr explicitly offers this no-key public endpoint for wallet/dApp/backend use.

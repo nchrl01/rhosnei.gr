@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {NativeHolderRelay,nativeLimits} from './native-holders.js';
 import {NATIVE_COINS,catalogueNative} from '../../apps/web/public/native-coins.js';
+import {loadCoinLoreNative} from './native-market-meta.js';
 const HOUR=3600000,DAY=24*HOUR;
 const request=network=>new URL('https://worker.invalid/native-holders?network='+network);
 function setup(){
@@ -17,7 +18,7 @@ test('unknown chains never make an upstream request and exact native identity ex
  try{assert.equal((await s.relay.get(request('arbitrary'))).state,'unsupported-network');assert.equal(catalogueNative({id:'wrapped-bitcoin',symbol:'BTC',chain:'bitcoin',address:null}),null);assert.equal(catalogueNative({id:'solana',symbol:'SOL',nativeChain:'solana'})?.address,'native');}finally{globalThis.fetch=prior;s.db.close();}
 });
 test('fresh existing samples survive code upgrades without more paid or free requests',async()=>{
- const s=setup(),prior=globalThis.fetch;s.save('bitcoin');globalThis.fetch=()=>{throw Error('unexpected network');};
+ const s=setup(),prior=globalThis.fetch;s.save('bitcoin');s.relay.marketMetadata=async()=>({});globalThis.fetch=()=>{throw Error('unexpected network');};
  try{const result=await s.relay.get(request('bitcoin'));assert.equal(result.cached,true);assert.equal(result.records.length,1);}finally{globalThis.fetch=prior;s.db.close();}
 });
 test('one provider HTTP429 preserves its dated sample without stopping another provider',async()=>{
@@ -40,7 +41,7 @@ test('shared provider budget rejects extra reads without contacting upstream',as
  try{const result=await s.relay.get(request('bitcoin'));assert.equal(result.reason,'free-budget-wait');assert.equal(result.records.length,0);}finally{globalThis.fetch=prior;s.db.close();}
 });
 test('one cached price batch serves all native identities without refreshing on every view',async()=>{
- const s=setup(),prior=globalThis.fetch;let calls=0;globalThis.fetch=async input=>{calls++;assert.equal(new URL(input).searchParams.get('ids').split(',').length,Object.keys(NATIVE_COINS).length);return Response.json({solana:{usd:100,usd_market_cap:60000000000,last_updated_at:Math.floor(Date.now()/1000)}});};
+ const s=setup(),prior=globalThis.fetch;let calls=0;globalThis.fetch=async input=>{calls++;assert.equal(new URL(input).searchParams.get('ids').split(',').length,Object.keys(NATIVE_COINS).length);return Response.json(Object.fromEntries(Object.values(NATIVE_COINS).map(a=>[a.id,{usd:100,usd_market_cap:60000000000,last_updated_at:Math.floor(Date.now()/1000)}])));};
  try{const [a,b]=await Promise.all([s.relay.marketMetadata(),s.relay.marketMetadata()]);assert.equal(a.solana.supply,600000000);assert.deepEqual(a,b);await s.relay.marketMetadata();assert.equal(calls,1);}finally{globalThis.fetch=prior;s.db.close();}
 });
 test('RPC rate limits delivered as HTTP200 persist a provider-wide cooldown',async()=>{
@@ -51,4 +52,23 @@ test('provider cooldown survives the daily quota rollover',async()=>{
  const s=setup(),prior=globalThis.fetch;globalThis.fetch=()=>{throw Error('unexpected network');};
  s.sql.exec('INSERT INTO native_provider_budget VALUES(?,?,?,?)',Math.floor(Date.now()/DAY)-1,'sochain',5,Date.now()+HOUR);s.relay.cooldown('sochain',Date.now()+HOUR);
  try{await assert.rejects(s.relay.read('sochain','https://provider.invalid'),/free-budget-wait/);}finally{globalThis.fetch=prior;s.db.close();}
+});
+test('replacement provider can populate a failed cache while preserving the old cooldown',async()=>{
+ const s=setup();s.save('ethereum',{provider:'retired-provider',records:[],state:'unavailable'});s.relay.cooldown('retired-provider',Date.now()+HOUR);
+ s.relay.marketMetadata=async()=>({});let calls=0;s.relay.read=async(provider)=>{assert.equal(provider,'blockscout');calls++;return {items:[{hash:'0x'+'4'.repeat(40),coin_balance:'2000000000000000000'}]};};
+ try{const result=await s.relay.get(request('ethereum'));assert.equal(result.records[0].tokenBalance,2);assert.equal(result.provider,'blockscout');assert.equal(calls,1);assert.ok(s.sql.exec('SELECT until_ms FROM native_provider_cooldown WHERE provider=?','retired-provider').toArray()[0].until_ms>Date.now());}finally{s.db.close();}
+});
+test('negative cache for the same provider does not retry before its scheduled time',async()=>{
+ const s=setup();s.save('ethereum',{provider:'blockscout',records:[],state:'unavailable'});s.relay.read=async()=>{throw Error('must not call');};
+ try{assert.equal((await s.relay.get(request('ethereum'))).state,'unavailable');}finally{s.db.close();}
+});
+test('CoinLore batch requires exact id, slug and symbol and keeps retrieval time separate',async()=>{
+ const now=Date.now(),btc={id:'90',nameid:'bitcoin',symbol:'BTC',price_usd:'100',market_cap_usd:'2100000000',csupply:'21000000'};
+ const valid=await loadCoinLoreNative(async()=>[btc],Object.values(NATIVE_COINS),now);assert.equal(valid.bitcoin.marketFetchedAt,now);assert.equal(valid.bitcoin.marketAt,null);assert.equal(valid.bitcoin.supply,21000000);
+ for(const bad of [{...btc,nameid:'bitcoin-cash'},{...btc,id:'2321'},{...btc,symbol:'BCH'},{...btc,csupply:'0'}])assert.deepEqual(await loadCoinLoreNative(async()=>[bad],Object.values(NATIVE_COINS),now),{});
+ assert.deepEqual(await loadCoinLoreNative(async()=>[btc,btc],Object.values(NATIVE_COINS),now),{});
+});
+test('market fallback enriches a cached balance sample without changing balance age',async()=>{
+ const s=setup(),saved=s.save('bitcoin'),now=Date.now();s.relay.coingeckoMetadata=async()=>({});let calls=0;s.relay.read=async(provider)=>{assert.equal(provider,'coinlore');calls++;return [{id:'90',nameid:'bitcoin',symbol:'BTC',price_usd:'100',market_cap_usd:'2100000000',csupply:'21000000'}];};
+ try{const a=await s.relay.get(request('bitcoin')),b=await s.relay.get(request('bitcoin'));assert.equal(a.marketSource,'CoinLore');assert.equal(a.fetchedAt,saved.fetchedAt);assert.equal(b.marketFetchedAt,a.marketFetchedAt);assert.equal(calls,1);assert.equal(s.relay.freshMarket({marketFetchedAt:now-7*HOUR}),false);}finally{s.db.close();}
 });
