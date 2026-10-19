@@ -496,10 +496,9 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .marketplace-page .coin-gallery-toolbar{display:none}
 }
 
-/* Sign in is an action, styled like the other text navigation items. */
+/* Account access shares the header icon scale. */
 .header-wallet{display:inline-flex;font:inherit;font-size:var(--font-size-small)}
-.header-wallet>svg{display:none}
-.header-signin-label{display:inline}
+.header-wallet>svg{display:block;width:20px;height:20px;flex:none}
 
 /* Shared header geometry: one row and one control scale on every page. */
 :is(.market-header,.site-navigation) .header-main{box-sizing:border-box;width:100%;max-width:none}
@@ -508,10 +507,10 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
 :is(.market-header,.site-navigation) :is(.header-search,.header-marketplace,#volume-button)>svg{width:20px;height:20px;flex:none}
 :is(.market-header,.site-navigation) :is(.header-search,.header-marketplace,#volume-button):focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}
 :is(.market-header,.site-navigation) :is(.header-search,.header-marketplace,#volume-button):is(:active,[aria-expanded=true],[aria-busy=true]){color:var(--control-ink);background:var(--control-hover)}
- :is(.market-header,.site-navigation) .header-wallet{box-sizing:border-box;align-items:center;justify-content:center;flex:none;width:auto;min-width:0;height:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:var(--font-size-small);line-height:1;text-decoration:none;white-space:nowrap}
- :is(.market-header,.site-navigation) .header-wallet:focus-visible{outline:2px solid var(--control-ink);outline-offset:3px;text-decoration:underline;text-underline-offset:4px}
- @media(hover:hover){:is(.market-header,.site-navigation) .header-wallet:not(:disabled):hover{color:var(--control-ink);background:transparent;opacity:1;text-decoration:underline;text-underline-offset:4px}}
- :is(.market-header,.site-navigation) .header-wallet[aria-busy=true]{text-decoration:underline;text-underline-offset:4px}
+ :is(.market-header,.site-navigation) .header-wallet{box-sizing:border-box;align-items:center;justify-content:center;flex:none;width:28px;min-width:28px;height:44px;min-height:44px;margin:0;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:var(--font-size-small);line-height:1;text-decoration:none;white-space:nowrap}
+ :is(.market-header,.site-navigation) .header-wallet:focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}
+ @media(hover:hover){:is(.market-header,.site-navigation) .header-wallet:not(:disabled):hover{color:var(--control-ink);background:var(--control-hover);opacity:1;text-decoration:none}}
+ :is(.market-header,.site-navigation) .header-wallet[aria-busy=true]{opacity:.5}
 @media(hover:hover){:is(.market-header,.site-navigation) :is(.header-search,.header-marketplace,#volume-button):not(:disabled):hover{color:var(--control-ink);background:var(--control-hover);opacity:1;text-decoration:none}}
 @media(min-width:761px){:is(.market-header,.site-navigation) .header-link{min-height:44px}.header-marketplace,.header-search{display:none}}
 @media(max-width:760px){:is(.market-header,.site-navigation) .header-main{padding-inline:var(--header-gutter,16px)}:is(.market-header,.site-navigation) .header-links{gap:12px}}

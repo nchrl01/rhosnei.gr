@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 337;
+const version = 340;
 const pages = [
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
   { file: 'about.html', type: 'public', active: 'about', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
@@ -42,7 +42,6 @@ function header(page) {
     brandImage: page.type === 'instrument'
       ? '<img id="upic-mark" alt="" width="125" height="173" decoding="async" hidden><span id="upic-mark-fallback">U</span>'
       : '<img src="upic-logo-transparent.svg?v=116" alt="" width="125" height="173" decoding="async" draggable="false">',
-    instrumentCurrent: page.active === 'instrument' ? ' aria-current="page"' : '',
     marketplaceCurrent: page.active === 'marketplace' ? ' aria-current="page"' : '',
     aboutCurrent: page.active === 'about' ? ' aria-current="page"' : '',
     search: (page.type === 'instrument' || page.file === 'upic/marketplace/index.html') ? '<button type="button" class="header-search" aria-label="Search coins" aria-controls="mobile-coin-search" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>' : '<a class="header-search" href="./#search" aria-label="Search coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a>',
