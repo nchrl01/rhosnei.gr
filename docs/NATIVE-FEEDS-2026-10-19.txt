@@ -1,0 +1,105 @@
+UPIC — expanded native feed coverage and release report
+19 October 2026
+Checked: 2026-10-19T17:43:21.578Z
+Runtime release: 7172046
+Website: version 359
+
+RESULT
+48 native integrations added to the previous 50, covering 98 of 111 catalogue native identities. Production Cloudflare requests returned positive real balances for 96; 46 are additions in this release. 2 configured feeds did not return a positive sample in the final pass. 13 other identities have no verified usable free public balance feed from this investigation. These categories are separate.
+
+The website homepage and marketplace both publicly serve version359. Cloudflare's runtime release succeeded. No paid provider subscription or new paid API was enabled.
+
+WHAT CONNECTED MEANS
+These feeds provide actual native account balances for the visual engine. They are bounded samples, not full holder distributions or total holder counts. Responses keep totalHolders:null and complete:false. Native holder counting is still unavailable. Market prices/charts are separate feeds; an unavailable native-balance feed does not imply that a coin's price chart is unavailable.
+
+Coverage is intentionally specific: DOT is Polkadot Hub EVM accounts, TAO is Bittensor EVM accounts, CFX is eSpace. Hive/Steem use liquid balances; Chia/eCash use full unspent balances for sampled owners; Neo excludes GAS and other NEP-17; VTHO uses energy rather than VET balance. The machine-readable coverage file records each feed's actual scope and timestamps. No seed/default balance substitutes are used.
+
+FREE USAGE AND CACHE
+New feeds refresh on demand every two hours; earlier feeds retain their one- or two-hour cadence. One shared Cloudflare cache serves all visitors. Concurrent requests coalesce. Successful old samples retain their real timestamps; samples over six hours old are rejected. No native feed snapshots are persisted in visitors' local storage.
+
+There is a hard global limit of 6,000 upstream requests/day plus provider-specific caps, pacing and persistent cooldowns. HTTP/RPC denials and quotas are respected. This cap bounds source requests; it is not a guarantee that Cloudflare infrastructure itself can never incur costs.
+
+ADDED INTEGRATIONS
+CCD (concordium) — LIVE: 100 sampled native accounts
+NEO (neo) — LIVE: 3 sampled native accounts
+XEC (ecash) — LIVE: 3 sampled native accounts
+GEODE (geode-chain) — LIVE: 100 sampled native accounts
+QIE (qie) — LIVE: 2 sampled native accounts
+QTUM (qtum) — LIVE: 100 sampled native accounts
+FLUX (zelcash) — LIVE: 3 sampled native accounts
+SC (siacoin) — LIVE: 1 sampled native accounts
+ARDR (ardor) — LIVE: 1 sampled native accounts
+DAG (constellation-labs) — LIVE: 3 sampled native accounts
+XCH (chia) — LIVE: 1 sampled native accounts
+FB (fractal-bitcoin) — LIVE: 3 sampled native accounts
+CKB (nervos-network) — LIVE: 1 sampled native accounts
+MINA (mina-protocol) — LIVE: 7 sampled native accounts
+QUBIC (qubic-network) — LIVE: 3 sampled native accounts
+CSPR (casper-network) — LIVE: 1 sampled native accounts
+POLYX (polymesh) — LIVE: 90 sampled native accounts
+HDX (hydradx) — LIVE: 50 sampled native accounts
+QRL (quantum-resistant-ledger) — LIVE: 100 sampled native accounts
+DOT (polkadot) — LIVE: 1 sampled native accounts
+ONT (ontology) — LIVE: 1 sampled native accounts
+ONG (ong) — LIVE: 2 sampled native accounts
+ERG (ergo) — LIVE: 3 sampled native accounts
+A (vaulta) — LIVE: 4 sampled native accounts
+AR (arweave) — LIVE: 1 sampled native accounts
+DCR (decred) — LIVE: 1 sampled native accounts
+BSV (bitcoin-cash-sv) — LIVE: 1 sampled native accounts
+FOGO (fogo) — LIVE: 11 sampled native accounts
+TX (tx) — LIVE: 100 sampled native accounts
+GRX (grx-chain) — LIVE: 1 sampled native accounts
+EGLD (elrond-erd-2) — LIVE: 100 sampled native accounts
+ARK (ark) — LIVE: 100 sampled native accounts
+HIVE (hive) — LIVE: 34 sampled native accounts
+STEEM (steem) — LIVE: 58 sampled native accounts
+PI (pi-network) — LIVE: 4 sampled native accounts
+THETA (theta-token) — LIVE: 97 sampled native accounts
+TFUEL (theta-fuel) — LIVE: 97 sampled native accounts
+VTHO (vethor-token) — LIVE: 1 sampled native accounts
+TCY (tcy) — LIVE: 100 sampled native accounts
+TAO (bittensor) — LIVE: 1 sampled native accounts
+OZO (ozone-chain) — LIVE: 1 sampled native accounts
+PROS (pharos-network) — LIVE: 1 sampled native accounts
+DATA (story-2) — LIVE: 1 sampled native accounts
+ABEY (abey) — unavailable: empty-native-sample
+KUB (bitkub-coin) — LIVE: 2 sampled native accounts
+XP (xphere) — LIVE: 1 sampled native accounts
+BTY (bityuan) — LIVE: 2 sampled native accounts
+KAIA (kaia) — unavailable: provider-http-503
+
+CONFIGURED BUT NOT POSITIVE IN THE FINAL CHECK
+ABEY — empty-native-sample
+KAIA — provider-http-503
+
+REMAINING PUBLIC-FEED GAPS
+XMR (monero) — Public chain data does not reveal per-address native balances; no fabricated replacement.
+CC (canton-network) — Documented Scan APIs were found, but the two independently operated public endpoints checked returned HTTP403. Access denial was respected.
+PRL (pearl-2) — Official Pearl PoUW explorer identified; no verified free native-balance endpoint found. Old Oyster/Parallel PRL identities were rejected.
+ARRR (pirate-chain) — Shielded balances are not exposed as a public per-address balance feed.
+ARIAX (aria-chain) — Could not verify a public ARIAX native-balance source. The older ARIA chain and ticker were not assumed to be the same asset.
+XNO (nano) — Public Nano.to representatives endpoint worked, but bounded accounts_balances requests returned Node temporarily unavailable. Voting weights were not substituted for balances.
+XVG (verge) — The public explorer returned HTTP503 with an explicit database-reorganization maintenance notice.
+PCI (pay-coin) — No verified free native PayProtocol account-balance API found. Wrapped Ethereum PCI was excluded.
+ETHW (ethereum-pow-iou) — Official public endpoint returned HTTP522. A working free production balance source was not verified.
+RVN (ravencoin) — The public explorer returned HTTP520; another independently listed source timed out. No verified current balance feed obtained.
+ONE (harmony) — Three independently operated endpoints returned an old latest-block timestamp. Fresh retrieval time was not used to disguise an old chain view.
+TSC (tensorcash) — Official TensorCash PoUW node documentation identified, but no verified free public balance endpoint found. Other TSC-ticker chains were excluded.
+EPIC (epic-cash) — Mimblewimble does not provide the required public address-balance index.
+
+FIXES AND VALIDATION
+- Exact asset IDs and distinct cache/capture identities prevent VET/VTHO, THETA/TFUEL, ONT/ONG and RUNE/TCY collisions.
+- Ambiguous DATA/PROS/GRX/XP exchange tickers cannot automatically attach another asset's native feed.
+- Neo discovers native account keys, then reads current NEO independently; storage values and GAS are ignored.
+- Bitkub discovers actual recent transaction senders; Bityuan uses recent account activity. Transfer-token amounts are never used as native balances.
+- VTHO includes actual fee payers when delegated transaction origins hold no gas.
+- Chia handles transaction-free blocks and discovers ordinary recent outputs before querying full unspent balances.
+- Binary and WebSocket responses are bounded; actual Substrate metadata/genesis identities are checked.
+- 155 focused history, native-feed, capture, replay/export integrity checks passed. Six workspace typechecks passed. Workspace tests: 18 passed, two existing skips. Website build and actual Worker bundle passed. Clean npm10 root install passed; backend dependencies were installed from the actual Cloudflare build folder.
+- A Cloudflare build initially failed because the new SDK dependencies were only listed at the project root. The backend manifest/lock were repaired, deployment succeeded, and CI now installs and bundles that same backend folder.
+
+EVIDENCE
+Full per-asset production states, source scopes, source/index/retrieval timestamps and individual reasons: docs/native-feed-coverage-2026-10-19.json.
+Public site: https://nchrl01.github.io/rhosnei.gr/
+Public backend health: https://upic-insightx.nchrl01.workers.dev/health

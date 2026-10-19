@@ -1,3 +1,5 @@
+UPDATE: This earlier 50-feed snapshot is superseded by docs/NATIVE-FEEDS-2026-10-19.txt and the updated native-feed-coverage-2026-10-19.json (96 positive live feeds, 98 configured). The original audit below is retained as historical context.
+
 UPIC — native feeds and broad debug report
 19 October 2026
 Production sample check: 2026-10-19T16:31:54.232000+00:00
