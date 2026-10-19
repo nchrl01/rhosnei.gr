@@ -1,4 +1,4 @@
-import {nativeCoin} from './native-coins.js?v=356';
+import {nativeCoin} from './native-coins.js?v=358';
 const RELAY='https://upic-insightx.nchrl01.workers.dev/native-holders',MAX_AGE=6*3600000;
 const freshSources=(data,now)=>['sourceAt','indexerAt','indexTipAt'].every(key=>data[key]==null||(Number.isSafeInteger(data[key])&&data[key]<=now+300000&&now-data[key]<MAX_AGE));
 const empty=()=>({state:'unavailable',source:'Native address index',records:[],weight:0,holders:null,totalHolders:null,complete:false,native:true});
@@ -6,13 +6,13 @@ export function createNativeHolders({onChange=()=>{}}={}){
  let state=empty(),controller,timer,epoch=0;
  const snapshot=(now=Date.now())=>{const age=state.fetchedAt?now-state.fetchedAt:null,weight=age!==null&&age>=0&&age<MAX_AGE&&freshSources(state,now)?1:0;return {...state,age,weight,records:weight?state.records:[],state:state.records.length&&!weight?'expired':state.state};};
  function close(){epoch++;controller?.abort();clearTimeout(timer);state=empty();}
- function setMarket(pair){close();const asset=nativeCoin(pair?.baseToken?.symbol);if(!asset||pair.nativeAsset?.chain!==asset.chain)return;const version=epoch;state={...empty(),state:'loading',network:asset.chain};onChange();
+ function setMarket(pair){close();const asset=nativeCoin(pair?.baseToken?.symbol,pair?.nativeAsset);if(!asset||pair.nativeAsset?.chain!==asset.chain)return;const version=epoch;state={...empty(),state:'loading',network:asset.chain};onChange();
   async function refresh(){
    if(version!==epoch)return;if(document.hidden){timer=setTimeout(refresh,30000);return;}controller=new AbortController();
    try{
-    const url=new URL(RELAY);url.searchParams.set('network',asset.chain);
+    const url=new URL(RELAY);url.searchParams.set('network',asset.chain);url.searchParams.set('asset',asset.id);
     const response=await fetch(url,{credentials:'omit',signal:AbortSignal.any([controller.signal,AbortSignal.timeout(60000)])});if(!response.ok)throw Error('native-relay-unavailable');const data=await response.json();if(version!==epoch)return;
-    if(data.network!==asset.chain||data.address!=='native'||!Array.isArray(data.records))throw Error('native-identity-mismatch');
+    if(data.network!==asset.chain||data.assetId!==asset.id||data.address!=='native'||!Array.isArray(data.records))throw Error('native-identity-mismatch');
     const records=data.records.slice(0,100).filter(row=>typeof row.id==='string'&&row.id.length<=150&&Number.isFinite(row.tokenBalance)&&row.tokenBalance>0);
     const valid=records.length&&Number.isFinite(data.fetchedAt)&&data.fetchedAt<=Date.now()+1000&&Date.now()-data.fetchedAt<MAX_AGE&&freshSources(data,Date.now());
     state=valid?{...data,records,holders:null,totalHolders:null,native:true}:{...empty(),state:data.state||'unavailable',nextAt:data.nextAt};

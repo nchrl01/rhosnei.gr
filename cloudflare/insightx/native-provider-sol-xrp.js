@@ -19,7 +19,7 @@ const sample={totalHolders:null,complete:false,truncated:false,supply:null,refer
 // per hourly refresh stay bounded; this sample is explicitly scoped to activity.
 // https://docs.solanavibestation.com/getting-started/connection-information
 // https://solana.com/docs/rpc/http/getblock
-export async function loadSolanaNative(read,now=Date.now()){
+export async function loadSolanaNative(read,now=Date.now(),{includeVoteSigners=false}={}){
  const slot=await rpc(read,SOL_RPC,'getSlot',[{commitment:'finalized'}]);
  if(!Number.isSafeInteger(slot)||slot<=0)throw Error('invalid-solana-slot');
  const block=await rpc(read,SOL_RPC,'getBlock',[slot,{commitment:'finalized',transactionDetails:'accounts',rewards:false,maxSupportedTransactionVersion:1}]);
@@ -28,7 +28,7 @@ export async function loadSolanaNative(read,now=Date.now()){
  const ids=new Set();
  for(const row of block.transactions){
   const keys=row.transaction?.accountKeys;
-  if(!Array.isArray(keys)||keys.some(key=>key.pubkey==='Vote111111111111111111111111111111111111111'))continue;
+  if(!Array.isArray(keys)||!includeVoteSigners&&keys.some(key=>key.pubkey==='Vote111111111111111111111111111111111111111'))continue;
   for(const key of keys){if(ids.size<MAX_SAMPLE&&key.signer===true&&solAddress(key.pubkey))ids.add(key.pubkey);}
   if(ids.size===MAX_SAMPLE)break;
  }
@@ -46,6 +46,16 @@ export async function loadSolanaNative(read,now=Date.now()){
  const records=[...balances].filter(([,value])=>value>0).map(([id,tokenBalance])=>({id,tokenBalance}));
  if(!records.length)throw Error('empty-solana-block-sample');
  return {...sample,records,source:'Solana Vibe Station finalized balances',scope:'finalized-block-participants',coverage:'recent-account-sample',sourceAt,sourceSlot:slot,indexCadence:'finalized-block',balanceBasis:'last-post-transaction-balance'};
+}
+
+// Fogo's official SVM mainnet uses lamports (1e9). Pin its genesis identity
+// before reusing the same finalized post-balance parser; never sample SOL here.
+// https://docs.fogo.io/user-guides/building-on-fogo.html
+export async function loadFogoNative(read,now=Date.now()){
+ const endpoint='https://mainnet.fogo.io';
+ if(await rpc(read,endpoint,'getGenesisHash',[])!=='CDLtwKnaCoK157uaHQDj4fHu72AyD2519Cphmpiq6hvT')throw Error('native-chain-mismatch');
+ const result=await loadSolanaNative((url,options)=>read(endpoint,options),now,{includeVoteSigners:true});
+ return {...result,source:'Fogo official finalized native balances',scope:'finalized-block-participants-including-validator-vote-signers'};
 }
 
 // Ankr explicitly offers this no-key public endpoint for wallet/dApp/backend use.

@@ -4,6 +4,7 @@ import {fetchFinalEvmNativeBalances, FINAL_EVM_NATIVE_ASSETS} from '../cloudflar
 const now = 1792430000000;
 const ids = Array.from({length:8},(_,i)=>'0x'+String(i+1).padStart(40,'0'));
 const config = {
+ QIE:['https://rpc1mainnet.qie.digital/',1990],DOT:['https://eth-rpc.polkadot.io',420420419],GRX:['https://rpc.grxchain.io',1110],TAO:['https://lite.chain.opentensor.ai',964],OZO:['https://node1.ozonechain.io',4000],PROS:['https://rpc.pharos.xyz',1672],DATA:['https://mainnet.datarpc.io',1514],ABEY:['https://rpc.abeychain.com',179],KUB:['https://rpc.bitkubchain.io',96],XP:['https://en-bkk.x-phere.com',20250217],BTY:['https://mainnet.bityuan.com/eth',2999],KAIA:['https://kaia.drpc.org',8217],
  MON:['https://rpc.monad.xyz',143],S:['https://rpc.soniclabs.com',146],SOMI:['https://api.infra.mainnet.somnia.network',5031],
  WEMIX:['https://api.wemix.com',1111],XDC:['https://xdc.public-rpc.com',50],CFX:['https://evm.confluxrpc.com',1030],
  SEI:['https://evm-rpc.sei-apis.com',1329],BERA:['https://rpc.berachain.com',80094]

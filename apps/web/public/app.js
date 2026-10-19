@@ -1,7 +1,7 @@
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
-import {rememberRecentCoin} from './coin-catalogue.js?v=335';
+import {rememberRecentCoin} from './coin-catalogue.js?v=358';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=351';
 import {createTestMint} from './test-mint.js?v=3';
 import {createTestNftExporter} from './test-nft-export.js?v=1';
@@ -12,7 +12,7 @@ import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=281';
-import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=356';
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=358';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=350';
@@ -132,7 +132,7 @@ chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',coinImageKey='',imageController,imageToken='';const tokenImages=new Map(),failedCoinImages=new Map();
 function rejectedCoinImage(key,url){return Date.now()-(failedCoinImages.get(key+'|'+url)||0)<300000;}
 function rejectCoinImage(key,url){failedCoinImages.set(key+'|'+url,Date.now());while(failedCoinImages.size>128)failedCoinImages.delete(failedCoinImages.keys().next().value);}
-const imageKey=pair=>pair.nativeAsset?pair.nativeAsset.chain+':native':pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
+const imageKey=pair=>pair.nativeAsset?pair.nativeAsset.chain+':'+pair.nativeAsset.address:pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
 let testSimulationActive=false,testRefreshPending=false,lastTestActivityId='';
 const testMint=createTestMint(document.querySelector('.coin-copy'),{
  onPreviewEnd:()=>{if(playing&&!starting)$('play').click();},
@@ -727,7 +727,7 @@ async function freshMarketSnapshot(pair,{signal}={}){
  return completeMarketCap(updated,{signal});
 }
 function withNativeCap(pair,snapshot){
- if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.weight>0&&((snapshot.marketAt??snapshot.marketFetchedAt)==null||(Number.isSafeInteger(snapshot.marketAt??snapshot.marketFetchedAt)&&Date.now()-(snapshot.marketAt??snapshot.marketFetchedAt)<6*3600000&&(snapshot.marketAt??snapshot.marketFetchedAt)<=Date.now()+300000))&&Number(pair.priceUsd)>0){
+ if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.assetId===pair.nativeAsset.id&&snapshot.weight>0&&((snapshot.marketAt??snapshot.marketFetchedAt)==null||(Number.isSafeInteger(snapshot.marketAt??snapshot.marketFetchedAt)&&Date.now()-(snapshot.marketAt??snapshot.marketFetchedAt)<6*3600000&&(snapshot.marketAt??snapshot.marketFetchedAt)<=Date.now()+300000))&&Number(pair.priceUsd)>0){
   const supply=Number(snapshot.supply)||Number(snapshot.referenceMarketCap)/Number(snapshot.referencePrice);
   if(Number.isFinite(supply)&&supply>0)return {...pair,marketCap:supply*Number(pair.priceUsd),marketCapSource:snapshot.marketSource||snapshot.source,marketCapEstimated:true};
  }

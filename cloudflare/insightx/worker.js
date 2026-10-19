@@ -141,7 +141,7 @@ export default {
   }
   if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/holders')return holderCount(url,headers,env);
-  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},nativeHolders:{configured:Boolean(env.HOLDER_CACHE),networks:Object.values(NATIVE_COINS).map(asset=>asset.chain),...nativeLimits,totalHolderCount:false},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
+  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},nativeHolders:{configured:Boolean(env.HOLDER_CACHE),networks:[...new Set(Object.values(NATIVE_COINS).map(asset=>asset.chain))],assets:Object.values(NATIVE_COINS).map(({id,chain,symbol,cacheKey})=>({id,chain,symbol,cacheKey:cacheKey||chain})),...nativeLimits,totalHolderCount:false},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
   if(!['sol','eth','base'].includes(network))return json({state:'unsupported-network'},422,headers);

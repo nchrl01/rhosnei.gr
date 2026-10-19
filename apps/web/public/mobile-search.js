@@ -1,5 +1,5 @@
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=335';
-import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=335';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=358';
+import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=358';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {loadTrendingCoins} from './trending.js?v=345';
 const money=value=>Number.isFinite(value)&&value>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(value):'—';

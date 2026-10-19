@@ -4,7 +4,7 @@ export function loadCoinCatalogue(){return pending??=fetch('marketplace-coin-cat
 const nativeOnNetwork=(item,network)=>Boolean(network&&(item.nativeChain===network||item.nativeChains?.includes(network)||(item.contractStatus==='native'&&!item.nativeChain&&!item.nativeChains?.length&&item.chain===network)));
 export function coinPlayerURL(item){
  const address=item.contractStatus==='off-chain'||nativeOnNetwork(item,item.chain)?null:item.address;
- const params=new URLSearchParams({coin:address||item.query||item.symbol+'/USD'});if(address&&item.chain)params.set('network',item.chain);
+ const params=new URLSearchParams({coin:address||item.query||item.symbol+'/USD'});if(address&&item.chain)params.set('network',item.chain);if(!address&&nativeOnNetwork(item,item.chain)&&item.id)params.set('native',item.id);
  return './?'+params;
 }
 export function rememberRecentCoin(coin){

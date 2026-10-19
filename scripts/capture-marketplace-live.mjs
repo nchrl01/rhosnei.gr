@@ -30,7 +30,7 @@ const keyFor=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?ad
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro','kucoin-community-chain':'kcc'};
 const explorers=new Set(['ethereum','eth','base','arbitrum','optimism','polygon','polygon_pos','zksync','celo','robinhood']);
 function supported(coin){
- if(coin.address==='native')return Object.values(NATIVE_COINS).some(asset=>asset.chain===coin.chain&&asset.id===coin.id);
+ if(coin.address==='native'||coin.address?.startsWith('native:'))return catalogueNative(coin)?.address===coin.address;
  if(!coin.address||!coin.chain||coin.contractStatus==='off-chain')return false;
  if(['solana','sui','tron','ton'].includes(coin.chain))return validHolderToken(coin.chain,coin.address);
  return validHolderToken(coin.chain,coin.address)&&(explorers.has(coin.chain)||Boolean(HOLDER_NETWORKS[aliases[coin.chain]||coin.chain]));
@@ -181,7 +181,7 @@ try{
     }catch{await route.abort().catch(()=>{});}
    });
    page=await context.newPage();page.on('pageerror',error=>{if(errors.length<3)errors.push(error.message.slice(0,300));});
-   const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'?coin.symbol+'/USD':coin.address,...(coin.address==='native'?{}:{network:coin.chain}),request:randomUUID()});
+   const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'||coin.address?.startsWith('native:')?coin.symbol+'/USD':coin.address,...((coin.address==='native'||coin.address?.startsWith('native:'))?{native:coin.id}:{network:coin.chain}),request:randomUUID()});
    await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:Math.min(45000,options.timeout*1000)});
    await page.waitForFunction(({expectedKey,kind,started,needsImage})=>{const value=window.__upicLiveCapture,frame=value?.frame||value;return frame?.key===expectedKey&&frame.captureKind===kind&&frame.capturedAt>=started&&(!needsImage||frame.imageAvailable===true)&&frame.blob instanceof Blob;},{expectedKey,kind,started,needsImage:Boolean(coin.image)},{timeout:Math.max(1,options.timeout*1000-(Date.now()-started)),polling:500});
    const captured=await page.evaluate(async()=>{

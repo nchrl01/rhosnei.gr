@@ -14,6 +14,18 @@ const address = value => typeof value === 'string' && /^0x[0-9a-f]{40}$/i.test(v
 // https://docs.sei.io/evm
 // https://docs.berachain.com/general/introduction/connect-to-berachain
 const CONFIGS = Object.freeze({
+  QIE: {id:'qie',chain:'qie-blockchain',provider:'qie-mainnet',chainId:1990,url:'https://rpc1mainnet.qie.digital/',source:'QIE current mainnet native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  DOT: {id:'polkadot',chain:'polkadot',provider:'polkadot-hub-rpc',chainId:420420419,url:'https://eth-rpc.polkadot.io',source:'Polkadot Hub public native balances',scope:'polkadot-hub-ethereum-compatible-accounts-only',includeProposer:true,blockTag:'latest'},
+  GRX: {id:'grx-chain',chain:'grx-chain',provider:'grx-chain-public-rpc',chainId:1110,url:'https://rpc.grxchain.io',source:'GRX official native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  TAO: {id:'bittensor',chain:'bittensor',provider:'bittensor-public-rpc',chainId:964,url:'https://lite.chain.opentensor.ai',source:'TAO public native balances',scope:'bittensor-evm-accounts-only-excludes-substrate-accounts',includeProposer:true,blockTag:'latest'},
+  OZO: {id:'ozone-chain',chain:'ozone-chain',provider:'ozone-chain-public-rpc',chainId:4000,url:'https://node1.ozonechain.io',source:'OZO public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  PROS: {id:'pharos-network',chain:'pharos',provider:'pharos-public-rpc',chainId:1672,url:'https://rpc.pharos.xyz',source:'PROS public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  DATA: {id:'story-2',chain:'story',provider:'story-public-rpc',chainId:1514,url:'https://mainnet.datarpc.io',source:'DATA public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  ABEY: {id:'abey',chain:'abey',provider:'abey-public-rpc',chainId:179,url:'https://rpc.abeychain.com',source:'ABEY public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  KUB: {id:'bitkub-coin',chain:'bitkub-chain',provider:'bitkub-chain-public-rpc',chainId:96,url:'https://rpc.bitkubchain.io',source:'KUB public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  XP: {id:'xphere',chain:'xphere',provider:'xphere-public-rpc',chainId:20250217,url:'https://en-bkk.x-phere.com',source:'XP public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  BTY: {id:'bityuan',chain:'bityuan',provider:'bityuan-public-rpc',chainId:2999,url:'https://mainnet.bityuan.com/eth',source:'BTY public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  KAIA: {id:'kaia',chain:'kaia',provider:'kaia-public-rpc',chainId:8217,url:'https://kaia.drpc.org',source:'KAIA public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   MON: {id:'monad',chain:'monad',provider:'monad-public',chainId:143,url:'https://rpc.monad.xyz',source:'Monad public native balances',scope:'recent-transactors-current-native-balances'},
   S: {id:'sonic-3',chain:'sonic',provider:'sonic-public',chainId:146,url:'https://rpc.soniclabs.com',source:'Sonic public native balances',scope:'recent-transactors-current-native-balances'},
   SOMI: {id:'somnia',chain:'somnia',provider:'somnia-public',chainId:5031,url:'https://api.infra.mainnet.somnia.network',source:'Somnia public native balances',scope:'recent-transactors-current-native-balances'},
@@ -54,7 +66,7 @@ export async function fetchFinalEvmNativeBalances(asset, read, now = Date.now())
     // System transactions are not user transactors (e.g. Berachain's type 0x7e).
     .filter(tx => tx && tx.type !== '0x7e' && address(tx.from))
     .map(tx => tx.from.toLowerCase()).concat(config.includeProposer && address(block.miner) ? [block.miner.toLowerCase()] : []))];
-  let block = checkedBlock(await rpc('eth_getBlockByNumber',['finalized',true]));
+  let block = checkedBlock(await rpc('eth_getBlockByNumber',[config.blockTag||'finalized',true]));
   let ids;
   if (config.accountIndex) {
     // eSpace often has empty finalized blocks. Discover real indexed accounts instead;

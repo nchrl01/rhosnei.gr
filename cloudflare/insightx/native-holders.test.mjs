@@ -120,3 +120,20 @@ test('HTTP420 provider throttles persist a cooldown instead of treating them as 
  const s=setup(),prior=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return new Response('RequestRateLimitExceeded',{status:420});};
  try{await assert.rejects(s.relay.read('cosmos-directory','https://provider.invalid'),/provider-http-420/);await assert.rejects(s.relay.read('cosmos-directory','https://provider.invalid'),/free-budget-wait/);assert.equal(calls,1);}finally{globalThis.fetch=prior;s.db.close();}
 });
+test('two native assets on one chain keep separate cache records and explicit identities',async()=>{
+ const s=setup();s.relay.marketMetadata=async()=>({});
+ s.save('vechain',{network:'vechain',records:[{id:'vet',tokenBalance:3}],provider:'vechain-thorest'});
+ s.save('vechain:vtho',{network:'vechain',records:[{id:'vtho',tokenBalance:19}],provider:'vechain-thorest',assetId:'vethor-token'});
+ try{const vet=await s.relay.get(request('vechain')),vtho=await s.relay.get(new URL('https://worker.invalid/native-holders?network=vechain&asset=vethor-token'));assert.equal(vet.assetId,'vechain');assert.equal(vet.records[0].tokenBalance,3);assert.equal(vtho.assetId,'vethor-token');assert.equal(vtho.records[0].tokenBalance,19);assert.equal((await s.relay.get(new URL('https://worker.invalid/native-holders?network=ethereum&asset=vethor-token'))).state,'unsupported-network');}finally{s.db.close();}
+});
+test('native text reads preserve large integer amounts instead of JSON rounding',async()=>{
+ const s=setup(),prior=globalThis.fetch;globalThis.fetch=async()=>new Response('123456789012345678901234');
+ try{assert.equal(await s.relay.read('fixture','https://provider.invalid',{nativeText:true}),'123456789012345678901234');}finally{globalThis.fetch=prior;s.db.close();}
+});
+test('native responses exceeding the bounded size cannot consume arbitrary memory',async()=>{
+ const s=setup(),prior=globalThis.fetch;globalThis.fetch=async()=>new Response('x'.repeat(4*1024*1024+1));
+ try{await assert.rejects(s.relay.read('fixture','https://provider.invalid'),/too-large/);}finally{globalThis.fetch=prior;s.db.close();}
+});
+test('native binary responses preserve protobuf bytes and never forward internal options',async()=>{const s=setup(),prior=globalThis.fetch;globalThis.fetch=async(url,opts)=>{assert.equal(opts.nativeBinary,undefined);return new Response(new Uint8Array([0,255,12]));};try{assert.deepEqual(await s.relay.read('fixture','https://provider.invalid',{nativeBinary:true}),new Uint8Array([0,255,12]));}finally{globalThis.fetch=prior;s.db.close();}});
+test('Cloudflare WebSocket reads send one bounded RPC and close after the matching reply',async()=>{const s=setup(),prior=globalThis.fetch,listeners={};let sent,closed=false;const socket={accept(){},addEventListener(k,fn){listeners[k]=fn;},send(body){sent=body;queueMicrotask(()=>listeners.message({data:JSON.stringify({id:1,result:'mainnet'})}));},close(){closed=true;}};globalThis.fetch=async(url,opts)=>{assert.equal(url,'https://provider.invalid/rpc');assert.equal(opts.headers.Upgrade,'websocket');return {status:101,webSocket:socket};};try{const body=JSON.stringify({jsonrpc:'2.0',id:1,method:'chain_getBlockHash',params:[0]});assert.deepEqual(await s.relay.read('fixture','wss://provider.invalid/rpc',{body}),{id:1,result:'mainnet'});assert.equal(sent,body);assert.equal(closed,true);}finally{globalThis.fetch=prior;s.db.close();}});
+test('WebSocket JSON-RPC rate limits persist cooldowns without reconnect loops',async()=>{const s=setup(),prior=globalThis.fetch,listeners={};let calls=0;globalThis.fetch=async()=>{calls++;return {status:101,webSocket:{accept(){},addEventListener(k,fn){listeners[k]=fn;},send(){queueMicrotask(()=>listeners.message({data:JSON.stringify({id:1,error:{code:429,message:'rate limit'}})}));},close(){}}};};try{await assert.rejects(s.relay.read('fixture','wss://provider.invalid/rpc',{body:'{}'}),/rate-limit/);await assert.rejects(s.relay.read('fixture','wss://provider.invalid/rpc',{body:'{}'}),/free-budget/);assert.equal(calls,1);}finally{globalThis.fetch=prior;s.db.close();}});

@@ -14,7 +14,8 @@ const nativeBalance=value=>{
 // distinct VTHO currency and must never be added to or substituted for VET.
 // https://docs.vechain.org/how-to-run-a-node/nodes
 // https://docs.vechain.org/developer-resources/how-to-build-on-vechain/read-data/read-accounts
-export async function loadVeChainNative(read,now=Date.now()){
+export async function loadVeChainNative(read,now=Date.now(),symbol='VET'){
+ if(!['VET','VTHO'].includes(symbol))throw Error('unsupported-native-provider');
  const block=await read(ENDPOINT+'/blocks/finalized?expanded=true');
  const sourceAt=Number(block?.timestamp)*1000,height=block?.number;
  if(!hash(block?.id)||!Number.isSafeInteger(height)||height<1||!Number.isSafeInteger(sourceAt)||sourceAt>now+300000||now-sourceAt>=MAX_AGE||block?.isFinalized!==true||block?.isTrunk!==true||!Array.isArray(block?.transactions)||block.transactions.length>10000)throw Error('invalid-vechain-finalized-block');
@@ -42,9 +43,9 @@ export async function loadVeChainNative(read,now=Date.now()){
  const records=[];
  for(const id of selected){
   let body;try{body=await read(`${ENDPOINT}/accounts/${id}?revision=${block.id}`);}catch(error){if(records.length)break;throw error;}
-  const tokenBalance=nativeBalance(body?.balance);
+  const tokenBalance=nativeBalance(symbol==='VTHO'?body?.energy:body?.balance);
   if(tokenBalance>0)records.push({id,tokenBalance});
  }
  if(!records.length)throw Error('empty-vechain-native-balances');
- return {records,totalHolders:null,complete:false,truncated:false,supply:null,referencePrice:null,referenceMarketCap:null,source:'VeChain public finalized account balances',scope:'finalized-block-participants-vet-only',coverage:'recent-account-sample',sourceAt,sourceHeight:height,sourceBlockHash:block.id,indexCadence:'finalized-block',balanceBasis:'vet-balance-at-finalized-block-revision'};
+ return {records,totalHolders:null,complete:false,truncated:false,supply:null,referencePrice:null,referenceMarketCap:null,source:'VeChain public finalized '+symbol+' account balances',scope:'finalized-block-participants-'+symbol.toLowerCase()+'-only',coverage:'recent-account-sample',sourceAt,sourceHeight:height,sourceBlockHash:block.id,indexCadence:'finalized-block',balanceBasis:symbol.toLowerCase()+'-balance-at-finalized-block-revision'};
 }

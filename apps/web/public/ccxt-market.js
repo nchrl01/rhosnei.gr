@@ -1,7 +1,7 @@
-import {nativeCoin} from './native-coins.js?v=356';
+import {nativeCoin} from './native-coins.js?v=358';
 import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=325';
 // Browser-safe public exchange adapter. No account, API key or trading calls.
-let worker=null,serial=0;
+let worker=null,serial=0,initialNativeId=new URLSearchParams(globalThis.location?.search||'').get('native');
 const pending=new Map(),streams=new Map();
 function runtime(){
  if(worker)return worker;
@@ -30,7 +30,7 @@ function request(method,...args){
 export const isExchangeMarket=pair=>pair?.source==='ccxt'||pair?.chainId==='exchange';
 export const isExchangeQuery=text=>/^(?:cex:)?(?:kraken|coinbase|coinbaseexchange|binance):/i.test(text)||/^[a-z0-9]+[/-](USD|USDT|USDC)$/i.test(text);
 export const searchExchangeMarkets=query=>request('search',query);
-export async function prepareExchangeMarket(pair){const result=await request('snapshot',pair.exchangeId||pair.dexId,pair.exchangeSymbol||pair.pairAddress.split(':').slice(1).join(':'));const asset=nativeCoin(result.baseToken?.symbol);return asset?{...result,nativeAsset:{...asset,address:'native'}}:result;}
+export async function prepareExchangeMarket(pair){const result=await request('snapshot',pair.exchangeId||pair.dexId,pair.exchangeSymbol||pair.pairAddress.split(':').slice(1).join(':'));const id=pair.nativeAsset?.id||pair.nativeId||initialNativeId;initialNativeId=null;const asset=nativeCoin(result.baseToken?.symbol,id?{id}:undefined);return asset&&asset.exchange!==false?{...result,nativeAsset:asset}:result;}
 export function subscribeExchangeMarket(pair,onTrade,onStatus,onBook){
  const id='market-'+(++serial);let closed=false,retry,failures=0;
  function reconnect(){if(closed)return;request('subscribe',pair.exchangeId,pair.exchangeSymbol,id).then(()=>{failures=0;}).catch(error=>{if(!closed){onStatus({connected:false,kind:'exchange',message:error.message});schedule();}});}

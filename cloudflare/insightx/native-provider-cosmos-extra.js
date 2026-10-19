@@ -2,6 +2,8 @@
 // https://github.com/cosmos/chain-registry (mainnet assetlist.json files).
 // Public application API: https://github.com/eco-stake/cosmos-directory#api-documentation
 const CHAINS=Object.freeze({
+ TX:{id:'tx',chain:'tx',route:'coreum',denom:'ucore',decimals:6,prefix:'core'},
+ TCY:{id:'tcy',chain:'thorchain',route:'thorchain',denom:'tcy',decimals:8,prefix:'thor'},
  LUNC:{id:'terra-luna',chain:'terra',route:'terra',denom:'uluna',decimals:6,prefix:'terra'},
  BABY:{id:'babylon',chain:'babylon-genesis',route:'babylon',denom:'ubbn',decimals:6,prefix:'bbn'},
  MANTRA:{id:'mantra',chain:'mantra',route:'mantrachain',denom:'amantra',decimals:18,prefix:'mantra'},

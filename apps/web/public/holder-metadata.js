@@ -1,4 +1,4 @@
-import {createNativeHolders} from './native-holders.js?v=356';
+import {createNativeHolders} from './native-holders.js?v=358';
 import {createHolderBalances} from './holder-balances.js?v=350';
 import {fetchGoPlusCount} from './holder-count-providers.js?v=350';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.

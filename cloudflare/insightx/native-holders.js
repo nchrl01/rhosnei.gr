@@ -1,6 +1,8 @@
+import {loadNeoNative} from './native-provider-neo.js';
+import {loadEcashNative} from './native-provider-ecash.js';
 import {loadCoinLoreNative} from './native-market-meta.js';
 import {NATIVE_COINS} from '../../apps/web/public/native-coins.js';
-import {loadSolanaNative,loadXrpNative,loadHederaNative,loadAlgorandNative} from './native-provider-sol-xrp.js';
+import {loadSolanaNative,loadFogoNative,loadXrpNative,loadHederaNative,loadAlgorandNative} from './native-provider-sol-xrp.js';
 import {fetchExtraNativeBalances} from './native-provider-extra.js';
 import {fetchEvmExtraNativeBalances} from './native-provider-evm-extra.js';
 import {loadCardanoNative,loadCosmosNative,loadKaspaNative,loadTonNative} from './native-provider-next.js';
@@ -10,12 +12,19 @@ import {loadStellarNative,loadStacksNative} from './native-provider-xlm-stx.js';
 import {fetchFinalEvmNativeBalances,FINAL_EVM_NATIVE_ASSETS} from './native-provider-evm-final.js';
 import {loadSuiNative} from './native-provider-sui.js';
 import {loadVeChainNative} from './native-provider-vechain.js';
+import {loadPublicListNative} from './native-provider-public-lists.js';
+import {loadLedgerExtraNative} from './native-provider-ledger-extra.js';
+import {loadSubstrateNative} from './native-provider-substrate.js';
+import {loadMinaNative,loadQubicNative} from './native-provider-graphql-extra.js';
+import {loadExplorerExtraNative} from './native-provider-explorer-extra.js';
 const HOUR=3600000,DAY=24*HOUR,TTL=HOUR,MAX_AGE=6*HOUR,SCHEMA=3;
-const assets=new Map(Object.values(NATIVE_COINS).map(asset=>[asset.chain,asset]));
+const assets=new Map();for(const asset of Object.values(NATIVE_COINS))if(!asset.cacheKey&&!assets.has(asset.chain))assets.set(asset.chain,asset);
+const assetsById=new Map(Object.values(NATIVE_COINS).map(asset=>[asset.id,asset]));
+const assetCacheKey=asset=>asset.cacheKey||asset.chain;
 const empty=(network,state)=>({network,address:'native',state,records:[],totalHolders:null,complete:false,truncated:false,coverage:'top-holder-sample',native:true});
 const positive=x=>x!==null&&x!==''&&Number.isFinite(Number(x))&&Number(x)>0?Number(x):null;
-export const nativeLimits={cacheSeconds:TTL/1000,maxCacheSeconds:7200,maxAgeSeconds:MAX_AGE/1000,dailyRequests:3000,providerDailyRequests:{sochain:300,blockscout:400,bitcore:300,'bnb-alchemy':180,trongrid:160,coingecko:48,coinlore:48,...Object.fromEntries(FINAL_EVM_NATIVE_ASSETS.map(asset=>[asset.provider,90])),default:120}};
-const providerKey=asset=>asset.provider==='blockscout'?'blockscout':asset.provider;
+export const nativeLimits={cacheSeconds:TTL/1000,maxCacheSeconds:7200,maxAgeSeconds:MAX_AGE/1000,dailyRequests:6000,providerDailyRequests:{sochain:300,blockscout:400,bitcore:300,'cosmos-directory':144,'vechain-thorest':144,'bnb-alchemy':180,trongrid:160,coingecko:48,coinlore:48,'ontology-rpc':180,'neo-coz':180,...Object.fromEntries(FINAL_EVM_NATIVE_ASSETS.map(asset=>[asset.provider,90])),default:120}};
+const providerKey=asset=>['ledger-ont','ledger-ong'].includes(asset.provider)?'ontology-rpc':['public-list-theta','public-list-tfuel'].includes(asset.provider)?'theta-explorer':asset.provider;
 const safeCache=(cached,now)=>Array.isArray(cached?.records)&&cached.records.length&&Number.isSafeInteger(cached.fetchedAt)&&cached.fetchedAt<=now+1000&&now-cached.fetchedAt<MAX_AGE&&['sourceAt','indexerAt','indexTipAt'].every(key=>cached[key]==null||(Number.isSafeInteger(cached[key])&&cached[key]<=now+300000&&now-cached[key]<MAX_AGE));
 const retryAt=(response,now)=>{const value=response.headers.get('Retry-After');if(!value)return now+HOUR;const seconds=Number(value),date=Date.parse(value);return Math.max(now+HOUR,Number.isFinite(seconds)?now+seconds*1000:Number.isFinite(date)?date:now+HOUR);};
 // One Cloudflare object shares samples and quotas across all visitors. Provider
@@ -29,12 +38,13 @@ export class NativeHolderRelay{
   sql.exec('CREATE TABLE IF NOT EXISTS native_provider_budget (day INTEGER NOT NULL,provider TEXT NOT NULL,calls INTEGER NOT NULL,cooldown INTEGER NOT NULL,PRIMARY KEY(day,provider))');
  }
  async get(url){
-  const network=url.searchParams.get('network'),asset=assets.get(network);if(!asset)return empty(network,'unsupported-network');
-  const now=Date.now(),saved=this.sql.exec('SELECT data,next_at FROM native_samples WHERE network=?',network).toArray()[0];let cached=null;
+  const network=url.searchParams.get('network'),requestedAsset=url.searchParams.get('asset'),asset=requestedAsset?assetsById.get(requestedAsset):assets.get(network);if(!asset||asset.chain!==network)return empty(network,'unsupported-network');
+  const key=assetCacheKey(asset);
+  const now=Date.now(),saved=this.sql.exec('SELECT data,next_at FROM native_samples WHERE network=?',key).toArray()[0];let cached=null;
   try{cached=saved?JSON.parse(saved.data):null;}catch{}
   // Schema upgrades do not force extra requests for still-valid old samples.
   if(saved?.next_at>now&&cached){
-   if(safeCache(cached,now)){const meta=(await this.marketMetadata())[asset.id];return {...cached,...(this.freshMarket(meta)?meta:{}),cached:true};}
+   if(safeCache(cached,now)){const meta=(await this.marketMetadata())[asset.id];return {...cached,assetId:asset.id,...(this.freshMarket(meta)?meta:{}),cached:true};}
    if(cached.records?.length)return {...empty(network,'expired'),nextAt:saved.next_at};
    // An independent provider can replace a failed feed. The old provider's
    // durable cooldown is preserved and still enforced by read().
@@ -43,20 +53,29 @@ export class NativeHolderRelay{
    const improvedDiscovery=/^empty-/.test(cached.reason||'')&&(cached.sampleVersion||1)<(asset.sampleVersion||1);
    if(cached.provider===providerKey(asset)&&!improvedDiscovery)return cached;
   }
-  if(this.pending.has(network))return this.pending.get(network);
-  const provider=providerKey(asset),task=(this.queues.get(provider)||Promise.resolve()).then(()=>this.load(asset,cached)).finally(()=>this.pending.delete(network));
-  this.queues.set(provider,task.catch(()=>{}));this.pending.set(network,task);return task;
+  if(this.pending.has(key))return this.pending.get(key);
+  const provider=providerKey(asset),task=(this.queues.get(provider)||Promise.resolve()).then(()=>this.load(asset,cached)).finally(()=>this.pending.delete(key));
+  this.queues.set(provider,task.catch(()=>{}));this.pending.set(key,task);return task;
  }
  async load(asset,cached){
-  const network=asset.chain,now=Date.now(),provider=providerKey(asset),base={...empty(network,'unavailable'),schema:SCHEMA,provider,sampleVersion:asset.sampleVersion||1};
+  const network=asset.chain,now=Date.now(),provider=providerKey(asset),base={...empty(network,'unavailable'),schema:SCHEMA,provider,assetId:asset.id,sampleVersion:asset.sampleVersion||1};
   const cacheMs=Math.max(TTL,Math.min(nativeLimits.maxCacheSeconds*1000,Number(asset.cacheSeconds)*1000||TTL));
-  const save=data=>{this.sql.exec('INSERT OR REPLACE INTO native_samples VALUES(?,?,?)',network,JSON.stringify(data),data.nextAt);return data;};
+  const save=data=>{this.sql.exec('INSERT OR REPLACE INTO native_samples VALUES(?,?,?)',assetCacheKey(asset),JSON.stringify(data),data.nextAt);return data;};
   const read=(target,options)=>this.read(provider,target,options);
   try{
    let result;
-   if(asset.provider==='sochain')result=await this.sochain(asset,read,now);
+   if(asset.symbol==='NEO')result=await loadNeoNative(read,now);
+   else if(asset.symbol==='XEC')result=await loadEcashNative(read,now);
+   else if(asset.provider.startsWith('explorer-'))result=await loadExplorerExtraNative(asset,read,now);
+   else if(asset.symbol==='MINA')result=await loadMinaNative(read,now);
+   else if(asset.symbol==='QUBIC')result=await loadQubicNative(read,now);
+   else if(asset.provider.startsWith('substrate-'))result=await loadSubstrateNative(asset,read,now);
+   else if(asset.provider.startsWith('ledger-'))result=await loadLedgerExtraNative(asset,read,now);
+   else if(asset.provider.startsWith('public-list-'))result=await loadPublicListNative(asset,read,now);
+   else if(asset.provider==='sochain')result=await this.sochain(asset,read,now);
    else if(asset.provider==='blockscout')result=await this.blockscout(asset,read);
    else if(asset.symbol==='SOL')result=await loadSolanaNative(read,now);
+   else if(asset.symbol==='FOGO')result=await loadFogoNative(read,now);
    else if(asset.symbol==='XRP')result=await loadXrpNative(read,now);
    else if(asset.symbol==='HBAR')result=await loadHederaNative(read,now);
    else if(asset.symbol==='ALGO')result=await loadAlgorandNative(read,now);
@@ -67,7 +86,7 @@ export class NativeHolderRelay{
    else if(asset.symbol==='NEAR')result=await loadNearNative(read,now);
    else if(asset.symbol==='APT')result=await loadAptosNative(read,now);
    else if(asset.symbol==='SUI')result=await loadSuiNative(read,now);
-   else if(asset.symbol==='VET')result=await loadVeChainNative(read,now);
+   else if(['VET','VTHO'].includes(asset.symbol))result=await loadVeChainNative(read,now,asset.symbol);
    else if(asset.symbol==='XLM')result=await loadStellarNative(read,now);
    else if(asset.symbol==='STX')result=await loadStacksNative(read,now);
    else if(asset.provider==='cosmos-directory')result=await loadCosmosExtraNative(asset,read);
@@ -87,7 +106,7 @@ export class NativeHolderRelay{
   }catch(error){const nextAt=Number(error.retryAt)||Date.now()+(/^empty-/.test(String(error.message))?cacheMs:5*60000);if(/rate-limit/.test(String(error.message)))this.cooldown(provider,nextAt);return save(safeCache(cached,Date.now())?{...cached,schema:SCHEMA,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
  }
  async read(provider,target,options={}){
-   if(['chainz','routescan','trongrid','toncenter','cosmos-directory'].includes(provider)){const next=this.sql.exec('SELECT next_at FROM native_provider_pacing WHERE provider=?',provider).toArray()[0]?.next_at||0;const wait=Math.max(0,next-Date.now());this.sql.exec('INSERT OR REPLACE INTO native_provider_pacing VALUES(?,?)',provider,Date.now()+wait+(provider==='chainz'?10100:provider==='routescan'?600:1100));if(wait)await new Promise(resolve=>setTimeout(resolve,wait));}
+   if(['chainz','routescan','trongrid','toncenter','cosmos-directory','ledger-bsv'].includes(provider)){const next=this.sql.exec('SELECT next_at FROM native_provider_pacing WHERE provider=?',provider).toArray()[0]?.next_at||0;const wait=Math.max(0,next-Date.now());this.sql.exec('INSERT OR REPLACE INTO native_provider_pacing VALUES(?,?)',provider,Date.now()+wait+(provider==='chainz'?10100:provider==='routescan'?600:provider==='ledger-bsv'?500:1100));if(wait)await new Promise(resolve=>setTimeout(resolve,wait));}
    const at=Date.now(),day=Math.floor(at/DAY),limit=nativeLimits.providerDailyRequests[provider]||nativeLimits.providerDailyRequests.default;
    const budget=this.sql.exec('SELECT * FROM native_provider_budget WHERE day=? AND provider=?',day,provider).toArray()[0];
    const cooldown=Math.max(budget?.cooldown||0,this.sql.exec('SELECT until_ms FROM native_provider_cooldown WHERE provider=?',provider).toArray()[0]?.until_ms||0);
@@ -95,11 +114,21 @@ export class NativeHolderRelay{
    if(total>=nativeLimits.dailyRequests||(budget?.calls||0)>=limit||cooldown>at)throw Object.assign(Error('free-budget-wait'),{retryAt:cooldown>at?cooldown:(day+1)*DAY});
    this.sql.exec('INSERT INTO native_provider_budget VALUES(?,?,1,0) ON CONFLICT(day,provider) DO UPDATE SET calls=calls+1',day,provider);
    this.sql.exec('DELETE FROM native_provider_budget WHERE day<?',day-1);
-   const response=await fetch(target,{...options,headers:{Accept:'application/json',...(options.headers||{})},redirect:'manual',signal:AbortSignal.timeout(18000)});
+   const {nativeText=false,nativeBinary=false,...fetchOptions}=options;
+   const websocket=String(target).startsWith('wss://');
+   const response=await fetch(websocket?String(target).replace(/^wss:/,'https:'):target,websocket?{headers:{Upgrade:'websocket'},redirect:'manual',signal:AbortSignal.timeout(18000)}:{...fetchOptions,headers:{Accept:'application/json',...(options.headers||{})},redirect:'manual',signal:AbortSignal.timeout(18000)});
+   if(websocket&&response.status===101&&response.webSocket){
+    const socket=response.webSocket;socket.accept();
+    return new Promise((resolve,reject)=>{let settled=false;const finish=(error,data)=>{if(settled)return;settled=true;clearTimeout(timer);try{socket.close(1000,'read complete');}catch{}error?reject(error):resolve(data);};const timer=setTimeout(()=>finish(Error('native-websocket-timeout')),18000);
+     socket.addEventListener('message',event=>{try{if(typeof event.data!=='string'||new TextEncoder().encode(event.data).byteLength>4*1024*1024)throw Error('native-response-too-large');const data=JSON.parse(event.data);if(data?.id!==1)return;const text=String(data?.error?.message||'');if([429,-32005].includes(Number(data?.error?.code))||/rate.?limit|quota|too many requests|forbidden|unauthorized/i.test(text)){const next=Date.now()+HOUR;this.cooldown(provider,next);throw Object.assign(Error('provider-rpc-rate-limit'),{retryAt:next});}finish(null,data);}catch(error){finish(error);}});
+     socket.addEventListener('error',()=>finish(Error('native-websocket-error')));socket.addEventListener('close',()=>finish(Error('native-websocket-closed')));try{socket.send(fetchOptions.body);}catch(error){finish(error);}
+    });
+   }
+   if(websocket&&response.ok){await response.body?.cancel();throw Error('native-websocket-upgrade-failed');}
    if(!response.ok){const limited=[401,402,403,420,429,430].includes(response.status),next=limited?retryAt(response,Date.now()):Date.now()+5*60000;
     if(limited)this.cooldown(provider,next);
     await response.body?.cancel();throw Object.assign(Error('provider-http-'+response.status),{retryAt:next});}
-   const data=await response.json(),rpcError=data?.error||data?.result?.error;
+   const reader=response.body.getReader(),chunks=[];let bytes=0;for(;;){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>4*1024*1024){await reader.cancel();throw Error('native-response-too-large');}chunks.push(value);}const joined=new Uint8Array(bytes);let offset=0;for(const chunk of chunks){joined.set(chunk,offset);offset+=chunk.byteLength;}if(nativeBinary)return joined;const raw=new TextDecoder().decode(joined),data=nativeText?raw:JSON.parse(raw),rpcError=data?.error||data?.result?.error;
    const errorText=[rpcError?.message||rpcError,...(Array.isArray(data?.errors)?data.errors.map(error=>String(error?.message||'')+' '+String(error?.extensions?.code||'')):[])].filter(Boolean).join(' ');
    if([429,-32005].includes(Number(rpcError?.code||data?.result?.error_code))||/rate.?limit|usage.?limit|daily.?limit|quota|too many requests|slow.?down|unauthorized|forbidden|access denied/i.test(errorText)){const next=/daily|for the day/i.test(errorText)?(Math.floor(Date.now()/DAY)+1)*DAY:Date.now()+HOUR;this.cooldown(provider,next);throw Object.assign(Error('provider-rpc-rate-limit'),{retryAt:next});}
    await new Promise(resolve=>setTimeout(resolve,FINAL_EVM_NATIVE_ASSETS.some(asset=>asset.provider===provider)?500:300));return data;
