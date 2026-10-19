@@ -16,4 +16,4 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - name: History, native feeds and capture integrity
-        run: node --test cloudflare/insightx/history-cache.test.mjs cloudflare/insightx/native-holders.test.mjs cloudflare/insightx/coin-captures.test.mjs scripts/test-native-account-adapters.mjs scripts/test-native-evm-adapters.mjs scripts/test-native-evm-final.mjs scripts/test-native-next-adapters.mjs scripts/test-native-major-next.mjs scripts/test-native-cosmos-adapters.mjs scripts/test-native-xlm-stx.mjs scripts/test-native-sui.mjs scripts/test-mint.test.mjs scripts/test-nft-export.test.mjs
+        run: node --test cloudflare/insightx/history-cache.test.mjs cloudflare/insightx/native-holders.test.mjs cloudflare/insightx/coin-captures.test.mjs scripts/test-native-account-adapters.mjs scripts/test-native-evm-adapters.mjs scripts/test-native-evm-final.mjs scripts/test-native-next-adapters.mjs scripts/test-native-major-next.mjs scripts/test-native-cosmos-adapters.mjs scripts/test-native-xlm-stx.mjs scripts/test-native-sui.mjs scripts/test-native-vechain.mjs scripts/test-mint.test.mjs scripts/test-nft-export.test.mjs

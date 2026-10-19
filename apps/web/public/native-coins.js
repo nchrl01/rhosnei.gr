@@ -41,14 +41,15 @@ export const NATIVE_COINS=Object.freeze({
  RUNE:{id:'thorchain',chain:'thorchain',symbol:'RUNE',provider:'cosmos-directory',cacheSeconds:7200},
  APT:{id:'aptos',chain:'aptos',symbol:'APT',provider:'aptos-indexer',cacheSeconds:7200},
  SUI:{id:'sui',chain:'sui',symbol:'SUI',provider:'sui-public-graphql',cacheSeconds:7200},
+ VET:{id:'vechain',chain:'vechain',symbol:'VET',provider:'vechain-thorest',cacheSeconds:7200},
  MON:{id:'monad',chain:'monad',symbol:'MON',provider:'monad-public',cacheSeconds:7200},
  S:{id:'sonic-3',chain:'sonic',symbol:'S',provider:'sonic-public',cacheSeconds:7200},
  SOMI:{id:'somnia',chain:'somnia',symbol:'SOMI',provider:'somnia-public',cacheSeconds:7200},
  WEMIX:{id:'wemix-token',chain:'wemix-network',symbol:'WEMIX',provider:'wemix-public',cacheSeconds:7200},
- XDC:{id:'xdce-crowd-sale',chain:'xdc-network',symbol:'XDC',provider:'xdc-public',cacheSeconds:7200},
+ XDC:{id:'xdce-crowd-sale',chain:'xdc-network',symbol:'XDC',provider:'xdc-ankr-public',cacheSeconds:7200},
  SEI:{id:'sei-network',chain:'sei-network',symbol:'SEI',provider:'sei-public',cacheSeconds:7200},
  BERA:{id:'berachain-bera',chain:'berachain',symbol:'BERA',provider:'berachain-public',cacheSeconds:7200},
- CFX:{id:'conflux-token',chain:'conflux',symbol:'CFX',provider:'conflux-espace',cacheSeconds:7200},
+ CFX:{id:'conflux-token',chain:'conflux',symbol:'CFX',provider:'conflux-espace',cacheSeconds:7200,sampleVersion:2},
 });
 export function nativeCoin(symbol){return NATIVE_COINS[String(symbol).toUpperCase()]||null;}
 export function catalogueNative(coin){const asset=nativeCoin(coin?.symbol);return asset&&asset.id===coin.id&&(coin.nativeChain===asset.chain||coin.nativeChains?.includes(asset.chain)||(!coin.nativeChain&&!coin.nativeChains?.length&&!coin.address&&coin.chain===asset.chain))?{...asset,address:'native'}:null;}

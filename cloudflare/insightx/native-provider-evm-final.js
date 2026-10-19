@@ -8,8 +8,9 @@ const address = value => typeof value === 'string' && /^0x[0-9a-f]{40}$/i.test(v
 // https://docs.soniclabs.com/sonic/build-on-sonic/getting-started
 // https://docs.somnia.network/developer/json-rpc-api
 // https://docs.wemix.com/en/quick-start/start-node/use-public-api-server-rpc
-// https://docs.xdc.network/api/
+// https://xdc.public-rpc.com/ — independent Ankr-operated community endpoint, no key.
 // https://doc.confluxnetwork.org/docs/espace/network-endpoints/
+// https://evmapi.confluxscan.org/doc — account discovery, followed by current RPC balances.
 // https://docs.sei.io/evm
 // https://docs.berachain.com/general/introduction/connect-to-berachain
 const CONFIGS = Object.freeze({
@@ -17,10 +18,10 @@ const CONFIGS = Object.freeze({
   S: {id:'sonic-3',chain:'sonic',provider:'sonic-public',chainId:146,url:'https://rpc.soniclabs.com',source:'Sonic public native balances',scope:'recent-transactors-current-native-balances'},
   SOMI: {id:'somnia',chain:'somnia',provider:'somnia-public',chainId:5031,url:'https://api.infra.mainnet.somnia.network',source:'Somnia public native balances',scope:'recent-transactors-current-native-balances'},
   WEMIX: {id:'wemix-token',chain:'wemix-network',provider:'wemix-public',chainId:1111,url:'https://api.wemix.com',source:'WEMIX public native balances',scope:'recent-transactors-current-native-balances'},
-  XDC: {id:'xdce-crowd-sale',chain:'xdc-network',provider:'xdc-public',chainId:50,url:'https://rpc.xinfin.network',source:'XDC public native balances',scope:'recent-transactors-current-native-balances'},
+  XDC: {id:'xdce-crowd-sale',chain:'xdc-network',provider:'xdc-ankr-public',chainId:50,url:'https://xdc.public-rpc.com',source:'Ankr XDC public native balances',scope:'recent-transactors-current-native-balances'},
   SEI: {id:'sei-network',chain:'sei-network',provider:'sei-public',chainId:1329,url:'https://evm-rpc.sei-apis.com',source:'Sei public EVM native balances',scope:'sei-evm-recent-addresses-only'},
   BERA: {id:'berachain-bera',chain:'berachain',provider:'berachain-public',chainId:80094,url:'https://rpc.berachain.com',source:'Berachain public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true},
-  CFX: {id:'conflux-token',chain:'conflux',provider:'conflux-espace',chainId:1030,url:'https://evm.confluxrpc.com',source:'Confura eSpace native balances',scope:'conflux-espace-recent-addresses-only-excludes-core-space'},
+  CFX: {id:'conflux-token',chain:'conflux',provider:'conflux-espace',chainId:1030,url:'https://evm.confluxrpc.com',source:'ConfluxScan / Confura eSpace native balances',scope:'conflux-espace-indexed-accounts-current-native-balances-excludes-core-space',accountIndex:'https://evmapi.confluxscan.org/data/accounts?limit=20&sort=desc'},
 });
 
 export const FINAL_EVM_NATIVE_ASSETS = Object.freeze(Object.entries(CONFIGS).map(([symbol, {id,chain,provider}]) => Object.freeze({id,chain,symbol,provider,refreshMs:2*HOUR})));
@@ -54,9 +55,20 @@ export async function fetchFinalEvmNativeBalances(asset, read, now = Date.now())
     .filter(tx => tx && tx.type !== '0x7e' && address(tx.from))
     .map(tx => tx.from.toLowerCase()).concat(config.includeProposer && address(block.miner) ? [block.miner.toLowerCase()] : []))];
   let block = checkedBlock(await rpc('eth_getBlockByNumber',['finalized',true]));
-  let ids = senders(block);
+  let ids;
+  if (config.accountIndex) {
+    // eSpace often has empty finalized blocks. Discover real indexed accounts instead;
+    // index balances/totals are never trusted or used to manufacture holder counts.
+    if (++calls > 6) throw Error('native-call-budget');
+    const data = await read(config.accountIndex);
+    if (data?.status !== '1' || !Array.isArray(data?.result)) {
+      const limited = /rate.?limit|usage limit|quota|too many requests/i.test(String(data?.message)+' '+String(data?.result));
+      throw Object.assign(Error(limited ? 'native-rpc-rate-limit' : 'invalid-native-account-index'),limited ? {retryAt:now+2*HOUR} : {});
+    }
+    ids = [...new Set(data.result.slice(0,20).filter(row=>address(row?.address)).map(row=>row.address.toLowerCase()))];
+  } else ids = senders(block);
   // A quiet finalized block gets at most one preceding-block lookup, never a scan.
-  if (!ids.length && block.numberValue > 1) {
+  if (!config.accountIndex && !ids.length && block.numberValue > 1) {
     const previous = block.numberValue-1;
     block = checkedBlock(await rpc('eth_getBlockByNumber',['0x'+previous.toString(16),true]),previous);
     ids = senders(block);
@@ -72,6 +84,7 @@ export async function fetchFinalEvmNativeBalances(asset, read, now = Date.now())
     if (tokenBalance > 0) records.push({id,tokenBalance});
   }
   if (!records.length) throw Error('empty-native-sample');
-  // The finalized block discovers addresses; balances are sequential current-state reads.
-  return {source:config.source,scope:config.scope,coverage:'recent-address-sample',totalHolders:null,supply:null,referencePrice:null,referenceMarketCap:null,sourceAt:null,indexCadence:'current-rpc-state',discoveryBlock:block.numberValue,records};
+  // Balances are sequential current-state reads. The CFX block is only a health check;
+  // it is not the source block or timestamp of the index's discovered accounts.
+  return {source:config.source,scope:config.scope,coverage:config.accountIndex?'ledger-account-sample':'recent-address-sample',totalHolders:null,supply:null,referencePrice:null,referenceMarketCap:null,sourceAt:null,indexTipAt:Number(BigInt(block.timestamp))*1000,indexCadence:'current-rpc-state',...(config.accountIndex?{indexTip:block.numberValue}:{discoveryBlock:block.numberValue}),records};
 }

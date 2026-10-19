@@ -9,6 +9,7 @@ import {loadNearNative,loadAptosNative} from './native-provider-major-next.js';
 import {loadStellarNative,loadStacksNative} from './native-provider-xlm-stx.js';
 import {fetchFinalEvmNativeBalances,FINAL_EVM_NATIVE_ASSETS} from './native-provider-evm-final.js';
 import {loadSuiNative} from './native-provider-sui.js';
+import {loadVeChainNative} from './native-provider-vechain.js';
 const HOUR=3600000,DAY=24*HOUR,TTL=HOUR,MAX_AGE=6*HOUR,SCHEMA=3;
 const assets=new Map(Object.values(NATIVE_COINS).map(asset=>[asset.chain,asset]));
 const empty=(network,state)=>({network,address:'native',state,records:[],totalHolders:null,complete:false,truncated:false,coverage:'top-holder-sample',native:true});
@@ -37,14 +38,17 @@ export class NativeHolderRelay{
    if(cached.records?.length)return {...empty(network,'expired'),nextAt:saved.next_at};
    // An independent provider can replace a failed feed. The old provider's
    // durable cooldown is preserved and still enforced by read().
-   if(cached.provider===providerKey(asset))return cached;
+   // A corrected discovery algorithm may retry an old empty sample once. Real
+   // provider denials, quota waits and successful snapshots retain their timers.
+   const improvedDiscovery=/^empty-/.test(cached.reason||'')&&(cached.sampleVersion||1)<(asset.sampleVersion||1);
+   if(cached.provider===providerKey(asset)&&!improvedDiscovery)return cached;
   }
   if(this.pending.has(network))return this.pending.get(network);
   const provider=providerKey(asset),task=(this.queues.get(provider)||Promise.resolve()).then(()=>this.load(asset,cached)).finally(()=>this.pending.delete(network));
   this.queues.set(provider,task.catch(()=>{}));this.pending.set(network,task);return task;
  }
  async load(asset,cached){
-  const network=asset.chain,now=Date.now(),provider=providerKey(asset),base={...empty(network,'unavailable'),schema:SCHEMA,provider};
+  const network=asset.chain,now=Date.now(),provider=providerKey(asset),base={...empty(network,'unavailable'),schema:SCHEMA,provider,sampleVersion:asset.sampleVersion||1};
   const cacheMs=Math.max(TTL,Math.min(nativeLimits.maxCacheSeconds*1000,Number(asset.cacheSeconds)*1000||TTL));
   const save=data=>{this.sql.exec('INSERT OR REPLACE INTO native_samples VALUES(?,?,?)',network,JSON.stringify(data),data.nextAt);return data;};
   const read=(target,options)=>this.read(provider,target,options);
@@ -63,6 +67,7 @@ export class NativeHolderRelay{
    else if(asset.symbol==='NEAR')result=await loadNearNative(read,now);
    else if(asset.symbol==='APT')result=await loadAptosNative(read,now);
    else if(asset.symbol==='SUI')result=await loadSuiNative(read,now);
+   else if(asset.symbol==='VET')result=await loadVeChainNative(read,now);
    else if(asset.symbol==='XLM')result=await loadStellarNative(read,now);
    else if(asset.symbol==='STX')result=await loadStacksNative(read,now);
    else if(asset.provider==='cosmos-directory')result=await loadCosmosExtraNative(asset,read);
@@ -79,7 +84,7 @@ export class NativeHolderRelay{
    if(this.freshMarket(meta))result={...result,...meta};
    // No sample size, explorer account total, or list page count is a holder count.
    return save({...base,...result,records,network,address:'native',totalHolders:null,complete:false,state:'snapshot',fetchedAt:Date.now(),sourceAt,marketCapEstimated:true,indexCadence:result.indexCadence||'provider-indexed',cacheSeconds:cacheMs/1000,nextAt:Date.now()+cacheMs});
-  }catch(error){const nextAt=Number(error.retryAt)||Date.now()+(/^empty-/.test(String(error.message))?cacheMs:5*60000);return save(safeCache(cached,Date.now())?{...cached,schema:SCHEMA,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
+  }catch(error){const nextAt=Number(error.retryAt)||Date.now()+(/^empty-/.test(String(error.message))?cacheMs:5*60000);if(/rate-limit/.test(String(error.message)))this.cooldown(provider,nextAt);return save(safeCache(cached,Date.now())?{...cached,schema:SCHEMA,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
  }
  async read(provider,target,options={}){
    if(['chainz','routescan','trongrid','toncenter','cosmos-directory'].includes(provider)){const next=this.sql.exec('SELECT next_at FROM native_provider_pacing WHERE provider=?',provider).toArray()[0]?.next_at||0;const wait=Math.max(0,next-Date.now());this.sql.exec('INSERT OR REPLACE INTO native_provider_pacing VALUES(?,?)',provider,Date.now()+wait+(provider==='chainz'?10100:provider==='routescan'?600:1100));if(wait)await new Promise(resolve=>setTimeout(resolve,wait));}
@@ -91,7 +96,7 @@ export class NativeHolderRelay{
    this.sql.exec('INSERT INTO native_provider_budget VALUES(?,?,1,0) ON CONFLICT(day,provider) DO UPDATE SET calls=calls+1',day,provider);
    this.sql.exec('DELETE FROM native_provider_budget WHERE day<?',day-1);
    const response=await fetch(target,{...options,headers:{Accept:'application/json',...(options.headers||{})},redirect:'manual',signal:AbortSignal.timeout(18000)});
-   if(!response.ok){const limited=[401,402,403,429,430].includes(response.status),next=limited?retryAt(response,Date.now()):Date.now()+5*60000;
+   if(!response.ok){const limited=[401,402,403,420,429,430].includes(response.status),next=limited?retryAt(response,Date.now()):Date.now()+5*60000;
     if(limited)this.cooldown(provider,next);
     await response.body?.cancel();throw Object.assign(Error('provider-http-'+response.status),{retryAt:next});}
    const data=await response.json(),rpcError=data?.error||data?.result?.error;

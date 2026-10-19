@@ -51,12 +51,12 @@
 </script>
 <!-- site-shell:entry:end -->
 <!-- site-shell:styles:start -->
-<link rel="stylesheet" href="foundation.css?v=356">
-<link rel="stylesheet" href="visual-lab.css?v=356">
-<link rel="stylesheet" href="audio-lab.css?v=356">
-<link rel="stylesheet" href="typography.css?v=356">
-<link rel="stylesheet" href="shared-navigation.css?v=356">
-<link rel="stylesheet" href="intro.css?v=356">
+<link rel="stylesheet" href="foundation.css?v=357">
+<link rel="stylesheet" href="visual-lab.css?v=357">
+<link rel="stylesheet" href="audio-lab.css?v=357">
+<link rel="stylesheet" href="typography.css?v=357">
+<link rel="stylesheet" href="shared-navigation.css?v=357">
+<link rel="stylesheet" href="intro.css?v=357">
 <!-- site-shell:styles:end -->
 </head>
 <body>
@@ -71,6 +71,6 @@
 <!-- site-shell:header:end --><header class="lab-toolbar-header"><a href="av-lab.html" class="lab-link">Combined AV lab ↗</a><a href="./">UPIC ↗</a><a class="lab-link" href="visual-lab.html">Visual lab</a><span>AUDIO LAB <small>01</small></span><button id="play">Start audio</button></header>
 <main><section class="stage"><div class="audio-display"><p class="eyebrow">ACTUAL ENGINE OUTPUT</p><h1 id="instrument">Your sound.<br>Your controls.</h1><p id="harmony">Press Start audio to load the instruments.</p><canvas id="scope" aria-label="Audio waveform"></canvas><div class="meter" aria-label="Output level"><div id="meter-fill"></div></div><div class="stage-caption"><span id="meter-text">Silent</span><span id="clock">00:00</span></div><div id="engines" aria-live="polite"></div><p id="last-note">No notes yet</p></div><div class="stage-tools"><button id="chord" disabled>Play chord</button><button id="trade" disabled>Send trade</button><button id="restart">Restart score</button></div><p id="status" role="status">Synthetic market inputs · real UPIC engines · no trading API calls.</p></section>
 <aside><div class="intro"><h1>Hear the mappings.</h1><p>Drag knobs, use arrow keys, or type a value. AUTO follows the engine; turn a knob to override it. Your changes stay in this lab. Start audio is required before anything plays.</p></div><div class="actions"><button id="note">Export change note</button><button id="save">Save preset</button><label class="upload">Load preset<input id="load" type="file" accept="application/json,.json"></label><button id="reset">Reset all</button></div><label class="notes">Notes for changes<textarea id="notes" placeholder="What should change in the main website’s audio?"></textarea></label><div id="controls"></div><details class="inactive"><summary>What this lab covers</summary><p>GeneralUser sampled harmony and arpeggios with Kraken bass, ENVION’s market-mapped controls, data sonification, and optional AI arpeggios. Tempo is limited to the existing melodic engine’s 20–200 BPM range.</p><p>It simulates market inputs; it does not fetch trades or reproduce a historical recording. The arpeggio model downloads only when you request it. ENVION sample replacement, internal Pd patch wiring, model weights and convolution impulse lengths are not editable here. Exported notes and presets do not change the main website.</p></details><p class="footer">Audio Lab 01 · Uses UPIC’s shared audio engines. Drafts are stored in this browser. Attach an exported note here to request changes.</p></aside></main><div id="envion-host" hidden></div><script type="module" src="audio-lab.js?v=258"></script><!-- site-shell:scripts:start -->
-<script type="module" src="shared-header.js?v=356"></script>
+<script type="module" src="shared-header.js?v=357"></script>
 <!-- site-shell:scripts:end -->
 </body></html>

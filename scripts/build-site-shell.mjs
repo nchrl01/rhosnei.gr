@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 356;
+const version = 357;
 const pages = [
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
   { file: 'about.html', type: 'public', active: 'about', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },

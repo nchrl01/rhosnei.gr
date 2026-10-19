@@ -89,3 +89,34 @@ test('new native identities refresh the shared metadata batch once without bypas
  s.relay.read=async provider=>{assert.equal(provider,'coinlore');calls++;return [{id:'90',nameid:'bitcoin',symbol:'BTC',price_usd:'100',market_cap_usd:'2100000000',csupply:'21000000'}];};
  try{assert.ok((await s.relay.coinloreMetadata()).bitcoin);await s.relay.coinloreMetadata();assert.equal(calls,1);}finally{s.db.close();}
 });
+test('corrected discovery retries an old empty sample once but keeps all other negative timers',async()=>{
+ const s=setup();let calls=0;s.relay.load=async()=>{calls++;return {state:'snapshot'};};
+ try{
+  s.save('conflux',{provider:'conflux-espace',records:[],state:'unavailable',reason:'empty-native-sample',sampleVersion:1});
+  assert.equal((await s.relay.get(request('conflux'))).state,'snapshot');assert.equal(calls,1);
+  for(const overrides of [{reason:'provider-http-403',sampleVersion:1},{reason:'provider-rpc-rate-limit',sampleVersion:1},{reason:'free-budget-wait',sampleVersion:1},{reason:'empty-native-sample',sampleVersion:2}]){
+   s.save('conflux',{provider:'conflux-espace',records:[],state:'unavailable',...overrides});
+   assert.equal((await s.relay.get(request('conflux'))).state,'unavailable');assert.equal(calls,1);
+  }
+ }finally{s.db.close();}
+});
+test('discovery upgrades cannot bypass a provider cooldown or its daily budget',async()=>{
+ const prior=globalThis.fetch;globalThis.fetch=()=>{throw Error('must not call');};
+ try{
+  for(const guard of ['cooldown','daily-budget']){const s=setup();try{
+   s.save('conflux',{provider:'conflux-espace',records:[],state:'unavailable',reason:'empty-native-sample',sampleVersion:1});
+   if(guard==='cooldown')s.relay.cooldown('conflux-espace',Date.now()+HOUR);
+   else s.sql.exec('INSERT INTO native_provider_budget VALUES(?,?,?,0)',Math.floor(Date.now()/DAY),'conflux-espace',nativeLimits.providerDailyRequests['conflux-espace']);
+   const result=await s.relay.get(request('conflux'));assert.equal(result.reason,'free-budget-wait');assert.equal(result.sampleVersion,2);
+   assert.ok(result.nextAt>Date.now());
+  }finally{s.db.close();}}
+ }finally{globalThis.fetch=prior;}
+});
+test('adapter-detected quota messages persist the same provider cooldown as HTTP limits',async()=>{
+ const s=setup(),until=Date.now()+2*HOUR;s.relay.read=async()=>{throw Object.assign(Error('native-rpc-rate-limit'),{retryAt:until});};
+ try{const result=await s.relay.get(request('conflux'));assert.equal(result.nextAt,until);assert.equal(s.sql.exec('SELECT until_ms FROM native_provider_cooldown WHERE provider=?','conflux-espace').toArray()[0].until_ms,until);}finally{s.db.close();}
+});
+test('HTTP420 provider throttles persist a cooldown instead of treating them as ordinary failures',async()=>{
+ const s=setup(),prior=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return new Response('RequestRateLimitExceeded',{status:420});};
+ try{await assert.rejects(s.relay.read('cosmos-directory','https://provider.invalid'),/provider-http-420/);await assert.rejects(s.relay.read('cosmos-directory','https://provider.invalid'),/free-budget-wait/);assert.equal(calls,1);}finally{globalThis.fetch=prior;s.db.close();}
+});
