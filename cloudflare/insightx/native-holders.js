@@ -102,8 +102,8 @@ export class NativeHolderRelay{
  cooldown(provider,until){this.sql.exec('INSERT INTO native_provider_cooldown VALUES(?,?) ON CONFLICT(provider) DO UPDATE SET until_ms=MAX(until_ms,excluded.until_ms)',provider,until);}
  async coingeckoMetadata(){
   if(this.marketPending)return this.marketPending;
-  const now=Date.now(),saved=this.sql.exec('SELECT data,next_at FROM native_market_meta WHERE id=1').toArray()[0];let cached={};try{cached=JSON.parse(saved?.data||'{}');}catch{}
-  if(saved?.next_at>now)return cached;
+  const now=Date.now(),scope=Object.values(NATIVE_COINS).map(asset=>asset.id).sort().join(','),saved=this.sql.exec('SELECT data,next_at FROM native_market_meta WHERE id=1').toArray()[0];let cached={},cachedScope;try{const parsed=JSON.parse(saved?.data||'{}');cached=parsed.values||parsed;cachedScope=parsed.scope;}catch{}
+  if(saved?.next_at>now&&cachedScope===scope)return cached;
   this.marketPending=(async()=>{
    let data=cached,nextAt=now+TTL;
    try{
@@ -111,7 +111,7 @@ export class NativeHolderRelay{
     const body=await this.read('coingecko',target);data={};
     for(const asset of Object.values(NATIVE_COINS)){const row=body[asset.id],at=Number(row?.last_updated_at)*1000;if(positive(row?.usd)&&positive(row?.usd_market_cap)&&Number.isSafeInteger(at)&&at<=Date.now()+300000&&Date.now()-at<MAX_AGE)data[asset.id]={referencePrice:Number(row.usd),referenceMarketCap:Number(row.usd_market_cap),marketAt:at,marketSource:'CoinGecko',supply:Number(row.usd_market_cap)/Number(row.usd),supplyBasis:'circulating-estimate'};}
    }catch(error){nextAt=Math.max(now+TTL,Number(error.retryAt)||0);}
-   this.sql.exec('INSERT OR REPLACE INTO native_market_meta VALUES(1,?,?)',JSON.stringify(data),nextAt);return data;
+   this.sql.exec('INSERT OR REPLACE INTO native_market_meta VALUES(1,?,?)',JSON.stringify({scope,values:data}),nextAt);return data;
   })().finally(()=>{this.marketPending=null;});return this.marketPending;
  }
  freshMarket(meta){const at=meta?.marketAt??meta?.marketFetchedAt;return Number.isSafeInteger(at)&&at<=Date.now()+300000&&Date.now()-at<MAX_AGE;}
@@ -124,12 +124,12 @@ export class NativeHolderRelay{
  }
  async coinloreMetadata(){
   if(this.coinlorePending)return this.coinlorePending;
-  const now=Date.now(),saved=this.sql.exec('SELECT data,next_at FROM native_market_meta WHERE id=2').toArray()[0];let cached={};try{cached=JSON.parse(saved?.data||'{}');}catch{}
-  if(saved?.next_at>now)return cached;
+  const now=Date.now(),scope=Object.values(NATIVE_COINS).map(asset=>asset.id).sort().join(','),saved=this.sql.exec('SELECT data,next_at FROM native_market_meta WHERE id=2').toArray()[0];let cached={},cachedScope;try{const parsed=JSON.parse(saved?.data||'{}');cached=parsed.values||parsed;cachedScope=parsed.scope;}catch{}
+  if(saved?.next_at>now&&cachedScope===scope)return cached;
   this.coinlorePending=(async()=>{
    let data=cached,nextAt=now+TTL;
    try{data=await loadCoinLoreNative((url,options)=>this.read('coinlore',url,options),Object.values(NATIVE_COINS),now);}catch(error){nextAt=Math.max(now+TTL,Number(error.retryAt)||0);}
-   this.sql.exec('INSERT OR REPLACE INTO native_market_meta VALUES(2,?,?)',JSON.stringify(data),nextAt);return data;
+   this.sql.exec('INSERT OR REPLACE INTO native_market_meta VALUES(2,?,?)',JSON.stringify({scope,values:data}),nextAt);return data;
   })().finally(()=>{this.coinlorePending=null;});return this.coinlorePending;
  }
  async sochain(asset,read,now){

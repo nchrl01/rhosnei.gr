@@ -84,3 +84,8 @@ test('an empty native sample waits the normal asset interval instead of exhausti
  const s=setup(),now=Date.now();let calls=0;s.relay.read=async()=>{calls++;return {denom_owners:[]};};
  try{const first=await s.relay.get(request('provenance'));assert.equal(first.state,'unavailable');assert.ok(first.nextAt>=now+7200000);await s.relay.get(request('provenance'));assert.equal(calls,1);}finally{s.db.close();}
 });
+test('new native identities refresh the shared metadata batch once without bypassing budgets',async()=>{
+ const s=setup();s.sql.exec('INSERT INTO native_market_meta VALUES(2,?,?)',JSON.stringify({scope:'previous-registry',values:{}}),Date.now()+HOUR);let calls=0;
+ s.relay.read=async provider=>{assert.equal(provider,'coinlore');calls++;return [{id:'90',nameid:'bitcoin',symbol:'BTC',price_usd:'100',market_cap_usd:'2100000000',csupply:'21000000'}];};
+ try{assert.ok((await s.relay.coinloreMetadata()).bitcoin);await s.relay.coinloreMetadata();assert.equal(calls,1);}finally{s.db.close();}
+});
