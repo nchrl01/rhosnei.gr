@@ -862,7 +862,7 @@ $('coin-form').onsubmit=async e=>{
    if(!selection)throw Error('No indexed market found on this network.');
    await selectSearchMarket(selection,{autoPlay,revision});return;
   }
-  if(exchangeOnly&&pairs.length===1){await selectSearchMarket(pairs[0],{autoPlay,revision});return;}
+  if(exchangeOnly&&(pairs.length===1||captureMode)){await selectSearchMarket(pairs[0],{autoPlay,revision});return;}
   if(exchangeOnly){
    showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});});
    searchFeedback('Choose an exchange market');

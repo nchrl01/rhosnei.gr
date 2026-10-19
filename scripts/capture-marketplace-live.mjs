@@ -181,7 +181,7 @@ try{
     }catch{await route.abort().catch(()=>{});}
    });
    const page=await context.newPage();page.on('pageerror',error=>{if(errors.length<3)errors.push(error.message.slice(0,300));});
-   const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'?coin.symbol+'/USD':coin.address,network:coin.chain,request:randomUUID()});
+   const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'?coin.symbol+'/USD':coin.address,...(coin.address==='native'?{}:{network:coin.chain}),request:randomUUID()});
    await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:Math.min(45000,options.timeout*1000)});
    await page.waitForFunction(({expectedKey,kind,started,needsImage})=>{const value=window.__upicLiveCapture,frame=value?.frame||value;return frame?.key===expectedKey&&frame.captureKind===kind&&frame.capturedAt>=started&&(!needsImage||frame.imageAvailable===true)&&frame.blob instanceof Blob;},{expectedKey,kind,started,needsImage:Boolean(coin.image)},{timeout:Math.max(1,options.timeout*1000-(Date.now()-started)),polling:500});
    const captured=await page.evaluate(async()=>{
