@@ -3,8 +3,6 @@ import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=359';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=351';
-import {createTestMint} from './test-mint.js?v=3';
-import {createTestNftExporter} from './test-nft-export.js?v=1';
 import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
 import {bindSearchField} from './search-field.js?v=265';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
@@ -133,24 +131,9 @@ let coinImageURL='',coinImageKey='',imageController,imageToken='';const tokenIma
 function rejectedCoinImage(key,url){return Date.now()-(failedCoinImages.get(key+'|'+url)||0)<300000;}
 function rejectCoinImage(key,url){failedCoinImages.set(key+'|'+url,Date.now());while(failedCoinImages.size>128)failedCoinImages.delete(failedCoinImages.keys().next().value);}
 const imageKey=pair=>pair.nativeAsset?pair.nativeAsset.chain+':'+pair.nativeAsset.address:pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
-let testSimulationActive=false,testRefreshPending=false,lastTestActivityId='';
-const testMint=createTestMint(document.querySelector('.coin-copy'),{
- onPreviewEnd:()=>{if(playing&&!starting)$('play').click();},
- onChange:()=>{
-  if(testRefreshPending)return;testRefreshPending=true;
-  queueMicrotask(()=>{
-   testRefreshPending=false;testNftExport.refresh();
-   const active=Boolean(testMint.simulation());
-   if(active!==testSimulationActive){testSimulationActive=active;lastTestActivityId='';piano?.reset(seed);dataSonification.reset(seed);replayPianoPrimed=false;}
-   if(market){if(playing&&!starting)tick();else syncLevels(metrics());}
-  });
- },
-});
-const testNftExport=createTestNftExporter(testMint.exportHost,{
- prepare:prepareTestNftExport,
- enabled:()=>testMint.simulation()?.sampleActivity===true,
- onBusy:value=>testMint.setLocked(value),
-});
+let lastTestActivityId='';
+// Public playback uses observed market data; the retired test controls never mount or restore stored simulations.
+const testMint={simulation:()=>null,setMarket(){},setPlaying(){}};
 function engineMetrics(observed){
  if(testExportSession){const frozen=testExportSession.metrics;return {...frozen,testMint:{...frozen.testMint,original:observed}};}
  return testEvolutionMetrics(observed,testMint.simulation());
@@ -539,7 +522,6 @@ async function closeAudio(){
  if(runtime)await runtime.close();await context?.close();
 }
 function setPlayState(active){
- if(!active&&testExportSession)testNftExport.cancel('Export cancelled because playback stopped.');
  testMint.setPlaying(active&&ctx?.state==='running');
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
@@ -754,7 +736,6 @@ function applySnapshot(pair){
 function chooseMarket(pair,{shared=false}={}){
  if(!captureMode)rememberRecentCoin({key:imageKey(pair),chain:pair.chainId,address:pair.source==='ccxt'?null:pair.baseToken.address,query:pair.source==='ccxt'?pair.exchangeSymbol:undefined,symbol:pair.baseToken.symbol,name:pair.baseToken.name,image:pair.info?.imageUrl||pair.baseToken.imageUrl});
  document.dispatchEvent(new CustomEvent('upic:market-selected'));
- testNftExport.cancel('Export cancelled because the selected coin changed.');
  liveConnection?.abort();liveConnection=null;pendingHistoryReplay=false;
  void takeShare.finish();takeShare.reset();
  pendingPianoTrade=null;tradePollingAt=0;if(!captureMode)preloadPianoSamples(hash(pair.chainId+':'+pair.baseToken.address)).catch(error=>engineView.log('Piano preload: '+error.message));
@@ -954,7 +935,6 @@ function audioContext(){
 }
 function primeAudio(){try{unlockPlayback(audioContext()).catch(()=>{});}catch{}}
 function seekHistory(bar,dragging=false){
- if(testNftExport.busy)testNftExport.cancel('Export cancelled because the replay position changed.');
  pendingPianoTrade=null;
  if(!bar)return;
  if(!replay.state.active&&!historyReplayReady()){

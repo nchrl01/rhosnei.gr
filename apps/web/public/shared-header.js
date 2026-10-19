@@ -138,3 +138,5 @@ function bindVisualizerHeaderOffset(){
  else window.addEventListener('resize',measure);
 }
 bindVisualizerHeaderOffset();
+
+if(document.querySelector('[data-report-issue]'))void import('./report-issue.js?v=360').then(m=>m.bindIssueReporter()).catch(()=>{});

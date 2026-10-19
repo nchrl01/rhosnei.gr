@@ -3,9 +3,9 @@ import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-prev
 import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=335';
 import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,rememberRecentCoin} from './coin-catalogue.js?v=359';
 import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=350';
-const $=id=>document.getElementById(id),gallery=$('coin-gallery'),browser=$('collection-browser'),grid=$('coin-gallery-grid');
+const $=id=>document.getElementById(id),gallery=$('coin-gallery'),grid=$('coin-gallery-grid');
 const search=$('coin-gallery-search'),network=$('coin-gallery-network'),order=$('coin-gallery-order'),count=$('coin-gallery-count');
-let records=[],collectionsLoaded=false,visible=40,refreshSaved=()=>{};
+let records=[],visible=40,refreshSaved=()=>{};
 clearLegacyCoinSnapshots();
 const cardUpdates=new Map();
 function refreshCards(){for(const update of cardUpdates.values())update();}
@@ -32,6 +32,13 @@ function render(append=false){
  }
  $('coin-gallery-empty').hidden=items.length>0;more.hidden=items.length<=visible;more.textContent='Load more · '+Math.min(visible,items.length)+' / '+items.length.toLocaleString();
 }
+const networkIcons=["ethereum", "base", "solana", "arbitrum", "polygon", "optimism", "avalanche", "robinhood", "abstract", "animechain", "ape_chain", "arc", "bera_chain", "blast", "flow", "gunzilla", "hyperevm", "hyperliquid", "ink", "megaeth", "monad", "ronin", "sei", "shape", "somnia", "soneium", "stablechain", "unichain", "zora"];
+const networkAliases={bera_chain:'berachain',sei:'sei-network',ape_chain:'apechain',animechain:'animechain',stablechain:'stable',hyperevm:'hyperevm'};
+const networkGroup=document.querySelector('.marketplace-networks');
+networkGroup.replaceChildren();
+function networkButton(chain,name,icon){const button=element('button');button.type='button';button.dataset.chain=chain;button.setAttribute('aria-pressed',String(chain==='all'));button.setAttribute('aria-label',name);if(icon){const image=element('img',null,'network-mark');image.src='images/networks/'+icon+'.svg';image.alt='';image.width=32;image.height=32;image.draggable=false;button.append(image,element('span',name,'network-name'));}else button.textContent=name;button.addEventListener('click',()=>{if(![...network.options].some(o=>o.value===chain)){const option=element('option',name);option.value=chain;network.append(option);}network.value=chain;for(const item of networkGroup.querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===button));network.dispatchEvent(new Event('change'));});networkGroup.append(button);}
+networkButton('all','All networks');
+for(const icon of networkIcons){const chain=networkAliases[icon]||icon,name=icon.replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());networkButton(chain,name,icon);}
 async function loadFrames(){
  const [catalogue,previews]=await Promise.allSettled([loadCoinCatalogue(),loadCloudCaptures()]);
  records=catalogue.status==='fulfilled'?catalogue.value.coins.filter(row=>row.top1000).slice(0,1000).map(row=>({...row})):[];
@@ -44,22 +51,11 @@ async function loadFrames(){
 }
 bindMarketplaceCoinSearch();
 const reset=()=>{visible=40;render();};network.addEventListener('change',reset);order.addEventListener('change',reset);
-for(const tab of document.querySelectorAll('[data-marketplace-tab]'))tab.addEventListener('click',async()=>{
- const coins=tab.dataset.marketplaceTab==='coins';gallery.hidden=!coins;browser.hidden=coins;if(coins)void refreshSaved();
- for(const button of document.querySelectorAll('[data-marketplace-tab]'))button.setAttribute('aria-selected',String(button===tab));
- if(!coins&&!collectionsLoaded){collectionsLoaded=true;try{await import('./marketplace-collections.js?v=323');}catch{$('marketplace-empty-title').textContent='Collection browser unavailable';$('marketplace-empty-note').textContent='Reload to try again.';}}
-});
 const captureRefresh=setInterval(()=>void refreshSaved(),60000);
 window.addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(captureRefresh);});
 void loadFrames();
 
-// Header search always targets the coin gallery; collections retain their own search.
-document.querySelector('button.header-search')?.addEventListener('click',()=>{if(gallery.hidden)document.querySelector('[data-marketplace-tab="coins"]').click();if(matchMedia('(min-width:761px)').matches)search.focus();});
-document.querySelector('.marketplace-tabs').addEventListener('keydown',event=>{
- if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
- const tabs=[...document.querySelectorAll('[data-marketplace-tab]')],at=tabs.indexOf(event.target);if(at<0)return;
- event.preventDefault();const next=event.key==='Home'?0:event.key==='End'?tabs.length-1:(at+(event.key==='ArrowRight'?1:tabs.length-1))%tabs.length;tabs[next].focus();tabs[next].click();
-});
+document.querySelector('button.header-search')?.addEventListener('click',()=>{if(matchMedia('(min-width:761px)').matches)search.focus();});
 
 window.addEventListener('focus',()=>void refreshSaved());
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshSaved();});
