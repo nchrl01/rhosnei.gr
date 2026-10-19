@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=earthbound-16';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=347';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=345';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -19,7 +19,7 @@ function seedFor(key){let seed=2166136261;for(const c of key)seed=Math.imul(seed
 function observedHolderSnapshot(m){
  // Counts or aggregate cluster percentages cannot reconstruct individual
  // holdings. Use only actual per-wallet values from the current snapshot.
- if(m.replay)return {balances:[],source:'unavailable',providerState:'historical-unavailable',primaryProviderState:'historical-unavailable',coverage:'unavailable',loading:false,settled:false};
+ if(m.replay&&m.replay.source!=='observed')return {balances:[],source:'unavailable',providerState:'historical-unavailable',primaryProviderState:'historical-unavailable',coverage:'unavailable',loading:false,settled:false};
  const audience=m.audience||{},relations=audience.relationships,holdings=audience.holdings,records=[];
  let selected=null,source='unavailable',coverage='unavailable';
  const supplied=Array.isArray(audience.holderBalances)&&audience.weight>0;
@@ -60,7 +60,7 @@ export function observedHolderBalances(m={}){
 export function earthboundMarketState(m={},coinKey='unselected'){
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const holders=observedHolderSnapshot(m),holderBalances=holders.balances;
- return {coinKey,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
+ return {coinKey,chartHistory:m.replay?.source==='candles'?m.replay.chart:null,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
   holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
@@ -136,7 +136,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   // Never attribute the old coin's pixels to the newly selected coin.
   if(identityKey(state.coinKey)!==key)return;
   // Share the market-cap readout's up/down pulse; price change is not a shape input.
-  latest.change=Math.sign(Number(state.markDirection)||0);
+  latest.change=latest.chartHistory?Math.sign(latest.chartHistory.at(-1)?.close-latest.chartHistory.at(-1)?.open):Math.sign(Number(state.markDirection)||0);
   const fresh=latest.fresh>0;
   // Original transport envelope: fast return on Play, cap-scaled release on
   // Pause, and a dim sparse field left behind. Audio amplitude is not an input.

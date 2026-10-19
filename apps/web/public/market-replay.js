@@ -85,5 +85,5 @@ export function scoreCandle(bars,market,interval,bar){
  // Activity is a labelled volume proxy; unavailable controls remain neutral/dry.
  const raw={motion,activity:volume,balance:.5,texture:0,volume,fresh:1,snapshotFresh:1,snapshotAge:0,decoded:false,observedVolume:bar.volume};
  const m=contextualizeMarket(raw,{price:bar.close,marketCap:Number(market?.marketCap),snapshotPrice:Number(market?.priceUsd),history:known,interval,volumeRate,observedAt:candleEnd(bar,interval),now:candleEnd(bar,interval)});
- return {...m,availability:{balance:false,liquidity:false,volume:bar.volume!=null},replay:{source:'candles',at:candleEnd(bar,interval),price:bar.close,volume:bar.volume}};
+ return {...m,availability:{balance:false,liquidity:false,volume:bar.volume!=null},replay:{source:'candles',at:candleEnd(bar,interval),price:bar.close,volume:bar.volume,chart:known.slice(-64).map(({time,open,high,low,close,volume})=>({time,open,high,low,close,volume}))}};
 }

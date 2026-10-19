@@ -61,7 +61,7 @@ export function validateCapturePayload(body,now=Date.now()){
 }
 function publicMetadata(raw,origin){const metadata=typeof raw==='string'?JSON.parse(raw):raw;const imageURL='/coin-captures/image?'+new URLSearchParams({key:metadata.key,v:String(metadata.capturedAt)});return {...metadata,imageURL,snapshot:new URL(imageURL,origin).href};}
 export class CoinCaptures{
- constructor(ctx){this.ctx=ctx;this.sql=ctx.storage.sql;this.sql.exec('CREATE TABLE IF NOT EXISTS live_coin_captures (key TEXT PRIMARY KEY, metadata TEXT NOT NULL, captured INTEGER NOT NULL, image BLOB NOT NULL, bytes INTEGER NOT NULL)');for(const row of this.sql.exec('SELECT key FROM live_coin_captures').toArray())if(!identities.has(row.key))this.sql.exec('DELETE FROM live_coin_captures WHERE key=?',row.key);}
+ constructor(ctx,visualHistory=null){this.visualHistory=visualHistory;this.ctx=ctx;this.sql=ctx.storage.sql;this.sql.exec('CREATE TABLE IF NOT EXISTS live_coin_captures (key TEXT PRIMARY KEY, metadata TEXT NOT NULL, captured INTEGER NOT NULL, image BLOB NOT NULL, bytes INTEGER NOT NULL)');for(const row of this.sql.exec('SELECT key FROM live_coin_captures').toArray())if(!identities.has(row.key))this.sql.exec('DELETE FROM live_coin_captures WHERE key=?',row.key);}
  async fetch(request){
   const url=new URL(request.url);
   try{
@@ -76,7 +76,7 @@ export class CoinCaptures{
      if(previous?.captured>=metadata.capturedAt)return 'older';
      const totals=this.sql.exec('SELECT COUNT(*) AS count, COALESCE(SUM(bytes),0) AS total FROM live_coin_captures').toArray()[0];
      if((!previous&&totals.count>=identities.size)||totals.total-(previous?.bytes||0)+bytes.length>MAX_TOTAL)return 'capacity';
-     this.sql.exec('INSERT OR REPLACE INTO live_coin_captures(key,metadata,captured,image,bytes) VALUES(?,?,?,?,?)',metadata.key,JSON.stringify(metadata),metadata.capturedAt,bytes.buffer,bytes.length);return 'saved';
+     this.sql.exec('INSERT OR REPLACE INTO live_coin_captures(key,metadata,captured,image,bytes) VALUES(?,?,?,?,?)',metadata.key,JSON.stringify(metadata),metadata.capturedAt,bytes.buffer,bytes.length);this.visualHistory?.record(metadata,bytes);return 'saved';
     });
     if(result==='older')return json({error:'A newer or identical capture already exists'},409);
     if(result==='capacity')return json({error:'Capture storage limit reached; previous captures retained'},507);

@@ -59,8 +59,13 @@ export function parseHolderBalances(text){
 export function deriveFieldRules(inputs={}){
   // Spatial/detail maturity is reached at $1M. This local clamp does not alter
   // the actual cap used by the renderer's independent $50M colour milestone.
-  const marketCap=Math.min(1e6,finite(inputs.marketCap)&&inputs.marketCap>0?inputs.marketCap:1);
-  const liquidity=finite(inputs.liquidity)&&inputs.liquidity>=0?inputs.liquidity:0;
+  const marketCap=Math.min(1e6,finite(inputs.marketCap)&&inputs.marketCap>0?inputs.marketCap:Array.isArray(inputs.chartHistory)?1e6:1);
+  // In reconstruction mode these are explicitly visual weights from candles,
+  // never wallet holdings or an estimate of historical liquidity.
+  const chart=Array.isArray(inputs.chartHistory)?inputs.chartHistory.slice(-64).filter(b=>[b.time,b.open,b.high,b.low,b.close].every(finite)&&b.open>0&&b.close>0):null;
+  const peak=chart?.reduce((n,b)=>Math.max(n,Math.max(0,Number(b.volume)||0)),0)||1;
+  const chartMarks=chart?.flatMap(b=>['open','high','low','close'].map(field=>({id:'candle:'+b.time+':'+field,balance:10000*(.35+Math.sqrt(Math.max(0,Number(b.volume)||0)/peak)*2+Math.min(2,Math.abs(b[field]/b.open-1)*5))})));
+  const liquidity=chart?1000000:finite(inputs.liquidity)&&inputs.liquidity>=0?inputs.liquidity:0;
   // Calibration: liquidity $0..$10M for spacing, $1..$1M for gradual field
   // opening. Dot sizes use USD holdings as a share of liquidity.
   // These bounded ranges are separate from the permanent mapping directions.
@@ -97,7 +102,7 @@ export function deriveFieldRules(inputs={}){
   const edgePower=1+3*(1-capDepth)**2;
   // Field opening is monotonic and finishes at $1M.
   const liquidityDepth=clamp(Math.log10(1+liquidity/1000)/4,0,1);
-  const balances=normalizeHolderBalances(inputs.holderBalances);
+  const balances=chartMarks||normalizeHolderBalances(inputs.holderBalances);
   // Balances and liquidity are USD. A fourth-root response softens size differences
   // from holding / liquidity, without sample-mean normalization.
   // 1% -> 8px, 4% -> about 11px; cap at 20px. Layout applies raster floors,
@@ -118,7 +123,7 @@ export function deriveFieldRules(inputs={}){
     :balances.length?balances.length+(inputs.holderSource==='simulated'?' simulated USD holdings':' supplied USD holdings')+' · softened dot sizes from % of liquidity'
     :'No USD holdings supplied — minimum equal marks';
   return {canvasSize,dotBudget,zoomScale,gapPx,edgeShrink,edgePower,fieldSpan,fieldRelease,baseMarkSize,markDiameters,markBrightness,footprintScale,
-    holderCount:balances.length,holderStatus,liquidityShares,
+    holderCount:chart?0:balances.length,holderStatus:chart?'Chart reconstruction · candle marks':holderStatus,liquidityShares,
     capDepth,liquidityDepth,balances};
 }
 

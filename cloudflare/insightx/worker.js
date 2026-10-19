@@ -1,3 +1,4 @@
+import {VisualHistory} from './visual-history.js';
 import {CoinCaptures,authenticateCaptureRequest,captureCapabilities} from './coin-captures.js';
 import {HolderBalanceRelay} from './holder-balance-relay.js';
 import {CoinSummary,summaryIdentity} from './coin-summary.js';
@@ -113,6 +114,10 @@ export default {
    if(!['GET','POST'].includes(request.method)||request.method==='POST'&&url.pathname!=='/coin-captures')return json({error:'Method not allowed'},405,headers);
    try{if(request.method==='POST')await authenticateCaptureRequest(request);const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-live-coin-captures-v1'));const result=await store.fetch(request);const response=new Response(result.body,result);for(const [key,value] of Object.entries(headers))response.headers.set(key,value);return response;}catch(error){return json({error:error.status?error.message:'Capture service unavailable'},error.status||503,headers);}
   }
+  if(url.pathname==='/visual-history'||url.pathname==='/visual-history/image'){
+   if(request.method!=='GET')return json({error:'Method not allowed'},405,headers);
+   try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-live-coin-captures-v1'));const result=await store.fetch(new Request(url));return new Response(result.body,{status:result.status,headers:{...Object.fromEntries(result.headers),...headers}});}catch{return json({error:'Visual archive unavailable'},503,headers);}
+  }
   if(url.pathname.startsWith('/marketplace/'))return marketplace(request,env,headers);
   if(url.pathname==='/takes'||/^\/takes\/[A-Za-z0-9_-]{16}$/.test(url.pathname)){
    if(!['GET','POST'].includes(request.method))return json({state:'method-not-allowed'},405,headers);
@@ -155,7 +160,7 @@ export default {
 export class HolderCache extends DurableObject {
  constructor(ctx,env){
   super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);this.summaries=new CoinSummary(this.sql,env);
-  this.captures=new CoinCaptures(ctx);this.balanceRelay=new HolderBalanceRelay(this.sql,env);
+  this.visualHistory=new VisualHistory(this.sql);this.captures=new CoinCaptures(ctx,this.visualHistory);this.balanceRelay=new HolderBalanceRelay(this.sql,env);
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS holder_counts (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
@@ -164,6 +169,7 @@ export class HolderCache extends DurableObject {
   this.sql.exec('CREATE TABLE IF NOT EXISTS cooldown (id INTEGER PRIMARY KEY, until_ms INTEGER)');
  }
  async fetch(request){
+  if(['/visual-history','/visual-history/image'].includes(new URL(request.url).pathname))return this.visualHistory.fetch(new URL(request.url));
   if(['/coin-captures','/coin-captures/image'].includes(new URL(request.url).pathname))return this.captures.fetch(request);
   if(new URL(request.url).pathname==='/holder-balances')return json(await this.balanceRelay.get(new URL(request.url)));
   if(new URL(request.url).pathname==='/coin-summary'){const identity=summaryIdentity(new URL(request.url));return identity?json(await this.summaries.get(identity)):json({state:'invalid-token'},400);}
