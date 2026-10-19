@@ -12,13 +12,13 @@ export class NativeHolderRelay{
  async get(url){
   const network=url.searchParams.get('network'),asset=assets.get(network);if(!asset)return empty(network,'unsupported-network');
   const now=Date.now(),saved=this.sql.exec('SELECT data,next_at FROM native_samples WHERE network=?',network).toArray()[0],cached=saved?JSON.parse(saved.data):null;
-  if(saved?.next_at>now&&!cached?.reason?.startsWith('Invalidredirectvalue'))return cached?.records.length&&now-cached.fetchedAt<MAX_AGE?{...cached,cached:true}:cached?.records.length?{...empty(network,'expired'),nextAt:saved.next_at}:cached;
+  if(saved?.next_at>now&&cached?.schema===2)return cached?.records.length&&now-cached.fetchedAt<MAX_AGE?{...cached,cached:true}:cached?.records.length?{...empty(network,'expired'),nextAt:saved.next_at}:cached;
   if(this.pending.has(network))return this.pending.get(network);
   // Serial requests also avoid bursts on the free provider plans.
   const task=this.queue.then(()=>this.load(asset,cached)).finally(()=>this.pending.delete(network));this.queue=task.catch(()=>{});this.pending.set(network,task);return task;
  }
  async load(asset,cached){
-  const network=asset.chain,now=Date.now(),day=Math.floor(now/DAY),base=empty(network,'unavailable');
+  const network=asset.chain,now=Date.now(),day=Math.floor(now/DAY),base={...empty(network,'unavailable'),schema:2};
   const save=data=>{this.sql.exec('INSERT OR REPLACE INTO native_samples VALUES(?,?,?)',network,JSON.stringify(data),data.nextAt);return data;};
   const read=async target=>{
    const budget=this.sql.exec('SELECT * FROM native_budget WHERE day=?',day).toArray()[0];
@@ -38,6 +38,7 @@ export class NativeHolderRelay{
     const seen=new Set();for(const row of body.data.rows){const id=row.address,tokenBalance=positive(row.balance);if(typeof id!=='string'||!/^[A-Za-z0-9]{20,150}$/.test(id)||!tokenBalance||seen.has(id))continue;seen.add(id);records.push({id,tokenBalance});}
     // ZEC rich-list supply covers its transparent pool, never its full market cap.
     supply=network==='zcash'?null:positive(body.data.supply);
+    if(network==='zcash')try{const chart=await read('https://sochain.com/api/v3/charts/ZEC/supply/hour?from='+Math.floor((now-2*HOUR)/1000));if(chart.status==='success'&&chart.data?.series==='supply'&&Array.isArray(chart.data.points)){const latest=chart.data.points.filter(p=>Number.isSafeInteger(p.t)&&p.t*1000<=now+1000&&now-p.t*1000<3*HOUR).sort((a,b)=>b.t-a.t)[0];supply=positive(latest?.v);}}catch{}
     try{const price=await read('https://sochain.com/api/v3/price/'+asset.symbol);if(price.status==='success'&&price.data?.currency==='USD')referencePrice=positive(price.data.value);}catch{}
     if(supply&&referencePrice)referenceMarketCap=supply*referencePrice;
    }else{
@@ -51,6 +52,6 @@ export class NativeHolderRelay{
    if(!records.length)throw Error('empty-native-sample');
    if(sourceAt!==null&&(!Number.isSafeInteger(sourceAt)||sourceAt>now+300000||now-sourceAt>MAX_AGE))throw Error('native-index-delayed');
    return save({...base,state:'snapshot',source,scope,records,fetchedAt:Date.now(),sourceAt,supply,referencePrice,referenceMarketCap,marketCapEstimated:true,indexCadence:'provider-indexed',nextAt:Date.now()+TTL});
-  }catch(error){const nextAt=Number(error.retryAt)||Date.now()+5*60000;return save(cached?.records.length&&Date.now()-cached.fetchedAt<MAX_AGE?{...cached,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
+  }catch(error){const nextAt=Number(error.retryAt)||Date.now()+5*60000;return save(cached?.records.length&&Date.now()-cached.fetchedAt<MAX_AGE?{...cached,schema:2,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
  }
 }
