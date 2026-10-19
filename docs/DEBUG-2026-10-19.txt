@@ -1,0 +1,125 @@
+UPIC — native feeds and broad debug report
+19 October 2026
+Production sample check: 2026-10-19T16:31:54.232000+00:00
+Implementation: ab92b453162caad128fc06113cbbb3c5d26c7004
+
+RESULT
+All 50 configured native feeds returned positive real account/address balances from the production Cloudflare Worker. SOL, XRP, BNB and BCH are included. XDC and Conflux, which failed in the earlier pass, now work; VET also works. This is verified source coverage, not a claim of all-native-coin coverage.
+
+The catalogue has 111 explicitly tagged native identities: 50 configured and 61 still unconfigured. Some other coins have only wrapped/bridged identities in the catalogue and need explicit native identity work. The complete dated coverage snapshot is docs/native-feed-coverage-2026-10-19.json. No synthetic balances were used.
+
+WHAT THE FEEDS REPRESENT
+These are bounded samples of real native balances for the visual engine. They are NOT total holder counts, a census, or a count of unique people. Every native response retains totalHolders:null and complete:false. Samples can include contracts or exchange custodians. Coverage differs by chain: recent participants, richest addresses or an indexed account page. Some exclude stake, shielded balances or another execution domain; those scopes remain attached to the data.
+
+Source time, index time, balance retrieval time and market-price retrieval time are kept separate. When a source cannot pin an exact balance time, sourceAt remains null. VET was pinned to its provider's finalized block, approximately 68 minutes behind retrieval, and retains that original time. It is not described as a current-second snapshot.
+
+FREE SOURCES AND SHARED CACHE
+SOL: Vibe Station finalized block account balances.
+XRP: Ankr validated ledger accounts.
+BNB: Alchemy public BNB native balance reads.
+BCH: Bitcore confirmed native address balances.
+BTC/LTC/DOGE/ZEC: SoChain; ETH and selected EVM chains: Blockscout.
+XDC: independent public Ankr endpoint; the denied XinFin endpoint is not retried.
+CFX: ConfluxScan account discovery plus actual Confura eSpace balance reads.
+VET: official VeChain Thorest, balances pinned to one finalized block revision.
+Other fixed free endpoints and exact identities are listed in the implementation and coverage snapshot.
+
+Balance snapshots share a Cloudflare cache across all visitors, refreshing on demand every one or two hours. Samples older than six hours are unusable. Simultaneous requests coalesce. A repeated live SOL request returned cached:true with the original balance timestamp. Browser code keeps native samples in memory; it does not persist them in visitors' local storage.
+
+The relay enforces 3,000 upstream calls/day globally plus separate provider caps, pacing and durable cooldowns. Expected continuous successful demand is approximately 2,556 calls/day, with fewer calls when pages are not requested or samples need fewer reads. Errors can consume that allowance, then the relay waits instead of making unbounded requests. No paid provider subscription or new credential was added. This is not a promise that existing Cloudflare hosting can never incur costs.
+
+FIXES FROM THE DEBUG
+1. History retention: saved pages now remain within the 30-day / 1,000-page / 64-MiB limits instead of disappearing when a refresh becomes due. If the provider fails, a previously saved page can be returned with its original time and explicit stale status. Provider cooldown and UPIC's own quota have separate codes. Uncached history still cannot load while the upstream refuses it. Five regression tests pass; a live uncached PEPE request correctly returned PROVIDER_HISTORY_COOLDOWN. A live stale-page response was not observed, so that path is supported by offline regression evidence.
+2. Native reliability: provider-specific queues, budgets and cooldowns prevent one failed provider blocking other chains. HTTP420,429 and quota messages delivered as HTTP200 are handled. Quiet/empty feeds wait their normal cache interval. Corrected discovery can retry an older empty result once without bypassing provider denials or budgets.
+3. Metadata: shared CoinLore fallback supplies verified native market metadata when CoinGecko is unavailable. Exact ID/slug/symbol matching prevents token confusion. Expired index timestamps and expired market metadata cannot be made fresh by cache reads. Registry additions refresh the shared metadata batch once.
+4. XDC/CFX/VET: production failures were resolved with bounded real-data queries and exact network checks. Native and wrapped identities remain separate.
+5. Clean install: GitHub's npm10 job exposed two missing utf-8-validate lockfile entries. The lockfile now contains the resolver-generated entries. A fresh npm10.9.9 installation succeeds; existing platform metadata was preserved.
+
+CHECK RESULTS
+PASS: 107 focused tests for native adapters/cache, history, captures, test-mint controls and export metadata.
+PASS: all six TypeScript workspaces.
+PASS: 18 workspace tests. Two environment-dependent tests remain intentionally skipped: browser smoke and local database lease integration.
+PASS: production build. The Vite app bundle is 568.71 kB before gzip / 176.71 kB gzip and still emits a size warning.
+PASS: Worker dry-run build.
+PASS: fresh npm10.9.9 dependency install in an isolated directory.
+PASS: earlier 28 additional audio/data/replay checks, including native WASM audio, all 21 Envion preset routes, all five data voices and real stereo export. These overlap with some focused tests and must not be added as a separate overall total.
+PASS: all 126 non-vendor JavaScript modules inspected had their relative module files present.
+PASS: CVX's formerly missing image reference returned HTTP200 PNG.
+PASS: fixed native identities match the catalogue, with 50 unique chain cache keys.
+
+DEPENDENCY AUDIT — OPEN
+Production npm audit reports 4 high and 7 moderate package entries, mostly propagated through the Solana wallet dependency tree. Root advisories concern bigint-buffer, stream-json and uuid. Inspection found that the current checked-in browser bundle uses pure-JavaScript bigint conversion, not the affected native binding; stream-json is absent; the Jayson path uses UUIDv4, whereas the cited UUID issue concerns other variants with caller buffers. No matching import path was found in the Worker/API/renderer/server source review. This is not proof that the installed dependency tree is vulnerability-free. The audit remains open.
+Do not apply npm's suggested Reown downgrade automatically: it changes the wallet integration's dependency generation. A coordinated wallet dependency upgrade/replacement and wallet regression testing remain necessary.
+Sources:
+https://github.com/advisories/GHSA-3gc7-fjrx-p6mg
+https://github.com/advisories/GHSA-528h-pc64-c93x
+https://github.com/advisories/GHSA-hqr4-qq8f-hg3x
+https://github.com/advisories/GHSA-mjw6-4jj6-33hc
+https://github.com/advisories/GHSA-w5hq-g745-h8pq
+
+DEPLOYMENT STATE
+Cloudflare Workers Builds reports success for ab92b45; the production Worker reports 50 networks and all 50 returned samples.
+GitHub Pages publication and Platform checks for ab92b45 remain queued. The published homepage was still asset version352; this release prepares version357. The complete browser-side release is therefore NOT yet live. GitHub reports an active Actions/Pages/Webhooks incident. Separately, the real earlier npm install defect was fixed; it is not attributed to that incident.
+Pages job: https://github.com/nchrl01/rhosnei.gr/actions/runs/39285871907
+Checks job: https://github.com/nchrl01/rhosnei.gr/actions/runs/39285872136
+Service status: https://www.githubstatus.com/
+
+OTHER REMAINING WORK
+- 61 tagged native identities lack an adapter. The largest include XMR, CC, TAO, DOT, PI and PRL. XMR and other privacy chains cannot expose a complete public account-balance sample. DOT's documented public Asset Hub service returned HTTP500 during this pass. TCY and VTHO require separate asset cache identities so they cannot be mixed with RUNE or VET. Most remaining entries are not yet researched; the report does not claim they are impossible or require a paid service.
+- Several major Cosmos assets are represented only by wrapped/bridged catalogue identities. Seven public native endpoints returned real balances during research, but the catalogue was not silently reclassified. Correct explicit native identities are still needed before integrating those sources.
+- Preview manifest check found 753 exact coin/network captures covering 749 distinct catalogue coins. Preview coverage remains incomplete.
+- Marketplace public configuration says trading:false. Live buying/listing is not enabled by this work.
+- Actual browser layout, mobile interaction, wallet sign-in/signatures, purchases and database-backed end-to-end minting were not tested. No browser/desktop permission was granted for this task; no funds were transferred.
+
+LIVE NATIVE SNAPSHOT COUNTS
+Counts below are the sampled addresses/accounts returned, never total holders.
+bitcoin: 100 sample records; SoChain native balances
+ethereum: 50 sample records; Blockscout native balances
+litecoin: 100 sample records; SoChain native balances
+dogecoin: 100 sample records; SoChain native balances
+dash: 100 sample records; Chainz CryptoID native balances
+digibyte: 100 sample records; Chainz CryptoID native balances
+firo: 100 sample records; Chainz CryptoID native balances
+avalanche: 49 sample records; Routescan native balances
+henesys: 50 sample records; Routescan native balances
+bsc: 5 sample records; Alchemy public BNB balances
+tezos: 50 sample records; TzKT native balances
+hedera: 100 sample records; Hedera public mirror balances
+algorand: 3 sample records; dRPC Algorand current account balances
+solana: 96 sample records; Solana Vibe Station finalized balances
+xrp: 100 sample records; Ankr XRP validated balances
+bitcoin-cash: 12 sample records; Bitcore confirmed BCH balances
+tron: 3 sample records; TronGrid solidified native balances
+ethereum-classic: 50 sample records; Blockscout native balances
+ronin: 50 sample records; Blockscout native balances
+flow: 50 sample records; Blockscout native balances
+filecoin: 50 sample records; Blockscout native balances
+zcash: 100 sample records; SoChain native balances
+flare-network: 50 sample records; Flare official explorer
+kucoin-community-chain: 50 sample records; KCC official explorer
+electroneum: 50 sample records; Electroneum official explorer
+stratis: 50 sample records; Xertra official explorer
+plasma: 50 sample records; Routescan native balances
+cardano: 38 sample records; Koios Cardano stake-account UTXOs
+cosmos: 100 sample records; Cosmos Directory ATOM bank balances
+kaspa: 100 sample records; Kaspa public indexed balances
+ton: 100 sample records; Toncenter native account balances
+near: 12 sample records; FASTNEAR finalized account balances
+stellar: 4 sample records; Stellar Horizon current native balances
+stacks: 4 sample records; Hiro Stacks current native balances
+terra: 100 sample records; Cosmos Directory LUNC bank balances
+babylon-genesis: 100 sample records; Cosmos Directory BABY bank balances
+mantra: 100 sample records; Cosmos Directory MANTRA bank balances
+provenance: 100 sample records; Cosmos Directory HASH bank balances
+thorchain: 100 sample records; Cosmos Directory RUNE bank balances
+aptos: 100 sample records; Aptos Labs current native balances
+sui: 7 sample records; Sui public GraphQL checkpoint balances
+vechain: 1 sample records; VeChain public finalized account balances
+monad: 4 sample records; Monad public native balances
+sonic: 1 sample records; Sonic public native balances
+somnia: 1 sample records; Somnia public native balances
+wemix-network: 1 sample records; WEMIX public native balances
+xdc-network: 2 sample records; Ankr XDC public native balances
+sei-network: 1 sample records; Sei public EVM native balances
+berachain: 1 sample records; Berachain public native balances
+conflux: 3 sample records; ConfluxScan / Confura eSpace native balances
