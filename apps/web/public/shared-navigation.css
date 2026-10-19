@@ -529,3 +529,12 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
 .footer-mobile-sheet .footer-upcoming small{flex:none;font-size:var(--font-size-small)}
 .footer-mobile-sheet a:hover,.footer-sheet-heading button:hover{background:var(--control-hover);color:var(--control-ink)}
 .footer-mobile-sheet :is(a,button):focus-visible{outline:2px solid var(--control-ink);outline-offset:2px}
+
+/* Every single-value dropdown reserves a consistent inset for its chevron. */
+html body select:not([multiple]):not([size]),html body select:not([multiple])[size="1"]{
+ appearance:none;-webkit-appearance:none;box-sizing:border-box;
+ padding-inline-end:36px!important;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10' fill='none'%3E%3Cpath d='m2 2 6 6 6-6' stroke='%23f2f2f2' stroke-width='1.5'/%3E%3C/svg%3E")!important;
+ background-repeat:no-repeat!important;background-position:right 12px center!important;background-size:12px 8px!important;
+}
+html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:not([multiple])[size="1"]{background-position:left 12px center!important}
