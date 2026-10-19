@@ -4,7 +4,7 @@ import {fetchGecko} from './gecko.js?v=277';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
 export function loadHistory(market,onUpdate,options={}){
  if(isExchangeMarket(market))return loadExchangeHistory(market,onUpdate,options);
- let closed=false,timer,controller;const rows=new Map();
+ let closed=false,timer,controller,directProvider=false;const rows=new Map();
  const created=Number(market.pairCreatedAt)||null,age=created?Date.now()-created:Infinity;
  const timeframe=options.timeframe||(age<86400000?'minute':age<30*86400000?'hour':'day');
  const aggregate=options.aggregate||1,maxPages=options.maxPages||20;
@@ -22,11 +22,32 @@ export function loadHistory(market,onUpdate,options={}){
    const query=new URLSearchParams({network,pool:market.pairAddress,timeframe,aggregate:String(aggregate),limit:String(pages===0&&cachedLatest!==null?Math.min(1000,Math.max(10,Math.ceil((Date.now()-cachedLatest)/interval)+3)):1000),currency:'usd',token:market.baseToken.address,include_empty_intervals:'false'});
    // A stable latest-page URL coalesces simultaneous chart/music requests.
    if(pages>0)query.set('before_timestamp',String(before));
-   let r;try{r=await fetch(base+'?'+query,{signal:controller.signal,credentials:'omit'});}catch(error){if(controller.signal.aborted)throw error;r=new Response(null,{status:503});}
-   // Keep chart loading available while the backend deploy rolls out. Never
-   // bypass a real upstream/quota cooldown (429).
-   if(r.status===404||r.status===503){const fallback=new URL('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/pools/'+encodeURIComponent(market.pairAddress)+'/ohlcv/'+timeframe);for(const [key,value] of query)if(!['network','pool','timeframe'].includes(key))fallback.searchParams.set(key,value);r=await fetchGecko(fallback.href,{signal:controller.signal,priority:pages===0?(options.priority??80):20});}
-   if(!r.ok){if(r.status===429)delay=Math.max(30000,Number(r.headers.get('Retry-After'))*1000||0);throw Error('History provider HTTP '+r.status);}
+   async function direct(){
+    const fallback=new URL('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/pools/'+encodeURIComponent(market.pairAddress)+'/ohlcv/'+timeframe);
+    for(const [key,value] of query)if(!['network','pool','timeframe'].includes(key))fallback.searchParams.set(key,value);
+    return fetchGecko(fallback.href,{signal:controller.signal,priority:pages===0?(options.priority??100):20});
+   }
+   let r;
+   if(directProvider)r=await direct();
+   else{
+    try{r=await fetch(base+'?'+query,{signal:controller.signal,credentials:'omit'});}catch(error){if(controller.signal.aborted)throw error;r=new Response(null,{status:503});}
+    // The application's shared quota is separate from the provider's per-client
+    // quota. Only that shared-budget refusal permits the paced direct route.
+    let sharedQuota=false;
+    if(r.status===429){const detail=await r.clone().json().catch(()=>null);sharedQuota=detail?.code==='SHARED_HISTORY_QUOTA'||detail?.error?.startsWith('Shared history quota is cooling down');}
+    if(sharedQuota||[404,502,503,504].includes(r.status)){
+     directProvider=true;report('loading','Loading market history from fallback provider…');r=await direct();
+    }
+   }
+   if(!r.ok){
+    if(r.status===429){
+     const header=r.headers.get('Retry-After'),seconds=Number(header);
+     delay=Math.max(30000,header&&Number.isFinite(seconds)?seconds*1000:Date.parse(header)-Date.now()||60000);
+     report('waiting',rows.size?'Showing loaded history · waiting for provider':'History provider busy · retrying automatically',{retrying:true,retryAt:Date.now()+delay});
+     timer=setTimeout(page,delay);return;
+    }
+    throw Error('History provider HTTP '+r.status);
+   }
    const data=await r.json();if(closed)return;const observedAt=Number(r.headers.get('X-UPIC-Fetched-At'))||Date.now();const list=data.data?.attributes?.ohlcv_list;if(!Array.isArray(list))throw Error('Unexpected history response');
    const validTimes=[];
    for(const row of list){if(row.length<6||!row.every(v=>Number.isFinite(Number(v))))continue;const [seconds,open,high,low,close,volume]=row.map(Number);if(seconds<=0||open<=0||close<=0||low<=0||high<Math.max(open,close)||low>Math.min(open,close)||volume<0)continue;const bar={time:seconds*1000,open,high,low,close,volume,observedThrough:Math.min(seconds*1000+interval,observedAt)};validTimes.push(bar.time);rows.set(bar.time,bar);}

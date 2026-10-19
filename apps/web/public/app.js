@@ -42,7 +42,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=345';
 import {MarketChart} from './chart.js?v=234';
-import {loadHistory} from './history.js?v=326';
+import {loadHistory} from './history.js?v=346';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
 // The trusted publisher captures this player silently. Normal visits do not
@@ -653,14 +653,14 @@ function startHistory(pair){
  refreshMusicHistory();
 }
 function setHistoryLoading(data={}){
- const host=$('history-loading'),has=data.candles?.length>0,failed=Boolean(data.error)||data.state==='unavailable',busy=!failed&&['loading','cached'].includes(data.state);
+ const host=$('history-loading'),has=data.candles?.length>0,waiting=data.state==='waiting',failed=Boolean(data.error)||data.state==='unavailable',busy=!failed&&['loading','cached'].includes(data.state);
  if(pendingHistoryReplay&&failed&&!data.retrying&&!historyReplayReady()){
   pendingHistoryReplay=false;status('History unavailable · retry history to replay');updateReplayUI({});
  }
- host.hidden=has&&!busy&&!failed;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
- $('history-loading-label').textContent=failed?(has?'History refresh delayed · showing loaded candles':'History delayed')+(data.retrying?' · retrying automatically':' · retry available'):has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
- $('history-retry').hidden=busy;
- ui.loading('history',busy?'working':failed||!has?'error':'done',data.retrying&&busy?'Retrying history':has?'Updating history':'Loading history',{operation:data.operation??null,startedAt:data.startedAt,endedAt:data.endedAt});
+ host.hidden=has&&!busy&&!failed&&!waiting;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
+ $('history-loading-label').textContent=waiting?data.message:failed?(has?'History refresh delayed · showing loaded candles':'History delayed')+(data.retrying?' · retrying automatically':' · retry available'):has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
+ $('history-retry').hidden=busy||waiting;
+ ui.loading('history',waiting?null:busy?'working':failed||!has?'error':'done',data.retrying&&busy?'Retrying history':has?'Updating history':'Loading history',{operation:data.operation??null,startedAt:data.startedAt,endedAt:data.endedAt});
 }
 $('history-retry').onclick=()=>{$('chart-timeframe').value==='auto'?startHistory(market):loadChartTimeframe();};
 const chartFrames={'1m':{timeframe:'minute',aggregate:1},'5m':{timeframe:'minute',aggregate:5},'15m':{timeframe:'minute',aggregate:15},'1h':{timeframe:'hour',aggregate:1},'4h':{timeframe:'hour',aggregate:4},'1d':{timeframe:'day',aggregate:1}};
