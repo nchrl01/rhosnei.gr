@@ -165,7 +165,7 @@ try{
  console.log('Capturing '+queue.length+' exact identities with '+options.concurrency+' isolated players; '+unsupported.length+' unsupported identities reported.');
  async function capture(coin){
   const expectedKey=keyFor(coin.chain,coin.address),started=Date.now(),errors=[];
-  const context=await browser.newContext({viewport:{width:1280,height:1200},deviceScaleFactor:1,serviceWorkers:'block'});
+  let page;const context=await browser.newContext({viewport:{width:1280,height:1200},deviceScaleFactor:1,serviceWorkers:'block'});
   try{
    // Match all requests: https://** does not cover paths reliably. Local files
    // use the local server; public HTTPS is forwarded without substituting data.
@@ -180,7 +180,7 @@ try{
      await route.fulfill({status:response.status,headers:incoming,body:Buffer.from(await response.arrayBuffer())});
     }catch{await route.abort().catch(()=>{});}
    });
-   const page=await context.newPage();page.on('pageerror',error=>{if(errors.length<3)errors.push(error.message.slice(0,300));});
+   page=await context.newPage();page.on('pageerror',error=>{if(errors.length<3)errors.push(error.message.slice(0,300));});
    const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'?coin.symbol+'/USD':coin.address,...(coin.address==='native'?{}:{network:coin.chain}),request:randomUUID()});
    await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:Math.min(45000,options.timeout*1000)});
    await page.waitForFunction(({expectedKey,kind,started,needsImage})=>{const value=window.__upicLiveCapture,frame=value?.frame||value;return frame?.key===expectedKey&&frame.captureKind===kind&&frame.capturedAt>=started&&(!needsImage||frame.imageAvailable===true)&&frame.blob instanceof Blob;},{expectedKey,kind,started,needsImage:Boolean(coin.image)},{timeout:Math.max(1,options.timeout*1000-(Date.now()-started)),polling:500});
@@ -208,7 +208,8 @@ try{
    }
    manifest.set(expectedKey,metadata);report.results.push({id:coin.id,key:expectedKey,...outcome,capturedAt:frame.capturedAt,bytes:bytes.length});console.log(coin.symbol+' '+coin.chain+' '+outcome.state);return true;
   }catch(error){
-   const previous=manifest.get(expectedKey);report.results.push({id:coin.id,key:expectedKey,state:previous?'retained-previous':'unavailable',capturedAt:previous?.capturedAt??null,error:String(error.message||error).slice(0,500),pageErrors:errors});
+   let playerStatus=null;try{playerStatus=await page?.evaluate(()=>window.__upicCaptureStatus?.()||null);}catch{}
+   const previous=manifest.get(expectedKey);report.results.push({id:coin.id,key:expectedKey,state:previous?'retained-previous':'unavailable',capturedAt:previous?.capturedAt??null,error:String(error.message||error).slice(0,500),pageErrors:errors,playerStatus});
    console.log(coin.symbol+' '+coin.chain+' '+(previous?'retained previous live capture':'no live capture')+': '+String(error.message||error).split('\n')[0]);return false;
   }finally{await context.close();}
  }
