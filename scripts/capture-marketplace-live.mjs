@@ -192,7 +192,7 @@ try{
    const bytes=Buffer.from(captured.dataURL.slice(captured.dataURL.indexOf(',')+1),'base64');
    if(bytes.length<20||bytes.length>750000||bytes.toString('ascii',0,4)!=='RIFF'||bytes.toString('ascii',8,12)!=='WEBP')throw Error('Invalid capture image');
    const metadata={key:expectedKey,id:coin.id,chain:frame.chain,address:frame.address,symbol:coin.symbol,name:coin.name,captureKind:kind,capturedAt:frame.capturedAt};
-   for(const key of ['marketCap','liquidity','holders','holderFetchedAt','marketObservedAt','coverage','pairAddress','renderedAt'])if(frame[key]!==undefined)metadata[key]=frame[key];
+   for(const key of ['marketCap','liquidity','holders','holderFetchedAt','marketObservedAt','coverage','pairAddress','renderedAt','imageAvailable'])if(frame[key]!==undefined)metadata[key]=frame[key];
    // Only the renderer can fingerprint the complete observed inputs. Aggregate
    // market metrics alone would miss changes in the actual wallet distribution.
    if(/^[\da-f]{64}$/i.test(frame.sourceDataHash||''))metadata.sourceDataHash=frame.sourceDataHash.toLowerCase();

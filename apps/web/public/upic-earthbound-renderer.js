@@ -236,7 +236,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024,initialAllocati
   get contentBounds(){return contentBounds();},
   get allocation(){return allocation();},
   setImage(source){
-   mask=source;palette=source?originalArtworkPalette(source.originalPixels||source.pixels,{includeNeutrals:true}):[[1,1,1],[1,1,1]];originalImage=null;imageCells=0;imagePixels=null;
+   stats.imageAvailable=Boolean(source);mask=source;palette=source?originalArtworkPalette(source.originalPixels||source.pixels,{includeNeutrals:true}):[[1,1,1],[1,1,1]];originalImage=null;imageCells=0;imagePixels=null;
    if(source){
     background=artworkBackground(source);originalImage=document.createElement('canvas');
     originalImage.width=source.width;originalImage.height=source.height;

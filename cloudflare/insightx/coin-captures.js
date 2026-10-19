@@ -49,10 +49,11 @@ export function validateCapturePayload(body,now=Date.now()){
  const input=body?.metadata,identity=captureIdentity(input?.chain??input?.network,input?.address);
  if(!identity||input.captureKind!==KIND||(input.key!==undefined&&input.key!==identity.key))fail('Capture identity is not in the catalogue',400);
  if(!Number.isSafeInteger(input.capturedAt)||input.capturedAt<=0||input.capturedAt>now+1000||input.capturedAt<now-86400000)fail('Invalid capture timestamp',400);
+ if(input.imageAvailable!==undefined&&typeof input.imageAvailable!=='boolean')fail('Invalid artwork reference state');
  const text=body.imageBase64;if(typeof text!=='string'||text.length>Math.ceil(MAX_IMAGE/3)*4||text.length%4||!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(text))fail('Invalid WebP encoding',400);
  let bytes;try{bytes=Uint8Array.from(atob(text),c=>c.charCodeAt(0));}catch{fail('Invalid WebP encoding',400);}
  if(bytes.length<20||bytes.length>MAX_IMAGE||String.fromCharCode(...bytes.slice(0,4))!=='RIFF'||String.fromCharCode(...bytes.slice(8,12))!=='WEBP'||new DataView(bytes.buffer).getUint32(4,true)!==bytes.length-8||!['VP8 ','VP8L','VP8X'].includes(String.fromCharCode(...bytes.slice(12,16))))fail('Invalid WebP image',400);
- const metadata={...identity,captureKind:KIND,capturedAt:input.capturedAt,source:'Live UPIC player frame'};
+ const metadata={...identity,captureKind:KIND,capturedAt:input.capturedAt,source:'Live UPIC player frame',...(input.imageAvailable===undefined?{}:{imageAvailable:input.imageAvailable})};
  for(const key of ['marketCap','liquidity','holders'])if(input[key]!=null){if(!Number.isFinite(input[key])||input[key]<0||(key==='holders'&&!Number.isSafeInteger(input[key])))fail('Invalid capture metrics');metadata[key]=input[key];}
  for(const key of ['holderFetchedAt','marketObservedAt','renderedAt'])if(input[key]!=null){if(!Number.isSafeInteger(input[key])||input[key]<=0||input[key]>input.capturedAt+1000)fail('Invalid source timestamp');metadata[key]=input[key];}
  if(input.coverage!=null){if(typeof input.coverage!=='string'||input.coverage.length>180||/[\u0000-\u001f]/.test(input.coverage))fail('Invalid coverage');metadata.coverage=input.coverage;}

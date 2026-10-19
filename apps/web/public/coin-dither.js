@@ -44,31 +44,33 @@ export function coinImagePixels(image,size=256){
 export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=>{}}={}){
  const host=img.parentElement,canvas=document.createElement('canvas');canvas.className='coin-dither';canvas.setAttribute('aria-hidden','true');canvas.hidden=true;host.append(canvas);
  const context=canvas.getContext('2d');
- let serial=0,current='',pixels=null,size=96,stopReveal=()=>{};
+ let serial=0,current='',currentKey='',pixels=null,size=96,stopReveal=()=>{},stopImageLoad=()=>{};
  // Share the decoded source once; the field never fetches or reads it per frame.
  function notify(image){try{onPixels(image);}catch(error){console.warn('Coin artwork unavailable to the visual field:',error.message);}}
  function paint(){if(!pixels)return;context.putImageData(new ImageData(ditherPixels(pixels,size,size),size,size),0,0);}
  function load(url,token){
-  stopReveal();img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
+  stopImageLoad();stopReveal();img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
   if(!url){img.removeAttribute('src');return;}
-  const decoded=new Image();decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
+  let loadTimer,finished=false;
+  const decoded=new Image();stopImageLoad=()=>{finished=true;clearTimeout(loadTimer);decoded.onload=decoded.onerror=null;};decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
   decoded.onload=()=>{
-   if(token!==serial)return;
+   clearTimeout(loadTimer);if(token!==serial||finished)return;
    try{
     size=Math.max(64,Math.min(256,Math.round(host.clientWidth||96)));canvas.width=canvas.height=size;
     const fieldImage=coinImagePixels(decoded);
     pixels=(size===fieldImage.width?fieldImage:coinImagePixels(decoded,size)).pixels;
-    canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';canvas.style.filter='none';stopReveal=ditherReveal(canvas,pixels,size,size,host);notify(fieldImage);
+    canvas.hidden=false;fallback.hidden=true;host.dataset.dither='pixels';canvas.style.filter='none';stopReveal=ditherReveal(canvas,pixels,size,size,host);finished=true;notify(fieldImage);
    }catch{relayOrFallback();}
   };
   let relayed=false;
   function relayOrFallback(){
-   if(token!==serial)return;
+   clearTimeout(loadTimer);if(token!==serial||finished)return;
    let relay='';try{const source=new URL(url);if(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com'].includes(source.hostname))relay='https://upic-insightx.nchrl01.workers.dev/artwork?revision=2&url='+encodeURIComponent(source.href);}catch{}
-   if(relay&&!relayed){relayed=true;decoded.src=relay;return;}
-   original(url,token);
+   if(relay&&!relayed){relayed=true;start(relay);return;}
+   finished=true;decoded.onload=decoded.onerror=null;original(url,token);
   }
-  decoded.onerror=relayOrFallback;decoded.src=url;
+  function start(source){loadTimer=setTimeout(relayOrFallback,12000);decoded.src=source;}
+  decoded.onerror=relayOrFallback;start(url);
  }
  // A missing readable image uses the placeholder while metadata fallback
  // resolves another source. Never show a second dithering style.
@@ -78,7 +80,7 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
   try{onUnavailable(url);}catch{}
  }
 
- return {set(url){if(url===current)return;current=url;load(url,++serial);},close(){serial++;stopReveal();canvas.remove();}};
+ return {set(url,key=''){if(url===current&&key===currentKey)return;current=url;currentKey=key;load(url,++serial);},close(){serial++;stopImageLoad();stopReveal();canvas.remove();}};
 }
 
 // Reveal the source through ordered pixel holes, rather than an opacity fade.

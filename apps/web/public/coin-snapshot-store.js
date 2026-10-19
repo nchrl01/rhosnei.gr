@@ -41,7 +41,7 @@ export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligi
    const blob=await new Promise(resolve=>frame.toBlob(resolve,'image/webp',.86));
    if(closed||!blob||getMarket()!==market||document.hidden||!eligible())return;
    const current=visual.snapshot();if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderLoading)return;
-   const saved=publishCapture({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',coverage:state.holderCoverage,captureKind:KIND,blob});
+   const saved=publishCapture({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',imageAvailable:state.imageAvailable===true,coverage:state.holderCoverage,captureKind:KIND,blob});
    if(saved){lastAt.set(key,state.renderedAt);if(lastAt.size>LIMIT)lastAt.delete(lastAt.keys().next().value);}
   }catch{}finally{if(frame)frame.width=frame.height=1;busy=false;}
  }
