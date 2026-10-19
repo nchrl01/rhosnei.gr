@@ -34,7 +34,7 @@ test('one network deduplicates simultaneous callers and never promotes sample si
 test('expired and future samples cannot supply usable balances',async()=>{
  const s=setup();
  try{for(const at of [Date.now()-7*HOUR,Date.now()+HOUR]){s.save('bitcoin',{fetchedAt:at});const result=await s.relay.get(request('bitcoin'));assert.equal(result.state,'expired');assert.deepEqual(result.records,[]);}
- s.save('bitcoin',{fetchedAt:Date.now()-1000,sourceAt:Date.now()-7*HOUR});assert.equal((await s.relay.get(request('bitcoin'))).state,'expired');}finally{s.db.close();}
+ for(const key of ['sourceAt','indexerAt','indexTipAt']){s.save('bitcoin',{fetchedAt:Date.now()-1000,[key]:Date.now()-7*HOUR});assert.equal((await s.relay.get(request('bitcoin'))).state,'expired');}}finally{s.db.close();}
 });
 test('shared provider budget rejects extra reads without contacting upstream',async()=>{
  const s=setup(),prior=globalThis.fetch;globalThis.fetch=()=>{throw Error('unexpected network');};const day=Math.floor(Date.now()/DAY);s.sql.exec('INSERT INTO native_provider_budget VALUES(?,?,?,0)',day,'sochain',nativeLimits.providerDailyRequests.sochain);
@@ -71,4 +71,16 @@ test('CoinLore batch requires exact id, slug and symbol and keeps retrieval time
 test('market fallback enriches a cached balance sample without changing balance age',async()=>{
  const s=setup(),saved=s.save('bitcoin'),now=Date.now();s.relay.coingeckoMetadata=async()=>({});let calls=0;s.relay.read=async(provider)=>{assert.equal(provider,'coinlore');calls++;return [{id:'90',nameid:'bitcoin',symbol:'BTC',price_usd:'100',market_cap_usd:'2100000000',csupply:'21000000'}];};
  try{const a=await s.relay.get(request('bitcoin')),b=await s.relay.get(request('bitcoin'));assert.equal(a.marketSource,'CoinLore');assert.equal(a.fetchedAt,saved.fetchedAt);assert.equal(b.marketFetchedAt,a.marketFetchedAt);assert.equal(calls,1);assert.equal(s.relay.freshMarket({marketFetchedAt:now-7*HOUR}),false);}finally{s.db.close();}
+});
+test('additional native feeds share a bounded two-hour refresh instead of per-visitor requests',async()=>{
+ const s=setup();let calls=0;s.relay.marketMetadata=async()=>({});s.relay.read=async()=>{calls++;return {denom_owners:[{address:'pb1'+'q'.repeat(38),balance:{denom:'nhash',amount:'1000000000'}}]};};
+ try{const first=await s.relay.get(request('provenance')),second=await s.relay.get(request('provenance'));assert.equal(first.cacheSeconds,7200);assert.ok(first.nextAt-first.fetchedAt>=7200000);assert.equal(first.fetchedAt,second.fetchedAt);assert.equal(calls,1);}finally{s.db.close();}
+});
+test('GraphQL quota failures returned as HTTP200 also persist a cooldown',async()=>{
+ const s=setup(),prior=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;return Response.json({data:null,errors:[{message:'Quota exhausted',extensions:{code:'RATE_LIMITED'}}]});};
+ try{await assert.rejects(s.relay.read('graphql-provider','https://provider.invalid'),/rate-limit/);await assert.rejects(s.relay.read('graphql-provider','https://provider.invalid'),/free-budget-wait/);assert.equal(calls,1);}finally{globalThis.fetch=prior;s.db.close();}
+});
+test('an empty native sample waits the normal asset interval instead of exhausting retries',async()=>{
+ const s=setup(),now=Date.now();let calls=0;s.relay.read=async()=>{calls++;return {denom_owners:[]};};
+ try{const first=await s.relay.get(request('provenance'));assert.equal(first.state,'unavailable');assert.ok(first.nextAt>=now+7200000);await s.relay.get(request('provenance'));assert.equal(calls,1);}finally{s.db.close();}
 });

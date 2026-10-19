@@ -4,13 +4,18 @@ import {loadSolanaNative,loadXrpNative,loadHederaNative,loadAlgorandNative} from
 import {fetchExtraNativeBalances} from './native-provider-extra.js';
 import {fetchEvmExtraNativeBalances} from './native-provider-evm-extra.js';
 import {loadCardanoNative,loadCosmosNative,loadKaspaNative,loadTonNative} from './native-provider-next.js';
+import {loadCosmosExtraNative} from './native-provider-cosmos-extra.js';
+import {loadNearNative,loadAptosNative} from './native-provider-major-next.js';
+import {loadStellarNative,loadStacksNative} from './native-provider-xlm-stx.js';
+import {fetchFinalEvmNativeBalances,FINAL_EVM_NATIVE_ASSETS} from './native-provider-evm-final.js';
+import {loadSuiNative} from './native-provider-sui.js';
 const HOUR=3600000,DAY=24*HOUR,TTL=HOUR,MAX_AGE=6*HOUR,SCHEMA=3;
 const assets=new Map(Object.values(NATIVE_COINS).map(asset=>[asset.chain,asset]));
 const empty=(network,state)=>({network,address:'native',state,records:[],totalHolders:null,complete:false,truncated:false,coverage:'top-holder-sample',native:true});
 const positive=x=>x!==null&&x!==''&&Number.isFinite(Number(x))&&Number(x)>0?Number(x):null;
-export const nativeLimits={cacheSeconds:TTL/1000,maxAgeSeconds:MAX_AGE/1000,dailyRequests:1800,providerDailyRequests:{sochain:300,blockscout:400,bitcore:300,'bnb-alchemy':180,trongrid:160,coingecko:48,coinlore:48,default:120}};
+export const nativeLimits={cacheSeconds:TTL/1000,maxCacheSeconds:7200,maxAgeSeconds:MAX_AGE/1000,dailyRequests:3000,providerDailyRequests:{sochain:300,blockscout:400,bitcore:300,'bnb-alchemy':180,trongrid:160,coingecko:48,coinlore:48,...Object.fromEntries(FINAL_EVM_NATIVE_ASSETS.map(asset=>[asset.provider,90])),default:120}};
 const providerKey=asset=>asset.provider==='blockscout'?'blockscout':asset.provider;
-const safeCache=(cached,now)=>Array.isArray(cached?.records)&&cached.records.length&&Number.isSafeInteger(cached.fetchedAt)&&cached.fetchedAt<=now+1000&&now-cached.fetchedAt<MAX_AGE&&(cached.sourceAt==null||(Number.isSafeInteger(cached.sourceAt)&&cached.sourceAt<=now+300000&&now-cached.sourceAt<MAX_AGE));
+const safeCache=(cached,now)=>Array.isArray(cached?.records)&&cached.records.length&&Number.isSafeInteger(cached.fetchedAt)&&cached.fetchedAt<=now+1000&&now-cached.fetchedAt<MAX_AGE&&['sourceAt','indexerAt','indexTipAt'].every(key=>cached[key]==null||(Number.isSafeInteger(cached[key])&&cached[key]<=now+300000&&now-cached[key]<MAX_AGE));
 const retryAt=(response,now)=>{const value=response.headers.get('Retry-After');if(!value)return now+HOUR;const seconds=Number(value),date=Date.parse(value);return Math.max(now+HOUR,Number.isFinite(seconds)?now+seconds*1000:Number.isFinite(date)?date:now+HOUR);};
 // One Cloudflare object shares samples and quotas across all visitors. Provider
 // queues are separate: a slow or throttled provider cannot stall other chains.
@@ -40,6 +45,7 @@ export class NativeHolderRelay{
  }
  async load(asset,cached){
   const network=asset.chain,now=Date.now(),provider=providerKey(asset),base={...empty(network,'unavailable'),schema:SCHEMA,provider};
+  const cacheMs=Math.max(TTL,Math.min(nativeLimits.maxCacheSeconds*1000,Number(asset.cacheSeconds)*1000||TTL));
   const save=data=>{this.sql.exec('INSERT OR REPLACE INTO native_samples VALUES(?,?,?)',network,JSON.stringify(data),data.nextAt);return data;};
   const read=(target,options)=>this.read(provider,target,options);
   try{
@@ -54,6 +60,13 @@ export class NativeHolderRelay{
    else if(asset.symbol==='ATOM')result=await loadCosmosNative(read,now);
    else if(asset.symbol==='KAS')result=await loadKaspaNative(read,now);
    else if(asset.symbol==='GRAM')result=await loadTonNative(read,now);
+   else if(asset.symbol==='NEAR')result=await loadNearNative(read,now);
+   else if(asset.symbol==='APT')result=await loadAptosNative(read,now);
+   else if(asset.symbol==='SUI')result=await loadSuiNative(read,now);
+   else if(asset.symbol==='XLM')result=await loadStellarNative(read,now);
+   else if(asset.symbol==='STX')result=await loadStacksNative(read,now);
+   else if(asset.provider==='cosmos-directory')result=await loadCosmosExtraNative(asset,read);
+   else if(FINAL_EVM_NATIVE_ASSETS.some(row=>row.provider===asset.provider))result=await fetchFinalEvmNativeBalances(asset,read,now);
    else if(['BNB','TRX','FLR','KCS','ETN','STRAX','XPL'].includes(asset.symbol))result=await fetchEvmExtraNativeBalances(asset,read,now);
    else result=await fetchExtraNativeBalances(asset,read,now);
    const seen=new Set(),records=[];
@@ -65,11 +78,11 @@ export class NativeHolderRelay{
    const meta=(await this.marketMetadata())[asset.id];
    if(this.freshMarket(meta))result={...result,...meta};
    // No sample size, explorer account total, or list page count is a holder count.
-   return save({...base,...result,records,network,address:'native',totalHolders:null,complete:false,state:'snapshot',fetchedAt:Date.now(),sourceAt,marketCapEstimated:true,indexCadence:result.indexCadence||'provider-indexed',nextAt:Date.now()+TTL});
-  }catch(error){const nextAt=Number(error.retryAt)||Date.now()+5*60000;return save(safeCache(cached,Date.now())?{...cached,schema:SCHEMA,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
+   return save({...base,...result,records,network,address:'native',totalHolders:null,complete:false,state:'snapshot',fetchedAt:Date.now(),sourceAt,marketCapEstimated:true,indexCadence:result.indexCadence||'provider-indexed',cacheSeconds:cacheMs/1000,nextAt:Date.now()+cacheMs});
+  }catch(error){const nextAt=Number(error.retryAt)||Date.now()+(/^empty-/.test(String(error.message))?cacheMs:5*60000);return save(safeCache(cached,Date.now())?{...cached,schema:SCHEMA,state:'delayed',nextAt}:{...base,reason:String(error.message).replace(/[^a-z0-9-]/gi,'').slice(0,80),nextAt});}
  }
  async read(provider,target,options={}){
-   if(['chainz','routescan','trongrid','toncenter'].includes(provider)){const next=this.sql.exec('SELECT next_at FROM native_provider_pacing WHERE provider=?',provider).toArray()[0]?.next_at||0;const wait=Math.max(0,next-Date.now());this.sql.exec('INSERT OR REPLACE INTO native_provider_pacing VALUES(?,?)',provider,Date.now()+wait+(provider==='chainz'?10100:['trongrid','toncenter'].includes(provider)?1100:600));if(wait)await new Promise(resolve=>setTimeout(resolve,wait));}
+   if(['chainz','routescan','trongrid','toncenter','cosmos-directory'].includes(provider)){const next=this.sql.exec('SELECT next_at FROM native_provider_pacing WHERE provider=?',provider).toArray()[0]?.next_at||0;const wait=Math.max(0,next-Date.now());this.sql.exec('INSERT OR REPLACE INTO native_provider_pacing VALUES(?,?)',provider,Date.now()+wait+(provider==='chainz'?10100:provider==='routescan'?600:1100));if(wait)await new Promise(resolve=>setTimeout(resolve,wait));}
    const at=Date.now(),day=Math.floor(at/DAY),limit=nativeLimits.providerDailyRequests[provider]||nativeLimits.providerDailyRequests.default;
    const budget=this.sql.exec('SELECT * FROM native_provider_budget WHERE day=? AND provider=?',day,provider).toArray()[0];
    const cooldown=Math.max(budget?.cooldown||0,this.sql.exec('SELECT until_ms FROM native_provider_cooldown WHERE provider=?',provider).toArray()[0]?.until_ms||0);
@@ -82,8 +95,9 @@ export class NativeHolderRelay{
     if(limited)this.cooldown(provider,next);
     await response.body?.cancel();throw Object.assign(Error('provider-http-'+response.status),{retryAt:next});}
    const data=await response.json(),rpcError=data?.error||data?.result?.error;
-   if(rpcError&&([429,-32005].includes(Number(rpcError.code||data.result?.error_code))||/rate.?limit|usage.?limit|daily.?limit|quota|too many requests|slow.?down/i.test(String(rpcError.message||rpcError)))){const next=/daily|for the day/i.test(String(rpcError.message||rpcError))?(Math.floor(Date.now()/DAY)+1)*DAY:Date.now()+HOUR;this.cooldown(provider,next);throw Object.assign(Error('provider-rpc-rate-limit'),{retryAt:next});}
-   await new Promise(resolve=>setTimeout(resolve,300));return data;
+   const errorText=[rpcError?.message||rpcError,...(Array.isArray(data?.errors)?data.errors.map(error=>String(error?.message||'')+' '+String(error?.extensions?.code||'')):[])].filter(Boolean).join(' ');
+   if([429,-32005].includes(Number(rpcError?.code||data?.result?.error_code))||/rate.?limit|usage.?limit|daily.?limit|quota|too many requests|slow.?down|unauthorized|forbidden|access denied/i.test(errorText)){const next=/daily|for the day/i.test(errorText)?(Math.floor(Date.now()/DAY)+1)*DAY:Date.now()+HOUR;this.cooldown(provider,next);throw Object.assign(Error('provider-rpc-rate-limit'),{retryAt:next});}
+   await new Promise(resolve=>setTimeout(resolve,FINAL_EVM_NATIVE_ASSETS.some(asset=>asset.provider===provider)?500:300));return data;
  }
  cooldown(provider,until){this.sql.exec('INSERT INTO native_provider_cooldown VALUES(?,?) ON CONFLICT(provider) DO UPDATE SET until_ms=MAX(until_ms,excluded.until_ms)',provider,until);}
  async coingeckoMetadata(){
