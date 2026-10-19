@@ -12,7 +12,7 @@ export class NativeHolderRelay{
  async get(url){
   const network=url.searchParams.get('network'),asset=assets.get(network);if(!asset)return empty(network,'unsupported-network');
   const now=Date.now(),saved=this.sql.exec('SELECT data,next_at FROM native_samples WHERE network=?',network).toArray()[0],cached=saved?JSON.parse(saved.data):null;
-  if(saved?.next_at>now)return cached?.records.length&&now-cached.fetchedAt<MAX_AGE?{...cached,cached:true}:cached?.records.length?{...empty(network,'expired'),nextAt:saved.next_at}:cached;
+  if(saved?.next_at>now&&!cached?.reason?.startsWith('Invalidredirectvalue'))return cached?.records.length&&now-cached.fetchedAt<MAX_AGE?{...cached,cached:true}:cached?.records.length?{...empty(network,'expired'),nextAt:saved.next_at}:cached;
   if(this.pending.has(network))return this.pending.get(network);
   // Serial requests also avoid bursts on the free provider plans.
   const task=this.queue.then(()=>this.load(asset,cached)).finally(()=>this.pending.delete(network));this.queue=task.catch(()=>{});this.pending.set(network,task);return task;
@@ -24,7 +24,7 @@ export class NativeHolderRelay{
    const budget=this.sql.exec('SELECT * FROM native_budget WHERE day=?',day).toArray()[0];
    if((budget?.calls||0)>=300||budget?.cooldown>Date.now())throw Object.assign(Error('free-budget-wait'),{retryAt:budget?.cooldown>Date.now()?budget.cooldown:(day+1)*DAY});
    this.sql.exec('INSERT INTO native_budget VALUES(?,1,0) ON CONFLICT(day) DO UPDATE SET calls=calls+1',day);this.sql.exec('DELETE FROM native_budget WHERE day<?',day-1);
-   const response=await fetch(target,{headers:{Accept:'application/json'},redirect:'error',signal:AbortSignal.timeout(18000)});
+   const response=await fetch(target,{headers:{Accept:'application/json'},redirect:'manual',signal:AbortSignal.timeout(18000)});
    if(!response.ok){const limited=[401,402,403,429,430].includes(response.status),retryAt=Date.now()+(limited?HOUR:5*60000);if(limited)this.sql.exec('UPDATE native_budget SET cooldown=? WHERE day=?',retryAt,day);throw Object.assign(Error('provider-http-'+response.status),{retryAt});}
    const data=await response.json();await new Promise(resolve=>setTimeout(resolve,300));return data;
   };
