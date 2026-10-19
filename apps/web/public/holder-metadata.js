@@ -1,5 +1,5 @@
-import {createHolderBalances} from './holder-balances.js?v=336';
-import {fetchGoPlusCount} from './holder-count-providers.js?v=307';
+import {createHolderBalances} from './holder-balances.js?v=350';
+import {fetchGoPlusCount} from './holder-count-providers.js?v=350';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {createHolderClusters} from './holder-clusters.js?v=168';
 const RELAY='https://upic-insightx.nchrl01.workers.dev/holders';

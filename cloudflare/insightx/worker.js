@@ -94,7 +94,7 @@ async function artwork(url,headers){
 async function holderCount(url,headers,env){
  const network=url.searchParams.get('network')||'',input=url.searchParams.get('address')||'';
  const address=/^0x[0-9a-fA-F]{40}$/.test(input)?input.toLowerCase():input;
- if(!/^[a-z0-9_-]{1,40}$/.test(network)||! /^[a-zA-Z0-9:_-]{1,128}$/.test(address))return json({state:'invalid-token'},400,headers);
+ if(!/^[a-z0-9_-]{1,40}$/.test(network)||! /^[a-zA-Z0-9:_-]{1,256}$/.test(address))return json({state:'invalid-token'},400,headers);
  try{
   const object=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-free-budget-v1'));
   const requestURL=new URL('/holders',url.origin);requestURL.search=new URLSearchParams({network,address}).toString();

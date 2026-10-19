@@ -1,3 +1,4 @@
+import {compareCoinNetworks} from '../apps/web/public/coin-network-choice.js';
 // Capture the actual player with current provider inputs and unmodified WebP pixels.
 // Local runs write development artifacts under the system temporary directory.
 // --publish (or CI=true) writes to the shared Cloudflare store using GitHub OIDC.
@@ -7,7 +8,7 @@ import {resolve,extname,dirname,sep,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
-import {HOLDER_NETWORKS} from '../apps/web/public/holder-count-providers.js';
+import {HOLDER_NETWORKS,validHolderToken} from '../apps/web/public/holder-count-providers.js';
 
 const project=resolve(dirname(fileURLToPath(import.meta.url)),'..'),root=resolve(project,'apps/web/public');
 const endpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures',kind='live-player-frame-v1';
@@ -29,8 +30,8 @@ const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm
 const explorers=new Set(['ethereum','eth','base','arbitrum','optimism','polygon','polygon_pos','zksync','celo','robinhood']);
 function supported(coin){
  if(!coin.address||!coin.chain||coin.contractStatus==='off-chain')return false;
- if(coin.chain==='solana')return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(coin.address);
- return /^0x[\da-f]{40}$/i.test(coin.address)&&(explorers.has(coin.chain)||Boolean(HOLDER_NETWORKS[aliases[coin.chain]||coin.chain]));
+ if(['solana','sui','tron','ton'].includes(coin.chain))return validHolderToken(coin.chain,coin.address);
+ return validHolderToken(coin.chain,coin.address)&&(explorers.has(coin.chain)||Boolean(HOLDER_NETWORKS[aliases[coin.chain]||coin.chain]));
 }
 const catalogue=JSON.parse(await readFile(resolve(root,'marketplace-coin-catalogue.json'),'utf8'));
 if(!Array.isArray(catalogue.coins))throw Error('Invalid coin catalogue');
@@ -68,7 +69,7 @@ const supportedCoins=candidates.filter(supported),priority=['HI','COVENANT','JEA
 const priorityFor=c=>{const index=priority.indexOf(c.symbol);return index<0?priority.length:index;};
 const missing=supportedCoins.filter(c=>!manifest.has(c.key)).sort((a,b)=>priorityFor(a)-priorityFor(b)||(a.rank||10001)-(b.rank||10001)||a.key.localeCompare(b.key));
 const preferred=new Map(),coveredCoins=new Set([...manifest.keys()].map(key=>identities.get(key)?.id));
-for(const coin of supportedCoins){const current=preferred.get(coin.id),primary=catalogue.coins.find(c=>c.id===coin.id);if(!current||coin.key===keyFor(primary.chain,primary.address))preferred.set(coin.id,coin);}
+for(const coin of supportedCoins){const current=preferred.get(coin.id),primary=catalogue.coins.find(c=>c.id===coin.id);if(!current||compareCoinNetworks(primary,{...coin,...manifest.get(coin.key)},{...current,...manifest.get(current.key)})<0)preferred.set(coin.id,coin);}
 const uncovered=missing.filter(c=>!coveredCoins.has(c.id)&&preferred.get(c.id)?.key===c.key),alternate=missing.filter(c=>!uncovered.includes(c));
 // Captures that do not exist share the oldest timestamp. Rotate that tie hourly
 // so an unavailable provider cannot monopolize every scheduled batch.

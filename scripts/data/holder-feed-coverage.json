@@ -1,0 +1,3444 @@
+{
+  "checkedAt": "2026-10-19T14:12:17.027254+00:00",
+  "scope": "The 181 top-1000 coins excluded by the previous holder-capture adapter",
+  "originalMissing": 181,
+  "confirmedNewFeeds": 20,
+  "remainingWithoutConfirmedFeed": 161,
+  "adapterEligibleBefore": 819,
+  "adapterEligibleAfter": 840,
+  "note": "Adapter eligibility does not guarantee a live market, usable liquidity, holder records, or successful capture. Samples are not full holder lists. Native SUI returned no sample and remains unconfirmed.",
+  "selectionPolicy": [
+    "Prefer the listed native/main identity.",
+    "Among other available representations, prefer the greatest observed USD liquidity.",
+    "Break ties with the latest capture; selecting a network explicitly always stays on that network."
+  ],
+  "coins": [
+    {
+      "id": "bitcoin",
+      "symbol": "BTC",
+      "name": "Bitcoin",
+      "nativeChain": "bitcoin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ethereum",
+      "symbol": "ETH",
+      "name": "Ethereum",
+      "nativeChain": "ethereum",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ripple",
+      "symbol": "XRP",
+      "name": "XRP",
+      "nativeChain": "xrp",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "solana",
+      "symbol": "SOL",
+      "name": "Solana",
+      "nativeChain": "solana",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "tron",
+      "symbol": "TRX",
+      "name": "TRON",
+      "nativeChain": "tron",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "figure-heloc",
+      "symbol": "FIGR_HELOC",
+      "name": "Figure Heloc",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "provenance",
+          "address": "scope1qrm5d0wjzamyywvjuws6774ljmrqu8kh9x"
+        },
+        {
+          "chain": "provenance",
+          "address": "scope1qrm5d0wjzamyywvjuws6774ljmrqu8kh9x"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "zcash",
+      "symbol": "ZEC",
+      "name": "Zcash",
+      "nativeChain": "zcash",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://z.cash/learn/what-is-the-difference-between-zcash-and-zec/"
+      ]
+    },
+    {
+      "id": "hyperliquid",
+      "symbol": "HYPE",
+      "name": "Hyperliquid",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "hyperliquid",
+          "address": "0x0d01dc56dcaaca66ad901c959b4011ec"
+        },
+        {
+          "chain": "hyperliquid",
+          "address": "0x0d01dc56dcaaca66ad901c959b4011ec"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "dogecoin",
+      "symbol": "DOGE",
+      "name": "Dogecoin",
+      "nativeChain": "dogecoin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "monero",
+      "symbol": "XMR",
+      "name": "Monero",
+      "nativeChain": "monero",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "cardano",
+      "symbol": "ADA",
+      "name": "Cardano",
+      "nativeChain": "cardano",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "near",
+      "symbol": "NEAR",
+      "name": "NEAR Protocol",
+      "nativeChain": "near",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "stellar",
+      "symbol": "XLM",
+      "name": "Stellar",
+      "nativeChain": "stellar",
+      "identities": [
+        {
+          "chain": "stellar",
+          "address": "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "bitcoin-cash",
+      "symbol": "BCH",
+      "name": "Bitcoin Cash",
+      "nativeChain": "bitcoin-cash",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "litecoin",
+      "symbol": "LTC",
+      "name": "Litecoin",
+      "nativeChain": "litecoin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "avalanche-2",
+      "symbol": "AVAX",
+      "name": "Avalanche",
+      "nativeChain": "avalanche",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "sui",
+      "symbol": "SUI",
+      "name": "Sui",
+      "nativeChain": "sui",
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "sui",
+        "symbol": "SUI",
+        "chain": "sui",
+        "address": "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": null,
+        "sampleRows": 0,
+        "checkedAt": 1792418956938
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "canton-network",
+      "symbol": "CC",
+      "name": "Canton",
+      "nativeChain": "canton-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "hedera-hashgraph",
+      "symbol": "HBAR",
+      "name": "Hedera",
+      "nativeChain": "hedera",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "bittensor",
+      "symbol": "TAO",
+      "name": "Bittensor",
+      "nativeChain": "bittensor",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "polkadot",
+      "symbol": "DOT",
+      "name": "Polkadot",
+      "nativeChain": "polkadot",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "bfusd",
+      "symbol": "BFUSD",
+      "name": "BFUSD",
+      "nativeChain": null,
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "off-chain",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.binance.com/en/academy/articles/what-is-bfusd"
+      ]
+    },
+    {
+      "id": "ethereum-classic",
+      "symbol": "ETC",
+      "name": "Ethereum Classic",
+      "nativeChain": "ethereum-classic",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "just",
+      "symbol": "JST",
+      "name": "JUST",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "tron",
+          "address": "TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9"
+        },
+        {
+          "chain": "tron",
+          "address": "TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "just",
+        "symbol": "JST",
+        "chain": "tron",
+        "address": "TCFLL5dx5ZJdKnWuesXxi1VPwjLVmWZZy9",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": "441790",
+        "sampleRows": 10,
+        "checkedAt": 1792418958730
+      },
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "algorand",
+      "symbol": "ALGO",
+      "name": "Algorand",
+      "nativeChain": "algorand",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "kaspa",
+      "symbol": "KAS",
+      "name": "Kaspa",
+      "nativeChain": "kaspa",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "pi-network",
+      "symbol": "PI",
+      "name": "Pi Network",
+      "nativeChain": "pi-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/pi-network"
+      ]
+    },
+    {
+      "id": "filecoin",
+      "symbol": "FIL",
+      "name": "Filecoin",
+      "nativeChain": "filecoin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "pearl-2",
+      "symbol": "PRL",
+      "name": "Pearl",
+      "nativeChain": "pearl",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/pearl-research"
+      ]
+    },
+    {
+      "id": "aptos",
+      "symbol": "APT",
+      "name": "Aptos",
+      "nativeChain": "aptos",
+      "identities": [
+        {
+          "chain": "aptos",
+          "address": "0x1::aptos_coin::AptosCoin"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "blockstack",
+      "symbol": "STX",
+      "name": "Stacks",
+      "nativeChain": "stacks",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "xdce-crowd-sale",
+      "symbol": "XDC",
+      "name": "XDC Network",
+      "nativeChain": "xdc-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "dash",
+      "symbol": "DASH",
+      "name": "Dash",
+      "nativeChain": "dash",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.dash.org/en/stable/docs/user/introduction/about.html"
+      ]
+    },
+    {
+      "id": "celestia",
+      "symbol": "TIA",
+      "name": "Celestia",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "cosmos",
+          "address": "ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877"
+        },
+        {
+          "chain": "cosmos",
+          "address": "ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "vechain",
+      "symbol": "VET",
+      "name": "VeChain",
+      "nativeChain": "vechain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "flare-networks",
+      "symbol": "FLR",
+      "name": "Flare",
+      "nativeChain": "flare-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "ylds",
+      "symbol": "YLDS",
+      "name": "YLDS",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "provenance",
+          "address": "uylds.fcc"
+        },
+        {
+          "chain": "provenance",
+          "address": "uylds.fcc"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "hash-2",
+      "symbol": "HASH",
+      "name": "Provenance Blockchain",
+      "nativeChain": "provenance",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "sei-network",
+      "symbol": "SEI",
+      "name": "Sei",
+      "nativeChain": "sei-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "bitcoin-cash-sv",
+      "symbol": "BSV",
+      "name": "Bitcoin SV",
+      "nativeChain": "bitcoin-sv",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/bitcoin-sv"
+      ]
+    },
+    {
+      "id": "plasma",
+      "symbol": "XPL",
+      "name": "Plasma",
+      "nativeChain": "plasma",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "tezos",
+      "symbol": "XTZ",
+      "name": "Tezos",
+      "nativeChain": "tezos",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "sun-token",
+      "symbol": "SUN",
+      "name": "Sun Token",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "tron",
+          "address": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S"
+        },
+        {
+          "chain": "tron",
+          "address": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "sun-token",
+        "symbol": "SUN",
+        "chain": "tron",
+        "address": "TSSMHYeV2uE9qYH95DqyoCuNCzEL1NvU3S",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": "82914",
+        "sampleRows": 10,
+        "checkedAt": 1792418960563
+      },
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "conflux-token",
+      "symbol": "CFX",
+      "name": "Conflux",
+      "nativeChain": "conflux",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "kaia",
+      "symbol": "KAIA",
+      "name": "Kaia",
+      "nativeChain": "kaia",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "decred",
+      "symbol": "DCR",
+      "name": "Decred",
+      "nativeChain": "decred",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://decred.org/micar-whitepaper"
+      ]
+    },
+    {
+      "id": "terra-luna",
+      "symbol": "LUNC",
+      "name": "Terra Luna Classic",
+      "nativeChain": "terra",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "monad",
+      "symbol": "MON",
+      "name": "Monad",
+      "nativeChain": "monad",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "arweave",
+      "symbol": "AR",
+      "name": "Arweave",
+      "nativeChain": "arweave",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.arweave.com/blog/endowment-with-arweave"
+      ]
+    },
+    {
+      "id": "iota",
+      "symbol": "IOTA",
+      "name": "IOTA",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "iota",
+          "address": "0x2::iota::IOTA"
+        },
+        {
+          "chain": "iota",
+          "address": "0x2::iota::IOTA"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "thorchain",
+      "symbol": "RUNE",
+      "name": "THORChain",
+      "nativeChain": "thorchain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "sonic-3",
+      "symbol": "S",
+      "name": "Sonic",
+      "nativeChain": "sonic",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "akash-network",
+      "symbol": "AKT",
+      "name": "Akash Network",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "akash",
+          "address": "uakt"
+        },
+        {
+          "chain": "akash",
+          "address": "uakt"
+        },
+        {
+          "chain": "archway",
+          "address": "ibc/C2CFB1C37C146CF95B0784FD518F8030FEFC76C5800105B1742FB65FFE65F873"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/1480B8FD20AD5FCAE81EA87584D269547DD4D436843C1D20F15E00EB64743EF4"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "theta-token",
+      "symbol": "THETA",
+      "name": "Theta Network",
+      "nativeChain": "theta",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "grx-chain",
+      "symbol": "GRX",
+      "name": "GRX Chain",
+      "nativeChain": "grx-chain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "neo",
+      "symbol": "NEO",
+      "name": "NEO",
+      "nativeChain": "neo",
+      "identities": [
+        {
+          "chain": "neo",
+          "address": "0xef4073a0f2b305a38ec4050e4d3d28bc40ea63f5"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms",
+        "https://docs.neo.org/docs/n3/reference/rpc/getcontractstate.html"
+      ]
+    },
+    {
+      "id": "vaulta",
+      "symbol": "A",
+      "name": "Vaulta",
+      "nativeChain": "eos",
+      "identities": [
+        {
+          "chain": "eos",
+          "address": "core.vaulta"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.vaulta.com/docs/latest/advanced-topics/upgrading-to-vaulta/"
+      ]
+    },
+    {
+      "id": "celium",
+      "symbol": "SN51",
+      "name": "lium",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "51"
+        },
+        {
+          "chain": "bittensor",
+          "address": "51"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ecash",
+      "symbol": "XEC",
+      "name": "eCash",
+      "nativeChain": "ecash",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.e.cash/about"
+      ]
+    },
+    {
+      "id": "ozone-chain",
+      "symbol": "OZO",
+      "name": "Ozone Chain",
+      "nativeChain": "ozone-chain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://whitepaper.ozonechain.io/blockchain-internals"
+      ]
+    },
+    {
+      "id": "chutes",
+      "symbol": "SN64",
+      "name": "Chutes",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "64"
+        },
+        {
+          "chain": "bittensor",
+          "address": "64"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "elrond-erd-2",
+      "symbol": "EGLD",
+      "name": "MultiversX",
+      "nativeChain": "elrond",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "walrus-2",
+      "symbol": "WAL",
+      "name": "Walrus",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL"
+        },
+        {
+          "chain": "sui",
+          "address": "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "walrus-2",
+        "symbol": "WAL",
+        "chain": "sui",
+        "address": "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 145822,
+        "sampleRows": 10,
+        "checkedAt": 1792418962903
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "quantum-resistant-ledger",
+      "symbol": "QRL",
+      "name": "Quantum Resistant Ledger",
+      "nativeChain": "qrl",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.theqrl.org/use/tools/explorer/overview/"
+      ]
+    },
+    {
+      "id": "dydx-chain",
+      "symbol": "DYDX",
+      "name": "dYdX",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "cosmos",
+          "address": "ibc/831F0B1BBB1D08A2B75311892876D71565478C532967545476DF4C2D7492E48C"
+        },
+        {
+          "chain": "cosmos",
+          "address": "ibc/831F0B1BBB1D08A2B75311892876D71565478C532967545476DF4C2D7492E48C"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/831F0B1BBB1D08A2B75311892876D71565478C532967545476DF4C2D7492E48C"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "kinetiq",
+      "symbol": "KNTQ",
+      "name": "Kinetiq",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "hyperevm",
+          "address": "0x000000000000780555bd0bca3791f89f9542c2d6"
+        },
+        {
+          "chain": "hyperevm",
+          "address": "0x000000000000780555bd0bca3791f89f9542c2d6"
+        },
+        {
+          "chain": "hyperliquid",
+          "address": "0xbd31bd605c0a1b82c72aae3587f9061f"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "mina-protocol",
+      "symbol": "MINA",
+      "name": "Mina Protocol",
+      "nativeChain": "mina",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://minaprotocol.com/get-started-with-mina"
+      ]
+    },
+    {
+      "id": "wemix-token",
+      "symbol": "WEMIX",
+      "name": "WEMIX",
+      "nativeChain": "wemix-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "qtum",
+      "symbol": "QTUM",
+      "name": "Qtum",
+      "nativeChain": "qtum",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "pharos-network",
+      "symbol": "PROS",
+      "name": "Pharos",
+      "nativeChain": "pharos",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "targon",
+      "symbol": "SN4",
+      "name": "Targon",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "4"
+        },
+        {
+          "chain": "bittensor",
+          "address": "4"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "zano",
+      "symbol": "ZANO",
+      "name": "Zano",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "zano",
+          "address": "d6329b5b1f7c0805b5c345f4957554002a2f557845f64d7645dae0e051a6498a"
+        },
+        {
+          "chain": "zano",
+          "address": "d6329b5b1f7c0805b5c345f4957554002a2f557845f64d7645dae0e051a6498a"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "gas",
+      "symbol": "GAS",
+      "name": "Gas",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "neo",
+          "address": "602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
+        },
+        {
+          "chain": "neo",
+          "address": "602c79718b16e442de58778e148d0b1084e3b2dffd5de6b7b16cee7969282de7"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "kusama",
+      "symbol": "KSM",
+      "name": "Kusama",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "hydration",
+          "address": "asset_registry%2F1000771"
+        },
+        {
+          "chain": "hydration",
+          "address": "asset_registry%2F1000771"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "usdsui",
+      "symbol": "USDSUI",
+      "name": "USDsui",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x44f838219cf67b058f3b37907b655f226153c18e33dfcd0da559a844fea9b1c1::usdsui::USDSUI"
+        },
+        {
+          "chain": "sui",
+          "address": "0x44f838219cf67b058f3b37907b655f226153c18e33dfcd0da559a844fea9b1c1::usdsui::USDSUI"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "usdsui",
+        "symbol": "USDSUI",
+        "chain": "sui",
+        "address": "0x44f838219cf67b058f3b37907b655f226153c18e33dfcd0da559a844fea9b1c1::usdsui::USDSUI",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 14867,
+        "sampleRows": 10,
+        "checkedAt": 1792418964713
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "felix-feusd",
+      "symbol": "FEUSD",
+      "name": "Felix feUSD",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "hyperevm",
+          "address": "0x02c6a2fa58cc01a18b8d9e00ea48d65e4df26c70"
+        },
+        {
+          "chain": "hyperevm",
+          "address": "0x02c6a2fa58cc01a18b8d9e00ea48d65e4df26c70"
+        },
+        {
+          "chain": "hyperliquid",
+          "address": "0x88102bea0bbad5f301f6e9e4dacdf979"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "nervos-network",
+      "symbol": "CKB",
+      "name": "Nervos Network",
+      "nativeChain": "nervos-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "theta-fuel",
+      "symbol": "TFUEL",
+      "name": "Theta Fuel",
+      "nativeChain": "theta",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://blog.thetatoken.org/theta-fuel-the-operational-token-of-the-theta-network/"
+      ]
+    },
+    {
+      "id": "digibyte",
+      "symbol": "DGB",
+      "name": "DigiByte",
+      "nativeChain": "digibyte",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.digibyte.org/en/"
+      ]
+    },
+    {
+      "id": "vethor-token",
+      "symbol": "VTHO",
+      "name": "VeThor",
+      "nativeChain": "vechain",
+      "identities": [
+        {
+          "chain": "vechain",
+          "address": "0x0000000000000000000000000000456E65726779"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.vechain.org/developer-resources/evm-compatibility-for-developers/vechain-blockchain-specifications",
+        "https://docs.vechain.org/introduction-to-vechain/dual-token-economic-model/vethor-vtho"
+      ]
+    },
+    {
+      "id": "qubic-network",
+      "symbol": "QUBIC",
+      "name": "Qubic",
+      "nativeChain": "qubic",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "story-2",
+      "symbol": "DATA",
+      "name": "Data Network",
+      "nativeChain": "story",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "berachain-bera",
+      "symbol": "BERA",
+      "name": "Berachain",
+      "nativeChain": "berachain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "babylon",
+      "symbol": "BABY",
+      "name": "Babylon",
+      "nativeChain": "babylon-genesis",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "efficientfrontier",
+      "symbol": "SN53",
+      "name": "EfficientFrontier",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "53"
+        },
+        {
+          "chain": "bittensor",
+          "address": "53"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "nexpace",
+      "symbol": "NXPC",
+      "name": "Nexpace",
+      "nativeChain": "henesys",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms",
+        "https://www.coingecko.com/en/coins/nexpace"
+      ]
+    },
+    {
+      "id": "purr-2",
+      "symbol": "PURR",
+      "name": "Purr",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "hyperliquid",
+          "address": "0xc1fb593aeffbeb02f85e0308e9956a90"
+        },
+        {
+          "chain": "hyperliquid",
+          "address": "0xc1fb593aeffbeb02f85e0308e9956a90"
+        },
+        {
+          "chain": "hyperevm",
+          "address": "0x9b498c3c8a0b8cd8ba1d9851d40d186f1872b44e"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "wink",
+      "symbol": "WIN",
+      "name": "WINkLink",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "tron",
+          "address": "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7"
+        },
+        {
+          "chain": "tron",
+          "address": "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "wink",
+        "symbol": "WIN",
+        "chain": "tron",
+        "address": "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": "808827",
+        "sampleRows": 10,
+        "checkedAt": 1792418966503
+      },
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "dai-on-pulsechain",
+      "symbol": "DAI",
+      "name": "DAI on PulseChain",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "pulsechain",
+          "address": "0x6b175474e89094c44da98b954eedeac495271d0f"
+        },
+        {
+          "chain": "pulsechain",
+          "address": "0x6b175474e89094c44da98b954eedeac495271d0f"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "score",
+      "symbol": "SN44",
+      "name": "Score",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "44"
+        },
+        {
+          "chain": "bittensor",
+          "address": "44"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ontology",
+      "symbol": "ONT",
+      "name": "Ontology",
+      "nativeChain": "ontology",
+      "identities": [
+        {
+          "chain": "ontology",
+          "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhUMqNMV"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.ont.io/guides-and-tutorials/integration-guides/exchange-integration/exchange-docking-guide",
+        "https://docs.ont.io/support/faq/token-protocols"
+      ]
+    },
+    {
+      "id": "snek",
+      "symbol": "SNEK",
+      "name": "Snek",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "cardano",
+          "address": "279c909f348e533da5808898f87f9a14bb2c3dfbbacccd631d927a3f534e454b"
+        },
+        {
+          "chain": "cardano",
+          "address": "279c909f348e533da5808898f87f9a14bb2c3dfbbacccd631d927a3f534e454b"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "flow",
+      "symbol": "FLOW",
+      "name": "Flow",
+      "nativeChain": "flow",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "magma-finance",
+      "symbol": "MAGMA",
+      "name": "Magma Finance",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x9f854b3ad20f8161ec0886f15f4a1752bf75d22261556f14cc8d3a1c5d50e529::magma::MAGMA"
+        },
+        {
+          "chain": "sui",
+          "address": "0x9f854b3ad20f8161ec0886f15f4a1752bf75d22261556f14cc8d3a1c5d50e529::magma::MAGMA"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "magma-finance",
+        "symbol": "MAGMA",
+        "chain": "sui",
+        "address": "0x9f854b3ad20f8161ec0886f15f4a1752bf75d22261556f14cc8d3a1c5d50e529::magma::MAGMA",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 17943,
+        "sampleRows": 10,
+        "checkedAt": 1792418968318
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "pirate-chain",
+      "symbol": "ARRR",
+      "name": "Pirate Chain",
+      "nativeChain": "pirate-chain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.piratechain.com/docs/installation"
+      ]
+    },
+    {
+      "id": "megaeth",
+      "symbol": "MEGA",
+      "name": "MegaETH",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "megaeth",
+          "address": "0x28b7e77f82b25b95953825f1e3ea0e36c1c29861"
+        },
+        {
+          "chain": "megaeth",
+          "address": "0x28b7e77f82b25b95953825f1e3ea0e36c1c29861"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "aria-chain",
+      "symbol": "ARIAX",
+      "name": "ARIA NETWORK",
+      "nativeChain": "aria-chain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/aria-chain"
+      ]
+    },
+    {
+      "id": "deep",
+      "symbol": "DEEP",
+      "name": "DeepBook",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP"
+        },
+        {
+          "chain": "sui",
+          "address": "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "deep",
+        "symbol": "DEEP",
+        "chain": "sui",
+        "address": "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 95673,
+        "sampleRows": 10,
+        "checkedAt": 1792418970149
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "concordium",
+      "symbol": "CCD",
+      "name": "Concordium",
+      "nativeChain": "concordium",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.concordium.com/en/mainnet/learn/tokenomics.html"
+      ]
+    },
+    {
+      "id": "nano",
+      "symbol": "XNO",
+      "name": "Nano",
+      "nativeChain": "nano",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://nano.org/"
+      ]
+    },
+    {
+      "id": "polymesh",
+      "symbol": "POLYX",
+      "name": "Polymesh",
+      "nativeChain": "polymesh",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://developers.polymesh.network/docs/introduction/polyx/"
+      ]
+    },
+    {
+      "id": "ronin",
+      "symbol": "RON",
+      "name": "Ronin",
+      "nativeChain": "ronin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "hydradx",
+      "symbol": "HDX",
+      "name": "Hydration",
+      "nativeChain": "hydration",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "proprietary-trading-network",
+      "symbol": "SN8",
+      "name": "Vanta Network",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "8"
+        },
+        {
+          "chain": "bittensor",
+          "address": "8"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "fractal-bitcoin",
+      "symbol": "FB",
+      "name": "Fractal Bitcoin",
+      "nativeChain": "fractal-bitcoin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.fractalbitcoin.io/getting-started/introduction"
+      ]
+    },
+    {
+      "id": "gm-3",
+      "symbol": "SN28",
+      "name": "gm",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "28"
+        },
+        {
+          "chain": "bittensor",
+          "address": "28"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "verge",
+      "symbol": "XVG",
+      "name": "Verge",
+      "nativeChain": "verge",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://vergecurrency.com/static/whitepaper/XVGETH_Whitepaper_v1.pdf"
+      ]
+    },
+    {
+      "id": "casper-network",
+      "symbol": "CSPR",
+      "name": "Casper Network",
+      "nativeChain": "casper-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "abey",
+      "symbol": "ABEY",
+      "name": "Abey",
+      "nativeChain": "abey",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.abey.com/whitepaper/abey_whitepaper"
+      ]
+    },
+    {
+      "id": "electroneum",
+      "symbol": "ETN",
+      "name": "Electroneum",
+      "nativeChain": "electroneum",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "siacoin",
+      "symbol": "SC",
+      "name": "Siacoin",
+      "nativeChain": "sia",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.sia.tech/get-started-with-sia/learn-about-siacoins"
+      ]
+    },
+    {
+      "id": "pay-coin",
+      "symbol": "PCI",
+      "name": "Paycoin",
+      "nativeChain": "payprotocol",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://payprotocol.io/about"
+      ]
+    },
+    {
+      "id": "bitkub-coin",
+      "symbol": "KUB",
+      "name": "KUB Coin",
+      "nativeChain": "bitkub-chain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "notcoin",
+      "symbol": "NOT",
+      "name": "Notcoin",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ton",
+          "address": "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT"
+        },
+        {
+          "chain": "ton",
+          "address": "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "notcoin",
+        "symbol": "NOT",
+        "chain": "ton",
+        "address": "EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT",
+        "provider": "TonAPI",
+        "holderCount": 2856065,
+        "sampleRows": 1,
+        "checkedAt": 1792419050224
+      },
+      "sources": [
+        "https://docs.tonconsole.com/tonapi/rest-api/jettons"
+      ]
+    },
+    {
+      "id": "templar",
+      "symbol": "SN3",
+      "name": "\u03c4emplar",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "3"
+        },
+        {
+          "chain": "bittensor",
+          "address": "3"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "swarm-network",
+      "symbol": "TRUTH",
+      "name": "Swarm Network",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x0a48f85a3905cfa49a652bdb074d9e9fabad27892d54afaa5c9e0adeb7ac3cdf::swarm_network_token::SWARM_NETWORK_TOKEN"
+        },
+        {
+          "chain": "sui",
+          "address": "0x0a48f85a3905cfa49a652bdb074d9e9fabad27892d54afaa5c9e0adeb7ac3cdf::swarm_network_token::SWARM_NETWORK_TOKEN"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "swarm-network",
+        "symbol": "TRUTH",
+        "chain": "sui",
+        "address": "0x0a48f85a3905cfa49a652bdb074d9e9fabad27892d54afaa5c9e0adeb7ac3cdf::swarm_network_token::SWARM_NETWORK_TOKEN",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 1525,
+        "sampleRows": 10,
+        "checkedAt": 1792418971999
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "ston-2",
+      "symbol": "STON",
+      "name": "STON",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ton",
+          "address": "EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO"
+        },
+        {
+          "chain": "ton",
+          "address": "EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "ston-2",
+        "symbol": "STON",
+        "chain": "ton",
+        "address": "EQA2kCVNwVsil2EM2mB0SkXytxCqQjS4mttjDpnXmwG9T6bO",
+        "provider": "TonAPI",
+        "holderCount": 71180,
+        "sampleRows": 1,
+        "checkedAt": 1792419052729
+      },
+      "sources": [
+        "https://docs.tonconsole.com/tonapi/rest-api/jettons"
+      ]
+    },
+    {
+      "id": "ong",
+      "symbol": "ONG",
+      "name": "Ontology Gas",
+      "nativeChain": "ontology",
+      "identities": [
+        {
+          "chain": "ontology",
+          "address": "AFmseVrdL9f9oyCzZefL9tG6UbvhfRZMHJ"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.ont.io/guides-and-tutorials/integration-guides/exchange-integration/exchange-docking-guide",
+        "https://docs.ont.io/support/faq/token-protocols"
+      ]
+    },
+    {
+      "id": "elexium",
+      "symbol": "EX",
+      "name": "Elexium",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "alephium",
+          "address": "28LgMeQGdvtXfsvWhpNNVx1DoSiz7TzrATv9qxMQP5is9"
+        },
+        {
+          "chain": "alephium",
+          "address": "28LgMeQGdvtXfsvWhpNNVx1DoSiz7TzrATv9qxMQP5is9"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ark",
+      "symbol": "ARK",
+      "name": "ARK",
+      "nativeChain": "ark",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://arkvault.io/docs/transactions/features/staking"
+      ]
+    },
+    {
+      "id": "osmosis",
+      "symbol": "OSMO",
+      "name": "Osmosis",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "osmosis",
+          "address": "uosmo"
+        },
+        {
+          "chain": "osmosis",
+          "address": "uosmo"
+        },
+        {
+          "chain": "evmos",
+          "address": "0xfa3c22c069b9556a4b2f7ece1ee3b467909f4864"
+        },
+        {
+          "chain": "cosmos",
+          "address": "ibc/14F9BC3E44B8A9C1BE1FB08980FAB87034C9905EF17CF2F5008FC085218811CC"
+        },
+        {
+          "chain": "secret",
+          "address": "secret150jec8mc2hzyyqak4umv6cfevelr0x9p0mjxgg"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "catizen",
+      "symbol": "CATI",
+      "name": "Catizen",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ton",
+          "address": "EQD-cvR0Nz6XAyRBvbhz-abTrRC6sI5tvHvvpeQraV9UAAD7"
+        },
+        {
+          "chain": "ton",
+          "address": "EQD-cvR0Nz6XAyRBvbhz-abTrRC6sI5tvHvvpeQraV9UAAD7"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "catizen",
+        "symbol": "CATI",
+        "chain": "ton",
+        "address": "EQD-cvR0Nz6XAyRBvbhz-abTrRC6sI5tvHvvpeQraV9UAAD7",
+        "provider": "TonAPI",
+        "holderCount": 1631461,
+        "sampleRows": 1,
+        "checkedAt": 1792419055202
+      },
+      "sources": [
+        "https://docs.tonconsole.com/tonapi/rest-api/jettons"
+      ]
+    },
+    {
+      "id": "storx",
+      "symbol": "SRX",
+      "name": "StorX",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "xdc-network",
+          "address": "xdc5d5f074837f5d4618b3916ba74de1bf9662a3fed"
+        },
+        {
+          "chain": "xdc-network",
+          "address": "xdc5d5f074837f5d4618b3916ba74de1bf9662a3fed"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ustbl-tokenized-u-s-treasury-bill",
+      "symbol": "USTBL",
+      "name": "USTBL",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ordinals",
+          "address": "79b6b75e951a9c723e215cc0492f08ad6d7b95fcef1826265e8e9ea1e58cc69c"
+        },
+        {
+          "chain": "ordinals",
+          "address": "79b6b75e951a9c723e215cc0492f08ad6d7b95fcef1826265e8e9ea1e58cc69c"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "iota-2",
+      "symbol": "SN9",
+      "name": "iota",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "9"
+        },
+        {
+          "chain": "bittensor",
+          "address": "9"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "manta-network",
+      "symbol": "MANTA",
+      "name": "Manta Network",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "manta-pacific",
+          "address": "0x95cef13441be50d20ca4558cc0a27b601ac544e5"
+        },
+        {
+          "chain": "manta-pacific",
+          "address": "0x95cef13441be50d20ca4558cc0a27b601ac544e5"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "manta-network",
+        "symbol": "MANTA",
+        "chain": "manta-pacific",
+        "address": "0x95cef13441be50d20ca4558cc0a27b601ac544e5",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": "209455",
+        "sampleRows": 10,
+        "checkedAt": 1792418973822
+      },
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "quantus",
+      "symbol": "QTC",
+      "name": "Quantus",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "near",
+          "address": "qtc.omft.near"
+        },
+        {
+          "chain": "near",
+          "address": "qtc.omft.near"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "chia",
+      "symbol": "XCH",
+      "name": "Chia",
+      "nativeChain": "chia",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "somnia",
+      "symbol": "SOMI",
+      "name": "Somnia",
+      "nativeChain": "somnia",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "zelcash",
+      "symbol": "FLUX",
+      "name": "Flux",
+      "nativeChain": "flux",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://docs.runonflux.com/fluxnodes/claim-parallel-assets/"
+      ]
+    },
+    {
+      "id": "bora",
+      "symbol": "BORA",
+      "name": "BORA",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "kaia",
+          "address": "0x02cbe46fb8a1f579254a9b485788f2d86cad51aa"
+        },
+        {
+          "chain": "kaia",
+          "address": "0x02cbe46fb8a1f579254a9b485788f2d86cad51aa"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "terra-luna-2",
+      "symbol": "LUNA",
+      "name": "Terra",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "terra-2",
+          "address": "uluna"
+        },
+        {
+          "chain": "terra-2",
+          "address": "uluna"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/785AFEC6B3741100D15E7AF01374E3C4C36F24888E96479B1C33F5C71F364EF9"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "steem",
+      "symbol": "STEEM",
+      "name": "Steem",
+      "nativeChain": "steem",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://steem.com/steem-bluepaper.pdf?t=20250711"
+      ]
+    },
+    {
+      "id": "tcy",
+      "symbol": "TCY",
+      "name": "THORChain Yield",
+      "nativeChain": "thorchain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://adr28.thorchain.org/"
+      ]
+    },
+    {
+      "id": "geode-chain",
+      "symbol": "GEODE",
+      "name": "Geode Chain",
+      "nativeChain": "geode-chain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/geode-chain"
+      ]
+    },
+    {
+      "id": "xphere",
+      "symbol": "XP",
+      "name": "Xphere",
+      "nativeChain": "xphere",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://whitepaper.x-phere.com/economy/xp"
+      ]
+    },
+    {
+      "id": "terrausd",
+      "symbol": "USTC",
+      "name": "TerraClassicUSD",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "terra",
+          "address": "uusd"
+        },
+        {
+          "chain": "terra",
+          "address": "uusd"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/BE1BB42D4BE3C30D50B68D7C41DB4DFCE9678E8EF8C539F6E6A9345048894FCC"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "hive",
+      "symbol": "HIVE",
+      "name": "Hive",
+      "nativeChain": "hive",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.hive.io/"
+      ]
+    },
+    {
+      "id": "ergo",
+      "symbol": "ERG",
+      "name": "Ergo",
+      "nativeChain": "ergo",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "initia",
+      "symbol": "INIT",
+      "name": "Initia",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "initia",
+          "address": "uinit"
+        },
+        {
+          "chain": "initia",
+          "address": "uinit"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/DD7EA9AF1E58E9FDD7F9810976817E203D5B87BAEF7AEA592FA34DF73310620B"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "bucket-protocol-buck-stablecoin",
+      "symbol": "BUCK",
+      "name": "Bucket Protocol BUCK Stablecoin",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK"
+        },
+        {
+          "chain": "sui",
+          "address": "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "bucket-protocol-buck-stablecoin",
+        "symbol": "BUCK",
+        "chain": "sui",
+        "address": "0xce7ff77a83ea0cb6fd39bd8748e2ec89a3f41e8efdc3f4eb123e0ca37b184db2::buck::BUCK",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 40367,
+        "sampleRows": 10,
+        "checkedAt": 1792418976601
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "ardor",
+      "symbol": "ARDR",
+      "name": "Ardor",
+      "nativeChain": "ardor",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "coredaoorg",
+      "symbol": "CORE",
+      "name": "Core",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "core",
+          "address": "0x191e94fa59739e188dce837f7f6978d84727ad01"
+        },
+        {
+          "chain": "core",
+          "address": "0x191e94fa59739e188dce837f7f6978d84727ad01"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "mantra",
+      "symbol": "MANTRA",
+      "name": "MANTRA",
+      "nativeChain": "mantra",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "ethereum-pow-iou",
+      "symbol": "ETHW",
+      "name": "EthereumPoW",
+      "nativeChain": "ethereumpow",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "nova-3",
+      "symbol": "SN68",
+      "name": "NOVA",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "68"
+        },
+        {
+          "chain": "bittensor",
+          "address": "68"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "constellation-labs",
+      "symbol": "DAG",
+      "name": "Constellation",
+      "nativeChain": "constellation-network",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "metal",
+      "symbol": "MTL",
+      "name": "Metal DAO",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "metal-l2",
+          "address": "0xbcfc435d8f276585f6431fc1b9ee9a850b5c00a9"
+        },
+        {
+          "chain": "metal-l2",
+          "address": "0xbcfc435d8f276585f6431fc1b9ee9a850b5c00a9"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "hippius",
+      "symbol": "SN75",
+      "name": "Hippius",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "75"
+        },
+        {
+          "chain": "bittensor",
+          "address": "75"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "stratis",
+      "symbol": "STRAX",
+      "name": "Xertra",
+      "nativeChain": "stratis",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "ao-computer",
+      "symbol": "AO",
+      "name": "ao Computer",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ao",
+          "address": "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc"
+        },
+        {
+          "chain": "ao",
+          "address": "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/ao-computer",
+        "https://github.com/permaweb/ao-token-docs/blob/main/docs/token-integration.md"
+      ]
+    },
+    {
+      "id": "bitcast",
+      "symbol": "SN93",
+      "name": "Bitcast",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "93"
+        },
+        {
+          "chain": "bittensor",
+          "address": "93"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "ravencoin",
+      "symbol": "RVN",
+      "name": "Ravencoin",
+      "nativeChain": "ravencoin",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://ravencoin.org/assets/documents/Ravencoin.pdf"
+      ]
+    },
+    {
+      "id": "usdh-2",
+      "symbol": "USDH",
+      "name": "USDH",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "hyperevm",
+          "address": "0x111111a1a0667d36bd57c0a9f569b98057111111"
+        },
+        {
+          "chain": "hyperevm",
+          "address": "0x111111a1a0667d36bd57c0a9f569b98057111111"
+        },
+        {
+          "chain": "hyperliquid",
+          "address": "0x54e00a5988577cb0b0c9ab0cb6ef7f4b"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "utya",
+      "symbol": "UTYA",
+      "name": "Utya",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ton",
+          "address": "EQBaCgUwOoc6gHCNln_oJzb0mVs79YG7wYoavh-o1ItaneLA"
+        },
+        {
+          "chain": "ton",
+          "address": "EQBaCgUwOoc6gHCNln_oJzb0mVs79YG7wYoavh-o1ItaneLA"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "utya",
+        "symbol": "UTYA",
+        "chain": "ton",
+        "address": "EQBaCgUwOoc6gHCNln_oJzb0mVs79YG7wYoavh-o1ItaneLA",
+        "provider": "TonAPI",
+        "holderCount": 11756,
+        "sampleRows": 1,
+        "checkedAt": 1792419057706
+      },
+      "sources": [
+        "https://docs.tonconsole.com/tonapi/rest-api/jettons"
+      ]
+    },
+    {
+      "id": "sats-ordinals",
+      "symbol": "SATS",
+      "name": "SATS (Ordinals)",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ordinals",
+          "address": "9b664bdd6f5ed80d8d88957b63364c41f3ad4efb8eee11366aa16435974d9333i0"
+        },
+        {
+          "chain": "ordinals",
+          "address": "9b664bdd6f5ed80d8d88957b63364c41f3ad4efb8eee11366aa16435974d9333i0"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "gradients",
+      "symbol": "SN56",
+      "name": "Gradients",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "56"
+        },
+        {
+          "chain": "bittensor",
+          "address": "56"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "cetus-protocol",
+      "symbol": "CETUS",
+      "name": "Cetus Protocol",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS"
+        },
+        {
+          "chain": "sui",
+          "address": "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "cetus-protocol",
+        "symbol": "CETUS",
+        "chain": "sui",
+        "address": "0x06864a6f921804860930db6ddbe2e16acdf8504495ea7481637a1c8b9a8fe54b::cetus::CETUS",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 126596,
+        "sampleRows": 10,
+        "checkedAt": 1792418978389
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "harmony",
+      "symbol": "ONE",
+      "name": "Harmony",
+      "nativeChain": "harmony",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "playnance",
+      "symbol": "GCOIN",
+      "name": "Playnance",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "playblock",
+          "address": "0xC3B539972C522d883aaA904aAAdcfE69A2d9F26B"
+        },
+        {
+          "chain": "playblock",
+          "address": "0xC3B539972C522d883aaA904aAAdcfE69A2d9F26B"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://bitmart.zendesk.com/hc/en-us/articles/51501190839835-G-Coin-GCOIN",
+        "https://explorer.playblock.io/token/0xC3B539972C522d883aaA904aAAdcfE69A2d9F26B",
+        "https://topplay.playw3.com/gcoin"
+      ]
+    },
+    {
+      "id": "rich-kids-of-tao",
+      "symbol": "SN110",
+      "name": "Green Compute",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "110"
+        },
+        {
+          "chain": "bittensor",
+          "address": "110"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "tx",
+      "symbol": "TX",
+      "name": "tx",
+      "nativeChain": "tx",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://www.coingecko.com/en/coins/tx"
+      ]
+    },
+    {
+      "id": "fogo",
+      "symbol": "FOGO",
+      "name": "Fogo",
+      "nativeChain": "fogo",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "gama-token",
+      "symbol": "GAMA",
+      "name": "Gama Token",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "xdc-network",
+          "address": "0x3a170c7c987f55c84f28733bfa27962d8cdd5d3b"
+        },
+        {
+          "chain": "xdc-network",
+          "address": "0x3a170c7c987f55c84f28733bfa27962d8cdd5d3b"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "dogs-2",
+      "symbol": "DOGS",
+      "name": "Dogs",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "ton",
+          "address": "EQCvxJy4eG8hyHBFsZ7eePxrRsUQSFE_jpptRAYBmcG_DOGS"
+        },
+        {
+          "chain": "ton",
+          "address": "EQCvxJy4eG8hyHBFsZ7eePxrRsUQSFE_jpptRAYBmcG_DOGS"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "dogs-2",
+        "symbol": "DOGS",
+        "chain": "ton",
+        "address": "EQCvxJy4eG8hyHBFsZ7eePxrRsUQSFE_jpptRAYBmcG_DOGS",
+        "provider": "TonAPI",
+        "holderCount": 4899948,
+        "sampleRows": 1,
+        "checkedAt": 1792419060152
+      },
+      "sources": [
+        "https://docs.tonconsole.com/tonapi/rest-api/jettons"
+      ]
+    },
+    {
+      "id": "bitcastle-token",
+      "symbol": "BCE",
+      "name": "bitcastle Token",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0x34d12f761847a05dfa33a1692440588f4b5f7f24be619334e29d74e083f5e64e::bce::BCE"
+        },
+        {
+          "chain": "sui",
+          "address": "0x34d12f761847a05dfa33a1692440588f4b5f7f24be619334e29d74e083f5e64e::bce::BCE"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "bitcastle-token",
+        "symbol": "BCE",
+        "chain": "sui",
+        "address": "0x34d12f761847a05dfa33a1692440588f4b5f7f24be619334e29d74e083f5e64e::bce::BCE",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 7822,
+        "sampleRows": 10,
+        "checkedAt": 1792418980746
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "medibloc",
+      "symbol": "MED",
+      "name": "Medibloc",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "osmosis",
+          "address": "ibc/3BCCC93AD5DF58D11A6F8A05FA8BC801CBA0BA61A981F57E91B8B598BF8061CB"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/3BCCC93AD5DF58D11A6F8A05FA8BC801CBA0BA61A981F57E91B8B598BF8061CB"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "my-paqman-coin",
+      "symbol": "MPC",
+      "name": "My Paqman Coin",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "polkadot",
+          "address": "50000103"
+        },
+        {
+          "chain": "polkadot",
+          "address": "50000103"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "certik",
+      "symbol": "CTK",
+      "name": "Shentu",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "osmosis",
+          "address": "ibc/7ED954CFFFC06EE8419387F3FC688837FF64EF264DE14219935F724EEEDBF8D3"
+        },
+        {
+          "chain": "osmosis",
+          "address": "ibc/7ED954CFFFC06EE8419387F3FC688837FF64EF264DE14219935F724EEEDBF8D3"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "quantixai",
+      "symbol": "QFI",
+      "name": "Quantix Finance",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "tron",
+          "address": "TMVnKncD9NhAYEPoR6EutBrAKi8x6oZdR6"
+        },
+        {
+          "chain": "tron",
+          "address": "TMVnKncD9NhAYEPoR6EutBrAKi8x6oZdR6"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "quantixai",
+        "symbol": "QFI",
+        "chain": "tron",
+        "address": "TMVnKncD9NhAYEPoR6EutBrAKi8x6oZdR6",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": "822",
+        "sampleRows": 10,
+        "checkedAt": 1792418982550
+      },
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "zcoin",
+      "symbol": "FIRO",
+      "name": "Firo",
+      "nativeChain": "firo",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://whatisfiro.firo.org/pillars/ecosystem/"
+      ]
+    },
+    {
+      "id": "bitmind",
+      "symbol": "SN34",
+      "name": "BitMind",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "34"
+        },
+        {
+          "chain": "bittensor",
+          "address": "34"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "talus",
+      "symbol": "US",
+      "name": "Talus",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "sui",
+          "address": "0xee962a61432231c2ede6946515beb02290cb516ad087bb06a731e922b2a5f57a::us::US"
+        },
+        {
+          "chain": "sui",
+          "address": "0xee962a61432231c2ede6946515beb02290cb516ad087bb06a731e922b2a5f57a::us::US"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "talus",
+        "symbol": "US",
+        "chain": "sui",
+        "address": "0xee962a61432231c2ede6946515beb02290cb516ad087bb06a731e922b2a5f57a::us::US",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": 2383,
+        "sampleRows": 10,
+        "checkedAt": 1792418984343
+      },
+      "sources": [
+        "https://docs.gopluslabs.io/reference/suitokensecurityusingget"
+      ]
+    },
+    {
+      "id": "fuzzybear",
+      "symbol": "FUZZY",
+      "name": "Fuzzybear",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "xrp",
+          "address": "46555A5A59000000000000000000000000000000.rhCAT4hRdi2Y9puNdkpMzxrdKa5wkppR62"
+        },
+        {
+          "chain": "xrp",
+          "address": "46555A5A59000000000000000000000000000000.rhCAT4hRdi2Y9puNdkpMzxrdKa5wkppR62"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "qie",
+      "symbol": "QIE",
+      "name": "QIE Blockchain",
+      "nativeChain": "qie-blockchain",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://api.coingecko.com/api/v3/asset_platforms"
+      ]
+    },
+    {
+      "id": "tiger-alpha",
+      "symbol": "SN107",
+      "name": "Tiger Alpha",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "107"
+        },
+        {
+          "chain": "bittensor",
+          "address": "107"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "tensorcash",
+      "symbol": "TSC",
+      "name": "TensorCash",
+      "nativeChain": "tensorcash",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://tensorcash.org/"
+      ]
+    },
+    {
+      "id": "redteam",
+      "symbol": "SN61",
+      "name": "RedTeam",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "bittensor",
+          "address": "61"
+        },
+        {
+          "chain": "bittensor",
+          "address": "61"
+        }
+      ],
+      "status": "not-yet-connected",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+      ]
+    },
+    {
+      "id": "epic-cash",
+      "symbol": "EPIC",
+      "name": "Epic Private Internet Cash",
+      "nativeChain": "epic-cash",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://epic.tech/"
+      ]
+    },
+    {
+      "id": "striker",
+      "symbol": "STKRI",
+      "name": "Striker",
+      "nativeChain": null,
+      "identities": [
+        {
+          "chain": "tron",
+          "address": "TVnuZu3GF8CLKn4D6nMWNwkHhnUwzAqn8W"
+        },
+        {
+          "chain": "tron",
+          "address": "TVnuZu3GF8CLKn4D6nMWNwkHhnUwzAqn8W"
+        }
+      ],
+      "status": "holder-feed-confirmed",
+      "category": "chain-specific-adapter-needed",
+      "providerCheck": {
+        "id": "striker",
+        "symbol": "STKRI",
+        "chain": "tron",
+        "address": "TVnuZu3GF8CLKn4D6nMWNwkHhnUwzAqn8W",
+        "provider": "GoPlus",
+        "code": 1,
+        "holderCount": "530",
+        "sampleRows": 10,
+        "checkedAt": 1792418986166
+      },
+      "sources": [
+        "https://gopluslabs.io/en/token-security"
+      ]
+    },
+    {
+      "id": "bityuan",
+      "symbol": "BTY",
+      "name": "Bityuan",
+      "nativeChain": "bityuan",
+      "identities": [],
+      "status": "not-yet-connected",
+      "category": "native-no-token-identifier",
+      "providerCheck": null,
+      "sources": [
+        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
+        "https://bityuan.com/"
+      ]
+    }
+  ],
+  "candidateProviders": [
+    {
+      "name": "Blockchair",
+      "assets": [
+        "BTC",
+        "ETH",
+        "BCH",
+        "LTC",
+        "DOGE",
+        "DASH"
+      ],
+      "status": "requires-api-key-for-application-use",
+      "source": "https://github.com/Blockchair/Blockchair.Support/blob/master/API.md",
+      "notes": "Native address-balance indexes and positive-balance address counts. This is address data, not a count of people. Ethereum address-index freshness differs from the price feed."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import {fetchGoPlusCount,HOLDER_NETWORKS} from './holder-count-providers.js?v=307';
+import {fetchGoPlusCount,HOLDER_NETWORKS,validHolderToken} from './holder-count-providers.js?v=350';
 // Actual indexed ERC-20 balances. Public Blockscout reads require no API key.
 // A bounded, paginated sample is never expanded into invented wallets.
 const EXPLORERS={ethereum:'https://eth.blockscout.com',eth:'https://eth.blockscout.com',base:'https://base.blockscout.com',arbitrum:'https://arbitrum.blockscout.com',optimism:'https://explorer.optimism.io',polygon:'https://polygon.blockscout.com',polygon_pos:'https://polygon.blockscout.com',zksync:'https://zksync.blockscout.com',celo:'https://celo.blockscout.com',robinhood:'https://robinhoodchain.blockscout.com'};
@@ -33,8 +33,8 @@ export function createHolderBalances({onChange=()=>{}}={}){
  function setMarket(pair){
   close();const version=epoch,host=EXPLORERS[pair?.chainId],input=pair?.baseToken?.address;
   const network=pair?.geckoNetwork||ALIASES[pair?.chainId]||pair?.chainId,solana=network==='solana';
-  if((!host&&!HOLDER_NETWORKS[network]&&!solana)||!(solana?/^[1-9A-HJ-NP-Za-km-z]{32,44}$/:addressPattern).test(input||'')){publish(empty(pair?'unsupported-network':'unavailable'));return;}
-  const address=solana?input:input.toLowerCase(),key=network+':'+address;
+  if((!host&&!HOLDER_NETWORKS[network]&&!solana)||!validHolderToken(network,input)){publish(empty(pair?'unsupported-network':'unavailable'));return;}
+  const address=solana||network==='sui'||network==='tron'||network==='ton'?input:input.toLowerCase(),key=network+':'+address;
   const saved=cache.get(key);
   const reuse=saved&&!expired(saved)&&(saved.records.length||saved.complete||saved.nextAt>Date.now());
   publish(reuse?saved:empty('loading'));
@@ -70,7 +70,7 @@ export function createHolderBalances({onChange=()=>{}}={}){
    async function sample(){
     const result=await fetchGoPlusCount(network,address,{signal});if(!current())return;
     if(!result.holderBalances?.length){const error=Error('holder-sample-unavailable');error.rateLimited=result.state==='rate-limited';throw error;}
-    publish({source:'GoPlus',network,address,totalHolders:result.holders,fetchedAt:result.fetchedAt,state:'snapshot',coverage:'top-holder-sample',records:result.holderBalances,complete:false,truncated:false,nextAt:Date.now()+TTL});
+    publish({source:result.source||'GoPlus',network,address,totalHolders:result.holders,fetchedAt:result.fetchedAt,state:'snapshot',coverage:'top-holder-sample',records:result.holderBalances,complete:false,truncated:false,nextAt:Date.now()+TTL});
    }
    try{
     if(!host){await sample();return;}

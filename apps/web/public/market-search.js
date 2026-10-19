@@ -1,16 +1,17 @@
-import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=327';
+import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=350';
 import {fetchGecko} from './gecko.js?v=277';
 import {geckoPoolMarket} from './trending.js?v=345';
 
 // Shared discovery and provider cooldowns for the player and marketplace.
 const providerCooldowns=new Map();
-export const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
+const tokenIdentity=value=>{const s=String(value||''),move=/^(0x[0-9a-fA-F]{1,64})(::[A-Za-z_][A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*)$/.exec(s);return move?'0x'+move[1].slice(2).toLowerCase().padStart(64,'0')+move[2]:/^0x[0-9a-f]{40}$/i.test(s)?s.toLowerCase():s;};
+export const sameToken=(a,b)=>Boolean(a&&b)&&tokenIdentity(a)===tokenIdentity(b);
 export function orientPair(pair,token){
- if(sameToken(pair.baseToken?.address,token))return {...pair,historyTokenSide:'base'};
+ if(sameToken(pair.baseToken?.address,token))return {...pair,baseToken:{...pair.baseToken,address:token},historyTokenSide:'base'};
  if(!sameToken(pair.quoteToken?.address,token))return null;
  const native=Number(pair.priceNative),usd=Number(pair.priceUsd),txns={};
  for(const [window,tx] of Object.entries(pair.txns||{}))txns[window]={buys:tx.sells,sells:tx.buys};
- return {...pair,marketCap:null,fdv:null,historyTokenSide:'quote',baseToken:pair.quoteToken,quoteToken:pair.baseToken,priceNative:native>0?String(1/native):null,priceUsd:native>0&&usd>0?String(usd/native):null,txns,priceChange:{}};
+ return {...pair,marketCap:null,fdv:null,historyTokenSide:'quote',baseToken:{...pair.quoteToken,address:token},quoteToken:pair.baseToken,priceNative:native>0?String(1/native):null,priceUsd:native>0&&usd>0?String(usd/native):null,txns,priceChange:{}};
 }
 export async function fetchJSON(url,{signal}={}){
  const origin=new URL(url).origin,until=providerCooldowns.get(origin)||0;

@@ -1,7 +1,7 @@
 import {attachArtworkDither} from './coin-dither.js?v=276';
 
 const normalized=value=>String(value||'').normalize('NFKC').trim().toLowerCase().replace(/^\$/,'');
-export const isTokenIdentifier=query=>/^0x[0-9a-f]{40,64}$/i.test(query)||/^[1-9A-HJ-NP-Za-km-z]{32,64}$/.test(query);
+export const isTokenIdentifier=query=>/^[EU]Q[A-Za-z0-9_-]{46}$/.test(query)||/^0x[0-9a-f]{40,64}$/i.test(query)||/^0x[0-9a-fA-F]{1,64}::[A-Za-z_][A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*$/.test(query)||/^[1-9A-HJ-NP-Za-km-z]{32,64}$/.test(query);
 export function rankCoinMatches(pairs,query,{orientPair,network}={}){
  const address=isTokenIdentifier(query),q=normalized(query);
  const rank=token=>normalized(token.symbol)===q?4:normalized(token.name)===q?3:normalized(token.symbol).startsWith(q)||normalized(token.name).startsWith(q)?2:normalized(token.symbol).includes(q)||normalized(token.name).includes(q)?1:0;
@@ -15,7 +15,7 @@ export function rankCoinMatches(pairs,query,{orientPair,network}={}){
   if(match)matches.push({pair:match,rank:Math.max(base,quote)});
  }
  matches.sort((a,b)=>b.rank-a.rank||(Number(b.pair.liquidity?.usd)||0)-(Number(a.pair.liquidity?.usd)||0));
- const unique=new Set();return matches.filter(({pair})=>{const token=pair.baseToken.address,key=pair.chainId+':'+(/^0x/i.test(token)?token.toLowerCase():token);if(unique.has(key))return false;unique.add(key);return true;}).map(({pair})=>pair).slice(0,12);
+ const unique=new Set();return matches.filter(({pair})=>{const token=pair.baseToken.address,key=pair.chainId+':'+(/^0x[0-9a-f]{40}$/i.test(token)?token.toLowerCase():token);if(unique.has(key))return false;unique.add(key);return true;}).map(({pair})=>pair).slice(0,12);
 }
 export function showCoinMatches(container,pairs,onChoose){
  const active=container.ownerDocument.activeElement,focusedKey=container.contains(active)?active.closest('.coin-search-result')?.dataset.marketKey:null;
