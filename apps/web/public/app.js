@@ -1,4 +1,4 @@
-import {catalogueCoinArtwork} from './coin-artwork.js?v=348';
+import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 import {createReplayVisualHistory} from './replay-visual-history.js?v=347';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=335';
@@ -193,7 +193,6 @@ function safeCoinImage(value){
  try{const url=new URL(value);return url.protocol==='https:'&&url.href.length<=2048&&!url.username&&!url.password?url.href:'';}catch{return '';}
 }
 async function loadCoinImage(pair,{fallback=false}={}){
- if(isExchangeMarket(pair))return;
  const key=imageKey(pair),requestKey=key+(fallback?':pixels':'');if(imageToken===requestKey)return;imageToken=requestKey;imageController?.abort();
  const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
  const controller=new AbortController();imageController=controller;const timeout=setTimeout(()=>controller.abort(),45000);
@@ -203,8 +202,8 @@ async function loadCoinImage(pair,{fallback=false}={}){
  };
  try{
   if(!fallback&&[tokenImages.get(key),pair.baseToken?.imageUrl,pair.historyTokenSide!=='quote'?pair.info?.imageUrl:null].some(accept))return;
-  const listed=await catalogueCoinArtwork(pair.chainId,pair.baseToken.address);
-  if(accept(listed))return;
+  const listed=await (isExchangeMarket(pair)?catalogueNativeArtwork(pair.baseToken.symbol):catalogueCoinArtwork(pair.chainId,pair.baseToken.address));
+  if(accept(listed)||isExchangeMarket(pair))return;
   // Old shared scores contain no image. Fetch artwork metadata only: their
   // saved prices, market cap and candles must remain exactly as shared.
   try{

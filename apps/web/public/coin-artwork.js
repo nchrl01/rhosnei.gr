@@ -23,3 +23,13 @@ export async function catalogueCoinArtwork(chain,token){
   return images.get(network(chain)+':'+address(token))||'';
  }catch{return '';}
 }
+
+// Exchange pairs have a currency identity, not an on-chain contract. Resolve
+// only an unambiguous native asset; never substitute one of its wrapped tokens.
+export async function catalogueNativeArtwork(symbol){
+ try{
+  const data=await loadCoinCatalogue(),matches=data.coins.filter(coin=>coin.symbol?.toUpperCase()===String(symbol).toUpperCase()&&(coin.nativeChain||coin.nativeChains?.length));
+  if(matches.length!==1)return '';
+  const url=new URL(matches[0].image);return url.protocol==='https:'&&!url.username&&!url.password?url.href:'';
+ }catch{return '';}
+}
