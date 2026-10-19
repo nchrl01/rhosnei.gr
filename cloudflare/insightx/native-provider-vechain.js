@@ -23,6 +23,8 @@ export async function loadVeChainNative(read,now=Date.now(),symbol='VET'){
  if(Number.parseInt(block.id.slice(2,10),16)!==height)throw Error('invalid-vechain-block-identity');
  const selected=new Set();
  const add=value=>{if(selected.size<MAX_ACCOUNTS&&address(value))selected.add(value.toLowerCase());};
+ // Fee-delegated senders may hold no VTHO; actual fee payers are relevant native holders.
+ if(symbol==='VTHO')for(const tx of block.transactions){if(tx?.chainTag!==74)throw Error('invalid-vechain-mainnet');if(tx.reverted===false)add(tx.gasPayer);}
  for(const tx of block.transactions){
   if(tx?.chainTag!==74)throw Error('invalid-vechain-mainnet');
   if(tx.reverted!==false)continue;

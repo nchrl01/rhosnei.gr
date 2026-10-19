@@ -1,4 +1,4 @@
-import {nativeCoin} from './native-coins.js?v=358';
+import {nativeCoin} from './native-coins.js?v=359';
 import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=325';
 // Browser-safe public exchange adapter. No account, API key or trading calls.
 let worker=null,serial=0,initialNativeId=new URLSearchParams(globalThis.location?.search||'').get('native');

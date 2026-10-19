@@ -1,5 +1,5 @@
 import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=325';
-import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=358';
+import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=359';
 import {fetchGecko} from './gecko.js?v=277';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
 export function loadHistory(market,onUpdate,options={}){

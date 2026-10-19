@@ -38,3 +38,4 @@ test('VET rejects missing native balance rather than using energy and skips zero
  let calls=0;await assert.rejects(loadVeChainNative(async()=>++calls===1?block():{energy:'0xffff'},now),/invalid-vechain-balance/);
  calls=0;const result=await loadVeChainNative(async()=>++calls===1?block():balance(calls===2?0n:3n),now);assert.deepEqual(result.records,[{id:id(2),tokenBalance:3}]);
 });
+test('VTHO includes actual fee payers when delegated senders have no native gas balance',async()=>{const b=block();b.transactions[0].gasPayer=id(9);const r=await loadVeChainNative(async url=>url.includes('/blocks/')?b:{balance:'0xffff',energy:url.includes(id(9))?'0xde0b6b3a7640000':'0x0'},now,'VTHO');assert.deepEqual(r.records,[{id:id(9),tokenBalance:1}]);assert.equal(r.sourceBlockHash,blockID);});

@@ -19,12 +19,12 @@ const CONFIGS = Object.freeze({
   GRX: {id:'grx-chain',chain:'grx-chain',provider:'grx-chain-public-rpc',chainId:1110,url:'https://rpc.grxchain.io',source:'GRX official native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   TAO: {id:'bittensor',chain:'bittensor',provider:'bittensor-public-rpc',chainId:964,url:'https://lite.chain.opentensor.ai',source:'TAO public native balances',scope:'bittensor-evm-accounts-only-excludes-substrate-accounts',includeProposer:true,blockTag:'latest'},
   OZO: {id:'ozone-chain',chain:'ozone-chain',provider:'ozone-chain-public-rpc',chainId:4000,url:'https://node1.ozonechain.io',source:'OZO public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
-  PROS: {id:'pharos-network',chain:'pharos',provider:'pharos-public-rpc',chainId:1672,url:'https://rpc.pharos.xyz',source:'PROS public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  PROS: {quietLookback:64,id:'pharos-network',chain:'pharos',provider:'pharos-public-rpc',chainId:1672,url:'https://rpc.pharos.xyz',source:'PROS public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   DATA: {id:'story-2',chain:'story',provider:'story-public-rpc',chainId:1514,url:'https://mainnet.datarpc.io',source:'DATA public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   ABEY: {id:'abey',chain:'abey',provider:'abey-public-rpc',chainId:179,url:'https://rpc.abeychain.com',source:'ABEY public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
-  KUB: {id:'bitkub-coin',chain:'bitkub-chain',provider:'bitkub-chain-public-rpc',chainId:96,url:'https://rpc.bitkubchain.io',source:'KUB public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  KUB: {accountLogs:true,id:'bitkub-coin',chain:'bitkub-chain',provider:'bitkub-chain-public-rpc',chainId:96,url:'https://rpc.bitkubchain.io',source:'KUB public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   XP: {id:'xphere',chain:'xphere',provider:'xphere-public-rpc',chainId:20250217,url:'https://en-bkk.x-phere.com',source:'XP public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
-  BTY: {id:'bityuan',chain:'bityuan',provider:'bityuan-public-rpc',chainId:2999,url:'https://mainnet.bityuan.com/eth',source:'BTY public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
+  BTY: {accountLogs:true,id:'bityuan',chain:'bityuan',provider:'bityuan-public-rpc',chainId:2999,url:'https://mainnet.bityuan.com/eth',source:'BTY public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   KAIA: {id:'kaia',chain:'kaia',provider:'kaia-public-rpc',chainId:8217,url:'https://kaia.drpc.org',source:'KAIA public native balances',scope:'recent-transactors-and-block-proposers-current-native-balances',includeProposer:true,blockTag:'latest'},
   MON: {id:'monad',chain:'monad',provider:'monad-public',chainId:143,url:'https://rpc.monad.xyz',source:'Monad public native balances',scope:'recent-transactors-current-native-balances'},
   S: {id:'sonic-3',chain:'sonic',provider:'sonic-public',chainId:146,url:'https://rpc.soniclabs.com',source:'Sonic public native balances',scope:'recent-transactors-current-native-balances'},
@@ -78,10 +78,15 @@ export async function fetchFinalEvmNativeBalances(asset, read, now = Date.now())
       throw Object.assign(Error(limited ? 'native-rpc-rate-limit' : 'invalid-native-account-index'),limited ? {retryAt:now+2*HOUR} : {});
     }
     ids = [...new Set(data.result.slice(0,20).filter(row=>address(row?.address)).map(row=>row.address.toLowerCase()))];
+  } else if(config.accountLogs){
+    const from=Math.max(1,block.numberValue-128);if(++calls>6)throw Error('native-call-budget');
+    const logs=await read(config.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'eth_getLogs',params:[{fromBlock:'0x'+from.toString(16),toBlock:'0x'+block.numberValue.toString(16),topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']}]})});
+    if(logs?.error||logs?.id!==1||!Array.isArray(logs.result)||logs.result.length>10000)throw Error('invalid-native-account-logs');
+    const found=[];for(const log of logs.result){if(log?.removed===true||!hexQuantity(log?.blockNumber)||Number(BigInt(log.blockNumber))<from||Number(BigInt(log.blockNumber))>block.numberValue||log.topics?.[0]!=='0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef')continue;for(const topic of log.topics.slice(1,3)){if(typeof topic==='string'&&/^0x0{24}[0-9a-f]{40}$/i.test(topic)){const id='0x'+topic.slice(-40);if(address(id))found.push(id.toLowerCase());}}}ids=[...new Set(found)];
   } else ids = senders(block);
   // A quiet finalized block gets at most one preceding-block lookup, never a scan.
-  if (!config.accountIndex && !ids.length && block.numberValue > 1) {
-    const previous = block.numberValue-1;
+  if (!config.accountIndex && !config.accountLogs && !ids.length && block.numberValue > 1) {
+    const previous = Math.max(1,block.numberValue-(config.quietLookback||1));
     block = checkedBlock(await rpc('eth_getBlockByNumber',['0x'+previous.toString(16),true]),previous);
     ids = senders(block);
   }
@@ -98,5 +103,5 @@ export async function fetchFinalEvmNativeBalances(asset, read, now = Date.now())
   if (!records.length) throw Error('empty-native-sample');
   // Balances are sequential current-state reads. The CFX block is only a health check;
   // it is not the source block or timestamp of the index's discovered accounts.
-  return {source:config.source,scope:config.scope,coverage:config.accountIndex?'ledger-account-sample':'recent-address-sample',totalHolders:null,supply:null,referencePrice:null,referenceMarketCap:null,sourceAt:null,indexTipAt:Number(BigInt(block.timestamp))*1000,indexCadence:'current-rpc-state',...(config.accountIndex?{indexTip:block.numberValue}:{discoveryBlock:block.numberValue}),records};
+  return {source:config.source,scope:config.accountLogs?'recent-transfer-participants-current-native-balances-excludes-token-amounts':config.scope,coverage:config.accountIndex?'ledger-account-sample':'recent-address-sample',totalHolders:null,supply:null,referencePrice:null,referenceMarketCap:null,sourceAt:null,indexTipAt:Number(BigInt(block.timestamp))*1000,indexCadence:'current-rpc-state',...(config.accountIndex?{indexTip:block.numberValue}:{discoveryBlock:block.numberValue}),records};
 }

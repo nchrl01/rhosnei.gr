@@ -1,7 +1,7 @@
-import {catalogueNative} from './native-coins.js?v=358';
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=358';
+import {catalogueNative} from './native-coins.js?v=359';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=359';
 import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=335';
-import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,rememberRecentCoin} from './coin-catalogue.js?v=358';
+import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,rememberRecentCoin} from './coin-catalogue.js?v=359';
 import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=350';
 const $=id=>document.getElementById(id),gallery=$('coin-gallery'),browser=$('collection-browser'),grid=$('coin-gallery-grid');
 const search=$('coin-gallery-search'),network=$('coin-gallery-network'),order=$('coin-gallery-order'),count=$('coin-gallery-count');

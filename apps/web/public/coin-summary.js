@@ -1,4 +1,4 @@
-import {loadCoinCatalogue} from './coin-catalogue.js?v=358';
+import {loadCoinCatalogue} from './coin-catalogue.js?v=359';
 const sourceURL=value=>{try{
  const url=new URL(value);if(url.protocol!=='https:'||url.username||url.password||url.search||url.hash)return null;
  if(url.hostname==='www.coingecko.com'&&/^\/en\/coins\/[a-z0-9-]+\/?$/.test(url.pathname))return url.href;

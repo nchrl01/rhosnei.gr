@@ -1,4 +1,4 @@
-import {nativeCoin} from './native-coins.js?v=358';
+import {nativeCoin} from './native-coins.js?v=359';
 const RELAY='https://upic-insightx.nchrl01.workers.dev/native-holders',MAX_AGE=6*3600000;
 const freshSources=(data,now)=>['sourceAt','indexerAt','indexTipAt'].every(key=>data[key]==null||(Number.isSafeInteger(data[key])&&data[key]<=now+300000&&now-data[key]<MAX_AGE));
 const empty=()=>({state:'unavailable',source:'Native address index',records:[],weight:0,holders:null,totalHolders:null,complete:false,native:true});
