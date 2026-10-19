@@ -1,4 +1,5 @@
-import {NativeHolderRelay} from './native-holders.js';
+import {NativeHolderRelay,nativeLimits} from './native-holders.js';
+import {NATIVE_COINS} from '../../apps/web/public/native-coins.js';
 import {VisualHistory} from './visual-history.js';
 import {CoinCaptures,authenticateCaptureRequest,captureCapabilities} from './coin-captures.js';
 import {HolderBalanceRelay} from './holder-balance-relay.js';
@@ -140,7 +141,7 @@ export default {
   }
   if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/holders')return holderCount(url,headers,env);
-  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},nativeHolders:{configured:Boolean(env.HOLDER_CACHE),networks:['bitcoin','ethereum','litecoin','dogecoin','zcash'],cacheSeconds:3600,dailyRequests:300,totalHolderCount:false},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
+  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},nativeHolders:{configured:Boolean(env.HOLDER_CACHE),networks:Object.values(NATIVE_COINS).map(asset=>asset.chain),...nativeLimits,totalHolderCount:false},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
   if(!['sol','eth','base'].includes(network))return json({state:'unsupported-network'},422,headers);

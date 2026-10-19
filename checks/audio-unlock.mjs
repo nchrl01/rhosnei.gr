@@ -12,7 +12,7 @@ class Context{
 }
 globalThis.AudioContext=Context;
 globalThis.Audio=class{setAttribute(){}play(){playCount++;return Promise.resolve();}pause(){pauseCount++;}};
-const context=createMusicContext();assert.equal(navigator.audioSession.type,'playback');assert.equal(constructed,undefined,'Must use native device sample rate');
+const context=createMusicContext();assert.equal(navigator.audioSession.type,'playback');assert.equal(constructed?.sampleRate,undefined,'Must use native device sample rate');
 await unlockPlayback(context);assert.deepEqual(steps,['connect','source-start','resume']);assert.equal(context.listeners.size,0);assert.equal(playCount,0,'No fallback media when playback mode is available');
 const blocked=new Context();blocked.resume=()=>Promise.resolve();await assert.rejects(unlockPlayback(blocked),{name:'AudioUnlockError'});assert.equal(blocked.listeners.size,0);
 const interrupted=new Context();interrupted.state='interrupted';await unlockPlayback(interrupted);assert.equal(interrupted.state,'running');

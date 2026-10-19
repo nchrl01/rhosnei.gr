@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {MATH_FAMILIES,mathIdentity,createMathPatterns} from '../apps/web/public/math-patterns.js';
 import {createEnvionHarness} from './envion.mjs';
+import {harmoniousPitch} from '../apps/web/public/harmonic-network.js';
 const byId=new Map(MATH_FAMILIES.map(p=>[p.id,p]));
 const close=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1e-8,`${actual} != ${expected}`);
 close(byId.get('funk').graph(-8),2.5);
@@ -58,6 +59,6 @@ let sent=new Map();const engine=createMathPatterns({send:(name,value)=>sent.set(
 engine.setSeed(517);
 for(let frame=0;frame<450;frame++){
  const view=engine.frame({context:{latestCap:5000000},fresh:1,music:{intensity:.8,tempo:120},replay:{}},{playing:true,ready:true,event:'fixture',clock:frame/30});
- for(const slot of view.slots)if(slot.performing){const pattern=byId.get(slot.id),[raw,gate]=pattern.sample(slot.phase);close(slot.graphCursor.y,pattern.graph(slot.graphCursor.x));close(sent.get('math-'+slot.slot+'-pitch'),Math.max(24,Math.min(84,48+raw*12)));close(sent.get('math-'+slot.slot+'-gate'),gate);}
+ for(const slot of view.slots)if(slot.performing){const pattern=byId.get(slot.id),[raw,gate]=pattern.sample(slot.phase);close(slot.graphCursor.y,pattern.graph(slot.graphCursor.x));close(sent.get('math-'+slot.slot+'-pitch'),harmoniousPitch(Math.max(24,Math.min(84,48+raw*12)),48+517%12));close(sent.get('math-'+slot.slot+'-gate'),gate);}
 }
 console.log('PASS: all 23 formulas / graph domains, same graph and sound phase, actual Pd output, phrase stop and watchdog silence.');

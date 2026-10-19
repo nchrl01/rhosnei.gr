@@ -12,7 +12,7 @@ import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=281';
-import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=351';
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=353';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=350';
@@ -26,7 +26,7 @@ import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=348';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=351';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=353';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
@@ -44,7 +44,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=345';
 import {MarketChart} from './chart.js?v=234';
-import {loadHistory} from './history.js?v=346';
+import {loadHistory} from './history.js?v=353';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
 // The trusted publisher captures this player silently. Normal visits do not
@@ -373,7 +373,7 @@ function syncLevels(m){
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
  $('volume').textContent=m.replay?cash(m.replay.volume):market?cash(m.decoded?m.observedVolume:market.volume?.m5):'—';
  $('volume-window').textContent=m.replay?'REPLAY USD VOLUME':m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
- $('signal-source').textContent=isExchangeMarket(market)?'Public exchange trades / observed 30 sec; depth is top 25 book levels within 1% of midpoint, not pool liquidity. Market cap is unavailable.'+(market.dexId==='coinbaseexchange'?' Coinbase depth uses public 5-second snapshots.':'')+(market.quoteApproximate?' '+market.quoteToken.symbol+' is used as a USD proxy.':''):m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll','exchange'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Loading the highest-ranked trending market';
+ $('signal-source').textContent=isExchangeMarket(market)?'Public exchange trades / observed 30 sec; depth is top 25 book levels within 1% of midpoint, not pool liquidity. '+(market.nativeAsset?' Market cap estimates use the current price and the latest indexed circulating supply.':' Market cap is unavailable.')+(market.dexId==='coinbaseexchange'?' Coinbase depth uses public 5-second snapshots.':'')+(market.quoteApproximate?' '+market.quoteToken.symbol+' is used as a USD proxy.':''):m.decoded?'Price, activity, direction and volume: observed trades / 30 sec. '+(['swap','rpc-poll','exchange'].includes(streamKind)?'USD quote conversion and liquidity: snapshots.':'Trade USD values: provider; liquidity: snapshots.'):streamConnected&&streamKind==='pool'?'Activity: pool transactions / 10 sec. Price, volume and direction: 5-minute snapshots.':market?'Price, volume and activity: market snapshots / 5 min.':'Loading the highest-ranked trending market';
  if(market&&m.snapshotAge>liquiditySnapshotMaxAge())$('signal-source').textContent+=' Snapshot age '+Math.round(m.snapshotAge/1000)+'s · liquidity unavailable until a fresh snapshot arrives'+(m.decoded&&['swap','rpc-poll','exchange'].includes(streamKind)?'; native USD values use the last quote conversion.':'.');
  const c=m.context;
  $('market-pressure').textContent=Math.round(m.pressure*100)+'%';
@@ -727,8 +727,11 @@ async function freshMarketSnapshot(pair,{signal}={}){
  return completeMarketCap(updated,{signal});
 }
 function withNativeCap(pair,snapshot){
- if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.weight>0&&snapshot.referenceMarketCap>0&&snapshot.referencePrice>0&&Number(pair.priceUsd)>0)return {...pair,marketCap:snapshot.referenceMarketCap*Number(pair.priceUsd)/snapshot.referencePrice,marketCapSource:snapshot.source,marketCapEstimated:true};
- return pair;
+ if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.weight>0&&Number(pair.priceUsd)>0){
+  const supply=Number(snapshot.supply)||Number(snapshot.referenceMarketCap)/Number(snapshot.referencePrice);
+  if(Number.isFinite(supply)&&supply>0)return {...pair,marketCap:supply*Number(pair.priceUsd),marketCapSource:snapshot.marketSource||snapshot.source,marketCapEstimated:true};
+ }
+ return pair.nativeAsset?{...pair,marketCap:null,marketCapSource:null}:pair;
 }
 function applySnapshot(pair){
  if(pair.nativeAsset)pair=withNativeCap(pair,holderMetadata.snapshot().holdings);

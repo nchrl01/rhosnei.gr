@@ -24,24 +24,28 @@ export class SharedHistoryCache{
   const body=JSON.parse(result.payload),list=body.data?.attributes?.ohlcv_list;
   // Fetch/cache a canonical 1,000-row page once; callers can request a smaller tail.
   if(Array.isArray(list)&&list.length>spec.limit)body.data.attributes.ohlcv_list=list.slice(0,spec.limit);
-  return response(body,200,{'X-UPIC-History-Cache':result.cache,'X-UPIC-Fetched-At':String(result.fetched),'X-UPIC-History-Retention':'2592000'});
+  return response(body,200,{'X-UPIC-History-Cache':result.cache,'X-UPIC-Fetched-At':String(result.fetched),'X-UPIC-History-Retention':'2592000',...(result.retry?{'Retry-After':String(result.retry)}:{})});
  }
  async read(spec){
   const now=Date.now(),saved=this.sql.exec('SELECT payload,fetched,expires FROM chart_pages WHERE key=?',spec.key).toArray()[0];
   if(saved?.expires>now)return {...saved,status:200,cache:'hit'};
+  // Refresh expiry is not deletion: a dated saved page is still useful while
+  // the upstream provider is unavailable. Never label it as newly fetched.
+  const unavailable=result=>saved&&saved.fetched>now-RETENTION?{...saved,status:200,cache:'stale',retry:result.retry||60}:result;
   const day=Math.floor(now/DAY),budget=this.sql.exec('SELECT * FROM chart_budget WHERE day=?',day).toArray()[0]||{used:0,next:0,blocked:0};
   const dailyLimit=Math.max(1,Math.min(10000,Number(this.env.HISTORY_REQUESTS_PER_DAY)||10000));
   const wait=Math.max(0,budget.next-now,budget.blocked-now);
-  if(budget.used>=dailyLimit||wait>24000)return {status:429,body:{error:'Shared history quota is cooling down; saved browser candles remain available.'},retry:budget.used>=dailyLimit?Math.ceil(((day+1)*DAY-now)/1000):Math.ceil(wait/1000)};
+  if(budget.blocked>now)return unavailable({status:429,body:{code:'PROVIDER_HISTORY_COOLDOWN',error:'History provider cooldown'},retry:Math.ceil((budget.blocked-now)/1000)});
+  if(budget.used>=dailyLimit||wait>24000)return unavailable({status:429,body:{code:'SHARED_HISTORY_QUOTA',error:'Shared history quota is cooling down; saved history remains available.'},retry:budget.used>=dailyLimit?Math.ceil(((day+1)*DAY-now)/1000):Math.ceil(wait/1000)});
   this.sql.exec('INSERT OR REPLACE INTO chart_budget(day,used,next,blocked) VALUES(?,?,?,?)',day,budget.used+1,now+wait+6000,budget.blocked);
   if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
-  const cooldown=this.sql.exec('SELECT blocked FROM chart_budget WHERE day=?',day).toArray()[0]?.blocked||0;if(cooldown>Date.now())return {status:429,body:{error:'History provider cooldown'},retry:Math.ceil((cooldown-Date.now())/1000)};
+  const cooldown=this.sql.exec('SELECT blocked FROM chart_budget WHERE day=?',day).toArray()[0]?.blocked||0;if(cooldown>Date.now())return unavailable({status:429,body:{code:'PROVIDER_HISTORY_COOLDOWN',error:'History provider cooldown'},retry:Math.ceil((cooldown-Date.now())/1000)});
   const upstream=new URL('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(spec.network)+'/pools/'+encodeURIComponent(spec.pool)+'/ohlcv/'+spec.frame);
   upstream.search=new URLSearchParams({aggregate:String(spec.aggregate),limit:'1000',currency:'usd',token:spec.token,include_empty_intervals:'false'}).toString();if(spec.before!==null)upstream.searchParams.set('before_timestamp',String(spec.before));
   try{
    const r=await fetch(upstream,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(15000)});
    if(!r.ok){if(r.status===429){const retry=Math.min(3600000,Math.max(60000,(Number(r.headers.get('Retry-After'))||60)*1000));this.sql.exec('UPDATE chart_budget SET blocked=MAX(blocked,?) WHERE day=?',Date.now()+retry,day);}
-    return {status:r.status===429?429:502,body:{error:'History provider temporarily unavailable'},retry:60};}
+    return unavailable({status:r.status===429?429:502,body:{code:r.status===429?'PROVIDER_HISTORY_COOLDOWN':'HISTORY_PROVIDER_UNAVAILABLE',error:'History provider temporarily unavailable'},retry:r.status===429?Math.ceil(((this.sql.exec('SELECT blocked FROM chart_budget WHERE day=?',day).toArray()[0]?.blocked||Date.now()+60000)-Date.now())/1000):60});}
    if(Number(r.headers.get('Content-Length'))>1024*1024)return {status:502,body:{error:'History response too large'}};
    const payload=await r.text();if(payload.length>1024*1024)return {status:502,body:{error:'History response too large'}};
    const body=JSON.parse(payload),rows=body.data?.attributes?.ohlcv_list;
@@ -49,11 +53,11 @@ export class SharedHistoryCache{
    const fetched=Date.now(),historical=spec.before!==null&&spec.before<Math.floor(fetched/1000)-2*spec.interval,ttl=historical?RETENTION:30000;
    // Do not freeze an empty page for a month: provider indexing can catch up.
    this.sql.exec('INSERT OR REPLACE INTO chart_pages(key,payload,fetched,expires,bytes) VALUES(?,?,?,?,?)',spec.key,payload,fetched,fetched+(rows.length?ttl:30000),payload.length*2);
-   this.sql.exec('DELETE FROM chart_pages WHERE expires<=? AND key<>?',fetched,spec.key);
+   this.sql.exec('DELETE FROM chart_pages WHERE fetched<=? AND key<>?',fetched-RETENTION,spec.key);
    const meta=this.sql.exec('SELECT key,bytes FROM chart_pages ORDER BY fetched DESC').toArray();let total=0;
    for(let i=0;i<meta.length;i++){total+=meta[i].bytes;if(i>=MAX_PAGES||total>MAX_BYTES)this.sql.exec('DELETE FROM chart_pages WHERE key=?',meta[i].key);}
    this.sql.exec('DELETE FROM chart_budget WHERE day<?',day-2);
    return {status:200,payload,fetched,cache:'miss'};
-  }catch{return {status:503,body:{error:'Shared history temporarily unavailable'},retry:30};}
+  }catch{return unavailable({status:503,body:{error:'Shared history temporarily unavailable'},retry:30});}
  }
 }

@@ -1,5 +1,5 @@
 import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=325';
-import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=325';
+import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=353';
 import {fetchGecko} from './gecko.js?v=277';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
 export function loadHistory(market,onUpdate,options={}){
@@ -53,6 +53,11 @@ export function loadHistory(market,onUpdate,options={}){
    for(const row of list){if(row.length<6||!row.every(v=>Number.isFinite(Number(v))))continue;const [seconds,open,high,low,close,volume]=row.map(Number);if(seconds<=0||open<=0||close<=0||low<=0||high<Math.max(open,close)||low>Math.min(open,close)||volume<0)continue;const bar={time:seconds*1000,open,high,low,close,volume,observedThrough:Math.min(seconds*1000+interval,observedAt)};validTimes.push(bar.time);rows.set(bar.time,bar);}
    if(list.length&&!validTimes.length)throw Error('History page contains no valid candles');
    if(pages===0)latestSaved=observedAt;
+   if(r.headers.get('X-UPIC-History-Cache')==='stale'){
+    const retry=Math.max(30000,(Number(r.headers.get('Retry-After'))||60)*1000);
+    report('cached','Showing saved history · waiting for provider refresh',{retrying:true,retryAt:Date.now()+retry});
+    save('cached');timer=setTimeout(page,retry);return;
+   }
    pages++;failures=0;const oldest=rows.size?Math.min(...rows.keys()):null;
    const pageOldest=validTimes.length?Math.min(...validTimes):null;
    if(pageOldest!=null){

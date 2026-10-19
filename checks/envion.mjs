@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {performance} from 'node:perf_hooks';
 import {createPd} from '../apps/web/public/vendor/libpd-wasm.js';
 import {decodePdBytes,decodeWave,applyEnvionMarket} from '../apps/web/public/envion.js';
+import {buildPerformanceCatalog,createEnvionPerformance} from '../apps/web/public/envion-performance.js';
 const PUBLIC=new URL('../apps/web/public/',import.meta.url),ROOT='orchestra/envion/';
 export async function createEnvionHarness({sampleRate=44100,entry,extraFiles={}}={}) {
  const events=[],requests=[],times=[];let Processor,nodePort,namespace=0,pd;
@@ -82,9 +83,21 @@ export async function checkEnvion() {
   await h.initialize();
   await h.assertClean();
   assert.ok(h.events.some(e=>e.receiver==='av-envion-sample-frames'&&e.value>1000),'MAIN PRESET must load original audio');
+  // The current host loads a held material for each coin before opening the
+  // market gates. Exercise that same setup instead of the dormant main preset.
+  const model=JSON.parse(await fs.readFile(new URL('patches/envion/model.json',PUBLIC),'utf8'));
+  const {banks}=JSON.parse(await fs.readFile(new URL('patches/envion/performance-catalog.json',PUBLIC),'utf8'));
+  const market={motion:.5,activity:.8,texture:.5,volume:.8,balance:.5};
+  const plan=createEnvionPerformance(buildPerformanceCatalog(model,banks),1917).next(market,120,0,true);
+  for(const asset of new Set([...plan.material.preset.assets,plan.material.sample,plan.material.bank.path,plan.material.tape,plan.material.ir]))if(!h.files[ROOT+asset])await h.pd.writeFile(ROOT+asset,new Uint8Array(await fs.readFile(new URL('patches/envion/'+asset,PUBLIC))));
+  h.pd.sendBang('av-envion-ui-c0-'+plan.material.preset.index);await h.render(.06);
+  h.pd.sendSymbol('av-envion-file-c0-49','/patches/'+ROOT+plan.material.sample);
+  h.pd.sendSymbol('av-envion-file-c0-30','/patches/'+ROOT+plan.material.bank.path);
+  h.pd.sendSymbol(h.namespace+'-open','/patches/'+ROOT+plan.material.tape);
+  h.pd.sendSymbol(h.namespace+'-tape-IR','/patches/'+ROOT+plan.material.ir);await h.render(.06);
   h.pd.sendFloat('tempo',120);h.pd.sendFloat('seed',1917);h.pd.sendFloat('activity',1);h.pd.sendFloat('energy',.8);h.pd.sendFloat('motion',.5);h.pd.sendFloat('texture',.5);h.pd.sendFloat('master',.8);h.pd.sendFloat('run',1);h.pd.sendFloat('melody',.5);
   for(const k of ['tones','poly','filtered','percussion','space'])h.pd.sendFloat(k,0);
-  applyEnvionMarket(h.pd,h.namespace,{motion:.5,activity:.8,texture:.5,volume:.8,balance:.5},120);
+  applyEnvionMarket(h.pd,h.namespace,market,120,undefined,plan);
   await h.render(3); // Discard initial gain ramps and any startup tails.
   const melody=await h.render(5);assert.ok(melody.rms>1e-6,'original Envion alone must produce audio');
   h.pd.sendFloat('av-envion-ui-c0-72',2.5);await h.flush();assert.ok(h.events.some(e=>e.receiver==='av-envion-value-c0-72'&&e.value===2.5),'stretch value must traverse original Pd control');
@@ -92,7 +105,7 @@ export async function checkEnvion() {
   const nuke=await h.render(3);console.log('isolated original DSP',{melody,nuke});for(const [name,value] of [['av-envion-value-c0-350',900],['av-envion-value-c0-355',1],['av-envion-value-c0-356',1]])assert.ok(h.events.some(e=>e.receiver===name&&e.value===value),'original Nuke control '+name);
   assert.ok(nuke.rms>1e-6,'Nuke routing must keep rendering sound');
   assert.ok(h.events.some(e=>e.receiver==='av-envion-voice'),'Envion must emit actual audio activity feedback');
-  for(const amount of [.2,.6,.95]){applyEnvionMarket(h.pd,h.namespace,{motion:amount,activity:amount,texture:amount,volume:amount,balance:1-amount});await h.render(1);const mapped=await h.render(2);assert.ok(mapped.rms>1e-7,'market-driven routes must keep producing audio');await h.assertClean();}
+  for(const amount of [.2,.6,.95]){applyEnvionMarket(h.pd,h.namespace,{motion:amount,activity:amount,texture:amount,volume:amount,balance:1-amount},120,undefined,plan);await h.render(1);const mapped=await h.render(2);assert.ok(mapped.rms>1e-7,'market-driven routes must keep producing audio');await h.assertClean();}
   const recordingPath='orchestra/envion/recordings/check.wav';
   await h.pd.writeFile(recordingPath,new Uint8Array());
   h.pd.sendSymbol('av-envion-file-c44-2','/patches/'+recordingPath);

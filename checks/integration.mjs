@@ -7,7 +7,7 @@ import {createOrchestraConductor} from '../apps/web/public/orchestra.js';
 function chartWith(history){
  const chart=Object.create(MarketChart.prototype);
  Object.assign(chart,{history,interval:60000,points:[],buckets:new Map(),dirty:new Set(),rebuild:true,needsFit:false,manual:true,range:'live',origin:null});
- const scale={getVisibleRange:()=>null,scrollPosition:()=>0};
+ const scale={getVisibleRange:()=>null,scrollPosition:()=>0,scrollToRealTime:()=>{}};
  chart.chart={timeScale:()=>scale};
  for(const name of ['candles','line','volume'])chart[name]={setData:()=>{},update:()=>{}};
  chart.schedule=()=>{};chart.draw();return chart;

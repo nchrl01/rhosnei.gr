@@ -20,8 +20,14 @@ const holders={...quiet,audience:{holders:500000,weight:1,concentration:.4}};
 let clock=0;
 async function render(metrics,seconds,options={}){
  let square=0,peak=0,frames=0;
- const start=h.events.length;
- for(let t=0;t<seconds;t+=.125){score.frame(metrics,{playing:true,clock,...options});const audio=await h.render(.125);clock+=.125;square+=audio.rms**2;peak=Math.max(peak,audio.peak);frames++;}
+ const start=h.events.length,rate=metrics.fresh>0&&!options.noObservations?(metrics.raw?.activity||0)*8:0;let observed=-1;
+ for(let t=0;t<seconds;t+=.125){
+  score.frame(metrics,{playing:true,clock,...options});
+  // Current synthesis is triggered by observed swaps, not a UI timer. Feed a
+  // known event stream so the offline render measures actual event density.
+  const position=Math.floor(t*rate);if(rate>0&&position>observed){observed=position;score.event({kind:'swap'},{playing:options.playing!==false&&!options.seeking&&!options.ended,clock});}
+  const audio=await h.render(.125);clock+=.125;square+=audio.rms**2;peak=Math.max(peak,audio.peak);frames++;
+ }
  return {rms:Math.sqrt(square/frames),peak,onsets:h.events.slice(start).filter(e=>e.receiver==='data-onset').map(e=>e.value)};
 }
 async function reset(seed=1917){
@@ -32,6 +38,7 @@ try {
  await reset();
  assert.equal((await render(quiet,2)).peak,0,'An inactive market must be silent');
  assert.equal((await render({...quiet,music:{intensity:1},context:{latestCap:1000000000}},2)).peak,0,'High capitalization or historic movement alone must not invent current activity');
+ assert.equal((await render(busy,2,{noObservations:true})).peak,0,'Repeated busy metadata must not invent swap onsets');
  const normal=await render(moderate,12);
  await reset();const active=await render(busy,12);
  assert.ok(active.rms>normal.rms*2,'A fast, changing market must produce substantially more sonic energy');
@@ -43,13 +50,17 @@ try {
   assert.ok((await render(busy,1)).rms>1e-5,'Resuming after '+name+' must recover output');
  }
  // Holder metadata may still inform visuals, but never opens a sustained voice.
- await render(holders,.4);
- assert.ok((await render(holders,2)).peak<1e-8,'Holder metadata alone must remain silent after drone removal');
- for(let i=0;i<4;i++){score.frame(busy,{playing:true,clock});const background=await h.render(1);clock++;assert.ok(background.rms>1e-5,'A throttled one-second background timer must preserve finite data pulses');}
+ await reset();
+ // Let the finite voices and reverb from preceding swaps finish before
+ // measuring holder metadata on its own; opening metadata adds no onsets.
+ await render(holders,3);
+ const holderOnly=await render(holders,2);assert.equal(holderOnly.onsets.length,0,'Holder metadata must never trigger an onset');
+ assert.ok(holderOnly.peak<1e-8,'Holder metadata alone must remain silent after drone removal: '+holderOnly.peak);
+ for(let i=0;i<4;i++){score.frame(busy,{playing:true,clock});score.event({kind:'swap'},{playing:true,clock});const background=await h.render(1);clock++;assert.ok(background.rms>1e-5,'A new observed swap after a throttled timer must produce a finite pulse');}
  await h.render(2.8);assert.ok((await h.render(.25)).peak<1e-8,'Stopped browser control updates must close the Pd watchdog');
  assert.ok((await render(busy,2)).rms>1e-5,'The Pd watchdog must recover when control updates resume');
  score.setEnabled(false);await render(busy,.25);assert.equal((await render(busy,.25)).peak,0,'Removing the bundle must silence it');score.setEnabled(true);
- await reset();await render({...busy,fresh:0},.3);assert.equal((await render({...busy,fresh:0},.3)).peak,0,'Stale market observations must not drive pulses');
+ await reset();const stale=await render({...busy,fresh:0},3);assert.equal(stale.onsets.length,0,'Stale market observations must not drive pulses');assert.ok((await render({...busy,fresh:0},.3)).peak<1e-8,'Stale observations leave no sustained voice after existing reverb decays');
  // Resetting a captured score must reproduce its five-voice event sequence.
  await reset(8191);const first=await render(busy,4);await reset(8191);const again=await render(busy,4);assert.deepEqual(again.onsets,first.onsets,'The same seed and transport restart must reproduce the Pd phrase');
  // Direct swap bangs remain bounded and cannot treat snapshots/history as swaps.

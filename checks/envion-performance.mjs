@@ -11,7 +11,11 @@ const catalog=buildPerformanceCatalog(model,banks);
 const market={motion:.75,activity:.85,volume:.8,texture:.7,balance:.7,context:{pressure:.8,shock:.65,direction:1}};
 const planner=createEnvionPerformance(catalog,1917),samples=new Set(),presets=new Set(),envelopes=new Set(),variations=new Set();
 for(let i=0;i<6000;i++){
+ // Assets are now held for one coin seed to avoid audio-thread file churn.
+ // Reachability is across coin seeds; musical boundaries keep their material.
+ planner.reset(i);
  const plan=planner.next(market,160,i*8);assert.ok(plan);
+ const following=planner.next(market,160,i*8+8);assert.equal(following.changeMaterial,false);assert.deepEqual(following.material,plan.material);
  samples.add(plan.material.sample);presets.add(plan.material.preset.index);envelopes.add(plan.material.bank.path);variations.add(plan.summary);
  assert.ok(plan.row>=0&&plan.row<plan.material.bank.rows);
  assert.ok(plan.values[461]<=65&&plan.values[379]<=.25);

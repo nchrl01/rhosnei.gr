@@ -1,5 +1,9 @@
-name: Platform type checks
-on: [pull_request, workflow_dispatch]
+name: Platform checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
 permissions: {contents: read}
 jobs:
   types:
@@ -10,3 +14,6 @@ jobs:
         with: {node-version: 22, cache: npm}
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
+      - run: npm test
+      - name: History, native feeds and capture integrity
+        run: node --test cloudflare/insightx/history-cache.test.mjs cloudflare/insightx/native-holders.test.mjs cloudflare/insightx/coin-captures.test.mjs scripts/test-native-account-adapters.mjs scripts/test-mint.test.mjs scripts/test-nft-export.test.mjs
