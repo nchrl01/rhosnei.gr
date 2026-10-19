@@ -39,13 +39,14 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 .marketplace-tabs button{min-height:44px;padding:0 0 12px;border:0;background:transparent;color:var(--muted);font-size:var(--font-size-body)}
 .marketplace-tabs button[aria-selected=true]{color:var(--control-ink);box-shadow:inset 0 -1px var(--control-ink)}
 #coin-gallery[hidden],#collection-browser[hidden]{display:none}
-.coin-gallery-toolbar{display:flex;align-items:flex-end;gap:16px;margin-bottom:20px}
+.coin-gallery-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 180px 160px;align-items:start;gap:16px;margin-bottom:20px}
 #marketplace-coin-form{flex:1;min-width:0;margin:0}
-#marketplace-coin-form .address-row{margin:0}
+#marketplace-coin-form .address-row{margin:0;padding-top:8px}
 #marketplace-coin-form input{width:100%;height:100%;min-width:0;padding:0 12px;border:0;outline:0;background:none;color:var(--control-ink);font:inherit}
 #marketplace-coin-form button{padding-inline:20px}
-.coin-gallery-filter{display:grid;gap:6px;font-size:var(--font-size-small);color:var(--muted)}
-.coin-gallery-filter select{height:44px;max-width:180px;padding:0 12px;border:1px solid var(--line);background:var(--bg);color:var(--control-ink);font:inherit}
+.coin-gallery-filter{position:relative;display:block;min-width:0;padding-top:8px;font-size:var(--font-size-small);color:var(--muted)}
+.coin-gallery-filter>span{position:absolute;left:8px;top:8px;z-index:1;transform:translateY(-50%);padding:0 4px;background:#080808;font-size:var(--font-size-small);line-height:16px}
+.coin-gallery-filter select{display:block;width:100%;height:40px;max-width:none;padding:0 12px;border:1px solid var(--line);background:var(--bg);color:var(--control-ink);font:inherit}
 .coin-gallery-subheading{display:flex;justify-content:space-between;gap:16px;min-height:44px;align-items:center;border-block:1px solid var(--line);font-size:var(--font-size-small);color:var(--muted)}
 .coin-gallery-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;padding:24px 0}
 .coin-collectible{display:block;min-width:0;overflow:hidden;background:#0b0b0b;border:1px solid #252525;color:var(--control-ink);text-decoration:none}
@@ -82,10 +83,6 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
  .coin-capture-meta{display:grid;gap:4px}
 }
 
-#coin-gallery-label{position:absolute;left:12px;top:50%;margin:0;padding:0 4px;transform:translateY(-50%);background:#080808;color:var(--muted);font-size:var(--font-size-small);line-height:16px;pointer-events:none}
-.address-field:focus-within #coin-gallery-label,.address-field.has-value #coin-gallery-label{top:0}
-#coin-gallery-label span{display:inline-block}
-@media(max-width:760px){.mobile-coin-search #marketplace-coin-form{margin:12px 0 0}.mobile-coin-search .address-row{padding-top:6px}}
 .coin-gallery-more{display:block;min-height:44px;margin:0 auto 24px;padding:10px 20px;border:1px solid var(--line);background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small)}
 .coin-gallery-more[hidden]{display:none}
 .coin-full-name{margin:6px 0;color:var(--muted);font-size:var(--font-size-small);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
