@@ -1,3 +1,4 @@
+import {catalogueNative} from '../../apps/web/public/native-coins.js';
 import catalogue from './coin-capture-catalogue.json' with {type:'json'};
 const ISSUER='https://token.actions.githubusercontent.com',JWKS=ISSUER+'/.well-known/jwks';
 const REPOSITORY='nchrl01/rhosnei.gr',WORKFLOW=REPOSITORY+'/.github/workflows/captures.yml@refs/heads/main';
@@ -5,7 +6,7 @@ const KIND='live-player-frame-v1',MAX_IMAGE=750000,MAX_BODY=1048576,MAX_TOTAL=64
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 export const captureKey=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
 const identities=new Map();
-for(const coin of catalogue.coins){for(const p of [{chain:coin.chain,address:coin.address},...(coin.platforms||[])])if(p.chain&&p.address){const key=captureKey(p.chain,p.address);if(!identities.has(key))identities.set(key,{key,chain:p.chain,network:p.chain,address:/^0x[\da-f]{40}$/i.test(p.address)?p.address.toLowerCase():p.address,id:coin.id,symbol:coin.symbol,name:coin.name});}}
+for(const coin of catalogue.coins){for(const p of [catalogueNative(coin)||{},{chain:coin.chain,address:coin.address},...(coin.platforms||[])])if(p.chain&&p.address){const key=captureKey(p.chain,p.address);if(!identities.has(key))identities.set(key,{key,chain:p.chain,network:p.chain,address:/^0x[\da-f]{40}$/i.test(p.address)?p.address.toLowerCase():p.address,id:coin.id,symbol:coin.symbol,name:coin.name});}}
 export function captureIdentity(network,address){return typeof network==='string'&&typeof address==='string'?identities.get(captureKey(network,address))||null:null;}
 export const captureCapabilities={central:true,publisher:'GitHub Actions OIDC',catalogueIdentities:identities.size,maxImageBytes:MAX_IMAGE,maxStorageBytes:MAX_TOTAL};
 function fail(message,status=400){const error=Error(message);error.status=status;throw error;}

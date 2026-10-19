@@ -1,4 +1,5 @@
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=350';
+import {catalogueNative} from './native-coins.js?v=351';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=351';
 import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=335';
 import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,rememberRecentCoin} from './coin-catalogue.js?v=335';
 import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=350';
@@ -35,7 +36,7 @@ async function loadFrames(){
  const [catalogue,previews]=await Promise.allSettled([loadCoinCatalogue(),loadCloudCaptures()]);
  records=catalogue.status==='fulfilled'?catalogue.value.coins.filter(row=>row.top1000).slice(0,1000).map(row=>({...row})):[];
  if(catalogue.status==='fulfilled')$('coin-gallery-asof').textContent='Catalogue as of '+new Date(catalogue.value.asOf).toLocaleString();
- const byKey=new Map();for(const row of records){byKey.set(row.key,row);for(const p of row.platforms||[])byKey.set(previewKey(p.chain,p.address),row);}
+ const byKey=new Map();for(const row of records){byKey.set(row.key,row);const native=catalogueNative(row);if(native)byKey.set(previewKey(native.chain,'native'),row);for(const p of row.platforms||[])byKey.set(previewKey(p.chain,p.address),row);}
  function applyFrames(frames){for(const row of records)row.captures={};for(const frame of frames){const row=byKey.get(previewKey(frame.chain,frame.address));if(row)storeCapture(row,frame);}}
  if(previews.status==='fulfilled')applyFrames(previews.value);
  refreshSaved=async()=>{if(document.hidden||gallery.hidden)return;try{applyFrames(await loadCloudCaptures({force:true}));if(order.value==='recent')render();else refreshCards();}catch{}};

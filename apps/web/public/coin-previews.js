@@ -35,7 +35,7 @@ export function storeCapture(coin,frame){
  coin.captures??={};coin.captures[key]=frame;return true;
 }
 export function coinPreview(coin,network='all'){
- let selection=coinOnNetwork(coin,network);const frames=Object.values(coin.captures||{}).filter(f=>network==='all'||f.chain===selection.chain&&previewKey(f.chain,f.address)===previewKey(selection.chain,selection.address)).sort((a,b)=>network==='all'?compareCoinNetworks(coin,a,b):b.capturedAt-a.capturedAt);
+ let selection=coinOnNetwork(coin,network);const frames=Object.values(coin.captures||{}).filter(f=>network==='all'||f.chain===selection.chain&&previewKey(f.chain,f.address)===previewKey(selection.chain,selection.address||((coin.nativeChain===selection.chain||coin.nativeChains?.includes(selection.chain))?'native':selection.address))).sort((a,b)=>network==='all'?compareCoinNetworks(coin,a,b):b.capturedAt-a.capturedAt);
  const capture=frames[0]||null;
  if(capture&&network==='all')selection={...coin,chain:capture.chain,address:capture.address,key:previewKey(capture.chain,capture.address)};
  return {selection,capture};

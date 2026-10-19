@@ -23,7 +23,7 @@ permissions:
   contents: read
   id-token: write
 concurrency:
-  group: shared-live-captures
+  group: ${{ inputs.ids && 'shared-live-captures-selected' || 'shared-live-captures' }}
   cancel-in-progress: false
 jobs:
   capture:

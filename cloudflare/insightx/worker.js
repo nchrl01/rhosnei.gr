@@ -1,3 +1,4 @@
+import {NativeHolderRelay} from './native-holders.js';
 import {VisualHistory} from './visual-history.js';
 import {CoinCaptures,authenticateCaptureRequest,captureCapabilities} from './coin-captures.js';
 import {HolderBalanceRelay} from './holder-balance-relay.js';
@@ -129,6 +130,7 @@ export default {
    }catch{return json({state:'sharing-unavailable'},503,headers);}
   }
   if(request.method!=='GET')return json({state:'method-not-allowed'},405,headers);
+  if(url.pathname==='/native-holders'){try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-native-holders-v1'));const result=await store.fetch(new Request(url));return new Response(result.body,{status:result.status,headers:{...Object.fromEntries(result.headers),...headers}});}catch{return json({state:'unavailable',records:[],totalHolders:null},503,headers);}}
   if(url.pathname==='/holder-balances'){try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-holder-balances-v1'));const result=await store.fetch(new Request(url));const response=new Response(result.body,result);for(const [key,value] of Object.entries(headers))response.headers.set(key,value);return response;}catch{return json({state:'unavailable'},503,headers);}}
   if(url.pathname==='/coin-summary'){const identity=summaryIdentity(url);if(!identity)return json({state:'invalid-token'},400,headers);try{const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-coin-summary-v1'));const result=await store.fetch(new Request(url));return new Response(result.body,{status:result.status,headers:{'Content-Type':'application/json',...headers}});}catch{return json({state:'unavailable'},503,headers);}}
   if(url.pathname==='/history'){
@@ -138,7 +140,7 @@ export default {
   }
   if(url.pathname==='/artwork')return artwork(url,headers);
   if(url.pathname==='/holders')return holderCount(url,headers,env);
-  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
+  if(url.pathname==='/health')return json({service:'UPIC holder snapshots',sharing:true,history:{shared:true,retentionDays:30,latestRefreshSeconds:30},coinCaptures:{...captureCapabilities,configured:Boolean(env.HOLDER_CACHE)},nativeHolders:{configured:Boolean(env.HOLDER_CACHE),networks:['bitcoin','ethereum','litecoin','dogecoin','zcash'],cacheSeconds:3600,dailyRequests:300,totalHolderCount:false},holderBalances:{configured:Boolean(env.HOLDER_CACHE)},configured:Boolean(env.INSIGHTX_API_KEY)},200,headers);
   const network=url.searchParams.get('network'),input=url.searchParams.get('address')||'';
   if(url.pathname!=='/clusters')return json({state:'not-found'},404,headers);
   if(!['sol','eth','base'].includes(network))return json({state:'unsupported-network'},422,headers);
@@ -160,7 +162,7 @@ export default {
 export class HolderCache extends DurableObject {
  constructor(ctx,env){
   super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);this.summaries=new CoinSummary(this.sql,env);
-  this.visualHistory=new VisualHistory(this.sql);this.captures=new CoinCaptures(ctx,this.visualHistory);this.balanceRelay=new HolderBalanceRelay(this.sql,env);
+  this.visualHistory=new VisualHistory(this.sql);this.captures=new CoinCaptures(ctx,this.visualHistory);this.balanceRelay=new HolderBalanceRelay(this.sql,env);this.nativeHolders=new NativeHolderRelay(this.sql,env);
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS holder_counts (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
@@ -171,6 +173,7 @@ export class HolderCache extends DurableObject {
  async fetch(request){
   if(['/visual-history','/visual-history/image'].includes(new URL(request.url).pathname))return this.visualHistory.fetch(new URL(request.url));
   if(['/coin-captures','/coin-captures/image'].includes(new URL(request.url).pathname))return this.captures.fetch(request);
+  if(new URL(request.url).pathname==='/native-holders')return json(await this.nativeHolders.get(new URL(request.url)));
   if(new URL(request.url).pathname==='/holder-balances')return json(await this.balanceRelay.get(new URL(request.url)));
   if(new URL(request.url).pathname==='/coin-summary'){const identity=summaryIdentity(new URL(request.url));return identity?json(await this.summaries.get(identity)):json({state:'invalid-token'},400);}
   if(new URL(request.url).pathname==='/history')return this.history.fetch(new URL(request.url));

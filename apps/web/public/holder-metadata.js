@@ -1,3 +1,4 @@
+import {createNativeHolders} from './native-holders.js?v=351';
 import {createHolderBalances} from './holder-balances.js?v=350';
 import {fetchGoPlusCount} from './holder-count-providers.js?v=350';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
@@ -20,19 +21,21 @@ async function browserCount(network,address,signal){
 export function holderCountReadout(info={},historical=false){
  const available=Number.isSafeInteger(info.holders)&&info.holders>=0;
  const label=historical?'HOLDERS · LATEST':'HOLDERS';
- const value=available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
+ const value=!available&&info.native&&info.holdings?.weight>0?'Sample only':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
  const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
- const title=available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
+ const title=info.native?'Native address balances · '+(info.holdings?.source||'provider')+' · total funded-address count unavailable'+(info.holdings?.scope==='transparent-addresses-only'?' · transparent ZEC only':info.holdings?.scope==='public-addresses-excludes-MWEB'?' · excludes private MWEB balances':''):available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
   :'Waiting for holder data';
  const h=info.holdings;const coverage=!historical&&h?.weight>0?' · Visual: '+h.records.length.toLocaleString('en')+' observed balances · '+h.source+(h.complete?' (complete indexed list)':h.truncated?' (10,000 display limit)':h.state==='loading'?' (loading more)':' (partial sample)'):historical?' · Historical balances unavailable':' · Individual balances unavailable';
  return {label,value,title:title+coverage};
 }
 export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
+ const native=createNativeHolders({onChange:()=>onChange(snapshot())});let nativeActive=false;
  const clusters=createHolderClusters();
  const balances=createHolderBalances({onChange:()=>onChange(snapshot())});
  let key='',state={state:'unavailable',holders:null,watchers:null},controller,timer,epoch=0;
  function publish(next){state=next;onChange(snapshot());}
  function snapshot(now=Date.now()){
+  if(nativeActive){const holdings=native.snapshot(now);return {state:holdings.state,holders:null,watchers:null,native:true,weight:holdings.weight,holdings,relationships:{state:'unavailable',weight:0,clusters:[]}};}
   const relationships=clusters.snapshot(now),holdings=balances.snapshot(now);
   if(state.holders===null)return {...state,weight:0,watchers:null,relationships,holdings};
   // Provider time measures the snapshot, receipt time bounds our own cache.
@@ -41,8 +44,8 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   return {...state,age,weight,watchers:null,relationships,holdings,state:age===null?'age-unknown':weight===0?'expired':state.state};
  }
  function setMarket(pair){
-  clusters.setMarket(pair);balances.setMarket(pair);
-  epoch++;controller?.abort();clearTimeout(timer);key='';
+  nativeActive=Boolean(pair?.nativeAsset);clusters.setMarket(nativeActive?null:pair);balances.setMarket(nativeActive?null:pair);
+  epoch++;controller?.abort();clearTimeout(timer);key='';native.setMarket(nativeActive?pair:null);if(nativeActive)return;
   if(!pair){publish({state:'unavailable',holders:null,watchers:null});return;}
   const network=pair.geckoNetwork||aliases[pair.chainId]||pair.chainId,input=pair.baseToken.address;
   const address=/^0x[0-9a-fA-F]{40}$/.test(input)?input.toLowerCase():input;
@@ -75,5 +78,5 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
   if(saved&&Date.now()-saved.receivedAt<30*60000&&(network!=='robinhood'||saved.source==='Blockscout Robinhood index'))timer=setTimeout(refresh,30*60000-(Date.now()-saved.receivedAt));
   else void refresh();
  }
- return {setMarket,snapshot,close(){clusters.close();balances.close();epoch++;controller?.abort();clearTimeout(timer);}};
+ return {setMarket,snapshot,close(){native.close();clusters.close();balances.close();epoch++;controller?.abort();clearTimeout(timer);}};
 }

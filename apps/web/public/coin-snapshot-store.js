@@ -27,8 +27,8 @@ export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligi
  async function capture(){
   if(closed||busy)return;
   if(document.hidden||!eligible()){resetReady();return;}
-  const market=getMarket(),visual=getVisual(),state=visual?.snapshot(),address=market?.baseToken?.address;
-  if(!market||!address||!state){resetReady();return;}const key=keyFor(market.chainId,address),now=Date.now();
+  const market=getMarket(),visual=getVisual(),state=visual?.snapshot(),address=market?.nativeAsset?.address||market?.baseToken?.address,chain=market?.nativeAsset?.chain||market?.chainId;
+  if(!market||!address||!state){resetReady();return;}const key=keyFor(chain,address),now=Date.now();
   if(state.sourceCoinKey!==key||state.renderedPlaying!==true||state.holderSnapshotReady!==true||state.holderSource!=='observed-wallet-sample'||state.holderLoading||!(state.markCount>0)||!(state.transportPresence>=.99)){resetReady();return;}
   if(!Number.isFinite(state.renderedAt)||now-state.renderedAt<0||now-state.renderedAt>2000){resetReady();return;}
   // Let the actual playing field settle before its first capture. New market
@@ -41,7 +41,7 @@ export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligi
    const blob=await new Promise(resolve=>frame.toBlob(resolve,'image/webp',.86));
    if(closed||!blob||getMarket()!==market||document.hidden||!eligible())return;
    const current=visual.snapshot();if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderLoading)return;
-   const saved=publishCapture({key,chain:market.chainId,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',imageAvailable:state.imageAvailable===true,coverage:state.holderCoverage,captureKind:KIND,blob});
+   const saved=publishCapture({key,chain,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',imageAvailable:state.imageAvailable===true,coverage:state.holderCoverage,captureKind:KIND,blob});
    if(saved){lastAt.set(key,state.renderedAt);if(lastAt.size>LIMIT)lastAt.delete(lastAt.keys().next().value);}
   }catch{}finally{if(frame)frame.width=frame.height=1;busy=false;}
  }

@@ -1,8 +1,8 @@
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
-import {createReplayVisualHistory} from './replay-visual-history.js?v=347';
+import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=335';
-import {archivePlayerFrames} from './coin-snapshot-store.js?v=348';
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=351';
 import {createTestMint} from './test-mint.js?v=3';
 import {createTestNftExporter} from './test-nft-export.js?v=1';
 import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
@@ -12,7 +12,7 @@ import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=281';
-import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=325';
+import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=351';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=350';
@@ -26,7 +26,7 @@ import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=348';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=350';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=351';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
@@ -119,7 +119,7 @@ $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>even
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image),onUnavailable:url=>{if(market){rejectCoinImage(imageKey(market),url);void loadCoinImage(market,{fallback:true});}}});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
 const dataSonification=createDataSonification({send,event});
-const holderMetadata=createHolderMetadata({onChange:info=>displayHolderCount(info),onInfo:(info,pair)=>{
+const holderMetadata=createHolderMetadata({onChange:info=>{displayHolderCount(info);if(market?.nativeAsset){market=withNativeCap(market,info.holdings);updateContext();}},onInfo:(info,pair)=>{
  if(info?.image_url&&!rejectedCoinImage(imageKey(pair),info.image_url)){tokenImages.set(imageKey(pair),info.image_url);if(market&&imageKey(market)===imageKey(pair))displayCoinImage();}
 }});
 function displayHolderCount(info=holderMetadata.snapshot()){
@@ -132,7 +132,7 @@ chart.bindReplay(()=>replay.state,()=>playing);
 let coinImageURL='',coinImageKey='',imageController,imageToken='';const tokenImages=new Map(),failedCoinImages=new Map();
 function rejectedCoinImage(key,url){return Date.now()-(failedCoinImages.get(key+'|'+url)||0)<300000;}
 function rejectCoinImage(key,url){failedCoinImages.set(key+'|'+url,Date.now());while(failedCoinImages.size>128)failedCoinImages.delete(failedCoinImages.keys().next().value);}
-const imageKey=pair=>pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
+const imageKey=pair=>pair.nativeAsset?pair.nativeAsset.chain+':native':pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
 let testSimulationActive=false,testRefreshPending=false,lastTestActivityId='';
 const testMint=createTestMint(document.querySelector('.coin-copy'),{
  onPreviewEnd:()=>{if(playing&&!starting)$('play').click();},
@@ -726,7 +726,12 @@ async function freshMarketSnapshot(pair,{signal}={}){
  if(!updated||!(Number(updated.priceUsd)>0))throw Error('Selected live pool is unavailable');
  return completeMarketCap(updated,{signal});
 }
+function withNativeCap(pair,snapshot){
+ if(pair.nativeAsset&&snapshot?.network===pair.nativeAsset.chain&&snapshot.weight>0&&snapshot.referenceMarketCap>0&&snapshot.referencePrice>0&&Number(pair.priceUsd)>0)return {...pair,marketCap:snapshot.referenceMarketCap*Number(pair.priceUsd)/snapshot.referencePrice,marketCapSource:snapshot.source,marketCapEstimated:true};
+ return pair;
+}
 function applySnapshot(pair){
+ if(pair.nativeAsset)pair=withNativeCap(pair,holderMetadata.snapshot().holdings);
  if(!isExchangeMarket(pair))rememberPoolLiquidity(pair);
  const previous=currentPrice();
  if(market&&imageKey(pair)===imageKey(market)){
@@ -754,7 +759,7 @@ function chooseMarket(pair,{shared=false}={}){
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  lastMarketActivityAt=0;generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;void replayVisualHistory.setMarket(pair);nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
+ resetEnsemble();mode='live';market=pair;void replayVisualHistory.setMarket(pair);nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)&&!pair.nativeAsset?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
  if(!isExchangeMarket(pair)){const version=generation;void loadPoolLiquidity(pair).then(()=>{if(version===generation)display();});}
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});

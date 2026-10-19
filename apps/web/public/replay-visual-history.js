@@ -8,9 +8,9 @@ export function createReplayVisualHistory(host){
  return {
   async setMarket(market){
    const version=++generation;controller?.abort();controller=new AbortController();frames=[];current='';failed=new Set();image.hidden=true;host.classList.remove('has-recorded-frame');
-   if(!market?.baseToken?.address||market.source==='ccxt')return;
+   if(!market?.baseToken?.address||market.source==='ccxt'&&!market.nativeAsset)return;
    try{
-    const url=new URL(endpoint);url.search=new URLSearchParams({network:market.chainId,address:market.baseToken.address});
+    const url=new URL(endpoint);url.search=new URLSearchParams({network:market.nativeAsset?.chain||market.chainId,address:market.nativeAsset?.address||market.baseToken.address});
     const response=await fetch(url,{signal:controller.signal,cache:'no-store'});if(!response.ok)return;
     const data=await response.json();if(version!==generation||!Array.isArray(data.frames))return;
     frames=data.frames.filter(f=>Number.isSafeInteger(f.capturedAt)&&f.capturedAt>0&&f.capturedAt<=Date.now()+1000).sort((a,b)=>a.capturedAt-b.capturedAt);

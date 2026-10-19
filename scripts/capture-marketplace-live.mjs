@@ -1,3 +1,4 @@
+import {catalogueNative,NATIVE_COINS} from '../apps/web/public/native-coins.js';
 import {compareCoinNetworks} from '../apps/web/public/coin-network-choice.js';
 // Capture the actual player with current provider inputs and unmodified WebP pixels.
 // Local runs write development artifacts under the system temporary directory.
@@ -29,6 +30,7 @@ const keyFor=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?ad
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro','kucoin-community-chain':'kcc'};
 const explorers=new Set(['ethereum','eth','base','arbitrum','optimism','polygon','polygon_pos','zksync','celo','robinhood']);
 function supported(coin){
+ if(coin.address==='native')return Object.values(NATIVE_COINS).some(asset=>asset.chain===coin.chain&&asset.id===coin.id);
  if(!coin.address||!coin.chain||coin.contractStatus==='off-chain')return false;
  if(['solana','sui','tron','ton'].includes(coin.chain))return validHolderToken(coin.chain,coin.address);
  return validHolderToken(coin.chain,coin.address)&&(explorers.has(coin.chain)||Boolean(HOLDER_NETWORKS[aliases[coin.chain]||coin.chain]));
@@ -37,7 +39,7 @@ const catalogue=JSON.parse(await readFile(resolve(root,'marketplace-coin-catalog
 if(!Array.isArray(catalogue.coins))throw Error('Invalid coin catalogue');
 // Every candidate comes from the bundled exact identity list, including alternate networks.
 const identities=new Map();
-for(const coin of catalogue.coins)for(const item of [{chain:coin.chain,address:coin.address},...(coin.platforms||[])]){
+for(const coin of catalogue.coins)for(const item of [catalogueNative(coin)||{},{chain:coin.chain,address:coin.address},...(coin.platforms||[])]){
  if(!item.chain||!item.address)continue;const key=keyFor(item.chain,item.address);
  if(!identities.has(key))identities.set(key,{...coin,...item,key});
 }
@@ -179,7 +181,7 @@ try{
     }catch{await route.abort().catch(()=>{});}
    });
    const page=await context.newPage();page.on('pageerror',error=>{if(errors.length<3)errors.push(error.message.slice(0,300));});
-   const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address,network:coin.chain,request:randomUUID()});
+   const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'?coin.symbol+'/USD':coin.address,network:coin.chain,request:randomUUID()});
    await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:Math.min(45000,options.timeout*1000)});
    await page.waitForFunction(({expectedKey,kind,started,needsImage})=>{const value=window.__upicLiveCapture,frame=value?.frame||value;return frame?.key===expectedKey&&frame.captureKind===kind&&frame.capturedAt>=started&&(!needsImage||frame.imageAvailable===true)&&frame.blob instanceof Blob;},{expectedKey,kind,started,needsImage:Boolean(coin.image)},{timeout:Math.max(1,options.timeout*1000-(Date.now()-started)),polling:500});
    const captured=await page.evaluate(async()=>{
