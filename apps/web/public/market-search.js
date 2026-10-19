@@ -1,6 +1,6 @@
 import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=327';
 import {fetchGecko} from './gecko.js?v=277';
-import {geckoPoolMarket} from './trending.js?v=277';
+import {geckoPoolMarket} from './trending.js?v=345';
 
 // Shared discovery and provider cooldowns for the player and marketplace.
 const providerCooldowns=new Map();

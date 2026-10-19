@@ -378,7 +378,9 @@ input{caret-color:#fff}
 .visual-fullscreen svg{display:block;width:24px;height:24px;flex:none}
 .visual-fullscreen:hover:not(:disabled){background:#161616}
 body.visual-expanded{overflow:hidden}
-.audio-visualizer.is-expanded{position:fixed!important;inset:auto!important;left:0!important;top:var(--visual-full-top,64px)!important;width:100vw!important;height:calc(100svh - var(--visual-full-top,64px))!important;margin:0!important;max-width:none!important;z-index:90;transform-origin:top left;background:#000}
+.audio-visualizer.is-expanded{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;min-height:0!important;max-height:none!important;margin:0!important;max-width:none!important;aspect-ratio:auto!important;box-sizing:border-box;z-index:1000;transform-origin:top left;background:#000}
+body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility:hidden}
+body.visual-expanded>.visual-volume-control{z-index:1010}
 .visual-placeholder{pointer-events:none;min-width:0}
 
 /* Keep the pixel lattice hard edged when the render buffer is scaled. */
@@ -622,4 +624,17 @@ body.visual-expanded{overflow:hidden}
 }
 @media(max-width:760px){
  .instrument-page .coin-title>.audio-visualizer:not(.is-expanded){margin-top:12px}
+}
+
+/* Keep the mobile visual, identity, controls and metadata on a deliberate rhythm. */
+@media(max-width:760px){
+ .instrument-page .coin-context{flex-direction:column;gap:8px;margin-bottom:0;text-align:center}
+ .instrument-page .coin-context .eyebrow{flex:none;max-width:100%}
+ .instrument-page .coin-title{margin-top:20px;row-gap:16px}
+ .instrument-page .coin-title>.audio-visualizer:not(.is-expanded){margin-top:0}
+ .instrument-page .coin-title .transport{margin-block:0}
+ .instrument-page .coin-title .coin-live-readings{gap:12px}
+ .instrument-page .coin-title .test-mint{grid-column:1/-1;grid-row:5;justify-content:center;gap:8px 12px;width:100%;margin-top:0}
+ .instrument-page .coin-title .test-mint-note{text-align:center}
+ .instrument-page .coin-title .test-evolution{width:100%;text-align:left}
 }

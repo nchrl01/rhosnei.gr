@@ -540,3 +540,10 @@ html body select:not([multiple]):not([size]),html body select:not([multiple])[si
  background-repeat:no-repeat!important;background-position:right 12px center!important;background-size:12px 8px!important;
 }
 html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:not([multiple])[size="1"]{background-position:left 12px center!important}
+
+/* One compact quote; clicking it alternates ETH and SOL. */
+.footer-prices .footer-price-toggle{display:inline-flex;align-items:center;justify-content:flex-start;min-width:100px;min-height:32px;padding:0;border:0;background:transparent;color:inherit;font:inherit;text-align:left}
+.footer-price-toggle>[data-footer-coin]{display:inline-flex;align-items:center;gap:6px}
+.footer-price-toggle>[hidden]{display:none!important}
+.footer-prices .footer-price-toggle:hover{background:transparent;color:var(--control-ink);text-decoration:underline;text-underline-offset:4px}
+.footer-prices .footer-price-toggle:focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}

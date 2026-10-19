@@ -47,6 +47,30 @@ export function geckoPoolMarket(pool,included,networkID=pool?.relationships?.net
  if(baseToken.imageUrl)market.info={imageUrl:baseToken.imageUrl};
  return market;
 }
+// Share the header's 24-hour ranking with search; keep it in memory only.
+let searchTrending=[],searchTrendingAt=0,searchTrendingPending;
+function cacheSearchTrending(markets){
+ const seen=new Set();searchTrending=[];
+ for(const market of markets){
+  if(!market?.baseToken?.address)continue;
+  const chain=market.chainId,address=market.baseToken.address,key=chain+':'+(/^0x/i.test(address)?address.toLowerCase():address);
+  if(seen.has(key))continue;seen.add(key);
+  searchTrending.push({key,chain,address,symbol:market.baseToken.symbol,name:market.baseToken.name,image:market.info?.imageUrl||market.baseToken.imageUrl,marketCap:nonnegative(market.marketCap),liquidity:nonnegative(market.liquidity?.usd),volume:nonnegative(market.volume?.h24),trendingRank:searchTrending.length+1});
+ }
+ searchTrendingAt=Date.now();return searchTrending;
+}
+export async function loadTrendingCoins(){
+ if(searchTrendingAt&&Date.now()-searchTrendingAt<60000)return searchTrending;
+ if(searchTrendingPending)return searchTrendingPending;
+ searchTrendingPending=(async()=>{
+  const response=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/trending_pools?include=base_token,quote_token,dex,network&duration=24h&page=1',{signal:AbortSignal.timeout(35000),priority:60});
+  if(!response.ok)throw Error('Trending provider unavailable');
+  const data=await response.json();if(!Array.isArray(data.data))throw Error('Invalid trending response');
+  const included=new Map((data.included||[]).map(item=>[item.id,item]));
+  return cacheSearchTrending(data.data.map(pool=>geckoPoolMarket(pool,included)).filter(Boolean));
+ })().finally(()=>{searchTrendingPending=null;});
+ return searchTrendingPending;
+}
 export function startTrending(onPick,onLoading=()=>{}){
  const list=document.getElementById('trending-list'),status=document.getElementById('trending-status'),cycleButton=document.getElementById('trending-cycle'),periodLabel=document.getElementById('trending-period');
  const periods=['24h','1h','5m'],periodNames={'24h':'24 hours','1h':'1 hour','5m':'5 minutes'};
@@ -167,6 +191,7 @@ export function startTrending(onPick,onLoading=()=>{}){
     const market=geckoPoolMarket(pool,included,networkID);if(market)item.market=market;
     if(!next.has(key(item)))next.set(key(item),item);
    }
+   if(duration==='24h')cacheSearchTrending([...next.values()].map(item=>item.market).filter(Boolean));
    updated=Date.now();failures=0;applyRanking(next);loading(next.size?'done':'error','Loading trending');
    status.textContent=duration.toUpperCase()+' · '+next.size+' coins · top '+data.data.length+' trending pools · checked '+new Date(updated).toLocaleTimeString()+' · auto refresh 30s · provider-cached ranking';
    if(!next.size)placeholder('Loading trending');

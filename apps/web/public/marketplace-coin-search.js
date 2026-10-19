@@ -1,6 +1,6 @@
 import {bindSearchField} from './search-field.js?v=265';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=327';
-import {findOnchainMarkets} from './market-search.js?v=1';
+import {findOnchainMarkets} from './market-search.js?v=2';
 import {isExchangeQuery,searchExchangeMarkets} from './ccxt-market.js?v=325';
 import {rememberRecentCoin} from './coin-catalogue.js?v=335';
 

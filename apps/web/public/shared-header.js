@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=344';
+import {bindMobileCoinSearch} from './mobile-search.js?v=345';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -7,6 +7,12 @@ function markCurrentPage(){
   const target=new URL(link.href);
   if(target.origin===location.origin&&canonical(target.pathname)===canonical(location.pathname))link.setAttribute('aria-current','page');
  }
+}
+function bindFooterPriceToggle(){
+ const button=document.querySelector('.footer-price-toggle');if(!button)return;
+ const quotes=[...button.querySelectorAll('[data-footer-coin]')];let selected=0;
+ const paint=()=>{quotes.forEach((quote,index)=>quote.hidden=index!==selected);const next=quotes[(selected+1)%quotes.length]?.dataset.footerCoin;button.setAttribute('aria-label','Show '+next+' price');button.title='Switch to '+next;};
+ button.addEventListener('click',()=>{selected=(selected+1)%quotes.length;paint();});paint();
 }
 function bindRangeTracks(){
  const paint=input=>{
@@ -43,6 +49,7 @@ function removeRetiredSampleStorage(){
  try{const cleanup=indexedDB.deleteDatabase('upic-envion-samples-v1');cleanup.onerror=()=>{};}catch{}
 }
 markCurrentPage();
+bindFooterPriceToggle();
 bindListeningVolume();
 bindRangeTracks();
 bindNetworkDisclosure();
