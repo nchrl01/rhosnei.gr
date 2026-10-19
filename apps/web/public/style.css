@@ -615,3 +615,11 @@ body.visual-expanded{overflow:hidden}
  .instrument-page .readings small{font-size:var(--font-size-small);line-height:1.4;white-space:normal}
  .instrument-page .readings strong{font-size:var(--font-size-title);line-height:1.3;white-space:normal;overflow-wrap:anywhere;color:var(--control-ink,#fff)}
 }
+
+/* A little breathing room above the main visual field. */
+@media(min-width:761px){
+ .instrument-page .audio-visualizer:not(.is-expanded){margin-top:24px;top:calc(var(--instrument-header-height,calc(var(--navigation-row-height) + 28px)) + 24px);height:calc(100svh - var(--instrument-header-height,calc(var(--navigation-row-height) + 28px)) - var(--instrument-footer-height,var(--navigation-row-height)) - 36px)}
+}
+@media(max-width:760px){
+ .instrument-page .coin-title>.audio-visualizer:not(.is-expanded){margin-top:12px}
+}
