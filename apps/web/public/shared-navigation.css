@@ -514,3 +514,18 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
 @media(hover:hover){:is(.market-header,.site-navigation) :is(.header-search,.header-marketplace,#volume-button):not(:disabled):hover{color:var(--control-ink);background:var(--control-hover);opacity:1;text-decoration:none}}
 @media(min-width:761px){:is(.market-header,.site-navigation) .header-link{min-height:44px}.header-marketplace,.header-search{display:none}}
 @media(max-width:760px){:is(.market-header,.site-navigation) .header-main{padding-inline:var(--header-gutter,16px)}:is(.market-header,.site-navigation) .header-links{gap:12px}}
+
+/* Native mobile sheet keeps site links aligned and provides its own close control. */
+.footer-mobile-sheet:not([open]){display:none}
+.footer-mobile-sheet{position:fixed;inset:auto 0 0;width:100%;max-width:none;max-height:85dvh;box-sizing:border-box;margin:0;padding:16px var(--site-gutter,16px) calc(20px + env(safe-area-inset-bottom));border:0;border-top:1px solid var(--line);background:#000;color:var(--control-ink);overflow-y:auto;overscroll-behavior:contain}
+.footer-mobile-sheet::backdrop{background:#000b}
+.footer-sheet-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;font-size:var(--font-size-body)}
+.footer-sheet-heading button{display:grid;place-items:center;width:44px;height:44px;min-height:44px;padding:0;border:0;background:transparent;color:inherit}
+.footer-mobile-sheet .footer-mobile-panel{position:static;display:grid;gap:16px;width:100%;max-height:none;box-sizing:border-box;margin:0;padding:0;border:0;background:transparent;overflow:visible}
+.footer-mobile-sheet nav{display:grid;gap:0;width:100%;margin:0;padding:0;min-width:0;font-size:var(--font-size-body)}
+.footer-mobile-sheet nav>*{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;box-sizing:border-box;padding:12px 0;border-bottom:1px solid #222;white-space:normal;line-height:1.5;text-decoration:none}
+.footer-mobile-sheet a{color:var(--control-ink)}
+.footer-mobile-sheet .footer-upcoming{color:var(--muted,#888)}
+.footer-mobile-sheet .footer-upcoming small{flex:none;font-size:var(--font-size-small)}
+.footer-mobile-sheet a:hover,.footer-sheet-heading button:hover{background:var(--control-hover);color:var(--control-ink)}
+.footer-mobile-sheet :is(a,button):focus-visible{outline:2px solid var(--control-ink);outline-offset:2px}

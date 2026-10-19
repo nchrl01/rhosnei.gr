@@ -12,7 +12,8 @@ import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=281';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=325';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {isTokenIdentifier,rankCoinMatches,showCoinMatches} from './coin-search.js?v=326';
+import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=327';
+import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=1';
 import {rollingText} from './coin-readout.js?v=53';
 import {createTakeShare,loadSharedScore} from './take-share.js?v=220';
 import {pianoHarmony} from './music-context.js?v=208';
@@ -65,7 +66,6 @@ let sharedHarmony=null;
 let pd,ctx,gain,listeningGain,outputTap,outputMeters,instrumentTap,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let requestedNetwork=null,requestedAutoplay=false;
 let snapshotController,searchController;
-const providerCooldowns=new Map();
 const shouldFetchHistory=()=>!document.hidden||playing;
 let pendingHistoryReplay=false;
 function historyReplayReady(){return (replay.state.frozen?.bars||chart.history||[]).length>1;}
@@ -580,14 +580,6 @@ $('play').onclick=async()=>{
 };
 for(const id of controls)$(id).addEventListener('input',()=>{if(listeningGain)listeningGain.gain.setTargetAtTime(Number($(id).value),ctx.currentTime,.025);session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
-const sameToken=(a,b)=>/^0x[0-9a-f]{40}$/i.test(b||'')?a?.toLowerCase()===b.toLowerCase():a===b;
-function orientPair(pair,token){
- if(sameToken(pair.baseToken?.address,token))return {...pair,historyTokenSide:'base'};
- if(!sameToken(pair.quoteToken?.address,token))return null;
- const native=Number(pair.priceNative),usd=Number(pair.priceUsd),txns={};
- for(const [window,tx] of Object.entries(pair.txns||{}))txns[window]={buys:tx.sells,sells:tx.buys};
- return {...pair,marketCap:null,fdv:null,historyTokenSide:'quote',baseToken:pair.quoteToken,quoteToken:pair.baseToken,priceNative:native>0?String(1/native):null,priceUsd:native>0&&usd>0?String(usd/native):null,txns,priceChange:{}};
-}
 function display(){
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
  displayCoinImage();
@@ -688,21 +680,6 @@ function loadChartTimeframe(){
   $('chart-resolution').textContent=selection+' · '+data.candles.length+' provider candles · '+data.message;
  },{...frame,maxPages:3,priority:100,shouldFetch:shouldFetchHistory});
 }
-async function fetchJSON(url,{signal}={}){
- const origin=new URL(url).origin,until=providerCooldowns.get(origin)||0;
- if(until>Date.now())throw Error('Market provider cooling down · '+Math.ceil((until-Date.now())/1000)+'s');
- const abort=new AbortController(),cancel=()=>abort.abort(),timeout=setTimeout(cancel,12000);
- signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
- try{
-  const r=await fetch(url,{signal:abort.signal});
-  if(r.status===429||r.status===503){
-   const value=r.headers.get('Retry-After'),seconds=Number(value);
-   const delay=value&&Number.isFinite(seconds)?seconds*1000:value&&Number.isFinite(Date.parse(value))?Date.parse(value)-Date.now():30000;
-   providerCooldowns.set(origin,Date.now()+Math.max(1000,delay));
-  }
-  if(!r.ok)throw Error('Market provider returned '+r.status);return await r.json();
- }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
-}
 const capLookups=new Map();
 async function completeMarketCap(pair,{signal}={}){
  if(isExchangeMarket(pair)||Number(pair.marketCap)>0)return pair;
@@ -739,36 +716,6 @@ async function freshMarketSnapshot(pair,{signal}={}){
  const raw=geckoPoolMarket(data.data,included,network),updated=raw&&orientPair(raw,token);
  if(!updated||!(Number(updated.priceUsd)>0))throw Error('Selected live pool is unavailable');
  return completeMarketCap(updated,{signal});
-}
-async function findOnchainMarkets(query,{network,signal}={}){
- const priced=pair=>Number(pair?.priceUsd)>0&&Number.isFinite(Number(pair.priceUsd));
- const rank=pairs=>rankCoinMatches(pairs.filter(priced),query,{orientPair,network}).filter(priced);
- // Keep the fast search path, but an empty index or provider cooldown does
- // not mean the contract has no market. The second source must match it too.
- try{
-  const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(query),{signal});
-  const pairs=rank(data.pairs||[]);if(pairs.length)return pairs;
- }catch(error){if(signal?.aborted)throw error;}
- const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
- const geckoNetwork=network&&(aliases[network]||network),specific=geckoNetwork&&isTokenIdentifier(query);
- const params=new URLSearchParams({include:'base_token,quote_token,dex,network',page:'1'});
- if(!specific){params.set('query',query);if(geckoNetwork)params.set('network',geckoNetwork);}
- const path=specific?'/networks/'+encodeURIComponent(geckoNetwork)+'/tokens/'+encodeURIComponent(query)+'/pools':'/search/pools';
- const controller=new AbortController(),cancel=()=>controller.abort();
- signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)cancel();
- // Allow one provider-requested cooldown; still cancel promptly when the
- // user edits the address, selects another coin, or dismisses the search.
- const timeout=setTimeout(cancel,75000);
- try{
-  for(let attempt=0;attempt<2;attempt++){
-   const response=await fetchGecko('https://api.geckoterminal.com/api/v2'+path+'?'+params,{signal:controller.signal,priority:200});
-   if(response.status===429&&attempt===0)continue;
-   if(!response.ok)throw Error('Market search provider returned '+response.status);
-   const data=await response.json();if(!Array.isArray(data.data))throw Error('Unexpected market search response');
-   const included=new Map((data.included||[]).map(item=>[item.id,item]));
-   return rank(data.data.map(pool=>geckoPoolMarket(pool,included,geckoNetwork||undefined)).filter(Boolean));
-  }
- }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }
 function applySnapshot(pair){
  if(!isExchangeMarket(pair))rememberPoolLiquidity(pair);

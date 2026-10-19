@@ -23,7 +23,7 @@ export function showCoinMatches(container,pairs,onChoose){
  for(const child of [...container.childNodes])if(child!==title)child.remove();
  container.hidden=false;
  container.removeAttribute('aria-live');
- const input=container.ownerDocument.getElementById('address'),buttons=[];
+ const input=container.ownerDocument.querySelector('#address,#coin-gallery-search'),buttons=[];
  input?.setAttribute('aria-expanded','true');
  title.className='coin-search-summary';title.setAttribute('role','status');title.setAttribute('aria-live','polite');title.setAttribute('aria-atomic','true');
  if(title.parentNode!==container)container.append(title);

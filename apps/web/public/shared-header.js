@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=336';
+import {bindMobileCoinSearch} from './mobile-search.js?v=341';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -64,12 +64,20 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 function bindMobileFooter(){
  const mobile=matchMedia('(max-width:760px)'),footer=document.querySelector('.site-footer'),more=footer?.querySelector('.footer-mobile-more'),panel=more?.querySelector('.footer-mobile-panel');
  if(!panel)return;
+ const summary=more.querySelector('summary'),sheet=document.createElement('dialog');sheet.className='footer-mobile-sheet';sheet.id='footer-site-menu';sheet.setAttribute('aria-label','Site links');
+ const heading=document.createElement('div');heading.className='footer-sheet-heading';
+ const title=document.createElement('span');title.textContent='More';
+ const close=document.createElement('button');close.type='button';close.setAttribute('aria-label','Close site menu');close.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+ heading.append(title,close);sheet.append(heading,panel);document.body.append(sheet);
+ summary.setAttribute('aria-controls',sheet.id);summary.setAttribute('aria-haspopup','dialog');summary.setAttribute('aria-expanded','false');
  const groups=[footer.querySelector('.footer-links'),footer.querySelector('.footer-tools')].filter(Boolean),network=footer.querySelector('.footer-networks');
  const anchors=groups.map(group=>{const a=document.createComment('footer group');group.before(a);return a;});
  const networkAnchor=document.createComment('network position');if(network)network.before(networkAnchor);
- const sync=()=>{more.open=false;groups.forEach((group,i)=>mobile.matches?panel.append(group):anchors[i].after(group));if(network){if(mobile.matches)footer.insertBefore(network,more);else networkAnchor.after(network);}};
- document.addEventListener('pointerdown',event=>{if(more.open&&!more.contains(event.target))more.open=false;});
- document.addEventListener('keydown',event=>{if(event.key==='Escape'&&more.open){more.open=false;more.querySelector('summary').focus();}});
+ more.addEventListener('toggle',()=>{const open=mobile.matches&&more.open;summary.setAttribute('aria-expanded',String(open));if(open&&!sheet.open){if(network)network.open=false;sheet.showModal();}else if(!open&&sheet.open)sheet.close();});
+ close.addEventListener('click',()=>sheet.close());
+ sheet.addEventListener('close',()=>{more.open=false;summary.setAttribute('aria-expanded','false');if(mobile.matches)summary.focus({preventScroll:true});});
+ sheet.addEventListener('click',event=>{if(event.target!==sheet)return;const box=sheet.getBoundingClientRect();if(event.clientY<box.top||event.clientY>box.bottom||event.clientX<box.left||event.clientX>box.right)sheet.close();});
+ const sync=()=>{more.open=false;if(sheet.open)sheet.close();groups.forEach((group,i)=>mobile.matches?panel.append(group):anchors[i].after(group));if(network){if(mobile.matches)footer.insertBefore(network,more);else networkAnchor.after(network);}};
  mobile.addEventListener('change',sync);sync();
 }
 bindMobileFooter();
@@ -97,11 +105,12 @@ if(headerWallet){
 }
 
 function bindMobilePlayerOrder(){
- const transport=document.querySelector('.instrument-page .transport'),readings=document.querySelector('.coin-title .coin-live-readings');
- if(!transport||!readings)return;
- const home=document.createComment('transport position');transport.before(home);
+ const transport=document.querySelector('.instrument-page .transport'),title=document.querySelector('.coin-title'),readings=title?.querySelector('.coin-live-readings'),avatar=title?.querySelector('.coin-avatar'),name=title?.querySelector('#coin-name');
+ if(!transport||!readings||!avatar||!name)return;
+ const home=document.createComment('transport position'),avatarHome=document.createComment('avatar position'),nameHome=document.createComment('coin name position');transport.before(home);avatar.before(avatarHome);name.before(nameHome);
+ const heading=document.createElement('div');heading.className='mobile-player-heading';
  const mobile=matchMedia('(max-width:760px)');
- const arrange=()=>{if(mobile.matches)readings.before(transport);else home.after(transport);};
+ const arrange=()=>{if(mobile.matches){title.append(heading);heading.append(avatar,name);readings.before(transport);}else{avatarHome.after(avatar);nameHome.after(name);heading.remove();home.after(transport);}};
  mobile.addEventListener('change',arrange);arrange();
 }
 bindMobilePlayerOrder();

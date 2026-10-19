@@ -593,3 +593,25 @@ body.visual-expanded{overflow:hidden}
 .coin-ai-entry-label{color:var(--muted,#aaa)}
 .coin-ai-entry .coin-ai-source{display:inline;margin-left:3px}
 .coin-ai-retry{justify-self:start;padding:0;border:0;background:none;color:inherit;font:inherit;font-size:var(--font-size-small);text-decoration:underline;text-underline-offset:3px}
+
+/* Mobile player: centered artwork identity and a primary transport control. */
+@media(max-width:760px){
+ .instrument-page .coin-context{justify-content:center;flex-wrap:wrap;text-align:center}
+ .instrument-page .coin-title{grid-template-columns:minmax(0,1fr)}
+ .mobile-player-heading{grid-column:1/-1;grid-row:2;display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;width:100%}
+ .mobile-player-heading .coin-avatar{width:36px;height:36px;flex:0 0 36px;align-self:center;background:transparent}
+ .instrument-page .mobile-player-heading #coin-name{margin:0;min-width:0;max-width:calc(100% - 48px);text-align:center;font-size:var(--font-size-title);line-height:1.3}
+ .instrument-page .coin-title .transport{display:grid;grid-template-columns:48px 72px 48px;justify-content:center;gap:16px 20px;margin-block:4px;width:100%}
+ .instrument-page .coin-title .transport #play{grid-column:2;grid-row:1;width:72px;height:72px;min-width:72px;min-height:72px;justify-self:center}
+ .instrument-page .coin-title .transport #share{grid-column:1;grid-row:1;width:48px;height:48px;min-width:48px;min-height:48px;justify-self:center}
+ .instrument-page .coin-title .transport .visual-fullscreen{grid-column:3;grid-row:1;width:48px;height:48px;min-width:48px;min-height:48px;padding:10px;justify-self:center}
+ .instrument-page .coin-title .transport #audio-loader{grid-column:1/-1;grid-row:2}
+ .instrument-page .coin-title .coin-live-readings{grid-template-columns:minmax(0,1fr);gap:20px;text-align:center}
+ .instrument-page .coin-live-readings>div{justify-content:center}
+ .instrument-page .coin-live-readings>div:first-child{column-gap:20px}
+ /* Market readings read vertically, like the lines of a lyrics panel. */
+ .instrument-page .readings{grid-template-columns:minmax(0,1fr);gap:24px;margin-top:24px;padding:24px 20px;border:0;background:#080808;overflow:visible}
+ .instrument-page .readings>div{gap:8px;min-width:0}
+ .instrument-page .readings small{font-size:var(--font-size-small);line-height:1.4;white-space:normal}
+ .instrument-page .readings strong{font-size:var(--font-size-title);line-height:1.3;white-space:normal;overflow-wrap:anywhere;color:var(--control-ink,#fff)}
+}
