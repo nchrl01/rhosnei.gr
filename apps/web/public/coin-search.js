@@ -1,3 +1,5 @@
+import {attachArtworkDither} from './coin-dither.js?v=276';
+
 const normalized=value=>String(value||'').normalize('NFKC').trim().toLowerCase().replace(/^\$/,'');
 export const isTokenIdentifier=query=>/^0x[0-9a-f]{40,64}$/i.test(query)||/^[1-9A-HJ-NP-Za-km-z]{32,64}$/.test(query);
 export function rankCoinMatches(pairs,query,{orientPair,network}={}){
@@ -28,9 +30,9 @@ export function showCoinMatches(container,pairs,onChoose){
  const summary='Choose a market · '+pairs.length+' '+(pairs.length===1?'match':'matches');if(title.textContent!==summary)title.textContent=summary;
  for(const pair of pairs){
   const button=document.createElement('button');button.type='button';button.className='coin-search-result';
-  const thumbnail=document.createElement('img');thumbnail.className='coin-search-thumbnail';thumbnail.alt='';thumbnail.draggable=false;thumbnail.loading='lazy';
+  const artwork=document.createElement('span');artwork.className='coin-search-artwork';const thumbnail=document.createElement('img');thumbnail.className='coin-search-thumbnail';thumbnail.alt='';thumbnail.draggable=false;thumbnail.loading='lazy';
   const rawImage=pair.info?.imageUrl||pair.baseToken.imageUrl;try{const url=new URL(rawImage);if(url.protocol==='https:')thumbnail.src=url.href;}catch{}
-  if(!thumbnail.src)thumbnail.src='upic-logo-transparent.svg?v=116';thumbnail.addEventListener('error',()=>{thumbnail.src='upic-logo-transparent.svg?v=116';},{once:true});
+  if(!thumbnail.src)thumbnail.src='upic-logo-transparent.svg?v=116';thumbnail.addEventListener('error',()=>{thumbnail.src='upic-logo-transparent.svg?v=116';},{once:true});artwork.append(thumbnail);
   button.dataset.marketKey=[pair.source||'dex',pair.exchangeId||pair.chainId,pair.pairAddress||pair.exchangeSymbol||pair.baseToken.address].join('|');
   const identity=document.createElement('span'),symbol=document.createElement('strong'),name=document.createElement('span');
   symbol.textContent=pair.baseToken.symbol;name.textContent=pair.baseToken.name||pair.baseToken.symbol;identity.append(symbol,name);
@@ -39,7 +41,7 @@ export function showCoinMatches(container,pairs,onChoose){
   detail.textContent=exchange?venue+' · SPOT · '+pair.exchangeSymbol:venue+' · '+(cap!=null&&Number.isFinite(cap)&&cap>=0?'MCAP $'+Math.round(cap).toLocaleString('en'):'MCAP unavailable');
   const address=document.createElement('small');address.textContent=pair.source==='ccxt'?'Public exchange trades · '+(pair.quoteApproximate?pair.quoteToken.symbol+' quote / USD proxy':'USD quote')+' · MCAP unavailable':pair.baseToken.address;address.className='coin-search-address';
   button.setAttribute('aria-label',[symbol.textContent,name.textContent===symbol.textContent?'':name.textContent,detail.textContent,exchange?address.textContent:'Contract address '+address.textContent].filter(Boolean).join('. '));
-  button.append(thumbnail,identity,detail,address);
+  button.append(artwork,identity,detail,address);
   button.onclick=()=>{container.hidden=true;container.replaceChildren();input?.setAttribute('aria-expanded','false');onChoose(pair);};
   button.onkeydown=event=>{
    if(event.altKey||event.ctrlKey||event.metaKey)return;
@@ -50,7 +52,7 @@ export function showCoinMatches(container,pairs,onChoose){
    if(target===null)return;
    event.preventDefault();buttons[target]?.focus();
   };
-  buttons.push(button);container.append(button);
+  buttons.push(button);container.append(button);attachArtworkDither(thumbnail);
  }
  if(focusedKey)(buttons.find(button=>button.dataset.marketKey===focusedKey)||input)?.focus({preventScroll:true});
 }
