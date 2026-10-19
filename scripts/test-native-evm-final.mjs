@@ -26,14 +26,15 @@ function mock(symbol,handler) {
   if(custom!==undefined) return custom;
   if(req.method==='eth_chainId')return reply('0x'+config[symbol][1].toString(16));
   if(req.method==='eth_getBlockByNumber')return reply(block());
-  if(req.method==='eth_getLogs')return reply(ids.map(id=>({blockNumber:'0x1000',topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef','0x'+'0'.repeat(24)+id.slice(2)]})));
+  if(req.method==='eth_getLogs')return reply(ids.map(id=>({transactionHash:'0x'+'a'.repeat(64),blockNumber:'0x1000',topics:['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef','0x'+'0'.repeat(24)+id.slice(2)]})));
+  if(req.method==='eth_getTransactionByHash')return reply({hash:'0x'+'a'.repeat(64),from:ids[0],blockNumber:'0x1000'});
   if(req.method==='eth_getBalance')return reply('0xde0b6b3a7640000');
   throw Error('unexpected');
  }};
 }
 for (const symbol of Object.keys(config)) test(symbol+' exact mainnet, bounded real balance sample',async()=>{
  const m=mock(symbol);const value=await fetchFinalEvmNativeBalances(asset(symbol),m.read,now);
- assert.equal(m.calls.length,6);assert.equal(value.records.length,['CFX','KUB','BTY'].includes(symbol)?3:4);
+ assert.equal(m.calls.length,6);assert.equal(value.records.length,symbol==='KUB'?2:['CFX','BTY'].includes(symbol)?3:4);
  assert.equal(value.records[0].tokenBalance,1);assert.equal(value.totalHolders,null);
  assert.equal(value.sourceAt,null);assert.equal(value.coverage,symbol==='CFX'?'ledger-account-sample':'recent-address-sample');
  assert.equal(asset(symbol).refreshMs,7200000);
