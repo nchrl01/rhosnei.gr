@@ -1,12 +1,12 @@
 {
-  "checkedAt": "2026-10-19T14:12:17.027254+00:00",
+  "checkedAt": "2026-10-19T15:23:06.985986+00:00",
   "scope": "The 181 top-1000 coins excluded by the previous holder-capture adapter",
   "originalMissing": 181,
-  "confirmedNewFeeds": 20,
-  "remainingWithoutConfirmedFeed": 161,
+  "confirmedNewFeeds": 25,
+  "remainingWithoutConfirmedFeed": 156,
   "adapterEligibleBefore": 819,
-  "adapterEligibleAfter": 840,
-  "note": "Adapter eligibility does not guarantee a live market, usable liquidity, holder records, or successful capture. Samples are not full holder lists. Native SUI returned no sample and remains unconfirmed.",
+  "adapterEligibleAfter": 845,
+  "note": "Adapter eligibility does not guarantee a live market, usable liquidity, holder records, or successful capture. Samples are not full holder lists. Native SUI returned no sample and remains unconfirmed. Native BTC, ETH, LTC, DOGE and ZEC now have actual partial address-balance samples through a shared Cloudflare cache. No reliable total funded-address count is available from these sources. ZEC is transparent-only; LTC excludes private MWEB balances.",
   "selectionPolicy": [
     "Prefer the listed native/main identity.",
     "Among other available representations, prefer the greatest observed USD liquidity.",
@@ -19,11 +19,24 @@
       "name": "Bitcoin",
       "nativeChain": "bitcoin",
       "identities": [],
-      "status": "not-yet-connected",
+      "status": "holder-feed-confirmed",
       "category": "native-no-token-identifier",
-      "providerCheck": null,
+      "providerCheck": {
+        "id": "bitcoin",
+        "symbol": "BTC",
+        "chain": "bitcoin",
+        "address": "native",
+        "provider": "SoChain native balances",
+        "holderCount": null,
+        "sampleRows": 100,
+        "checkedAt": 1792423387159,
+        "scope": "public-addresses",
+        "cacheSeconds": 3600,
+        "totalHolderCountAvailable": false
+      },
       "sources": [
-        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+        "https://sochain.com/docs/rich_list",
+        "https://sochain.com/pricing"
       ]
     },
     {
@@ -32,11 +45,23 @@
       "name": "Ethereum",
       "nativeChain": "ethereum",
       "identities": [],
-      "status": "not-yet-connected",
+      "status": "holder-feed-confirmed",
       "category": "native-no-token-identifier",
-      "providerCheck": null,
+      "providerCheck": {
+        "id": "ethereum",
+        "symbol": "ETH",
+        "chain": "ethereum",
+        "address": "native",
+        "provider": "Blockscout native balances",
+        "holderCount": null,
+        "sampleRows": 50,
+        "checkedAt": 1792423387283,
+        "scope": "public-addresses",
+        "cacheSeconds": 3600,
+        "totalHolderCountAvailable": false
+      },
       "sources": [
-        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+        "https://docs.blockscout.com/api-reference/addresses/list-addresses-holding-native-coins-sorted-by-balance--top-accounts"
       ]
     },
     {
@@ -106,12 +131,24 @@
       "name": "Zcash",
       "nativeChain": "zcash",
       "identities": [],
-      "status": "not-yet-connected",
+      "status": "holder-feed-confirmed",
       "category": "native-no-token-identifier",
-      "providerCheck": null,
+      "providerCheck": {
+        "id": "zcash",
+        "symbol": "ZEC",
+        "chain": "zcash",
+        "address": "native",
+        "provider": "SoChain native balances",
+        "holderCount": null,
+        "sampleRows": 100,
+        "checkedAt": 1792423387459,
+        "scope": "transparent-addresses-only",
+        "cacheSeconds": 3600,
+        "totalHolderCountAvailable": false
+      },
       "sources": [
-        "https://api.coingecko.com/api/v3/coins/list?include_platform=true",
-        "https://z.cash/learn/what-is-the-difference-between-zcash-and-zec/"
+        "https://sochain.com/docs/rich_list",
+        "https://sochain.com/pricing"
       ]
     },
     {
@@ -142,11 +179,24 @@
       "name": "Dogecoin",
       "nativeChain": "dogecoin",
       "identities": [],
-      "status": "not-yet-connected",
+      "status": "holder-feed-confirmed",
       "category": "native-no-token-identifier",
-      "providerCheck": null,
+      "providerCheck": {
+        "id": "dogecoin",
+        "symbol": "DOGE",
+        "chain": "dogecoin",
+        "address": "native",
+        "provider": "SoChain native balances",
+        "holderCount": null,
+        "sampleRows": 100,
+        "checkedAt": 1792423387653,
+        "scope": "public-addresses",
+        "cacheSeconds": 3600,
+        "totalHolderCountAvailable": false
+      },
       "sources": [
-        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+        "https://sochain.com/docs/rich_list",
+        "https://sochain.com/pricing"
       ]
     },
     {
@@ -225,11 +275,24 @@
       "name": "Litecoin",
       "nativeChain": "litecoin",
       "identities": [],
-      "status": "not-yet-connected",
+      "status": "holder-feed-confirmed",
       "category": "native-no-token-identifier",
-      "providerCheck": null,
+      "providerCheck": {
+        "id": "litecoin",
+        "symbol": "LTC",
+        "chain": "litecoin",
+        "address": "native",
+        "provider": "SoChain native balances",
+        "holderCount": null,
+        "sampleRows": 100,
+        "checkedAt": 1792423387773,
+        "scope": "public-addresses-excludes-MWEB",
+        "cacheSeconds": 3600,
+        "totalHolderCountAvailable": false
+      },
       "sources": [
-        "https://api.coingecko.com/api/v3/coins/list?include_platform=true"
+        "https://sochain.com/docs/rich_list",
+        "https://sochain.com/pricing"
       ]
     },
     {
@@ -3438,7 +3501,28 @@
       ],
       "status": "requires-api-key-for-application-use",
       "source": "https://github.com/Blockchair/Blockchair.Support/blob/master/API.md",
-      "notes": "Native address-balance indexes and positive-balance address counts. This is address data, not a count of people. Ethereum address-index freshness differs from the price feed."
+      "notes": "Native address-balance indexes and positive-balance address counts. This is address data, not a count of people. Ethereum address-index freshness differs from the price feed. Keyless trial balance requests returned HTTP 430; not connected."
+    },
+    {
+      "name": "SoChain",
+      "assets": [
+        "BTC",
+        "LTC",
+        "DOGE",
+        "ZEC"
+      ],
+      "status": "connected-free-keyless-api",
+      "source": "https://sochain.com/pricing",
+      "notes": "2,500 requests/day/IP documented; UPIC caps all native source calls at 300/day and caches hourly. Partial large-address balances, no total holder count."
+    },
+    {
+      "name": "Blockscout",
+      "assets": [
+        "ETH"
+      ],
+      "status": "connected-existing-free-private-key",
+      "source": "https://docs.blockscout.com/devs/pro-api",
+      "notes": "Existing private Cloudflare credential; actual native address balances. total_addresses is deliberately not treated as a holder count."
     }
   ]
 }
