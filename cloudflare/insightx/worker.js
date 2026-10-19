@@ -13,6 +13,25 @@ const pct=value=>number(value)===null?null:Math.max(0,Math.min(100,Number(value)
 const ARTWORK_HOSTS=new Set(['cdn.dexscreener.com','coin-images.coingecko.com','assets.coingecko.com','i2c.seadn.io','i.seadn.io']);
 const ARTWORK_TYPES=new Set(['image/png','image/jpeg','image/webp','image/gif','image/avif']);
 const ARTWORK_LIMIT=2*1024*1024;
+let goPlusToken=null,goPlusTokenExpires=0,goPlusTokenRequest=null;
+
+async function goPlusAccessToken(env){
+ if(env.GOPLUS_ACCESS_TOKEN)return env.GOPLUS_ACCESS_TOKEN;
+ const appKey=env.GOPLUS_APP_KEY,appSecret=env.GOPLUS_APP_SECRET;
+ if(!appKey||!appSecret)return null;
+ if(goPlusToken&&Date.now()<goPlusTokenExpires)return goPlusToken;
+ if(goPlusTokenRequest)return goPlusTokenRequest;
+ goPlusTokenRequest=(async()=>{
+  const time=String(Math.floor(Date.now()/1000)),message=new TextEncoder().encode(appKey+time+appSecret);
+  const digest=await crypto.subtle.digest('SHA-1',message),sign=[...new Uint8Array(digest)].map(byte=>byte.toString(16).padStart(2,'0')).join('');
+  const response=await fetch('https://api.gopluslabs.io/api/v1/token',{method:'POST',headers:{Accept:'application/json','Content-Type':'application/json'},body:JSON.stringify({app_key:appKey,time,sign}),signal:AbortSignal.timeout(10000)});
+  if(!response.ok)throw Error('goplus-auth-http-'+response.status);
+  const body=await response.json(),token=body.access_token||body.result?.access_token,expires=Number(body.expires_in||body.result?.expires_in);
+  if(typeof token!=='string'||!token||!Number.isFinite(expires)||expires<=0)throw Error('goplus-auth-response-invalid');
+  goPlusToken=token;goPlusTokenExpires=Date.now()+Math.max(1000,(expires-60)*1000);return token;
+ })().catch(()=>null).finally(()=>{goPlusTokenRequest=null;});
+ return goPlusTokenRequest;
+}
 
 async function artwork(url,headers){
  const source=url.searchParams.get('url')||'';let target;
@@ -180,7 +199,8 @@ export class HolderCache extends DurableObject {
   });
   if(quota)return fallback('budget-wait',quota);
   const indexed=await fetchBlockscoutCount(network,address,this.env.BLOCKSCOUT_API_KEY);
-  const result=indexed||await fetchHolderCount(network,address);
+  const goplusAccessToken=await goPlusAccessToken(this.env);
+  const result=indexed||await fetchHolderCount(network,address,{goplusAccessToken});
   if(result.holders!==null){
    this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,JSON.stringify(result),now,now+30*60000);return result;
   }

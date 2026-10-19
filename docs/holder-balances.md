@@ -27,7 +27,7 @@ Provider discovery on 2026-10-18:
 - Public Ethereum Blockscout returned 50 PEPE holders plus next_page_params, decimals=18, holders_count=595967, raw balances as decimal strings.
 - CORS response allows browser origin; advertised request limit 180.
 - Existing public Solana RPC rejected getTokenLargestAccounts with HTTP 403. GoPlus Solana token_security did return actual token-unit balances (account, token_account, balance); those records now supply a labelled partial sample.
-- Cloudflare deployment CLI is not authenticated. This public API path does not need Cloudflare credentials. No existing Worker secrets changed.
+- GoPlus's current API requires an access token. The Worker now supports its app-key/app-secret token flow using private `GOPLUS_APP_KEY` and `GOPLUS_APP_SECRET` secrets; those credentials still need to be configured in Cloudflare for Solana holder counts to return again.
 
 Sources:
 https://docs.blockscout.com/devs/apis/rest

@@ -4,6 +4,13 @@ Deploy this folder as a Cloudflare Worker. Add `INSIGHTX_API_KEY` as an encrypte
 runtime secret in Cloudflare, never a repository file or public build variable.
 The SQLite Durable Object uses the free plan and is created by the migration.
 
+For current GoPlus holder snapshots, add `GOPLUS_APP_KEY` and
+`GOPLUS_APP_SECRET` as encrypted runtime secrets. The Worker signs GoPlus's
+short-lived access-token request, caches the token in memory until shortly
+before expiry, and sends it only from the server. `GOPLUS_ACCESS_TOKEN` can be
+used instead when managing a pre-issued token; do not put any of these values
+in browser code or checked-in configuration.
+
 `GET /clusters?network=sol|eth|base&address=...` returns delayed cluster snapshots.
 `GET /health` reports configuration without revealing credentials.
 
