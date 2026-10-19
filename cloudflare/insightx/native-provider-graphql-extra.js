@@ -25,3 +25,14 @@ export async function loadQubicNative(read){
  for(const id of ids){const row=(await read(origin+'/v1/balances/'+id))?.balance;if(row?.id!==id||!integer(row.balance)||!Number.isSafeInteger(row.validForTick)||row.validForTick<tick-2000)throw Error('invalid-qubic-balance');const tokenBalance=Number(row.balance);if(!Number.isSafeInteger(tokenBalance)||tokenBalance<0)throw Error('invalid-qubic-balance');if(tokenBalance>0)records.push({id,tokenBalance});}
  return base(records,'Qubic official current native balances','current-balances-of-indexed-richlist-members',{membershipEpoch:list.epoch,indexTip:tick});
 }
+// Official mainnet endpoint and schema:
+// https://github.com/Concordium/concordium-scan/blob/main/frontend/.env.mainnet
+// https://github.com/Concordium/concordium-scan/blob/main/backend/schema.graphql
+export async function loadConcordiumNative(read,now=Date.now()){
+ const query='{blocks(first:1){nodes{blockHeight blockSlotTime}} accounts(first:100,sort:AMOUNT_DESC){nodes{address{asString} amount}}}',body=await read('https://api-ccdscan-fungy.mainnet.concordium.software/api/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query})});
+ const block=body?.data?.blocks?.nodes?.[0],rows=body?.data?.accounts?.nodes,indexTipAt=Date.parse(block?.blockSlotTime);
+ if(body?.errors||!Number.isSafeInteger(block?.blockHeight)||!Array.isArray(rows)||rows.length>100)throw Error('invalid-concordium-mainnet');
+ if(!Number.isSafeInteger(indexTipAt)||indexTipAt>now+300000||now-indexTipAt>=21600000)throw Error('native-index-delayed');
+ const seen=new Set(),records=[];for(const row of rows){const id=row.address?.asString;let raw=row.amount;if(typeof raw==='number'&&Number.isSafeInteger(raw)&&raw>=0)raw=String(raw);if(typeof id!=='string'||!/^[1-9A-HJ-NP-Za-km-z]{48,52}$/.test(id)||!integer(raw)||seen.has(id))throw Error('invalid-concordium-balance');seen.add(id);const tokenBalance=Number(raw)/1e6;if(!Number.isFinite(tokenBalance))throw Error('invalid-native-balance');if(tokenBalance>0)records.push({id,tokenBalance});}
+ return base(records,'Official CCDScan mainnet native balances','indexed-native-account-total-balances-including-locked-CCD-excludes-PLT',{indexTipAt});
+}

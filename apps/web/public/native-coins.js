@@ -1,5 +1,6 @@
 // Native currencies are identified separately from issued/wrapped tokens.
 export const NATIVE_COINS=Object.freeze({
+ CCD:{id:'concordium',chain:'concordium',symbol:'CCD',provider:'ccdscan-public',cacheSeconds:7200},
  NEO:{id:'neo',chain:'neo',symbol:'NEO',provider:'neo-coz',cacheSeconds:7200},
  XEC:{id:'ecash',chain:'ecash',symbol:'XEC',provider:'ecash-chronik',cacheSeconds:7200},
  GEODE:{id:'geode-chain',chain:'geode-chain',symbol:'GEODE',provider:'substrate-geode',cacheSeconds:7200},

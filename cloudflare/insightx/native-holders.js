@@ -15,7 +15,7 @@ import {loadVeChainNative} from './native-provider-vechain.js';
 import {loadPublicListNative} from './native-provider-public-lists.js';
 import {loadLedgerExtraNative} from './native-provider-ledger-extra.js';
 import {loadSubstrateNative} from './native-provider-substrate.js';
-import {loadMinaNative,loadQubicNative} from './native-provider-graphql-extra.js';
+import {loadMinaNative,loadQubicNative,loadConcordiumNative} from './native-provider-graphql-extra.js';
 import {loadExplorerExtraNative} from './native-provider-explorer-extra.js';
 const HOUR=3600000,DAY=24*HOUR,TTL=HOUR,MAX_AGE=6*HOUR,SCHEMA=3;
 const assets=new Map();for(const asset of Object.values(NATIVE_COINS))if(!asset.cacheKey&&!assets.has(asset.chain))assets.set(asset.chain,asset);
@@ -67,6 +67,7 @@ export class NativeHolderRelay{
    if(asset.symbol==='NEO')result=await loadNeoNative(read,now);
    else if(asset.symbol==='XEC')result=await loadEcashNative(read,now);
    else if(asset.provider.startsWith('explorer-'))result=await loadExplorerExtraNative(asset,read,now);
+   else if(asset.symbol==='CCD')result=await loadConcordiumNative(read,now);
    else if(asset.symbol==='MINA')result=await loadMinaNative(read,now);
    else if(asset.symbol==='QUBIC')result=await loadQubicNative(read,now);
    else if(asset.provider.startsWith('substrate-'))result=await loadSubstrateNative(asset,read,now);
