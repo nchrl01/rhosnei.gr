@@ -8,7 +8,7 @@ const HOUR=3600000,DAY=24*HOUR,TTL=HOUR,MAX_AGE=6*HOUR,SCHEMA=3;
 const assets=new Map(Object.values(NATIVE_COINS).map(asset=>[asset.chain,asset]));
 const empty=(network,state)=>({network,address:'native',state,records:[],totalHolders:null,complete:false,truncated:false,coverage:'top-holder-sample',native:true});
 const positive=x=>x!==null&&x!==''&&Number.isFinite(Number(x))&&Number(x)>0?Number(x):null;
-export const nativeLimits={cacheSeconds:TTL/1000,maxAgeSeconds:MAX_AGE/1000,dailyRequests:1800,providerDailyRequests:{sochain:300,blockscout:400,bitcore:400,'bnb-rpc':400,'bnb-1rpc':180,trongrid:160,coingecko:48,coinlore:48,default:120}};
+export const nativeLimits={cacheSeconds:TTL/1000,maxAgeSeconds:MAX_AGE/1000,dailyRequests:1800,providerDailyRequests:{sochain:300,blockscout:400,bitcore:300,'bnb-alchemy':180,trongrid:160,coingecko:48,coinlore:48,default:120}};
 const providerKey=asset=>asset.provider==='blockscout'?'blockscout':asset.provider;
 const safeCache=(cached,now)=>Array.isArray(cached?.records)&&cached.records.length&&Number.isSafeInteger(cached.fetchedAt)&&cached.fetchedAt<=now+1000&&now-cached.fetchedAt<MAX_AGE&&(cached.sourceAt==null||(Number.isSafeInteger(cached.sourceAt)&&cached.sourceAt<=now+300000&&now-cached.sourceAt<MAX_AGE));
 const retryAt=(response,now)=>{const value=response.headers.get('Retry-After');if(!value)return now+HOUR;const seconds=Number(value),date=Date.parse(value);return Math.max(now+HOUR,Number.isFinite(seconds)?now+seconds*1000:Number.isFinite(date)?date:now+HOUR);};
@@ -82,7 +82,7 @@ export class NativeHolderRelay{
     if(limited)this.cooldown(provider,next);
     await response.body?.cancel();throw Object.assign(Error('provider-http-'+response.status),{retryAt:next});}
    const data=await response.json(),rpcError=data?.error||data?.result?.error;
-   if(rpcError&&([429,-32005].includes(Number(rpcError.code||data.result?.error_code))||/rate.?limit|too many requests|slow.?down/i.test(String(rpcError.message||rpcError)))){const next=Date.now()+HOUR;this.cooldown(provider,next);throw Object.assign(Error('provider-rpc-rate-limit'),{retryAt:next});}
+   if(rpcError&&([429,-32005].includes(Number(rpcError.code||data.result?.error_code))||/rate.?limit|usage.?limit|daily.?limit|quota|too many requests|slow.?down/i.test(String(rpcError.message||rpcError)))){const next=/daily|for the day/i.test(String(rpcError.message||rpcError))?(Math.floor(Date.now()/DAY)+1)*DAY:Date.now()+HOUR;this.cooldown(provider,next);throw Object.assign(Error('provider-rpc-rate-limit'),{retryAt:next});}
    await new Promise(resolve=>setTimeout(resolve,300));return data;
  }
  cooldown(provider,until){this.sql.exec('INSERT INTO native_provider_cooldown VALUES(?,?) ON CONFLICT(provider) DO UPDATE SET until_ms=MAX(until_ms,excluded.until_ms)',provider,until);}

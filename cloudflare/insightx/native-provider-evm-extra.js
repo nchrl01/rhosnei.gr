@@ -2,15 +2,15 @@ const HOUR = 3600000;
 const evmAddress = value => typeof value === 'string' && /^0x[0-9a-f]{40}$/i.test(value) && !/^0x0{40}$/i.test(value);
 const base = (source, scope, coverage = 'top-holder-sample') => ({source, scope, coverage, totalHolders: null, supply: null, referencePrice: null, referenceMarketCap: null, sourceAt: null, indexCadence: 'provider-indexed'});
 
-// Official, independent public service: https://docs.1rpc.io/overview/supported-networks
-// https://docs.1rpc.io/using-the-web3-api/errors limits public users to 200 calls/day.
-// Six addresses plus discovery = at most seven calls/hour. Relay must cap this provider at 180/day.
-export async function loadBnbOneRpc(read, now = Date.now()) {
+// Official independent keyless service: https://www.alchemy.com/rpc/bnb
+// Six addresses plus discovery = at most seven calls/hour. Relay caps this provider at 180/day.
+// No runtime retries or fallback to providers that rejected access.
+export async function loadBnbAlchemy(read, now = Date.now()) {
   const rpc = async (method, params) => {
-    const body = await read('https://public.1rpc.io/bnb', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({jsonrpc: '2.0', id: 1, method, params})});
+    const body = await read('https://bnb-mainnet.g.alchemy.com/public', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({jsonrpc: '2.0', id: 1, method, params})});
     if (body?.error) {
-      const limited = [-32001, -32005, 429].includes(Number(body.error.code)) || /rate.?limit|usage limit|too many requests/i.test(String(body.error.message));
-      throw Object.assign(Error(limited ? 'native-rpc-rate-limit' : 'native-rpc-unavailable'), limited ? {retryAt: (Math.floor(Date.now() / (24 * HOUR)) + 1) * 24 * HOUR} : {});
+      const limited = [-32005, 429].includes(Number(body.error.code)) || /rate.?limit|usage limit|quota|too many requests/i.test(String(body.error.message));
+      throw Object.assign(Error(limited ? 'native-rpc-rate-limit' : 'native-rpc-unavailable'), limited ? {retryAt: Date.now() + HOUR} : {});
     }
     if (body?.id !== 1 || body?.jsonrpc !== '2.0' || body.result === undefined) throw Error('invalid-native-rpc');
     return body.result;
@@ -29,7 +29,7 @@ export async function loadBnbOneRpc(read, now = Date.now()) {
   }
   if (!records.length) throw Error('empty-native-sample');
   // Latest-state reads are sequential, not atomic at the discovery block.
-  return {...base('Automata 1RPC BNB balances', 'recent-transactors-current-native-balances', 'recent-address-sample'), records, discoveryBlock: Number.parseInt(block.number, 16), indexCadence: 'current-rpc-state'};
+  return {...base('Alchemy public BNB balances', 'recent-transactors-current-native-balances', 'recent-address-sample'), records, discoveryBlock: Number.parseInt(block.number, 16), indexCadence: 'current-rpc-state'};
 }
 
 // Each is a separately operated official mainnet explorer, with documented public APIs.
@@ -83,7 +83,7 @@ async function plasma(read) {
 }
 
 export async function fetchEvmExtraNativeBalances(asset, read, now = Date.now()) {
-  if (asset.id === 'binancecoin' && asset.chain === 'bsc' && asset.symbol === 'BNB' && asset.provider === 'bnb-1rpc') return loadBnbOneRpc(read, now);
+  if (asset.id === 'binancecoin' && asset.chain === 'bsc' && asset.symbol === 'BNB' && asset.provider === 'bnb-alchemy') return loadBnbAlchemy(read, now);
   if (asset.id === 'tron' && asset.chain === 'tron' && asset.symbol === 'TRX' && asset.provider === 'trongrid') return loadTronGridNative(read, now);
   if (asset.id === 'plasma' && asset.chain === 'plasma' && asset.symbol === 'XPL' && asset.provider === 'routescan') return plasma(read);
   const config = EXPLORERS[asset.symbol];

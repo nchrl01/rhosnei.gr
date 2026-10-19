@@ -47,11 +47,11 @@ async function bch(read, now) {
   const block = await read(BCH_API + '/block/tip');
   if (block?.chain !== 'BCH' || block.network !== 'mainnet' || !/^[0-9a-f]{64}$/i.test(block.hash) || !Number.isSafeInteger(block.height)) throw Error('invalid-native-block');
   freshBlock(Date.parse(block.time), now);
-  const coins = await read(BCH_API + '/block/' + block.hash + '/coins/12/1');
+  const coins = await read(BCH_API + '/block/' + block.hash + '/coins/8/1');
   if (!Array.isArray(coins?.outputs) || !Array.isArray(coins?.inputs)) throw Error('invalid-native-outputs');
   const ids = [...new Set([...coins.outputs.slice(0, 1000), ...coins.inputs.slice(0, 1000)]
     .map(row => typeof row?.address === 'string' ? row.address.replace(/^bitcoincash:/, '') : '')
-    .filter(id => /^[qp][023456789acdefghjklmnpqrstuvwxyz]{41,111}$/.test(id)))].slice(0, 12);
+    .filter(id => /^[qp][023456789acdefghjklmnpqrstuvwxyz]{41,111}$/.test(id)))].slice(0, 8);
   const records = [];
   for (const id of ids) {
     const balance = await read(BCH_API + '/address/' + id + '/balance');

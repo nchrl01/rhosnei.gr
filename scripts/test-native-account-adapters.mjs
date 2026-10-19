@@ -59,10 +59,28 @@ test('HBAR converts tinybars and excludes zero balances without claiming a total
  assert.deepEqual(result.records,[{id:'0.0.1',tokenBalance:1.23456789}]);assert.equal(result.totalHolders,null);
 });
 
-test('ALGO matches balances to the indexed round and excludes closed accounts',async()=>{
+test('ALGO samples real recent senders and validates current balance rounds',async()=>{
  let calls=0;const id='A'.repeat(58);
- const result=await loadAlgorandNative(async()=>++calls===1?{'current-round':123,accounts:[{address:id,amount:1200000,round:123},{address:'B'.repeat(58),amount:1000000,round:123,deleted:true}]}:{round:123,timestamp:now/1000},now);
- assert.deepEqual(result.records,[{id,tokenBalance:1.2}]);assert.equal(result.sourceRound,123);assert.equal(calls,2);
+ const result=await loadAlgorandNative(async()=>{calls++;return calls===1?{'last-round':126}:calls===2?{block:{rnd:123,ts:now/1000,gen:'mainnet-v1.0',txns:[{txn:{snd:id}},{txn:{snd:'B'.repeat(58)}}]}}:calls===3?{address:id,amount:1200000,round:126}:{address:'B'.repeat(58),amount:0,round:127};},now);
+ assert.deepEqual(result.records,[{id,tokenBalance:1.2}]);assert.equal(result.sourceRound,123);assert.equal(calls,4);assert.equal(result.coverage,'recent-account-sample');assert.equal(result.balanceRoundMin,126);assert.equal(result.totalHolders,null);
  let wrongCalls=0;
- await assert.rejects(()=>loadAlgorandNative(async()=>++wrongCalls===1?{'current-round':123,accounts:[]}:{round:124,timestamp:now/1000},now),/invalid-algorand-round/);
+ await assert.rejects(()=>loadAlgorandNative(async()=>++wrongCalls===1?{'last-round':126}:{block:{rnd:124,ts:now/1000}},now),/invalid-algorand-round/);
+ let oldCalls=0;
+ await assert.rejects(()=>loadAlgorandNative(async()=>++oldCalls===1?{'last-round':126}:oldCalls===2?{block:{rnd:123,ts:now/1000,gen:'mainnet-v1.0',txns:[{txn:{snd:id}}]}}:{address:id,amount:1200000,round:120},now),/invalid-algorand-account-round/);
+});
+
+test('ALGO stops immediately at quota failure and keeps only earlier verified balances',async()=>{
+ const ids=['A','B','C'].map(x=>x.repeat(58));let calls=0;
+ const value=await loadAlgorandNative(async()=>{
+  calls++;
+  if(calls===1)return {'last-round':126};
+  if(calls===2)return {block:{rnd:123,ts:now/1000,gen:'mainnet-v1.0',txns:ids.map(snd=>({txn:{snd}}))}};
+  if(calls===3)return {address:ids[0],amount:2000000,round:127};
+  throw Error('provider-quota-429');
+ },now);
+ assert.equal(calls,4);assert.deepEqual(value.records,[{id:ids[0],tokenBalance:2}]);assert.equal(value.balanceRoundMin,127);assert.equal(value.balanceRoundMax,127);
+ assert.equal(value.sourceAt,now);assert.equal(value.balanceBasis,'current-balances-after-reference-block');
+ let staleCalls=0;
+ await assert.rejects(()=>loadAlgorandNative(async()=>++staleCalls===1?{'last-round':126}:{block:{rnd:123,ts:(now-7*3600000)/1000,gen:'mainnet-v1.0',txns:[]}},now),/invalid-algorand-round/);
+ assert.equal(staleCalls,2);
 });

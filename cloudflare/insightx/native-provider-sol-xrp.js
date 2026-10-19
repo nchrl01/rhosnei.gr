@@ -97,21 +97,34 @@ export async function loadHederaNative(read,now=Date.now()){
  return {...sample,records,source:'Hedera public mirror balances',scope:'public-account-balances',coverage:'ledger-account-sample',sourceAt,indexCadence:'provider-indexed'};
 }
 
-// Nodely's free public indexer is explicitly available for production backends.
-// https://nodely.io/docs/free/start
+// dRPC publishes a public Algorand node endpoint. It has no indexer account-list
+// route: select three actual recent senders and request their current balances.
+// Five requests maximum per refresh, cached centrally for an hour.
+// https://drpc.org/chainlist/algorand-mainnet-rpc
 export async function loadAlgorandNative(read,now=Date.now()){
- const endpoint='https://mainnet-idx.4160.nodely.dev';
- const body=await read(endpoint+'/v2/accounts?limit=100&currency-greater-than=0&include-all=false');
- const round=body?.['current-round'];
- if(!Array.isArray(body?.accounts)||!Number.isSafeInteger(round)||round<=0)throw Error('invalid-algorand-accounts');
- const block=await read(endpoint+'/v2/blocks/'+round),sourceAt=Number(block?.timestamp)*1000;
- if(block?.round!==round||!fresh(sourceAt,now))throw Error('invalid-algorand-round');
- const seen=new Set(),records=[];
- for(const row of body.accounts.slice(0,MAX_SAMPLE)){
-  const id=row.address,tokenBalance=amount(row.amount,6);
-  if(typeof id!=='string'||!/^[A-Z2-7]{58}$/.test(id)||row.deleted===true||row.round!==round||!tokenBalance||seen.has(id))continue;
-  seen.add(id);records.push({id,tokenBalance});
+ const endpoint='https://algorand.drpc.org';
+ const status=await read(endpoint+'/v2/status'),latest=status?.['last-round'];
+ if(!Number.isSafeInteger(latest)||latest<4||status?.['stopped-at-unsupported-round']===true)throw Error('invalid-algorand-status');
+ // Different public backends can be a round apart; avoid requesting a block
+ // that one has not indexed yet. Algorand rounds have immediate finality.
+ const round=latest-3,body=await read(endpoint+'/v2/blocks/'+round+'?format=json'),block=body?.block;
+ const sourceAt=Number(block?.ts)*1000;
+ if(block?.rnd!==round||block?.gen!=='mainnet-v1.0'||!fresh(sourceAt,now)||!Array.isArray(block.txns))throw Error('invalid-algorand-round');
+ const valid=id=>typeof id==='string'&&/^[A-Z2-7]{58}$/.test(id);
+ const ids=[...new Set(block.txns.map(row=>row.txn?.snd).filter(valid))].slice(0,3);
+ const records=[],balanceRounds=[];
+ for(const id of ids){
+  let row;
+  try{row=await read(endpoint+'/v2/accounts/'+id);}catch(error){
+   // Keep already verified balances when a later public lookup times out or
+   // reaches its quota. Stop here; never retry through another endpoint.
+   if(records.length)break;throw error;
+  }
+  const tokenBalance=amount(row?.amount,6);
+  if(row?.address!==id||!Number.isSafeInteger(row.round)||row.round<round||row.round>round+100)throw Error('invalid-algorand-account-round');
+  if(row.deleted===true||!tokenBalance)continue;
+  records.push({id,tokenBalance});balanceRounds.push(row.round);
  }
  if(!records.length)throw Error('empty-algorand-account-sample');
- return {...sample,records,source:'Nodely Algorand account balances',scope:'public-account-balances',coverage:'ledger-account-sample',sourceAt,sourceRound:round,indexCadence:'indexed-round'};
+ return {...sample,records,source:'dRPC Algorand current account balances',scope:'recent-block-participants',coverage:'recent-account-sample',sourceAt,sourceRound:round,balanceRoundMin:Math.min(...balanceRounds),balanceRoundMax:Math.max(...balanceRounds),indexCadence:'current-round',balanceBasis:'current-balances-after-reference-block'};
 }

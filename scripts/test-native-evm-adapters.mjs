@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {fetchEvmExtraNativeBalances, loadBnbOneRpc, loadTronGridNative} from '../cloudflare/insightx/native-provider-evm-extra.js';
+import {fetchEvmExtraNativeBalances, loadBnbAlchemy, loadTronGridNative} from '../cloudflare/insightx/native-provider-evm-extra.js';
 
 const now = 1792424400000, hour = 3600000;
 const evm = n => '0x' + n.toString(16).padStart(40, '0');
@@ -21,8 +21,8 @@ test('BNB caps discovery at six unique senders and seven reads, using current ba
   let calls = 0;
   const block = bnbBlock();
   block.transactions.unshift({from: evm(1)}, {from: 'invalid'}, {from: evm(0)});
-  const result = await loadBnbOneRpc(async (url, options) => {
-    assert.equal(url, 'https://public.1rpc.io/bnb');
+  const result = await loadBnbAlchemy(async (url, options) => {
+    assert.equal(url, 'https://bnb-mainnet.g.alchemy.com/public');
     const request = JSON.parse(options.body); calls++;
     if (calls === 1) {
       assert.equal(request.method, 'eth_getBlockByNumber');
@@ -41,23 +41,23 @@ test('BNB caps discovery at six unique senders and seven reads, using current ba
 test('BNB rejects all-zero samples and malformed balance responses', async () => {
   for (const balance of ['0x0', '0xZZ', null, 100, '0x' + 'f'.repeat(65)]) {
     let calls = 0;
-    await assert.rejects(() => loadBnbOneRpc(async () => rpcResult(++calls === 1 ? bnbBlock() : balance), now), /empty-native-sample|invalid-native-balance/);
+    await assert.rejects(() => loadBnbAlchemy(async () => rpcResult(++calls === 1 ? bnbBlock() : balance), now), /empty-native-sample|invalid-native-balance/);
     assert.ok(calls <= 7);
   }
 });
 
 test('BNB rejects stale discovery and never reads invalid senders', async () => {
   let calls = 0;
-  await assert.rejects(() => loadBnbOneRpc(async () => {calls++; return rpcResult(bnbBlock({timestamp: '0x' + ((now - 7 * hour) / 1000).toString(16)}));}, now), /native-index-delayed/);
+  await assert.rejects(() => loadBnbAlchemy(async () => {calls++; return rpcResult(bnbBlock({timestamp: '0x' + ((now - 7 * hour) / 1000).toString(16)}));}, now), /native-index-delayed/);
   assert.equal(calls, 1);
   calls = 0;
-  await assert.rejects(() => loadBnbOneRpc(async () => {calls++; return rpcResult(bnbBlock({transactions: [{from: evm(0)}, {from: 'wrong'}]}));}, now), /empty-native-sample/);
+  await assert.rejects(() => loadBnbAlchemy(async () => {calls++; return rpcResult(bnbBlock({transactions: [{from: evm(0)}, {from: 'wrong'}]}));}, now), /empty-native-sample/);
   assert.equal(calls, 1);
 });
 
-test('BNB stops immediately on public daily-quota errors', async () => {
+test('BNB stops immediately on public rate-limit errors', async () => {
   let calls = 0;
-  await assert.rejects(() => loadBnbOneRpc(async () => {calls++; return {jsonrpc: '2.0', id: 1, error: {code: -32001, message: 'Usage limit reached'}};}, now), error => error.message === 'native-rpc-rate-limit' && error.retryAt > Date.now());
+  await assert.rejects(() => loadBnbAlchemy(async () => {calls++; return {jsonrpc: '2.0', id: 1, error: {code: 429, message: 'Rate limit reached'}};}, now), error => error.message === 'native-rpc-rate-limit' && error.retryAt > Date.now());
   assert.equal(calls, 1);
 });
 

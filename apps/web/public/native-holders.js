@@ -1,4 +1,4 @@
-import {nativeCoin} from './native-coins.js?v=354';
+import {nativeCoin} from './native-coins.js?v=355';
 const RELAY='https://upic-insightx.nchrl01.workers.dev/native-holders',MAX_AGE=6*3600000;
 const empty=()=>({state:'unavailable',source:'Native address index',records:[],weight:0,holders:null,totalHolders:null,complete:false,native:true});
 export function createNativeHolders({onChange=()=>{}}={}){

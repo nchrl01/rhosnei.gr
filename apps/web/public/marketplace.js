@@ -1,5 +1,5 @@
-import {catalogueNative} from './native-coins.js?v=354';
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=354';
+import {catalogueNative} from './native-coins.js?v=355';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=355';
 import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=335';
 import {loadCoinCatalogue,coinPlayerURL,coinOnNetwork,rememberRecentCoin} from './coin-catalogue.js?v=335';
 import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=350';
