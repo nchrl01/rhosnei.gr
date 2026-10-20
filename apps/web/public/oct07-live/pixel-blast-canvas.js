@@ -1,3 +1,4 @@
+import {originalArtworkPalette} from '../upic-artwork-palette.js';
 import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=214';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
@@ -21,7 +22,7 @@ function noise(x,y,z){
 // Prepare once when coin artwork changes, using the same image levels and
 // Bayer grain as the coin avatar. Dark ink becomes light on the black stage.
 export function preparePixelIdentity(source){
- const width=Math.floor(Number(source?.width)),height=Math.floor(Number(source?.height)),pixels=source?.pixels;
+ const width=Math.floor(Number(source?.width)),height=Math.floor(Number(source?.height)),pixels=source?.originalPixels||source?.pixels;
  if(!(width>0&&height>0)||!pixels||pixels.length<width*height*4)return null;
  const scale=Math.min(1,256/Math.max(width,height)),w=Math.max(1,Math.round(width*scale)),h=Math.max(1,Math.round(height*scale));
  let rgba=pixels;
@@ -45,7 +46,7 @@ export function preparePixelIdentity(source){
   }
   sizeData[y*w+x]=sum/n;
  }
- return {width:w,height:h,data,sizeData};
+ return {width:w,height:h,data,sizeData,rgba,palette:originalArtworkPalette(rgba,{includeNeutrals:true})};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=.82*Math.min(w,h),x=fx/side,y=fy/side;
@@ -193,7 +194,19 @@ export function createPixelBlastCanvas(host){
    let occupied=0;
    for(let n=0;n<counts.length;n++)if(counts[n]){
     occupied++;const ink=(params.inkColor??1)*255,i=n*4;
-    output.data[i]=output.data[i+1]=output.data[i+2]=ink;output.data[i+3]=255;
+    let rgb=[1,1,1];
+    const color=clamp(params.artworkColor||0);
+    if(color&&identityMask?.rgba){
+     const side=.82*Math.min(w,h),u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
+     if(u>=0&&u<1&&v>=0&&v<1){
+      const m=(Math.floor(v*identityMask.height)*identityMask.width+Math.floor(u*identityMask.width))*4;
+      const source=identityMask.rgba,original=[source[m]/255,source[m+1]/255,source[m+2]/255];
+      const distance=c=>original.reduce((sum,x,j)=>sum+(x-c[j])**2,0),palette=identityMask.palette;
+      const primary=distance(palette[0])<distance(palette[1])?palette[0]:palette[1],peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
+      rgb=primary.map(c=>mix(1,peak>.001?c/peak*level:.4,color*source[m+3]/255));
+     }
+    }
+    output.data[i]=ink*rgb[0];output.data[i+1]=ink*rgb[1];output.data[i+2]=ink*rgb[2];output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;
    layerContext.putImageData(output,0,0);ctx.drawImage(layerCanvas,0,0);
