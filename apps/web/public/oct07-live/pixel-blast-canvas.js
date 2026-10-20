@@ -34,7 +34,18 @@ export function preparePixelIdentity(source){
  }
  const dither=ditherPixels(rgba,w,h),data=new Uint8Array(w*h);
  for(let n=0;n<data.length;n++)data[n]=dither[n*4]<128?dither[n*4+3]:0;
- return {width:w,height:h,data};
+ // A separate smooth artwork mask controls size only; selection keeps its
+ // original dither mask so changing liquidity cannot move or remove marks.
+ const sizeData=new Float32Array(w*h);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+  let sum=0,n=0;
+  for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+   const xx=x+dx,yy=y+dy;if(xx<0||yy<0||xx>=w||yy>=h)continue;
+   sum+=data[yy*w+xx]/255;n++;
+  }
+  sizeData[y*w+x]=sum/n;
+ }
+ return {width:w,height:h,data,sizeData};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=.82*Math.min(w,h),x=fx/side,y=fy/side;
@@ -61,7 +72,8 @@ export function createPixelBlastCanvas(host){
    if(!preserve)ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
    if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
    counts.fill(0);output.data.fill(0);
-   const cellSize=params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
+   const requested=Math.max(0,Math.round(params.holderCount||0));
+   const cellSize=requested?Math.min(params.cellSize,Math.min(viewWidth,viewHeight)/Math.ceil(Math.sqrt(requested*4))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const pattern=battlePattern(params.patternKey??seed,time);
    const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
@@ -102,7 +114,7 @@ export function createPixelBlastCanvas(host){
    const markDirection=Number(params.markDirection)||0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
-   let previousInk=-1;
+   let previousInk=-1;const candidates=[];
    // Share the shader's integer lattice and bottom-up origin. Cell ownership
    // and mark bounds agree even when either canvas dimension is odd.
    for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
@@ -111,10 +123,18 @@ export function createPixelBlastCanvas(host){
     const centerX=originX+fx*ratio,centerY=originY+fy*ratio;
     const edge=Math.min(centerX/w,1-centerX/w,centerY/h,1-centerY/h);
     const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
-    const taper=edgeT*edgeT*(3-2*edgeT);
-    if(edge<=0||taper<=.015)continue;
+    let taper=edgeT*edgeT*(3-2*edgeT);
+    if(requested&&params.edgeFade>0){
+     // Blend all four edges instead of selecting the nearest one (square rings).
+     const smooth=t=>{t=clamp(t);return t*t*(3-2*t)};
+     const nx=centerX/w,ny=centerY/h;
+     const variation=.9+.18*noise(nx*4+offset,ny*4+offset*.31,0);
+     const reach=params.edgeFade*variation;
+     taper=smooth(nx/reach)*smooth((1-nx)/reach)*smooth(ny/reach)*smooth((1-ny)/reach);
+    }
+    if(edge<=0||(!requested&&taper<=.015))continue;
     // Sparse stable perimeter: shrink and remove cells rather than draw a rim.
-    if(hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
+    if(!requested&&hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
     // small liquid movement survives without moving the square lattice.
     const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy),tx=fract(sx),ty=fract(sy);
@@ -127,13 +147,35 @@ export function createPixelBlastCanvas(host){
      const imageFeed=mix(-.05,1.05,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
-    if(feed+b8(px,py)-.5<.5)continue;
+    if(!requested&&feed+b8(px,py)-.5<.5)continue;
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
     const localSize=1; // Wallet-driven jitter owns size variation.
-    const artworkSize=identityMask?identityInk(identityMask,fx,fy,cssWidth,cssHeight,0,offset,{...params,identityMotion:0}):1;
-    const dotSize=(1+Math.max(0,params.dotSize-1)*artworkSize)*Math.sqrt(pixelPresence);
-    const diameter=Math.max(1,Math.round(dotSize*ratio));
+    // Artwork-aligned liquidity growth. Never use the rectangular edge taper
+    // to size these marks; it belongs only to the unchanged selection score.
+    let artworkSize=1;
+    if(requested&&identityMask?.sizeData){
+     const side=.82*Math.min(cssWidth,cssHeight),u=.5+fx/side,v=.5-fy/side;
+     artworkSize=0;
+     if(u>=0&&v>=0&&u<1&&v<1){
+      const x=u*(identityMask.width-1),y=v*(identityMask.height-1),x0=Math.floor(x),y0=Math.floor(y);
+      const x1=Math.min(x0+1,identityMask.width-1),y1=Math.min(y0+1,identityMask.height-1),d=identityMask.sizeData,W=identityMask.width;
+      artworkSize=mix(mix(d[y0*W+x0],d[y0*W+x1],x-x0),mix(d[y1*W+x0],d[y1*W+x1],x-x0),y-y0);
+     }
+    }
+    const dotSize=requested?1+Math.max(0,params.dotSize-1)*artworkSize:
+      (params.dotSize*localSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
+    const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
+    // A stable continuous threshold avoids Bayer tiles turning into solid blocks
+    // when selecting an exact population. Pattern motion still drives feed.
+    const threshold=hash(px*73.17+py*193.41+seed*.37);
+    const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
+    candidates.push({centerX,centerY,diameter,score});
+   }
+   if(requested)candidates.sort((a,b)=>b.score-a.score);
+   const selected=requested?candidates.slice(0,requested):candidates;
+   canvas.dataset.markCount=String(selected.length);
+   for(const {centerX,centerY,diameter} of selected){
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
@@ -141,9 +183,9 @@ export function createPixelBlastCanvas(host){
     const directed=diameter>=3&&markDirection!==0;
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
      const dx=x-left+.5-radius,dy=y-top+.5-radius;
-     const inside=!directed?dx*dx+dy*dy<=radius*radius
-      :markDirection>0?Math.min(Math.abs(dx),Math.abs(dy))<=halfStroke
-      :Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678<=halfStroke;
+     const weights=params.shapeWeights||(markDirection>0?[0,1,0]:markDirection<0?[0,0,1]:[1,0,0]);
+     const inside=diameter<3?dx*dx+dy*dy<=radius*radius:
+      (Math.hypot(dx,dy)-radius)*weights[0]+(Math.min(Math.abs(dx),Math.abs(dy))-halfStroke)*weights[1]+(Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678-halfStroke)*weights[2]<=0;
      if(!inside)continue;
      const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);
     }
