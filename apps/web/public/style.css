@@ -653,3 +653,5 @@ body:not(.advanced-view):not([data-playback=replay]) .coin-live-readings>div:fir
 body:not(.advanced-view) .coin-live-readings{grid-template-columns:minmax(0,1fr)}
 body:not(.advanced-view) .chart-panel{margin-top:16px}
 body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
+
+.instrument>#advanced-view{margin-top:24px;margin-bottom:0}.instrument>#advanced-market-source{margin:16px 0;justify-content:flex-start}.instrument>#advanced-diagnostics{margin:12px 0}
