@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=380';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=382';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=380';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -111,10 +111,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  }
  function size(){
   const box=host.getBoundingClientRect();
-  // The CSS host dimensions are independent of the marks. Fullscreen owns its
-  // outer rectangle, while the renderer keeps one uncropped square inside it.
-  const movingSide=parseFloat(host.style.getPropertyValue('--visual-motion-side'));
-  if(host.classList.contains('is-expanded')){const style=getComputedStyle(host);width=Math.max(1,box.width-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0));height=Math.max(1,box.height-(parseFloat(style.paddingTop)||0)-(parseFloat(style.paddingBottom)||0));}else width=height=Number.isFinite(movingSide)?movingSide:referenceSide(box);
+  // Both player and expanded view use the host's full content rectangle.
+  const style=getComputedStyle(host);
+  width=Math.max(1,box.width-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0));
+  height=Math.max(1,box.height-(parseFloat(style.paddingTop)||0)-(parseFloat(style.paddingBottom)||0));
   const pixels=width.toFixed(3)+'px';
   if(host.style.getPropertyValue('--visual-reference-side')!==pixels)host.style.setProperty('--visual-reference-side',pixels);
  }
