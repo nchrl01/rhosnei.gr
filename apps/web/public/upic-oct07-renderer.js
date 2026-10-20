@@ -6,6 +6,7 @@ const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const renderer=createPixelBlastCanvas(host),canvas=renderer.canvas;
  Object.assign(canvas.style,{position:'absolute',width:'100%',height:'100%',inset:'0'});
+ let frameMs=0,frameCount=0,lastFrameAt=0,frameInterval=0;
  let shapeDirection=null,shapeStarted=0,shapeFrom=[1,0,0],shapeWeights=[1,0,0];
  const shapeFor=d=>d>0?[0,1,0]:d<0?[0,0,1]:[1,0,0];
  let image=null,stats={markCount:0,shapeWeights:[1,0,0],sizeTransition:false,positionTransition:false};
@@ -31,7 +32,13 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    if(shapeStarted)shapeWeights=shapeFrom.map((v,i)=>v+(shapeFor(shapeDirection)[i]-v)*blend);
    if(direction!==shapeDirection){shapeFrom=shapeWeights.slice();shapeDirection=direction;shapeStarted=now;}
    const params={...mapped,fullscreen:!!host.closest('.audio-visualizer'),identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:direction,shapeWeights,artworkColor,inkColor};
+   const frameStarted=performance.now();
    renderer.render({width:renderWidth,height:renderHeight,time,eventTime:time,liquidTime:time,seed,params});
+   const duration=performance.now()-frameStarted;
+   frameMs=frameCount?frameMs*.9+duration*.1:duration;
+   if(lastFrameAt)frameInterval=frameInterval?frameInterval*.9+(frameStarted-lastFrameAt)*.1:frameStarted-lastFrameAt;
+   lastFrameAt=frameStarted;frameCount++;
+   if(frameCount%15===0)Object.assign(canvas.dataset,{renderMs:frameMs.toFixed(1),renderFps:frameInterval?(1000/frameInterval).toFixed(1):'0'});
    stats={...stats,shapeWeights:shapeWeights.slice(),markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),renderer:'october7-pattern-count',reconstructed:Boolean(history?.length)};
   },
   snapshot(){return {...stats}},clear(){renderer.clear()},close(){renderer.close()}
