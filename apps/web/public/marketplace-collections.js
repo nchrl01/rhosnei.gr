@@ -11,7 +11,7 @@ function syncSort(){const defaultLabel=collection?'Collection order':query?'Rele
 const form=document.getElementById('marketplace-form'),submit=document.getElementById('marketplace-submit'),feedback=document.getElementById('marketplace-feedback'),loaderHost=document.getElementById('marketplace-loader');
 bindSearchField(search,document.getElementById('address-label'));
 let loader,loadingState=null;
-import('./vendor/ui/upic-ui.js?v=235').then(module=>{loader=module.mountLoader(loaderHost);loaderHost.hidden=!loadingState;loader.update(loadingState);}).catch(()=>{});
+import('./vendor/ui/upic-ui.js?v=391').then(module=>{loader=module.mountLoader(loaderHost);loaderHost.hidden=!loadingState;loader.update(loadingState);}).catch(()=>{});
 function searchBusy(value){busy=value;syncSort();loaderHost.hidden=!value;title.hidden=value;empty.querySelector('img').hidden=value;empty.querySelector('a').hidden=value;submit.disabled=value;submit.textContent=value?'Searching…':'Search';submit.setAttribute('aria-busy',String(value));form.setAttribute('aria-busy',String(value));grid.setAttribute('aria-busy',String(value));loadingState=value?{status:'working',label:collection?'Loading NFTs':'Loading collections',startedAt:performance.now(),operation:String(revision)}:null;loader?.update(loadingState);}
 let chain='all',next='',busy=false,controller,revision=0,rows=[],collection='',query='';
 function safeURL(value,host){try{const u=new URL(value);return u.protocol==='https:'&&(!host||u.hostname===host)?u.href:'';}catch{return '';}}

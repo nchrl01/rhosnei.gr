@@ -13,13 +13,16 @@ export function createTransportIndicator(host) {
   host.replaceChildren(dot, label);
   let previous = '', hasPlayed = false;
 
-  function render({playing = false, audioRunning = false, replay = false,
+  function render({playing = false, audioRunning = false, replay = false, marketReady = false,
     seeking = false, ended = false, streamConnected = false,
     streamKind = 'snapshot', fresh = 0} = {}) {
     let text, kind = 'idle', pulse = false, detail;
     const running = playing && audioRunning;
     if (playing) hasPlayed = true;
-    if (replay) {
+    if (!marketReady) {
+      text = 'Loading coin…';
+      detail = 'Waiting for market data.';
+    } else if (replay) {
       if (ended) {
         text = 'Replay ended';
         detail = 'Replay finished.';

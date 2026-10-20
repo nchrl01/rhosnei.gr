@@ -79,6 +79,8 @@ export function startTrending(onPick,onLoading=()=>{}){
  let hovered=false,focused=false,dragging=false,pending=null,failures=0;
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
  const items=new Map();
+ const canDrag=()=>items.size>0&&width>0&&(!reduced.matches||list.scrollWidth>list.clientWidth+1);
+ function syncDraggable(){const enabled=canDrag();list.classList.toggle('is-draggable',enabled);list.tabIndex=enabled?0:-1;}
  const key=item=>item.chain+':'+(/^0x/i.test(item.address)?item.address.toLowerCase():item.address);
  function card(item,duplicate=false){
   const article=node('article',null,'trending-card');article.dataset.tokenKey=key(item);article.dataset.rank=String(item.rank);
@@ -94,9 +96,11 @@ export function startTrending(onPick,onLoading=()=>{}){
  }
  const track=node('div',null,'ticker-track'),empty=node('span',null,'trending-empty');empty.setAttribute('role','status');empty.setAttribute('aria-live','polite');list.replaceChildren(track,empty);
  const loader=node('span',null,'component-loader trending-component-loader');loader.id='trending-loader';loader.hidden=true;list.append(loader);
+ syncDraggable();
  function loading(status,label){onLoading({status:items.size?null:status,label,host:loader,operation:generation});}
  function placeholder(message,busy=false){empty.hidden=items.size>0;empty.textContent=message;list.setAttribute('aria-busy',String(busy));empty.classList.toggle('is-loading',busy);}
- const resize=new ResizeObserver(()=>{width=track.firstElementChild?.getBoundingClientRect().width||0;offset=width?offset%width:0;});resize.observe(list);
+ const resize=new ResizeObserver(()=>{width=track.firstElementChild?.getBoundingClientRect().width||0;offset=width?offset%width:0;syncDraggable();});resize.observe(list);
+ reduced.addEventListener('change',syncDraggable);
  function anchor(){
   const group=track.firstElementChild;if(!group)return null;const left=group.getBoundingClientRect().left;
   for(const card of group.children){const rect=card.getBoundingClientRect(),start=rect.left-left;const position=reduced.matches?list.scrollLeft:offset;if(start<=position&&start+rect.width>position)return {key:card.dataset.tokenKey,within:position-start};}
@@ -112,6 +116,7 @@ export function startTrending(onPick,onLoading=()=>{}){
   if(held){const match=[...group.children].find(card=>card.dataset.tokenKey===held.key);if(match){offset=match.getBoundingClientRect().left-group.getBoundingClientRect().left+Math.min(held.within,match.getBoundingClientRect().width);}}
   offset=width?offset%width:0;track.style.transform=reduced.matches?'none':`translateX(${-offset}px)`;
   if(reduced.matches)list.scrollLeft=offset;
+  syncDraggable();
   if(focusKey){const target=[...group.children].find(el=>el.dataset.tokenKey===focusKey)?.querySelector('button');(target||list).focus({preventScroll:true});}
  }
  list.addEventListener('pointerenter',()=>{hovered=true;});list.addEventListener('pointerleave',()=>{hovered=false;});
@@ -125,7 +130,7 @@ export function startTrending(onPick,onLoading=()=>{}){
   track.style.transform=`translateX(${-offset}px)`;
  }
  list.addEventListener('pointerdown',e=>{
-  if(e.button!==0||!width)return;
+  if(e.button!==0||!canDrag())return;
   pointer={id:e.pointerId,x:e.clientX,y:e.clientY,last:e.clientX};suppressClick=false;dragging=true;
  });
  list.addEventListener('pointermove',e=>{
@@ -149,11 +154,11 @@ export function startTrending(onPick,onLoading=()=>{}){
  list.addEventListener('click',e=>{if(suppressClick){e.preventDefault();e.stopPropagation();suppressClick=false;}},true);
  list.addEventListener('dragstart',e=>e.preventDefault());
  list.addEventListener('wheel',e=>{
-  if(!width)return;
+  if(!canDrag())return;
   const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
   if(!delta)return;e.preventDefault();moveBy(delta*(e.deltaMode===1?16:e.deltaMode===2?list.clientWidth:1));
  },{passive:false});
- list.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)&&width){e.preventDefault();moveBy(e.key==='ArrowRight'?180:-180);}});
+ list.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight'].includes(e.key)&&canDrag()){e.preventDefault();moveBy(e.key==='ArrowRight'?180:-180);}});
  function animate(now){
   const elapsed=lastFrame?Math.min(100,now-lastFrame):0;lastFrame=now;
   if(!document.hidden&&width&&!hovered&&!focused&&!dragging&&now>=manualUntil&&!reduced.matches)offset=(offset+elapsed*.035)%width;
@@ -214,6 +219,7 @@ export function startTrending(onPick,onLoading=()=>{}){
   if(pointer&&list.hasPointerCapture(pointer.id))list.releasePointerCapture(pointer.id);
   pointer=null;dragging=false;suppressClick=false;pending=null;manualUntil=0;list.classList.remove('is-dragging');
   items.clear();track.replaceChildren();offset=0;width=0;list.scrollLeft=0;track.style.transform='none';updated=null;failures=0;
+  syncDraggable();
   duration=next;periodLabel.textContent=duration.toUpperCase();
   const following=periods[(periods.indexOf(duration)+1)%periods.length];
   cycleButton.setAttribute('aria-label','Trending '+periodNames[duration]+'. Switch to '+periodNames[following]);

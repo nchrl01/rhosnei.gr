@@ -9,7 +9,7 @@ import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
-import {createUIControls} from './ui-controls.js?v=281';
+import {createUIControls} from './ui-controls.js?v=391';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=359';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
@@ -21,11 +21,11 @@ import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
 import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
-import {createTransportIndicator} from './transport-indicator.js?v=373';
+import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=390';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=391';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=373';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=391';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -40,7 +40,7 @@ import {subscribeEvm} from './evm.js?v=39';
 import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
-import {startTrending,geckoPoolMarket} from './trending.js?v=345';
+import {startTrending,geckoPoolMarket} from './trending.js?v=391';
 import {MarketChart} from './chart.js?v=390';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
@@ -336,7 +336,7 @@ function updateReplayUI(m){
  $('replay-speed').classList.toggle('is-live',!active);
  $('replay-speed').inert=!active;
  $('replay-speed').setAttribute('aria-hidden',String(!active));
- transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
+ transportIndicator.render({marketReady:!!market,playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active||!!liveConnection;
  $('replay-play').disabled=!market||pendingHistoryReplay;
  $('replay-restart').hidden=!active;
@@ -347,7 +347,7 @@ function updateReplayUI(m){
  $('replay-live').setAttribute('aria-pressed',String(!active));
  $('replay-play').setAttribute('aria-pressed',String(active));
  const hint=$('replay-hint');
- if(hint){const text=!(chart.renderedBars?.length)?'Loading history · live playback is available.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the timeline to explore another moment.'):'Choose a moment on the timeline to replay.';if(hint.textContent!==text)hint.textContent=text;}
+ if(hint){hint.hidden=!market||!(chart.renderedBars?.length);const text=hint.hidden?'':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the timeline to explore another moment.'):'Choose a moment on the timeline to replay.';if(hint.textContent!==text)hint.textContent=text;}
 
  const rate=Number(replay.state.speed)||1;
  $('replay-state').textContent=active?(replay.state.speed==='jump'?'· Jump':'· '+rate+'×'):'';
@@ -542,25 +542,30 @@ async function closeAudio(){
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
  if(runtime)await runtime.close();await context?.close();
 }
+function updatePlayAvailability(active=playing){
+ const button=$('play'),waiting=!market,interrupted=active&&ctx?.state!=='running';
+ button.disabled=starting||waiting;
+ button.title=waiting?'Loading coin':interrupted?'Resume':active?'Pause':'Play';
+ button.setAttribute('aria-label',waiting?'Loading coin':interrupted?'Resume interrupted audio':active?'Pause experience':'Play audiovisual experience');
+ button.setAttribute('aria-busy',String(starting||waiting));
+}
 function setPlayState(active){
  testMint.setPlaying(active&&ctx?.state==='running');
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
  button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
- button.title=interrupted?'Resume':active?'Pause':'Play';
- button.setAttribute('aria-label',interrupted?'Resume interrupted audio':active?'Pause experience':'Play audiovisual experience');
  button.setAttribute('aria-pressed',String(active&&!interrupted));
- button.setAttribute('aria-busy',String(starting));
+ updatePlayAvailability(active);
 }
 let audioLoadFailed=false;
 function audioBusy(value){
- starting=value;$('play').disabled=value;setPlayState(playing);
+ starting=value;setPlayState(playing);
  if(value)audioLoadFailed=false;
  ui.loading('audio',null,'');
 }
 setPlayState(false);
 $('play').onclick=async()=>{
- if(starting)return;
+ if(starting||!market)return;
  clearTimeout(idleAudioTimer);
  const wasInterrupted=playing&&ctx&&ctx.state!=='running';
  let unlocked;
@@ -593,6 +598,8 @@ $('play').onclick=async()=>{
 for(const id of controls)$(id).addEventListener('input',()=>{if(listeningGain)listeningGain.gain.setTargetAtTime(Number($(id).value),ctx.currentTime,.025);session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 function display(){
+ updatePlayAvailability();
+ $('replay-hint').hidden=!market||!(chart.renderedBars?.length);
  chart.setMarketCapBasis(replay.state.active?(replay.state.frozen?.market||market):market);
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
  displayCoinImage();

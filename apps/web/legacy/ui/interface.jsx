@@ -177,7 +177,7 @@ function LoaderIsland({ state }) {
       doneLabel="Done in"
       errorLabel="Failed after"
       pattern="orbit"
-      grid={3}
+      grid={2}
       shape="round"
       doneColor="#22c55e"
       errorColor="#ef4444"

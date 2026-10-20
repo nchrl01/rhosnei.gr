@@ -32,7 +32,7 @@ export function createUIControls(){
   // Completion is acknowledged briefly; errors remain beside the retry action.
   if(status==='done')timers.set(name,setTimeout(()=>{if(states.get(name)===state){states.set(name,null);loaders.get(name)?.update(null);}},1800));
  }
- import('./vendor/ui/upic-ui.js?v=235').then(module=>{
+ import('./vendor/ui/upic-ui.js?v=391').then(module=>{
   components=module;
   try{
    clock=components.mountClock(clockHost);dateClock=components.mountClock(dateNode);if(lastClock)dateClock.update({...lastClock,dateOnly:true});time.dataset.clockUi='true';

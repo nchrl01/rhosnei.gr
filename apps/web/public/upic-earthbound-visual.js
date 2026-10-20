@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=390';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=391';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=380';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -70,6 +70,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},imageUnavailable(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
  // Keep the field in the host's full rectangle, without cropping to mark bounds.
  const field=document.createElement('div');field.className='visual-content-frame';host.append(field);host.dataset.visualFrame='full';
+ const loader=document.createElement('div');loader.className='visual-loader';loader.setAttribute('role','status');loader.setAttribute('aria-live','polite');
+ const loaderDots=document.createElement('span');loaderDots.className='visual-loader__dots';loaderDots.setAttribute('aria-hidden','true');
+ for(let i=0;i<4;i++)loaderDots.append(document.createElement('span'));
+ const loaderLabel=document.createElement('span');loaderLabel.className='visual-loader__label';loaderLabel.textContent='Loading visual';loader.append(loaderDots,loaderLabel);host.append(loader);
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(field),fullscreen=createVisualFullscreen(host,{referenceSide});
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
@@ -89,7 +93,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const waiting=latest?.liveHolders&&!initialHoldersReady&&latest.holderFetchLoading;
   const loading=Boolean(latest?.liveHolders&&(waiting||awaitingHolderRender));
   if(loading)initialLoadShown=true;
-  host.dataset.holderLoading=String(loading);host.setAttribute('aria-busy',String(loading));
+  host.dataset.holderLoading=String(loading);
  }
 
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -99,6 +103,24 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null,imageSettled=false,imageReveal=0;
  let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
  let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
+ let visualReady=false,loaderHasPlayed=false,loaderSignature='';
+ function syncVisualLoading(){
+  if(visualReady&&loaderSignature==='hidden')return;
+  const state=getState(),playing=Boolean(state.playing);
+  if(playing)loaderHasPlayed=true;
+  const stopped=loaderHasPlayed&&!playing||settings.seeking||settings.ended;
+  const current=identityKey(state.coinKey)===key;
+  if(!visualReady&&current&&renderedCoinKey===key&&renderedAt&&imageSettled&&imageCoinKey===key&&imageReveal>=1&&host.dataset.holderLoading!=='true'&&renderer.snapshot().markCount>0)visualReady=true;
+  const unavailable=Boolean(current&&latest?.hasMarket&&latest.liveHolders&&!initialHoldersReady&&latest.holderFetchSettled&&!latest.holderFetchLoading);
+  const pending=!visualReady&&!stopped;
+  const signature=pending?(unavailable?'unavailable':'loading'):'hidden';
+  if(signature===loaderSignature)return;
+  loaderSignature=signature;
+  loader.hidden=!pending;
+  loader.dataset.state=unavailable?'unavailable':'loading';
+  const label=unavailable?'Visual unavailable':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
+  host.dataset.visualLoading=String(pending&&!unavailable);host.setAttribute('aria-busy',String(pending&&!unavailable));
+ }
  function reset(){clock=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
  function referenceSide(box){
   // CSS owns a stable viewport-sized desktop host. Use its content box so
@@ -129,6 +151,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  mobile.addEventListener('change',arrange);window.addEventListener('resize',size);document.addEventListener('visibilitychange',visibility);arrange();
  function draw(now){
   if(closed)return;raf=requestAnimationFrame(draw);
+  syncVisualLoading();
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
   syncHolderLoading();
@@ -186,6 +209,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   syncHolderLoading(true,now);
   renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
   renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
+  syncVisualLoading();
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
   Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String((playing||transportPresence>0)&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
@@ -196,7 +220,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
-   if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;}
+   if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;}
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    syncHolderLoading();
    if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
@@ -204,6 +228,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=latest.marketCap>=5e7?1:0;if(target!==colorTarget){colorStart=color;colorTarget=target;colorElapsed=0;colorDuration=Math.max(1.5,2.4*(1.5-.75*latest.activity));}
    if(!latest.hasMarket){renderer.clear();renderedAt=0;renderedPlaying=false;renderedHolderReady=false;}
+   syncVisualLoading();
   },
   // Keep the app's audio callback interface without coupling sound to ink.
   event(){},pulse(){},piano(){},
@@ -265,6 +290,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

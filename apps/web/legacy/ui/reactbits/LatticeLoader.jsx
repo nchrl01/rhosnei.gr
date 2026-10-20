@@ -10,6 +10,7 @@ const PATTERNS = {
   ripple: { 3: { cells: [2, 1, 2, 1, 0, 1, 2, 1, 2], loop: 4.8, scale: 1.5 } },
   spiral: { 3: { cells: [0, 1, 2, 7, 8, 3, 6, 5, 4], loop: 9, scale: 1.2, lit: 0.35 } },
   orbit: {
+    2: { cells: [0, 1, 3, 2], loop: 4, scale: 2.4 },
     3: { cells: [0, 1, 2, 7, null, 3, 6, 5, 4], loop: 8, scale: 1.2 },
     4: { cells: [0, 1, 2, 3, 11, null, null, 4, 10, null, null, 5, 9, 8, 7, 6], loop: 6, scale: 1.2, lit: 0.45 }
   },
@@ -22,8 +23,9 @@ const PATTERNS = {
   rain: { 4: { cells: [0, 2, 1, 3, 1, 3, 2, 4, 2, 4, 3, 5, 3, 5, 4, 6], loop: 4, scale: 1.2, lit: 0.35 } },
   pulse: { 4: { cells: [2, 1, 1, 2, 1, 0, 0, 1, 1, 0, 0, 1, 2, 1, 1, 2], loop: 2.4, scale: 2.5, lit: 0.45 } }
 };
-const DEFAULT_PATTERN = { 3: 'orbit', 4: 'sweep' };
+const DEFAULT_PATTERN = { 2: 'orbit', 3: 'orbit', 4: 'sweep' };
 const MARKS = {
+  2: { done: [0, 1, 2, 3], error: [0, 1, 2, 3] },
   3: { done: [2, 3, 5, 7], error: [0, 2, 4, 6, 8] },
   4: { done: [7, 8, 10, 13], error: [0, 3, 5, 6, 9, 10, 12, 15] }
 };
@@ -49,7 +51,7 @@ export default function LatticeLoader({
   errorLabel = 'Failed after',
   status = 'working',
   pattern = 'orbit',
-  grid = 3,
+  grid = 2,
   shape = 'round',
   color = 'currentColor',
   doneColor = '#22c55e',
@@ -66,7 +68,7 @@ export default function LatticeLoader({
   className = '',
   style
 }) {
-  const n = grid === 4 ? 4 : 3;
+  const n = grid === 4 ? 4 : grid === 3 ? 3 : 2;
   const pat = resolvePattern(pattern, n);
   const marks = MARKS[n];
   const d = step * pat.scale;

@@ -6,6 +6,7 @@ import {capitalFeed} from './capital-field.js?v=167';
 // Uses the same market parameters, seed and source clock as the shader.
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
 import {ditherPixels} from './coin-dither.js?v=217';
+import {artworkForeground} from './artwork-foreground.js?v=391';
 const fract=x=>x-Math.floor(x);
 const hash=n=>fract(Math.sin(n)*43758.5453);
 const fade=x=>x*x*x*(x*(x*6-15)+10);
@@ -20,7 +21,8 @@ function noise(x,y,z){
  return mix(mix(mix(hash(n),hash(n+1),a),mix(hash(n+57),hash(n+58),a),b),mix(mix(hash(n+113),hash(n+114),a),mix(hash(n+170),hash(n+171),a),b),c)*2-1;
 }
 // Prepare once when coin artwork changes, using the same image levels and
-// Bayer grain as the coin avatar. Dark ink becomes light on the black stage.
+// Bayer grain as the coin avatar. Select the subject, rather than always
+// treating a dark background as ink on the black stage.
 export function preparePixelIdentity(source){
  const width=Math.floor(Number(source?.width)),height=Math.floor(Number(source?.height)),pixels=source?.originalPixels||source?.pixels;
  if(!(width>0&&height>0)||!pixels||pixels.length<width*height*4)return null;
@@ -33,8 +35,8 @@ export function preparePixelIdentity(source){
    rgba[to]=pixels[from];rgba[to+1]=pixels[from+1];rgba[to+2]=pixels[from+2];rgba[to+3]=pixels[from+3];
   }
  }
- const dither=ditherPixels(rgba,w,h),data=new Uint8Array(w*h);
- for(let n=0;n<data.length;n++)data[n]=dither[n*4]<128?dither[n*4+3]:0;
+ const foreground=artworkForeground(rgba,w,h),dither=ditherPixels(rgba,w,h),data=new Uint8Array(w*h);
+ for(let n=0;n<data.length;n++)data[n]=foreground.polarity==='alpha'||(foreground.polarity==='light'?dither[n*4]>=128:dither[n*4]<128)?rgba[n*4+3]:0;
  // A separate smooth artwork mask controls size only; selection keeps its
  // original dither mask so changing liquidity cannot move or remove marks.
  const sizeData=new Float32Array(w*h);
@@ -54,7 +56,7 @@ export function preparePixelIdentity(source){
   const peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
   for(let c=0;c<3;c++)colors[n*3+c]=peak>.001?primary[c]/peak*level:.4;
  }
- return {width:w,height:h,data,sizeData,rgba,palette,colors};
+ return {width:w,height:h,data,sizeData,rgba,palette,colors,...foreground};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),x=fx/side,y=fy/side;
@@ -66,12 +68,12 @@ function identityInk(mask,fx,fy,w,h,time,offset,params){
 }
 export function createPixelBlastCanvas(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
- const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,output=null,lastCoverage=0,geometryKey=null,geometry=[];
+ const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,accents=null,output=null,lastCoverage=0,geometryKey=null,geometry=[];
  const layerCanvas=document.createElement("canvas"),layerContext=layerCanvas.getContext("2d");
  return {
   canvas,
   coverage(){return lastCoverage;},
-  setImage(mask){identityMask=mask;},
+  setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown'});},
   render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
@@ -79,8 +81,8 @@ export function createPixelBlastCanvas(host){
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
    if(!preserve)ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
-   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
-   counts.fill(0);output.data.fill(0);
+   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);accents=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
+   counts.fill(0);accents.fill(0);output.data.fill(0);
    const requested=Math.max(0,Math.round(params.holderCount||0));
    const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*3))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
@@ -121,6 +123,7 @@ export function createPixelBlastCanvas(host){
    const identity=identityMask?params.identity:0;
    const pixelPresence=clamp(params.pixelPresence??1);
    const markDirection=Number(params.markDirection)||0;
+   const shapeWeights=params.shapeWeights||(markDirection>0?[0,1,0]:markDirection<0?[0,0,1]:[1,0,0]);
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
    const candidates=[];
@@ -143,10 +146,10 @@ export function createPixelBlastCanvas(host){
      taper=smooth(nx/reach)*smooth((1-nx)/reach)*smooth(ny/reach)*smooth((1-ny)/reach);
     }
     if(edge<=0||(!requested&&taper<=.015))continue;
-    geometry.push({px,py,fx,fy,centerX,centerY,taper,threshold:hash(px*73.17+py*193.41+seed*.37)});
+    geometry.push({px,py,fx,fy,centerX,centerY,taper,threshold:hash(px*73.17+py*193.41+seed*.37),accent:hash(px*157.31+py*97.13+seed*.113)<.2});
     }
    }
-   for(const {px,py,fx,fy,centerX,centerY,taper,threshold} of geometry){
+   for(const {px,py,fx,fy,centerX,centerY,taper,threshold,accent} of geometry){
     // Sparse stable perimeter: shrink and remove cells rather than draw a rim.
     if(!requested&&hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
@@ -183,7 +186,7 @@ export function createPixelBlastCanvas(host){
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
     const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
-    candidates.push({centerX,centerY,diameter,score});
+    candidates.push({centerX,centerY,diameter,score,accent});
    }
    // Partition the highest-scoring population without sorting every cell.
    if(requested&&requested<candidates.length){
@@ -199,25 +202,31 @@ export function createPixelBlastCanvas(host){
     }
    }
    const selected=requested?candidates.slice(0,requested):candidates;
-   canvas.dataset.markCount=String(selected.length);
-   for(const {centerX,centerY,diameter} of selected){
+   canvas.dataset.markCount=String(selected.length);let accentMarkCount=0;
+   for(const {centerX,centerY,diameter,accent} of selected){
+    if(accent)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
     const radius=diameter*.5,halfStroke=Math.max(1,Math.round(diameter*.23))*.5;
-    const directed=diameter>=3&&markDirection!==0;
     for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++){
      const dx=x-left+.5-radius,dy=y-top+.5-radius;
-     const weights=params.shapeWeights||(markDirection>0?[0,1,0]:markDirection<0?[0,0,1]:[1,0,0]);
+     const weights=shapeWeights;
      const inside=diameter<3?dx*dx+dy*dy<=radius*radius:
       (Math.hypot(dx,dy)-radius)*weights[0]+(Math.min(Math.abs(dx),Math.abs(dy))-halfStroke)*weights[1]+(Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678-halfStroke)*weights[2]<=0;
      if(!inside)continue;
-     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);
+     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accent)accents[index]=Math.min(2,accents[index]+1);
     }
    }
+   canvas.dataset.accentMarkCount=String(accentMarkCount);
    let occupied=0;
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
+   // Stable cells carry the accent. The same weights that morph the glyph
+   // blend its colour, without changing selection, size, or motion.
+   const up=clamp(shapeWeights[1]),down=clamp(shapeWeights[2]),directionWeight=up+down;
+   const accentMix=clamp(directionWeight),denominator=directionWeight||1;
+   const accentR=(up*81+down*255)/255/denominator,accentG=(up*215+down*102)/255/denominator,accentB=(up*123+down*114)/255/denominator;
    for(let n=0;n<counts.length;n++)if(counts[n]){
     occupied++;const i=n*4;let r=1,g=1,b=1;
     if(color&&mask?.colors){
@@ -227,6 +236,7 @@ export function createPixelBlastCanvas(host){
       r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);
      }
     }
+    if(accents[n]&&accentMix){const amount=accentMix*Math.min(1,accents[n]/counts[n]);r=mix(r,accentR,amount);g=mix(g,accentG,amount);b=mix(b,accentB,amount);}
     output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;
