@@ -449,7 +449,7 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
    contribute different synthetic baselines to the wrapping readings row. */
 .coin-live-readings #coin-date,.coin-live-readings #coin-time{display:inline-flex;align-items:center;align-self:center;min-height:20px;font-size:var(--font-size-body);line-height:1;white-space:nowrap}
 .coin-live-readings .clock-island,.coin-live-readings .market-clock{align-items:center;line-height:1}
-.coin-live-readings>div:first-child{column-gap:14px}
+.coin-live-readings>.coin-clock-reading{column-gap:14px}
 
 /* Stable market slots; small screens scroll this strip instead of wrapping. */
 .instrument-page .readings{display:grid;grid-template-columns:repeat(5,minmax(max-content,1fr));width:100%;min-width:0;max-width:none;margin-top:8px;padding:8px 0;gap:12px;align-items:start;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
@@ -478,8 +478,9 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
 @media(min-width:761px){
  .instrument-page .instrument-top{gap:16px;margin-top:8px}
  .instrument-page .transport{align-self:center}
- .instrument-page .coin-title{align-items:flex-start;gap:12px}
- .instrument-page .coin-title>.coin-avatar{width:64px;height:64px;flex:0 0 64px}
+ .instrument-page .coin-title{align-items:stretch;gap:16px}
+ .instrument-page .coin-title>.coin-avatar{width:clamp(88px,7vw,112px);height:auto;min-height:clamp(88px,7vw,112px);flex:0 0 clamp(88px,7vw,112px);align-self:stretch;aspect-ratio:1}
+ .instrument-page .coin-title>.coin-copy{display:flex;flex-direction:column;justify-content:center}
  .instrument-page .coin-live-readings{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
  .instrument-page .coin-live-readings>div{min-width:0;align-content:start}
  .instrument-page .coin-live-readings small{line-height:1.4}
@@ -545,7 +546,7 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
 .instrument-page .coin-context{margin-bottom:16px}
 .instrument-page .instrument-top{gap:24px 20px;margin-bottom:20px}
 .instrument-page .coin-live-readings{gap:16px;margin-top:16px}
-.instrument-page .coin-live-readings>div:first-child{column-gap:20px}
+.instrument-page .coin-live-readings>.coin-clock-reading{column-gap:20px}
 .instrument-page .compact-chart-toolbar{gap:12px;margin-bottom:12px}
 .instrument-page .playback-speed{margin-bottom:12px}
 .instrument-page .chart-ticks{margin-top:16px}
@@ -610,7 +611,7 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
  .instrument-page .coin-title .transport #audio-loader{grid-column:1/-1;grid-row:2}
  .instrument-page .coin-title .coin-live-readings{grid-template-columns:minmax(0,1fr);gap:20px;text-align:center}
  .instrument-page .coin-live-readings>div{justify-content:center}
- .instrument-page .coin-live-readings>div:first-child{column-gap:20px}
+ .instrument-page .coin-live-readings>.coin-clock-reading{column-gap:20px}
  /* Market readings read vertically, like the lines of a lyrics panel. */
  .instrument-page .readings{grid-template-columns:minmax(0,1fr);gap:24px;margin-top:24px;padding:24px 20px;border:0;background:#080808;overflow:visible}
  .instrument-page .readings>div{gap:8px;min-width:0}
@@ -649,7 +650,7 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
 #advanced-view:hover{color:var(--control-ink)}
 #advanced-view:focus-visible{outline:1px solid var(--control-ink);outline-offset:3px}
 body:not(.advanced-view) :is(#advanced-diagnostics,#advanced-readings,#advanced-market-source,.chart-menu){display:none!important}
-body:not(.advanced-view):not([data-playback=replay]) .coin-live-readings>div:first-child{display:none}
+body:not(.advanced-view):not([data-playback=replay]) .coin-live-readings>.coin-clock-reading{display:none}
 body:not(.advanced-view) .coin-live-readings{grid-template-columns:minmax(0,1fr)}
 body:not(.advanced-view) .chart-panel{margin-top:16px}
 body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
@@ -743,13 +744,13 @@ body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility
 .visual-loader__dots>span:nth-child(2){animation-delay:.16s}.visual-loader__dots>span:nth-child(3){animation-delay:.48s}.visual-loader__dots>span:nth-child(4){animation-delay:.32s}
 .visual-loader__dots>span:nth-child(1){--spread-x:-14px;--spread-y:-14px}.visual-loader__dots>span:nth-child(2){--spread-x:14px;--spread-y:-14px}.visual-loader__dots>span:nth-child(3){--spread-x:-14px;--spread-y:14px}.visual-loader__dots>span:nth-child(4){--spread-x:14px;--spread-y:14px}
 .visual-loader[data-state=revealing] .visual-loader__dots>span{animation:visual-loading-release 400ms cubic-bezier(.2,.65,.25,1) both}
-.audio-visualizer .visual-content-frame{opacity:1;transform:translateX(0);transition:opacity 400ms ease,transform 400ms cubic-bezier(.2,.65,.25,1)}
-.audio-visualizer[data-visual-loading=true] .visual-content-frame{opacity:0;transform:translateX(28px);transition:none}
-.audio-visualizer .visual-departure{position:absolute;inset:0;z-index:3;width:100%;height:100%;pointer-events:none;animation:visual-coin-departure 280ms ease-out both}
+.audio-visualizer .visual-content-frame{opacity:1;transition:opacity 400ms ease}
+.audio-visualizer[data-visual-loading=true] .visual-content-frame,.audio-visualizer[data-visual-handoff=waiting] .visual-content-frame{opacity:0;transition:none}
+.audio-visualizer[data-visual-handoff=morphing] .visual-content-frame{opacity:1;transition:none}
+.audio-visualizer .visual-departure{position:absolute;inset:0;z-index:3;width:100%;height:100%;opacity:var(--departure-opacity,1);pointer-events:none}
 .visual-loader__label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .visual-loader[data-state=unavailable] .visual-loader__dots{display:none}
 .visual-loader[data-state=unavailable] .visual-loader__label{position:static;width:auto;height:auto;margin:0;clip-path:none;white-space:normal;font-size:var(--font-size-small);color:var(--muted,#aaa)}
 @keyframes visual-loading-dot{0%,100%{opacity:.25;transform:scale(.65)}50%{opacity:.9;transform:scale(1)}}
 @keyframes visual-loading-release{from{opacity:.65;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--spread-x),var(--spread-y)) scale(1.5)}}
-@keyframes visual-coin-departure{from{opacity:var(--departure-opacity,1);transform:translateX(0)}to{opacity:0;transform:translateX(-28px)}}
-@media(prefers-reduced-motion:reduce){.visual-loader__dots>span,.visual-loader[data-state=revealing] .visual-loader__dots>span{animation:none;opacity:.65;transform:none}.audio-visualizer .visual-content-frame,.audio-visualizer[data-visual-loading=true] .visual-content-frame{transition:none;transform:none}.audio-visualizer .visual-departure{display:none;animation:none}}
+@media(prefers-reduced-motion:reduce){.visual-loader__dots>span,.visual-loader[data-state=revealing] .visual-loader__dots>span{animation:none;opacity:.65;transform:none}.audio-visualizer .visual-content-frame,.audio-visualizer[data-visual-loading=true] .visual-content-frame{transition:none}.audio-visualizer .visual-departure{display:none}}

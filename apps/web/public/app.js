@@ -23,7 +23,7 @@ import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=392';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=393';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=391';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
@@ -64,7 +64,7 @@ let envionLoading=null;
 let testExportSession=null;
 let sharedHarmony=null;
 let pd,ctx,gain,listeningGain,outputTap,outputMeters,instrumentTap,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
-let requestedNetwork=null,requestedAutoplay=false;
+let requestedNetwork=null,requestedAutoplay=null;
 let snapshotController,searchController;
 const shouldFetchHistory=()=>!document.hidden||playing;
 let pendingHistoryReplay=false;
@@ -347,7 +347,7 @@ function updateReplayUI(m){
  $('replay-live').setAttribute('aria-pressed',String(!active));
  $('replay-play').setAttribute('aria-pressed',String(active));
  const hint=$('replay-hint');
- if(hint){hint.hidden=!market||!(chart.renderedBars?.length);const text=hint.hidden?'':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the timeline to explore another moment.'):'Choose a moment on the timeline to replay.';if(hint.textContent!==text)hint.textContent=text;}
+ if(hint){hint.hidden=true;hint.textContent='';}
 
  const rate=Number(replay.state.speed)||1;
  $('replay-state').textContent=active?(replay.state.speed==='jump'?'· Jump':'· '+rate+'×'):'';
@@ -599,7 +599,6 @@ for(const id of controls)$(id).addEventListener('input',()=>{if(listeningGain)li
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 function display(){
  updatePlayAvailability();
- $('replay-hint').hidden=!market||!(chart.renderedBars?.length);
  chart.setMarketCapBasis(replay.state.active?(replay.state.frozen?.market||market):market);
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
  displayCoinImage();
@@ -674,8 +673,8 @@ function startHistory(pair){
 }
 function setHistoryLoading(data={}){
  const host=$('history-loading'),has=data.candles?.length>0,waiting=data.state==='waiting',failed=Boolean(data.error)||data.state==='unavailable',busy=!failed&&['loading','cached'].includes(data.state);
- const message=$('player-history-message');message.hidden=has&&!failed&&!waiting;message.querySelector('span').textContent=failed?(has?'Earlier history is delayed. Loaded history is still available.':'History is unavailable. You can switch to live playback.'):waiting?'Waiting for earlier history. You can switch to live playback.':'Loading earlier history. Live playback is available.';
- $('player-history-retry').hidden=!failed;
+ const message=$('player-history-message');message.hidden=true;message.inert=true;message.querySelector('span').textContent='';
+ $('player-history-retry').hidden=true;
 
  if(pendingHistoryReplay&&failed&&!data.retrying&&!historyReplayReady()){
   pendingHistoryReplay=false;status('History unavailable · retry history to replay');updateReplayUI({});
@@ -825,6 +824,7 @@ $('address').addEventListener('keydown',event=>{
 });
 async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}={}){
  try{
+  if(autoPlay&&(!playing||ctx?.state!=='running'))primeAudio();
   searchController?.abort();
   searchFeedback('Opening '+pair.baseToken.symbol+'…','loading');
   if(isExchangeMarket(pair)){status('Loading '+pair.exchangeName+' market…');pair=await prepareExchangeMarket(pair);}
@@ -832,13 +832,13 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
   $('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];
   $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');chooseMarket(pair);
   searchFeedback('');
-  if(autoPlay&&!playing)await $('play').onclick();
+  if(autoPlay&&(!playing||ctx?.state!=='running'))await $('play').onclick();
  }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
 }
 document.addEventListener('upic:search-coin',event=>{
  const coin=event.detail;if(!coin||typeof(coin.address||coin.query)!=='string')return;
  liveConnection?.abort();liveConnection=null;searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
- requestedNetwork=coin.address?coin.chain:null;requestedAutoplay=false;
+ requestedNetwork=coin.address?coin.chain:null;requestedAutoplay=true;
  $('address').value=coin.address||coin.query;syncAddressLabel();$('coin-form').requestSubmit();
 });
 $('coin-form').onsubmit=async e=>{
@@ -846,8 +846,9 @@ $('coin-form').onsubmit=async e=>{
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.querySelector('.inspector-display').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const selectedNetwork=$('coin-form').dataset.searchNetwork;
- const wantedNetwork=requestedNetwork||(selectedNetwork&&selectedNetwork!=='all'?selectedNetwork:null),autoPlay=requestedAutoplay;requestedNetwork=null;requestedAutoplay=false;
+ const wantedNetwork=requestedNetwork||(selectedNetwork&&selectedNetwork!=='all'?selectedNetwork:null),autoPlay=requestedAutoplay??true;requestedNetwork=null;requestedAutoplay=null;
  const address=$('address').value.trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
+ if(autoPlay&&(!playing||ctx?.state!=='running'))primeAudio();
  const revision=++searchRevision,tokenAddress=isTokenIdentifier(address),exchangeOnly=isExchangeQuery(address);
  searchController?.abort();const searchAbort=new AbortController();searchController=searchAbort;
  const current=()=>revision===searchRevision&&$('address').value.trim()===address;
@@ -858,7 +859,7 @@ $('coin-form').onsubmit=async e=>{
   if(!current()||tokenAddress||exchangeOnly)return;
   const pairs=[...exchangePairs,...dexPairs];
   if(pairs.length){
-   showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});});
+   showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay:true,revision:selectedRevision});});
    searchFeedback(remaining?'Choose a result now · checking more markets…':'Choose a market'+(errors.length?' · some sources are unavailable':''),remaining?'loading':'ready');
   }
  }
@@ -881,7 +882,7 @@ $('coin-form').onsubmit=async e=>{
   }
   if(exchangeOnly&&(pairs.length===1||captureMode)){await selectSearchMarket(pairs[0],{autoPlay,revision});return;}
   if(exchangeOnly){
-   showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay,revision:selectedRevision});});
+   showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay:true,revision:selectedRevision});});
    searchFeedback('Choose an exchange market');
   }
  }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
@@ -946,7 +947,7 @@ if(!captureMode)startTrending((item,options={})=>{
  if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);
  $('address').value=item.address;syncAddressLabel();
  if(item.market){
-  requestedNetwork=null;requestedAutoplay=false;
+  requestedNetwork=null;requestedAutoplay=null;
   void selectSearchMarket(item.market,{autoPlay:options.autoplay??!options.initial,revision:searchRevision});
  }else $('coin-form').requestSubmit();
 },state=>ui.loading('trending',state.status,state.label,{host:state.host,operation:state.operation}));

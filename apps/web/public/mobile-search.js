@@ -21,10 +21,16 @@ export function bindMobileCoinSearch(){
  const showDesktop=()=>{if(!mobile.matches){desktopOpen=true;paintDesktop();}};
  input.addEventListener('focus',showDesktop);input.addEventListener('input',showDesktop);form.addEventListener('submit',showDesktop);
  if(desktop){
+  let pointerInside=false;
   const observer=new MutationObserver(paintDesktop);
   for(const element of [...feedback,results].filter(Boolean))observer.observe(element,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true,characterData:true});
   desktop.addEventListener('focusin',showDesktop);
-  desktop.addEventListener('focusout',()=>queueMicrotask(()=>{if(!desktop.contains(document.activeElement)){desktopOpen=false;paintDesktop();}}));
+  desktop.addEventListener('pointerdown',()=>{pointerInside=true;});
+  document.addEventListener('pointerup',()=>{pointerInside=false;});
+  document.addEventListener('pointercancel',()=>{pointerInside=false;});
+  // Safari may blur the input without focusing a clicked result button.
+  // Keep that result mounted through the pointer's click so selection can run.
+  desktop.addEventListener('focusout',()=>queueMicrotask(()=>{if(!pointerInside&&!desktop.contains(document.activeElement)){desktopOpen=false;paintDesktop();}}));
   document.addEventListener('pointerdown',event=>{if(!desktop.contains(event.target)){desktopOpen=false;paintDesktop();}});
   desktop.addEventListener('keydown',event=>{if(event.key==='Escape')queueMicrotask(()=>{desktopOpen=false;paintDesktop();});},true);
  }
