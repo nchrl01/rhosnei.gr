@@ -23,7 +23,7 @@ import {createCoinDither} from './coin-dither.js?v=348';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=361';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=365';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
@@ -124,7 +124,7 @@ function displayHolderCount(info=holderMetadata.snapshot()){
  const node=$('holders'),label=$('holders-label');if(!node||!label)return;
  const readout=holderCountReadout(info,replay.state.active);
  label.textContent=readout.label;node.textContent=readout.value;node.title=readout.title;
- let sample=$('holders-visual-sample');if(!sample){sample=document.createElement('small');sample.id='holders-visual-sample';node.after(sample);}const holdings=info.holdings;const count=holdings?.weight>0?holdings.records?.length:0;sample.hidden=Boolean(info.native||replay.state.active||!count);sample.textContent=count?count.toLocaleString('en')+' sampled for visual':'';
+ let sample=$('holders-visual-sample');if(!sample){sample=document.createElement('small');sample.id='holders-visual-sample';node.after(sample);}const holdings=info.holdings;const count=holdings?.weight>0?holdings.records?.length:0;sample.hidden=Boolean(info.native||replay.state.active||!count);sample.textContent=count?count.toLocaleString('en')+(info.holders>count?' individual · rest grouped':' individual in visual'):'';
 }
 $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);

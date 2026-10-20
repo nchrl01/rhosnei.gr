@@ -102,14 +102,20 @@ export function deriveFieldRules(inputs={}){
   const edgePower=1+3*(1-capDepth)**2;
   // Field opening is monotonic and finishes at $1M.
   const liquidityDepth=clamp(Math.log10(1+liquidity/1000)/4,0,1);
-  const balances=chartMarks||normalizeHolderBalances(inputs.holderBalances);
+  const observed=chartMarks||normalizeHolderBalances(inputs.holderBalances);
+  const reported=!chart&&Number.isSafeInteger(inputs.totalHolders)&&inputs.totalHolders>0?inputs.totalHolders:0;
+  const unknown=Math.max(0,reported-observed.length);
+  // Aggregate population cells carry counts only, never invented wallet balances.
+  const groups=Math.min(unknown,Math.max(1,4096-observed.length));
+  const balances=[...observed,...Array.from({length:groups},(_,i)=>({id:'population-group:'+i,balance:null,aggregate:true,representedHolders:Math.floor(unknown/groups)+(i<unknown%groups?1:0)}))];
   // Balances and liquidity are USD. A fourth-root response softens size differences
   // from holding / liquidity, without sample-mean normalization.
   // 1% -> 8px, 4% -> about 11px; cap at 20px. Layout applies raster floors,
   // edge shrink and the minimum clear gap after this calculation.
-  const liquidityShares=balances.map(h=>liquidity>0?h.balance/liquidity:null);
+  const liquidityShares=balances.map(h=>!h.aggregate&&liquidity>0?h.balance/liquidity:null);
   // Absolute USD ceiling prevents tiny bags from looking dominant in thin liquidity.
   const markBrightness=liquidityShares.map((share,i)=>{
+    if(balances[i].aggregate)return .35;
     const ratioBrightness=share===null?.01:Math.min(1,Math.max(.01,Math.sqrt(share/.01)));
     const dollarBrightness=Math.min(1,Math.max(.01,Math.pow(balances[i].balance/1e6,.25)));
     return Math.min(ratioBrightness,dollarBrightness);
@@ -123,7 +129,7 @@ export function deriveFieldRules(inputs={}){
     :balances.length?balances.length+(inputs.holderSource==='simulated'?' simulated USD holdings':' supplied USD holdings')+' · softened dot sizes from % of liquidity'
     :'No USD holdings supplied — minimum equal marks';
   return {canvasSize,dotBudget,zoomScale,gapPx,edgeShrink,edgePower,fieldSpan,fieldRelease,baseMarkSize,markDiameters,markBrightness,footprintScale,
-    holderCount:chart?0:balances.length,holderStatus:chart?'Chart reconstruction · candle marks':holderStatus,liquidityShares,
+    holderCount:chart?0:observed.length,reportedHolders:reported,aggregateHolders:unknown,aggregateMarks:groups,holderStatus:chart?'Chart reconstruction · candle marks':holderStatus,liquidityShares,
     capDepth,liquidityDepth,balances};
 }
 
@@ -169,7 +175,7 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512,previous
     const holder=holders[i];
     // Area ceiling scales with dollars: $1 is about one displayed pixel;
     // $1M unlocks the full field, subject to its cell and liquidity ratio.
-    const dollarDiameter=Math.max(referenceScale,Math.min(width,height)*Math.sqrt(Math.min(1,holder.balance/1e6)));
+    const dollarDiameter=holder.aggregate?limit*.55:Math.max(referenceScale,Math.min(width,height)*Math.sqrt(Math.min(1,holder.balance/1e6)));
     const raw=Math.min(limit*Math.sqrt(holder.brightness),dollarDiameter);
     // Keep small marks small even when their shape cannot resolve at this scale.
     const diameter=Math.min(limit,raw>=1?Math.max(1,2*Math.floor((raw-1)/2)+1):raw);
@@ -181,7 +187,7 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512,previous
     const unevenDistance=radius+.045*Math.sin(nx*11+ny*7+phases[3]);
     const edgeFade=count===1?1:1-smoothstep((unevenDistance-boundary+.14)/.32);
     const edgeScale=1-edgeStrength*(1-edgeFade);
-    return {...cell,id:holder.id,diameter:diameter*edgeScale,normalDiameter:diameter,
+    return {...cell,id:holder.id,aggregate:Boolean(holder.aggregate),representedHolders:holder.representedHolders||1,diameter:diameter*edgeScale,normalDiameter:diameter,
       brightness:holder.brightness*edgeScale,edgeScale};
   });
   return {marks,rules:{...rules,layoutMode:'regular-holder-grid',columns,rows,cellPitch:pitch,cellDiameterLimit:limit,layoutGap:gap,sizeScale:1,allocatedDots:count}};

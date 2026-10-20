@@ -4,7 +4,7 @@ import {originalArtworkPalette} from './upic-artwork-palette.js?v=earthbound-10'
 // Earthbound study renderer in the app: packed mark quads, with a CPU fallback.
 import {markVertex,fragment} from './upic-earthbound-shaders.js?v=earthbound-13';
 import {earthboundFrame,bindEarthboundUniforms} from './upic-earthbound-core.js?v=earthbound-10';
-import {buildMarkLayout} from './upic-field-rules.js?v=347';
+import {buildMarkLayout} from './upic-field-rules.js?v=365';
 import {imageDetailRules} from './upic-image-detail.js?v=earthbound-12';
 import {artworkBackground} from './upic-artwork-detail.js?v=earthbound-10';
 import {battlePatternFeed} from './upic-earthbound-sampling.js?v=earthbound-10';
@@ -140,7 +140,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024,initialAllocati
   advanceGeometry(now,reduced);
   const newCoin=layoutCoin!==inputs.coinKey;
   advanceShape(Math.sign(inputs.change),now,reduced,newCoin);
-  const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.holderBalances,inputs.chartHistory]);
+  const key=JSON.stringify([w,h,inputs.coinKey,inputs.marketCap,inputs.liquidity,inputs.totalHolders,inputs.holderBalances,inputs.chartHistory]);
   if(layoutKey!==key){
    const target=buildMarkLayout(inputs,{mode:'earthbound',mark:'auto'},w,h,allocation());
    const instant=!layout||newCoin||layoutWidth!==w||layoutHeight!==h||reduced;
@@ -180,7 +180,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024,initialAllocati
    layout=target;layoutKey=key;layoutCoin=inputs.coinKey;layoutWidth=w;layoutHeight=h;
    if(!keepSizePhase)sizeStarted=now;geometryDirty=true;
    if(positionMoving&&protectMotion&&now-positionStarted<glideSeconds)protectMovingMarks(layout.marks,Math.min(2,layout.rules.layoutGap??2));
-   Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
+   Object.assign(stats,{markCount:layout.marks.length,holderSamples:layout.rules.holderCount,reportedHolders:layout.rules.reportedHolders,aggregateHolders:layout.rules.aggregateHolders,aggregateMarks:layout.rules.aggregateMarks,gapPx:layout.rules.gapPx,baseMarkSize:layout.rules.baseMarkSize,fieldSpan:layout.rules.fieldSpan});
   }
   if(useSoftware||!geometryDirty)return;
   const length=layout.marks.length*48;
