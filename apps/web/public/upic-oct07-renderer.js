@@ -1,5 +1,5 @@
 // Production adapter for the approved October 7 pattern-count lab.
-import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=387';
+import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=388';
 import {pixelBlastParameters} from './oct07-live/pixel-blast-parameters.js';
 import {labVisualMappings} from './oct07-live/lab-visual-mappings.js';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -31,7 +31,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const progress=unit((now-shapeStarted)/.24),blend=progress*progress*(3-2*progress);
    if(shapeStarted)shapeWeights=shapeFrom.map((v,i)=>v+(shapeFor(shapeDirection)[i]-v)*blend);
    if(direction!==shapeDirection){shapeFrom=shapeWeights.slice();shapeDirection=direction;shapeStarted=now;}
-   const params={...mapped,fullscreen:!!host.closest('.audio-visualizer'),identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:direction,shapeWeights,artworkColor,inkColor};
+   const params={...mapped,pixelBudget:480000,fullscreen:!!host.closest('.audio-visualizer'),identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:direction,shapeWeights,artworkColor,inkColor};
    const frameStarted=performance.now();
    renderer.render({width:renderWidth,height:renderHeight,time,eventTime:time,liquidTime:time,seed,params});
    const duration=performance.now()-frameStarted;

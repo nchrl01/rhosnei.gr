@@ -75,7 +75,7 @@ export function createPixelBlastCanvas(host){
   render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
-   const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt(1.2e6/(viewWidth*viewHeight)));
+   const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt((params.pixelBudget||1.2e6)/(viewWidth*viewHeight)));
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
    if(!preserve)ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
