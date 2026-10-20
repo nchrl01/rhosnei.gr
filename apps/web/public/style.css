@@ -702,3 +702,8 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
  #chart-tick-row{min-height:44px}
 }
 .instrument-page .replay-actions>#replay-restart[hidden]{display:none}
+
+/* October 7 expanded canvas: retain navigation and fill the remaining viewport. */
+.audio-visualizer.is-expanded{inset:auto!important;left:0!important;top:var(--visual-full-top,64px)!important;width:100vw!important;height:calc(100svh - var(--visual-full-top,64px))!important;padding:0!important;z-index:90}
+.audio-visualizer.is-expanded .visual-content-frame{width:100%;height:100%;flex:none}
+body.visual-expanded>.market-header{visibility:visible}

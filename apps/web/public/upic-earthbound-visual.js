@@ -1,7 +1,7 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=374';
-import {createVisualFullscreen} from './visual-fullscreen.js?v=345';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=375';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=375';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
@@ -114,7 +114,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   // The CSS host dimensions are independent of the marks. Fullscreen owns its
   // outer rectangle, while the renderer keeps one uncropped square inside it.
   const movingSide=parseFloat(host.style.getPropertyValue('--visual-motion-side'));
-  width=height=Number.isFinite(movingSide)?movingSide:referenceSide(box);
+  if(host.classList.contains('is-expanded')){const style=getComputedStyle(host);width=Math.max(1,box.width-(parseFloat(style.paddingLeft)||0)-(parseFloat(style.paddingRight)||0));height=Math.max(1,box.height-(parseFloat(style.paddingTop)||0)-(parseFloat(style.paddingBottom)||0));}else width=height=Number.isFinite(movingSide)?movingSide:referenceSide(box);
   const pixels=width.toFixed(3)+'px';
   if(host.style.getPropertyValue('--visual-reference-side')!==pixels)host.style.setProperty('--visual-reference-side',pixels);
  }

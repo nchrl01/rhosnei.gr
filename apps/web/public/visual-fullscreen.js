@@ -34,7 +34,7 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
  }
  function top(){
   placeButton();fullscreenVolume();
-  const offset=(expanded?0:Math.max(0,header?.getBoundingClientRect().bottom||0))+'px';
+  const offset=Math.max(0,header?.getBoundingClientRect().bottom||0)+'px';
   host.style.setProperty('--visual-full-top',offset);
   if(expanded)volumeWidget?.style.setProperty('--visual-full-top',offset);
  }

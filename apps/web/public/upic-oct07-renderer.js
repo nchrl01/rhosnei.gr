@@ -15,8 +15,8 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const reported=Number.isFinite(inputs.totalHolders)&&inputs.totalHolders>0?Math.round(inputs.totalHolders):0;
    const population=history?.length?4096:reported||inputs.holderBalances?.length||0;
    if(!population){renderer.clear();stats.markCount=0;return;}
-   const count=Math.min(10000,population),side=Math.max(1,Math.min(width,height,maxDimension));
-   Object.assign(canvas.style,{width:Math.min(width,height)+'px',height:Math.min(width,height)+'px',left:(width-Math.min(width,height))/2+'px',top:(height-Math.min(width,height))/2+'px',opacity:String(unit(presence))});
+   const count=Math.min(10000,population),scale=Math.min(1,maxDimension/Math.max(width,height)),renderWidth=Math.max(1,width*scale),renderHeight=Math.max(1,height*scale);
+   Object.assign(canvas.style,{width:width+'px',height:height+'px',left:'0px',top:'0px',opacity:String(unit(presence))});
    const change=bar?Math.abs(bar.close/(prior?.close||bar.open)-1):0;
    const activity=history?.length?unit(change*30+(bar.high-bar.low)/bar.open*8):unit(inputs.activity);
    const marketCap=inputs.marketCap>0?inputs.marketCap:1000;
@@ -24,7 +24,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const mapped=labVisualMappings(pixelBlastParameters(artistic),artistic);
    const size=inputs.liquidity>0?1+11*unit((Math.log10(inputs.liquidity)-2)/6):1;
    const params={...mapped,identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:0,shapeWeights:[1,0,0],inkColor};
-   renderer.render({width:side,height:side,time,eventTime:time,liquidTime:time,seed,params});
+   renderer.render({width:renderWidth,height:renderHeight,time,eventTime:time,liquidTime:time,seed,params});
    stats={...stats,markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),renderer:'october7-pattern-count',reconstructed:Boolean(history?.length)};
   },
   snapshot(){return {...stats}},clear(){renderer.clear()},close(){renderer.close()}
