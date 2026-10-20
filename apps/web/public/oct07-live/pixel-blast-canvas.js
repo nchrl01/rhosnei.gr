@@ -59,8 +59,8 @@ export function preparePixelIdentity(source){
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),x=fx/side,y=fy/side;
  const flow=((1-params.identity)*.1+.012)*params.identityMotion,phase=time*.65+offset*.013;
- const u=.5+x+(Math.sin(y*9+phase)+.35*Math.sin(x*5-phase*.7))*flow;
- const v=.5-y+(Math.sin(x*8-phase*.85)+.3*Math.sin(y*5+phase*.6))*flow;
+ const u=.5+x+(flow?(Math.sin(y*9+phase)+.35*Math.sin(x*5-phase*.7))*flow:0);
+ const v=.5-y+(flow?(Math.sin(x*8-phase*.85)+.3*Math.sin(y*5+phase*.6))*flow:0);
  if(u<0||v<0||u>=1||v>=1)return 0;
  return mask.data[Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width)]/255;
 }
@@ -82,7 +82,7 @@ export function createPixelBlastCanvas(host){
    if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
    counts.fill(0);output.data.fill(0);
    const requested=Math.max(0,Math.round(params.holderCount||0));
-   const cellSize=requested?Math.min(params.cellSize,Math.min(viewWidth,viewHeight)/Math.ceil(Math.sqrt(requested*4))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
+   const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*4))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const pattern=battlePattern(params.patternKey??seed,time);
    const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
@@ -98,7 +98,7 @@ export function createPixelBlastCanvas(host){
     return {...p,x:(p.x*w-originX)/ratio,y:(p.y*h-originY)/ratio,envelope:t*t*(3-2*t)*(1-out*out*(3-2*out))};
    });
    function sampleAt(cx,cy){
-    const key=cx+':'+cy;let sample=cache.get(key);
+    const key=cx+cy*65536;let sample=cache.get(key);
     if(sample===undefined){
      const u0=cx*cell/cssHeight,v0=cy*cell/cssHeight;
      let warpX=0,warpY=0;
@@ -153,11 +153,11 @@ export function createPixelBlastCanvas(host){
     // small liquid movement survives without moving the square lattice.
     const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy),tx=fract(sx),ty=fract(sy);
     const a=sampleAt(cx,cy),b=sampleAt(cx+1,cy),cc=sampleAt(cx,cy+1),dd=sampleAt(cx+1,cy+1);
-    const sample={};for(const name of ['feed','warpX','warpY'])sample[name]=mix(mix(a[name],b[name],tx),mix(cc[name],dd[name],tx),ty);
-    let feed=sample.feed;
+    let feed=mix(mix(a.feed,b.feed,tx),mix(cc.feed,dd.feed,tx),ty);
+    const warpX=mix(mix(a.warpX,b.warpX,tx),mix(cc.warpX,dd.warpX,tx),ty),warpY=mix(mix(a.warpY,b.warpY,tx),mix(cc.warpY,dd.warpY,tx),ty);
     let maskInk=0;
     if(identity>0){
-     maskInk=identityInk(identityMask,fx+sample.warpX*cssHeight*(1-identity),fy+sample.warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
+     maskInk=identityInk(identityMask,fx+warpX*cssHeight*(1-identity),fy+warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
      const imageFeed=mix(-.05,1.05,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
