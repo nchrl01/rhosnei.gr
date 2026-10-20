@@ -96,6 +96,13 @@ let stopMusicHistory,musicHistoryTimer,musicalCandles=[],musicalInterval=300000;
 let stopHistory,stopChartHistory,historyContext=null,originDate=null,contextCandles=[],contextInterval=60000,chartRequest=0;
 let historyLoadSequence=0,contextHistoryState=null,contextHistoryOperation=null,contextHistoryKey='';
 const chart=new MarketChart($('market-chart'));
+$('advanced-view').addEventListener('click',()=>{
+ const expanded=document.body.classList.toggle('advanced-view');
+ $('advanced-view').setAttribute('aria-expanded',String(expanded));
+ $('advanced-view').querySelector('span').textContent=expanded?'−':'+';
+ display();if(expanded)requestAnimationFrame(()=>chart.draw());
+});
+
 const replay=createMarketReplay();
 createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
@@ -579,7 +586,7 @@ function display(){
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
  $('mode').hidden=!!historical||!market;
  $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
- $('coin-name').textContent=market?market.baseToken.symbol+' / '+market.quoteToken.symbol:'';
+ $('coin-name').textContent=market?market.baseToken.symbol+(document.body.classList.contains('advanced-view')?' / '+market.quoteToken.symbol:''):'';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
 
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
@@ -880,9 +887,12 @@ function updateCoinReadout(m){
 
  const at=replay.state.active?replay.state.cursor:Date.now(),date=new Date(at);
  ui.clock({timestamp:at,rate:replay.state.active?Number(replay.state.speed)||1:1,replay:replay.state.active,seeking:replay.state.dragging,label:replay.state.active?'Playback time':'Local time'});
- rollCap(cap>0?'$'+Math.round(cap).toLocaleString('en'):'—',cap||0);
+ document.body.dataset.playback=replay.state.active?'replay':'live';
+ const advanced=document.body.classList.contains('advanced-view');
+ rollCap(cap>0?'$'+(advanced?Math.round(cap).toLocaleString('en'):new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(cap)):'—',cap||0);
+ $('coin-cap').title=cap>0?'Estimated market cap · $'+Math.round(cap).toLocaleString('en'):'';
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
- $('coin-cap-label').textContent=replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated||market?.marketCapEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
+ $('coin-cap-label').textContent=!advanced?'MARKET CAP':replay.state.active?'MCAP · HISTORICAL ESTIMATE':m.context?.capEstimated||market?.marketCapEstimated?'MCAP · PRICE ESTIMATE':'MARKET CAP';
 
 }
 async function restoreSharedScore(){
