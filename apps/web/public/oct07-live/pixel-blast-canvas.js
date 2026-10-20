@@ -46,7 +46,15 @@ export function preparePixelIdentity(source){
   }
   sizeData[y*w+x]=sum/n;
  }
- return {width:w,height:h,data,sizeData,rgba,palette:originalArtworkPalette(rgba,{includeNeutrals:true})};
+ const palette=originalArtworkPalette(rgba,{includeNeutrals:true}),colors=new Float32Array(w*h*3);
+ for(let n=0;n<w*h;n++){
+  const i=n*4,r=rgba[i]/255,g=rgba[i+1]/255,b=rgba[i+2]/255;
+  const distance=c=>(r-c[0])**2+(g-c[1])**2+(b-c[2])**2;
+  const primary=distance(palette[0])<distance(palette[1])?palette[0]:palette[1];
+  const peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
+  for(let c=0;c<3;c++)colors[n*3+c]=peak>.001?primary[c]/peak*level:.4;
+ }
+ return {width:w,height:h,data,sizeData,rgba,palette,colors};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),x=fx/side,y=fy/side;
@@ -173,7 +181,19 @@ export function createPixelBlastCanvas(host){
     const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
     candidates.push({centerX,centerY,diameter,score});
    }
-   if(requested)candidates.sort((a,b)=>b.score-a.score);
+   // Partition the highest-scoring population without sorting every cell.
+   if(requested&&requested<candidates.length){
+    let lo=0,hi=candidates.length-1;const target=requested-1;
+    while(lo<hi){
+     const pivot=candidates[(lo+hi)>>>1].score;let i=lo,j=hi;
+     while(i<=j){
+      while(candidates[i].score>pivot)i++;
+      while(candidates[j].score<pivot)j--;
+      if(i<=j){const swap=candidates[i];candidates[i++]=candidates[j];candidates[j--]=swap;}
+     }
+     if(target<=j)hi=j;else if(target>=i)lo=i;else break;
+    }
+   }
    const selected=requested?candidates.slice(0,requested):candidates;
    canvas.dataset.markCount=String(selected.length);
    for(const {centerX,centerY,diameter} of selected){
@@ -192,21 +212,18 @@ export function createPixelBlastCanvas(host){
     }
    }
    let occupied=0;
+   const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
+   const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
    for(let n=0;n<counts.length;n++)if(counts[n]){
-    occupied++;const ink=(params.inkColor??1)*255,i=n*4;
-    let rgb=[1,1,1];
-    const color=clamp(params.artworkColor||0);
-    if(color&&identityMask?.rgba){
-     const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
+    occupied++;const i=n*4;let r=1,g=1,b=1;
+    if(color&&mask?.colors){
+     const u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
      if(u>=0&&u<1&&v>=0&&v<1){
-      const m=(Math.floor(v*identityMask.height)*identityMask.width+Math.floor(u*identityMask.width))*4;
-      const source=identityMask.rgba,original=[source[m]/255,source[m+1]/255,source[m+2]/255];
-      const distance=c=>original.reduce((sum,x,j)=>sum+(x-c[j])**2,0),palette=identityMask.palette;
-      const primary=distance(palette[0])<distance(palette[1])?palette[0]:palette[1],peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
-      rgb=primary.map(c=>mix(1,peak>.001?c/peak*level:.4,color*source[m+3]/255));
+      const m=Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width),amount=color*mask.rgba[m*4+3]/255,c=m*3;
+      r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);
      }
     }
-    output.data[i]=ink*rgb[0];output.data[i+1]=ink*rgb[1];output.data[i+2]=ink*rgb[2];output.data[i+3]=255;
+    output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;
    layerContext.putImageData(output,0,0);ctx.drawImage(layerCanvas,0,0);
