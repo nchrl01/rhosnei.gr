@@ -164,7 +164,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   }
   // Transport controls the original dim/sparse resting state; audio gain
   // and metering remain completely independent of the visual engine.
-  if(now-lastRender<1000/(renderer.kind==='canvas'?15:60))return;lastRender=now;
+  const frameInterval=1000/(renderer.kind==='canvas'?30:60);
+  if(now-lastRender<frameInterval)return;lastRender=now-(now-lastRender)%frameInterval;
   overlay?.clearRect(0,0,canvas.width,canvas.height);
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
