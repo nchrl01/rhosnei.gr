@@ -697,9 +697,14 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
 #advanced-diagnostics{padding-bottom:20px}
 @media(max-width:760px){
  .instrument-page .compact-chart-toolbar{align-items:flex-start;flex-wrap:wrap;gap:12px}
- .instrument-page .replay-actions{margin-left:0;width:100%}
+ .instrument-page .replay-actions{margin-left:0;width:100%;flex-wrap:nowrap;gap:8px}
  .playback-modes button,.instrument-page .replay-actions>#replay-restart,.instrument-page .replay-actions .playback-speed button{min-height:44px;height:auto}
- .instrument-page .replay-actions .playback-speed{flex-basis:100%;margin-top:4px}
+ .instrument-page .replay-actions .playback-speed{flex:0 0 auto;margin:0}
+ .instrument-page .replay-actions .playback-speed button{display:none}
+ .instrument-page .replay-actions .playback-speed .replay-speed-select{display:block;width:68px;min-height:44px;padding:6px;font-size:var(--font-size-body);border-color:#555}
+ .instrument-page .replay-actions .playback-modes{flex:1;min-width:0}
+ .instrument-page .playback-modes button{flex:1;min-width:0;padding-inline:clamp(6px,2vw,12px)}
+ .instrument-page .replay-actions>#replay-restart{flex:none;padding-inline:8px;font-size:var(--font-size-small)}
  #advanced-readings{grid-template-columns:1fr;gap:28px}
  .player-history-message{align-items:flex-start;flex-wrap:wrap}
  #chart-tick-row{min-height:44px}
@@ -723,6 +728,7 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
 }
 
 .instrument-page .replay-actions>#replay-restart[hidden]{display:none}
+.replay-speed-select{display:none}
 
 /* October 7 expanded canvas: retain navigation and fill the remaining viewport. */
 .audio-visualizer.is-expanded{inset:auto!important;left:0!important;top:var(--visual-full-top,64px)!important;width:100vw!important;height:calc(100svh - var(--visual-full-top,64px))!important;padding:0!important;z-index:90}

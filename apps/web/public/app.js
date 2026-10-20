@@ -12,6 +12,7 @@ import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=391';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=359';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
+import {bindPlaybackShortcuts} from './playback-shortcuts.js?v=397';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=395';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=395';
 import {rollingText} from './coin-readout.js?v=53';
@@ -541,6 +542,7 @@ function updatePlayAvailability(active=playing){
  button.setAttribute('aria-label',waiting?'Loading coin':interrupted?'Resume interrupted audio':active?'Pause experience':'Play audiovisual experience');
  button.setAttribute('aria-busy',String(starting||waiting));
 }
+const playbackShortcuts=bindPlaybackShortcuts({button:$('play'),getState:()=>({ready:!!market,starting,playing:playing&&ctx?.state==='running'}),getMetadata:()=>market?{title:market.baseToken.symbol+(market.baseToken.name&&market.baseToken.name!==market.baseToken.symbol?' · '+market.baseToken.name:''),artist:'$AV',album:'Live market artwork'}:null});
 function setPlayState(active){
  testMint.setPlaying(active&&ctx?.state==='running');
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
@@ -548,6 +550,7 @@ function setPlayState(active){
  button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
  button.setAttribute('aria-pressed',String(active&&!interrupted));
  updatePlayAvailability(active);
+ playbackShortcuts.update();
 }
 let audioLoadFailed=false;
 function audioBusy(value){
@@ -593,7 +596,7 @@ function display(){
  updatePlayAvailability();
  chart.setMarketCapBasis(replay.state.active?(replay.state.frozen?.market||market):market);
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
- displayCoinImage();syncSavedCoin();showCoinAddress(market?.baseToken?.address,market?.chainId);
+ displayCoinImage();syncSavedCoin();showCoinAddress(market?.baseToken?.address,market?.chainId);playbackShortcuts.update();
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
  $('mode').hidden=!!historical||!market;
  $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
@@ -989,7 +992,7 @@ function audioContext(){
    if(context!==ctx||!playing)return;
    if(context.state==='running'){replay.state.clock=performance.now();flushPianoTrade();setPlayState(true);}
    else{$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('play').textContent='Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
-   audioStatus();
+   audioStatus();playbackShortcuts.update();
   };
  }
  return ctx;
@@ -1061,13 +1064,17 @@ $('replay-live').onclick=async()=>{
 };
 function updateSpeedButtons(){
  for(const button of $('replay-speed').querySelectorAll('[data-rate]'))button.setAttribute('aria-pressed',String(button.dataset.rate===replay.state.speed));
+ $('replay-speed-select').value=replay.state.speed;
+}
+function setReplaySpeed(value){
+ replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');
+ replay.state.speed=replaySpeed(value);replay.release();updateSpeedButtons();
+ session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});
 }
 $('replay-speed').onclick=event=>{
- const button=event.target.closest('button[data-rate]');if(!button)return;
- replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');
- replay.state.speed=replaySpeed(button.dataset.rate);replay.release();updateSpeedButtons();
- session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});
+ const button=event.target.closest('button[data-rate]');if(button)setReplaySpeed(button.dataset.rate);
 };
+$('replay-speed-select').onchange=()=>setReplaySpeed($('replay-speed-select').value);
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);
 $('chart-range').onchange=()=>chart.setRange($('chart-range').value);
 $('chart-timeframe').onchange=async()=>{if(replay.state.active&&!await $('replay-live').onclick())return;loadChartTimeframe();};
