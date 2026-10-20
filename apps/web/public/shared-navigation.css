@@ -554,3 +554,18 @@ html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:
  .site-footer nav>*{display:flex;align-items:center;min-height:44px;white-space:normal}
  .site-footer>.footer-prices{order:3;display:flex;padding-top:16px;border-top:1px solid var(--line)}
 }
+
+.header-desktop-search{display:none}
+@media(min-width:761px){
+ :is(.market-header,.site-navigation) .header-main.has-desktop-search{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,40vw) minmax(0,1fr);gap:16px;height:60px}
+ .has-desktop-search>.header-links{justify-self:end}
+ .has-desktop-search>.upic-brand{justify-self:start}
+ .header-desktop-search{display:block;position:relative;min-width:0;width:100%;max-width:640px;justify-self:center}
+ .header-desktop-search :is(#coin-form,#marketplace-coin-form){width:100%;max-width:none;margin:0;padding:0}
+ .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row{padding:0;margin:0;gap:8px}
+ .header-desktop-search .address-field{height:36px;min-width:0}
+ .header-desktop-search .address-row>button{height:36px;min-height:36px;width:auto;aspect-ratio:auto;padding:4px 12px;font-size:var(--font-size-small)}
+ .header-desktop-search :is(#address-help,#marketplace-coin-help){display:none}
+ .header-desktop-search #coin-search-results{position:absolute;top:calc(100% + 12px);left:0;width:100%;max-height:65vh;overflow:auto;background:#000;border:1px solid var(--control-line);padding:12px;z-index:120}
+ .header-desktop-search :is(#lookup,#search-loader):not(:empty):not([hidden]){position:absolute;top:100%;left:0;width:100%;background:#000;margin:8px 0 0;padding:8px;border:1px solid var(--line)}
+}
