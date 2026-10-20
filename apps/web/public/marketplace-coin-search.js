@@ -1,4 +1,4 @@
-import {bindSearchField} from './search-field.js?v=265';
+import {bindSearchField} from './search-field.js?v=381';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {findOnchainMarkets} from './market-search.js?v=350';
 import {isExchangeQuery,searchExchangeMarkets} from './ccxt-market.js?v=359';

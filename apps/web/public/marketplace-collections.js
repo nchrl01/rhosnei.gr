@@ -1,5 +1,5 @@
 import {attachArtworkDither} from './coin-dither.js?v=276';
-import {bindSearchField} from './search-field.js?v=265';
+import {bindSearchField} from './search-field.js?v=381';
 const API='https://upic-insightx.nchrl01.workers.dev/marketplace';
 const search=document.getElementById('marketplace-search'),buttons=[...document.querySelectorAll('[data-chain]')],title=document.getElementById('marketplace-empty-title'),note=document.getElementById('marketplace-empty-note'),empty=document.querySelector('.marketplace-empty'),count=document.getElementById('marketplace-result-count');
 const grid=document.createElement('div');grid.className='marketplace-grid';grid.id='marketplace-grid';empty.before(grid);
