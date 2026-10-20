@@ -613,6 +613,7 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
  .instrument-page .coin-title .coin-live-readings{grid-template-columns:minmax(0,1fr);gap:20px;text-align:center}
  .instrument-page .coin-live-readings>div{justify-content:center}
  .instrument-page .coin-live-readings>.coin-clock-reading{column-gap:20px}
+ .instrument-page .coin-cap-reading strong{font-size:clamp(24px,6.4vw,32px);line-height:1.2}
  /* Market readings read vertically, like the lines of a lyrics panel. */
  .instrument-page .readings{grid-template-columns:minmax(0,1fr);gap:24px;margin-top:24px;padding:24px 20px;border:0;background:#080808;overflow:visible}
  .instrument-page .readings>div{gap:8px;min-width:0}

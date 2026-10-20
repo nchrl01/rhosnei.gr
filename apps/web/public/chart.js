@@ -34,7 +34,13 @@ export class MarketChart{
    const price=n=>'$'+Number(n).toLocaleString('en',{maximumSignificantDigits:7});
    target.textContent=new Date(bar.time).toLocaleString()+' · Estimated market cap · O '+this.formatMarketCap(bar.open)+'  H '+this.formatMarketCap(bar.high)+'  L '+this.formatMarketCap(bar.low)+'  C '+this.formatMarketCap(bar.close)+(bar.volume!=null?(bar.volumeEstimated?' · Estimated quote volume ':' · USD volume ')+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
   });
-  const interaction=()=>{this.manual=true;this.needsFit=false;this.replayFollowing=false;};
+  const interaction=()=>{
+   this.manual=true;this.needsFit=false;this.replayFollowing=false;
+   if(this.readReplay?.().active&&!this.replayPanning){
+    this.replayPanning=true;this.replayPanRange=this.chart.timeScale().getVisibleLogicalRange();
+    this.onReplayPanStart?.();
+   }
+  };
   let gesture=null,dragged=false;
   document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';
   container.addEventListener('pointerdown',event=>{
@@ -43,9 +49,9 @@ export class MarketChart{
   container.addEventListener('pointermove',event=>{
    if(gesture?.id===event.pointerId&&Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>5)dragged=true;
   },true);
-  const endGesture=event=>{if(gesture?.id===event.pointerId)gesture=null;};
+  const endGesture=event=>{if(gesture?.id===event.pointerId){gesture=null;requestAnimationFrame(()=>this.finishReplayPan());}};
   window.addEventListener('pointerup',endGesture,true);window.addEventListener('pointercancel',endGesture,true);
-  container.addEventListener('wheel',interaction,{passive:true});
+  container.addEventListener('wheel',()=>{interaction();clearTimeout(this.replayWheelTimer);this.replayWheelTimer=setTimeout(()=>this.finishReplayPan(),180);},{passive:true});
   setInterval(()=>{if(document.hidden||!document.body.classList.contains('inspecting'))return;const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},1000);
   this.tickView=createChartTicks(this);
   this.chart.subscribeClick(param=>{if(!dragged&&typeof param.time==='number'){const bars=this.readReplay?.().frozen?.bars,bar=bars?bars.find(item=>item.time===param.time*1000):this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
@@ -71,6 +77,22 @@ export class MarketChart{
   this.replayFrame=requestAnimationFrame(animate);
  }
  resumeReplayFollow(){this.replayFollowing=true;this.manual=true;this.needsFit=false;}
+ syncReplayPan(){
+  if(!this.replayPanning||!this.readReplay?.().active||!this.renderedBars.length)return;
+  const range=this.chart.timeScale().getVisibleLogicalRange();if(!range)return;
+  if(range.from===this.replayPanRange?.from&&range.to===this.replayPanRange?.to)return;
+  this.replayPanRange={...range};
+  const logical=Math.max(0,Math.min(this.renderedBars.length-1,(range.from+range.to)/2-this.publishedGap));
+  const index=Math.floor(logical),bar=this.renderedBars[index],next=this.renderedBars[index+1];
+  const start=candleEnd(bar,this.interval),end=next?candleEnd(next,this.interval):start;
+  this.onReplayPan?.(start+(end-start)*(logical-index));
+ }
+ finishReplayPan(){
+  if(!this.replayPanning)return;
+  this.syncReplayPan();this.replayPanning=false;this.replayPanRange=null;
+  this.onReplayPanEnd?.();
+  if(this.readReplay?.().active){this.resumeReplayFollow();this.followReplay();}
+ }
  replayLogical(at){
   const bars=this.renderedBars;if(!bars.length)return null;
   let low=0,high=bars.length;
@@ -84,6 +106,7 @@ export class MarketChart{
   const state=this.readReplay?.(),active=!!state?.active&&this.renderedBars.length>0;
   if(this.playhead)this.playhead.hidden=!active;
   if(!active)return;
+  this.syncReplayPan();
   const scale=this.chart.timeScale(),width=scale.width();
   if(this.playhead)this.playhead.style.bottom=scale.height()+'px';
   let cursor=state.cursor;
@@ -102,16 +125,8 @@ export class MarketChart{
   if(this.playhead){
    // The chart applies range changes on its next paint, so following must not
    // briefly position the cursor using the previous viewport.
-   let x=width/2;
-   if(!this.replayFollowing){
-    // This chart version only accepts integer logical indices. Interpolate
-    // between their coordinates to keep fractional playback off the left edge.
-    const index=Math.floor(logical),fraction=logical-index,start=scale.logicalToCoordinate(index);
-    const end=fraction?scale.logicalToCoordinate(index+1):start;
-    x=start==null||end==null?null:start+(end-start)*fraction;
-   }
-   this.playhead.hidden=x==null||x<0||x>width;
-   if(x!=null)this.playhead.style.left=x+'px';
+   this.playhead.hidden=false;
+   this.playhead.style.left=width/2+'px';
   }
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
@@ -123,7 +138,7 @@ export class MarketChart{
  goLive(){this.range='live';this.manual=false;this.replayFollowing=true;this.needsFit=true;this.schedule();}
  zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;this.replayFollowing=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.replayFollowing=true;this.publishedGap=0;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);if(this.playhead)this.playhead.hidden=true;this.schedule();}
+ reset(){clearTimeout(this.replayWheelTimer);this.replayPanning=false;this.replayPanRange=null;this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.replayFollowing=true;this.publishedGap=0;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);if(this.playhead)this.playhead.hidden=true;this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
   // Provider coverage takes precedence over observations already included in

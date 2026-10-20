@@ -37,7 +37,7 @@ function fixture(initial=[dex,native]){
   node:(tag,text,cls)=>new Element(tag,text,cls),
   iconButton:(label,icon,cls)=>{const button=new Element('button','',cls);button.setAttribute('aria-label',label);return button;},
   rememberRecentCoin:vi.fn(),paintRecent:vi.fn(),paintDesktop:vi.fn(),paint:vi.fn(),close:vi.fn(),
-  load:vi.fn(),loadTrending:vi.fn(),loadSavedCoins:vi.fn(async()=>[]),signInSavedCoins:vi.fn(async()=>{}),savedCoinsState:()=>({status:'ready'}),coinOnNetwork:vi.fn(()=>{throw Error('Saved coins must keep their network');}),
+  load:vi.fn(),loadTrending:vi.fn(),loadSavedCoins:vi.fn(async()=>[]),signInSavedCoins:vi.fn(async()=>{}),savedCoinsState:()=>({status:'ready',account:{address:'0xabc'}}),coinOnNetwork:vi.fn(()=>{throw Error('Saved coins must keep their network');}),
  });
  context.savedCoins=()=>context.rows;
  context.removeSavedCoin=vi.fn(key=>{context.rows=context.rows.filter(row=>row.key!==key);});
@@ -94,17 +94,17 @@ describe('saved search lists',()=>{
   expect(c.tabs.children.map(button=>button.attributes['aria-pressed'])).toEqual(['false','false','true']);
   expect(c.load).not.toHaveBeenCalled();expect(c.loadTrending).not.toHaveBeenCalled();expect(c.loadSavedCoins).toHaveBeenCalled();expect(c.paint).toHaveBeenCalled();
  });
- it('offers sign-in and loads profile bookmarks after a successful sign-in',async()=>{
+ it('keeps signed-out search free of private rows and sign-in panels',()=>{
   const {context:c,container}=fixture();c.savedCoinsState=()=>({status:'signed-out'});c.renderSaved(container);
-  expect(container.querySelector('.saved-search-empty').textContent).toContain('Sign in');
-  await container.querySelector('.saved-search-action').events.click();
-  expect(c.signInSavedCoins).toHaveBeenCalledTimes(1);expect(c.loadSavedCoins).not.toHaveBeenCalled();expect(c.close).toHaveBeenCalledWith(false);expect(c.open).toHaveBeenCalledWith({refresh:false});
+  expect(container.children).toHaveLength(0);
+  c.setCategory('saved');expect(c.category).toBe('coins');
+  expect(c.signInSavedCoins).not.toHaveBeenCalled();expect(c.loadSavedCoins).not.toHaveBeenCalled();
  });
- it('renders loading and retry states without exposing cached rows for a signed-out account',async()=>{
-  const {context:c,container}=fixture();c.savedCoinsState=()=>({status:'loading'});c.renderSaved(container);
+ it('renders loading and retry states for the authenticated profile',async()=>{
+  const {context:c,container}=fixture();c.savedCoinsState=()=>({status:'loading',account:{address:'0xabc'}});c.renderSaved(container);
   expect(container.querySelectorAll('.saved-search-row')).toHaveLength(0);
   expect(container.querySelector('.saved-search-empty').textContent).toBe('Loading saved coins…');
-  c.savedCoinsState=()=>({status:'error',error:'Connection interrupted'});c.renderSaved(container);
+  c.savedCoinsState=()=>({status:'error',error:'Connection interrupted',account:{address:'0xabc'}});c.renderSaved(container);
   expect(container.querySelector('.saved-search-empty').textContent).toBe('Connection interrupted');
   await container.querySelector('.saved-search-action').events.click();expect(c.loadSavedCoins).toHaveBeenCalledTimes(1);
  });

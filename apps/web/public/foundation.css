@@ -86,4 +86,11 @@ img, canvas { -webkit-user-drag: none; }
   clip-path: inset(50%);
   white-space: nowrap;
 }
-@media (max-width: 760px) { :root { --site-gutter: 20px; } }
+@media (max-width: 760px) {
+ :root {
+  --site-gutter: 20px;
+  --font-size-small: clamp(12px, calc(10px + .7vw), 14px);
+  --font-size-body: clamp(16px, calc(13px + .8vw), 18px);
+  --font-size-title: clamp(22px, calc(16px + 1.8vw), 28px);
+ }
+}

@@ -82,6 +82,7 @@ export function bindMobileCoinSearch(){
   row.append(pick,remove);return row;
  }
  function renderSaved(container,{desktop=false}={}){
+  if(!savedCoinsState().account){container.replaceChildren();return;}
   const state=savedCoinsState(),all=savedCoins(),rows=matchingSaved(),previous=[...container.querySelectorAll('.saved-search-row')],focused=previous.findIndex(row=>row.contains(document.activeElement)),focusedKey=previous[focused]?.dataset.key,removeFocused=document.activeElement?.classList.contains('saved-search-remove');
   container.setAttribute('aria-busy',String(state.status==='loading'));
   // Keep loaded rows and keyboard focus stable during a profile refresh.
@@ -127,6 +128,9 @@ export function bindMobileCoinSearch(){
   filters.hidden=category==='saved';filterPanel.hidden=filters.hidden||!filters.open;filters.setAttribute('aria-expanded',String(!filterPanel.hidden));
  }
  function paint(){
+  const signedIn=Boolean(savedCoinsState().account);
+  const savedTab=tabs.querySelector('[data-category="saved"]');if(savedTab)savedTab.hidden=!signedIn;
+  if(category==='saved'&&!signedIn){category='coins';for(const button of tabs.children)button.setAttribute('aria-pressed',String(button.dataset.category==='coins'));}
   dialog.dataset.category=category;paintNetworks();
   const q=input.value.trim().toLowerCase(),liveResults=category!=='saved'&&results&&!results.hidden;recent.hidden=Boolean(q)||!chips.childElementCount;suggestions.hidden=Boolean(liveResults);tabs.hidden=false;status.hidden=Boolean(liveResults);more.hidden=Boolean(liveResults);if(liveResults)return;
   if(category==='saved'){status.textContent=savedCoinsState().status==='ready'?'Saved in your profile':'';status.hidden=!status.textContent;more.hidden=true;renderSaved(suggestions);return;}
@@ -136,13 +140,14 @@ export function bindMobileCoinSearch(){
   more.hidden=rows.length<=visible;for(const row of rows.slice(0,visible)){const {selection:coin,capture}=coinPreview(row,network.value);const button=node('button',null,'mobile-search-coin');button.type='button';const artwork=node('span',null,'mobile-search-artwork'),img=node('img');img.alt='';if(capture?.snapshot||coin.image)img.src=capture?.snapshot||coin.image;else artwork.dataset.unavailable='true';img.draggable=false;img.loading='lazy';artwork.append(img);const identity=node('span',null,'mobile-search-identity');identity.append(node('span',coin.symbol,'mobile-search-symbol'),node('small',coin.name||coin.symbol),node('small',(coin.chain==='unknown'?'MARKET SEARCH':(coin.chain||'').toUpperCase())+(coin.address?' · '+coin.address.slice(0,5)+'…'+coin.address.slice(-4):'')));let fallback=false;img.addEventListener('error',()=>{if(capture?.snapshot&&coin.image&&!fallback){fallback=true;img.src=coin.image;attachArtworkDither(img);}else artwork.dataset.unavailable='true';});const metrics=node('span',null,'mobile-search-metrics');metrics.append(node('span',money(coin.marketCap)),node('small','Market cap'));button.append(artwork,identity,metrics);button.addEventListener('click',()=>select(coin));suggestions.append(button);if(!capture?.snapshot&&coin.image)attachArtworkDither(img);}
  }
  function setCategory(key){
+  if(key==='saved'&&!savedCoinsState().account)key='coins';
   category=key;visible=30;filters.open=false;if(results){results.hidden=true;input.setAttribute('aria-expanded','false');}for(const button of tabs.children)button.setAttribute('aria-pressed',String(button.dataset.category===key));
   if(key==='saved'){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));void loadSavedCoins().catch(()=>{});}paint();
   if(dialog.open&&key!=='saved')void load();if(key==='trending')void loadTrending();
  }
  for(const [key,label] of [['coins','Coins'],['trending','Trending'],['saved','Saved']]){const button=node('button',label);button.type='button';button.dataset.category=key;button.setAttribute('aria-pressed',String(key===category));button.addEventListener('click',()=>setCategory(key));tabs.append(button);}
  form.addEventListener('submit',()=>{if(category!=='coins')setCategory('coins');});
- window.addEventListener('upic:saved-coins-changed',()=>{paintDesktopSaved();if(category==='saved')paint();});
+ window.addEventListener('upic:saved-coins-changed',()=>{paintDesktopSaved();paint();});
  async function loadTrending(){
   if(trendingLoading)return trendingLoading;trendingError='';
   trendingLoading=loadTrendingCoins().then(rows=>{

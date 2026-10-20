@@ -42,7 +42,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=391';
-import {MarketChart} from './chart.js?v=395';
+import {MarketChart} from './chart.js?v=396';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -1012,6 +1012,17 @@ function seekHistory(bar,dragging=false){
 }
 chart.onHistorySeek=seekHistory;
 chart.onHistorySeekEnd=()=>replay.release();
+chart.onReplayPanStart=()=>{
+ replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');
+ replay.state.dragging=true;pendingPianoTrade=null;replayPianoPrimed=false;replayPhrase=null;
+};
+chart.onReplayPan=at=>{
+ if(!replay.state.active)return;
+ Object.assign(replay.state,{cursor:at,clock:performance.now(),controls:null,endHold:null,ended:false});
+ pianoReplayCursor=at;
+ if(!playing)syncLevels(metrics());
+};
+chart.onReplayPanEnd=()=>{replay.release();};
 function restartHistory(){
  if(!historyReplayReady()){
   pendingHistoryReplay=true;primeAudio();status('Loading history for replay');
