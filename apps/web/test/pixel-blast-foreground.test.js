@@ -76,21 +76,30 @@ function fakeCanvas(){
  return canvas;
 }
 afterEach(()=>vi.unstubAllGlobals());
+function accentRenderer(){
+ vi.stubGlobal('document',{createElement:()=>fakeCanvas()});
+ vi.stubGlobal('devicePixelRatio',1);
+ const renderer=createPixelBlastCanvas({append(){}}),base=pixelBlastParameters({active:true,fresh:1,level:.5,seed:205});
+ const params={...base,holderCount:100,pixelPresence:1,edgeFade:.05,dotSize:8,identity:0,identityMotion:0,inkColor:1,artworkColor:0};
+ const render=(weights,overrides={})=>{
+  renderer.render({width:128,height:128,time:3,seed:205,params:{...params,...overrides,shapeWeights:weights}});
+  return new Uint8ClampedArray(renderer.canvas.context.pixels.data);
+ };
+ return {renderer,render};
+}
+function colours(pixels){
+ const result=[];
+ for(let n=0;n<pixels.length;n+=4)if(pixels[n+3])result.push([...pixels.slice(n,n+3)]);
+ return result;
+}
+function expectNeutral(pixels){
+ const visible=colours(pixels);
+ expect(visible.length).toBeGreaterThan(0);
+ expect(visible.every(rgb=>rgb.every(channel=>channel===255))).toBe(true);
+}
 describe('stable directional accents',()=>{
- it('tints the same minority of cells and blends colour with the shape weights',()=>{
-  vi.stubGlobal('document',{createElement:()=>fakeCanvas()});
-  vi.stubGlobal('devicePixelRatio',1);
-  const renderer=createPixelBlastCanvas({append(){}}),base=pixelBlastParameters({active:true,fresh:1,level:.5,seed:205});
-  const params={...base,holderCount:100,pixelPresence:1,edgeFade:.05,dotSize:8,identity:0,identityMotion:0,inkColor:1,artworkColor:0};
-  const render=weights=>{
-   renderer.render({width:128,height:128,time:3,seed:205,params:{...params,shapeWeights:weights}});
-   return new Uint8ClampedArray(renderer.canvas.context.pixels.data);
-  };
-  const colours=pixels=>{
-   const result=[];
-   for(let n=0;n<pixels.length;n+=4)if(pixels[n+3])result.push([...pixels.slice(n,n+3)]);
-   return result;
-  };
+ it('colours the same minority of resolved pluses green and crosses red',()=>{
+  const {renderer,render}=accentRenderer();
   const up=render([0,1,0]),accentCount=Number(renderer.canvas.dataset.accentMarkCount);
   expect(Number(renderer.canvas.dataset.markCount)).toBe(100);
   expect(accentCount).toBeGreaterThan(8);expect(accentCount).toBeLessThan(32);
@@ -99,11 +108,40 @@ describe('stable directional accents',()=>{
   expect(render([0,1,0])).toEqual(up);
   expect(colours(render([0,0,1]))).toContainEqual([255,102,114]);
   expect(Number(renderer.canvas.dataset.accentMarkCount)).toBe(accentCount);
-  const mixed=colours(render([0,.5,.5])).find(rgb=>rgb[0]!==255||rgb[1]!==255||rgb[2]!==255);
-  expect(mixed[0]).toBeCloseTo(168,0);
-  expect(Math.abs(mixed[1]-158.5)).toBeLessThanOrEqual(.5);
-  expect(Math.abs(mixed[2]-118.5)).toBeLessThanOrEqual(.5);
-  expect(colours(render([1,0,0])).every(rgb=>rgb.every(channel=>channel===255))).toBe(true);
+  expect(render([0,1,0])).toEqual(up);
   expect(Number(renderer.canvas.dataset.markCount)).toBe(100);
+ });
+ it.each([-1,0,1])('keeps resolved dots neutral even with direction %s',direction=>{
+  const {renderer,render}=accentRenderer();
+  render([0,1,0]);
+  expectNeutral(render([1,0,0],{markDirection:direction}));
+  expect(Number(renderer.canvas.dataset.accentMarkCount)).toBe(0);
+  expect(Number(renderer.canvas.dataset.markCount)).toBe(100);
+ });
+ it.each([[.5,.5,0],[.5,0,.5],[.001,.999,0],[.001,0,.999],[0,.5,.5],[.2,.4,.4]])('keeps morph weights %j in the neutral palette',(...weights)=>{
+  const {renderer,render}=accentRenderer();
+  render([0,1,0]);
+  expectNeutral(render(weights));
+  expect(Number(renderer.canvas.dataset.accentMarkCount)).toBe(0);
+  expect(Number(renderer.canvas.dataset.markCount)).toBe(100);
+ });
+ it.each([1,2])('does not colour the tiny circle fallback at size %s',dotSize=>{
+  const {renderer,render}=accentRenderer();
+  for(const weights of [[0,1,0],[0,0,1]]){
+   expectNeutral(render(weights,{dotSize}));
+   expect(Number(renderer.canvas.dataset.accentMarkCount)).toBe(0);
+   expect(Number(renderer.canvas.dataset.markCount)).toBe(100);
+  }
+ });
+ it('preserves milestone artwork colours on dots and transitional shapes',()=>{
+  const {renderer,render}=accentRenderer(),mask=preparePixelIdentity(artwork(0,255));
+  for(let n=0;n<mask.colors.length;n+=3)mask.colors.set([.2,.4,.8],n);
+  renderer.setImage(mask);
+  for(const weights of [[1,0,0],[.5,.5,0],[.5,0,.5],[0,.5,.5]]){
+   const visible=colours(render(weights,{artworkColor:1}));
+   expect(visible).toContainEqual([51,102,204]);
+   expect(visible.every(rgb=>rgb.join(',')==='51,102,204'||rgb.join(',')==='255,255,255')).toBe(true);
+   expect(Number(renderer.canvas.dataset.accentMarkCount)).toBe(0);
+  }
  });
 });

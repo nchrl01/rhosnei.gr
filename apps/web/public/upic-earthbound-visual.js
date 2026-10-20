@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=391';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=392';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=380';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -103,22 +103,40 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null,imageSettled=false,imageReveal=0;
  let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
  let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
- let visualReady=false,loaderHasPlayed=false,loaderSignature='';
+ let visualReady=false,loaderHasPlayed=false,loaderSignature='',loaderRevealUntil=0;
+ let departure=null,departureTimer=null;
+ function clearDeparture(){clearTimeout(departureTimer);departureTimer=null;if(departure){departure.remove();departure.width=departure.height=1;departure=null;}}
+ function stageDeparture(){
+  clearDeparture();
+  if(reduced.matches||!visualReady||!renderedAt||host.classList.contains('has-recorded-frame')||transportHasPlayed&&transportPresence<=.001)return;
+  const surface=renderer.surface;if(!surface?.width||!surface.height)return;
+  const copy=document.createElement('canvas');copy.width=surface.width;copy.height=surface.height;
+  const context=copy.getContext('2d');if(!context)return;
+  try{context.drawImage(surface,0,0);}catch{return;}
+  copy.className='visual-departure';copy.setAttribute('aria-hidden','true');
+  copy.style.setProperty('--departure-opacity',String(unit(surface.style.opacity||1)*unit(getComputedStyle(field).opacity)));
+  departure=copy;
+ }
+ function showDeparture(){
+  if(!departure||departure.isConnected)return;
+  host.append(departure);departureTimer=setTimeout(clearDeparture,280);
+ }
  function syncVisualLoading(){
   if(visualReady&&loaderSignature==='hidden')return;
   const state=getState(),playing=Boolean(state.playing);
   if(playing)loaderHasPlayed=true;
   const stopped=loaderHasPlayed&&!playing||settings.seeking||settings.ended;
   const current=identityKey(state.coinKey)===key;
-  if(!visualReady&&current&&renderedCoinKey===key&&renderedAt&&imageSettled&&imageCoinKey===key&&imageReveal>=1&&host.dataset.holderLoading!=='true'&&renderer.snapshot().markCount>0)visualReady=true;
+  if(!visualReady&&current&&renderedCoinKey===key&&renderedAt&&imageSettled&&imageCoinKey===key&&imageReveal>=1&&host.dataset.holderLoading!=='true'&&renderer.snapshot().markCount>0){visualReady=true;loaderRevealUntil=reduced.matches||stopped?0:performance.now()+400;}
   const unavailable=Boolean(current&&latest?.hasMarket&&latest.liveHolders&&!initialHoldersReady&&latest.holderFetchSettled&&!latest.holderFetchLoading);
   const pending=!visualReady&&!stopped;
-  const signature=pending?(unavailable?'unavailable':'loading'):'hidden';
+  const revealing=visualReady&&!stopped&&performance.now()<loaderRevealUntil;
+  const signature=pending?(unavailable?'unavailable':'loading'):revealing?'revealing':'hidden';
   if(signature===loaderSignature)return;
   loaderSignature=signature;
-  loader.hidden=!pending;
-  loader.dataset.state=unavailable?'unavailable':'loading';
-  const label=unavailable?'Visual unavailable':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
+  loader.hidden=!pending&&!revealing;
+  loader.dataset.state=signature;
+  const label=revealing?'Visual ready':unavailable?'Visual unavailable':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
   host.dataset.visualLoading=String(pending&&!unavailable);host.setAttribute('aria-busy',String(pending&&!unavailable));
  }
  function reset(){clock=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
@@ -220,7 +238,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
-   if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;}
+   if(changed){showDeparture();initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;}
+   else if(departure&&!departure.isConnected)clearDeparture();
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    syncHolderLoading();
    if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
@@ -289,7 +308,12 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    };
   },
   snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
-  refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  refresh(){lastRender=0;size();},reset(){
+   stageDeparture();reset();
+   // Selection assigns its new identity synchronously after reset. Start the
+   // handoff before the next market tick, without treating replay resets as navigation.
+   queueMicrotask(()=>{if(closed)return;if(identityKey(getState().coinKey)!==key){showDeparture();visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;syncVisualLoading();}else if(departure&&!departure.isConnected)clearDeparture();});
+  },
+  close(){closed=true;cancelAnimationFrame(raf);clearDeparture();fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

@@ -701,6 +701,24 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
  .player-history-message{align-items:flex-start;flex-wrap:wrap}
  #chart-tick-row{min-height:44px}
 }
+/* Middle-width player: artwork and playback each get a complete, readable row. */
+@media(min-width:761px) and (max-width:1279px){
+ body.instrument-page>main{display:flex;flex-direction:column;align-items:stretch}
+ body.instrument-page>main>.market-header{order:0}
+ body.instrument-page>main>#coin-form{order:1;width:100%;max-width:760px;align-self:center}
+ body.instrument-page>main>#coin-search-results{order:2;width:100%;max-width:760px;align-self:center}
+ body.instrument-page>main>.audio-visualizer:not(.is-expanded){order:3;position:relative;inset:auto;align-self:stretch;flex:none;width:100%;height:clamp(260px,44svh,500px);min-height:0;aspect-ratio:auto;margin:16px 0 24px}
+ body.instrument-page>main>.visual-placeholder{order:3;flex:none;max-width:100%}
+ body.instrument-page>main>.instrument{order:4;width:100%;min-width:0;max-width:760px;align-self:center}
+ body.instrument-page>main>.nft-owner-preview{order:5;width:100%;max-width:760px;align-self:center}
+ body.instrument-page>main>.site-footer{order:6}
+ body.instrument-page .instrument>.instrument-top{display:grid;grid-template-columns:minmax(0,1fr);width:100%;max-width:none;gap:20px;margin:0 0 20px}
+ body.instrument-page .instrument-top>.coin-identity{grid-column:1;grid-row:1;width:100%;min-width:0}
+ body.instrument-page .instrument-top>.transport{grid-column:1;grid-row:2;display:flex;flex-direction:row;flex-wrap:wrap;align-self:start;justify-content:flex-start;align-items:center;gap:14px;width:100%;padding:0}
+ body.instrument-page .instrument-top>.chart-panel{grid-column:1;grid-row:3;width:100%;min-width:0}
+ body.instrument-page .chart-panel #market-chart{height:clamp(140px,22svh,220px)}
+}
+
 .instrument-page .replay-actions>#replay-restart[hidden]{display:none}
 
 /* October 7 expanded canvas: retain navigation and fill the remaining viewport. */
@@ -723,8 +741,15 @@ body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility
 .visual-loader__dots{display:grid;grid-template-columns:repeat(2,7px);gap:7px}
 .visual-loader__dots>span{width:7px;height:7px;border-radius:50%!important;background:currentColor;opacity:.3;animation:visual-loading-dot 1.4s ease-in-out infinite}
 .visual-loader__dots>span:nth-child(2){animation-delay:.16s}.visual-loader__dots>span:nth-child(3){animation-delay:.48s}.visual-loader__dots>span:nth-child(4){animation-delay:.32s}
+.visual-loader__dots>span:nth-child(1){--spread-x:-14px;--spread-y:-14px}.visual-loader__dots>span:nth-child(2){--spread-x:14px;--spread-y:-14px}.visual-loader__dots>span:nth-child(3){--spread-x:-14px;--spread-y:14px}.visual-loader__dots>span:nth-child(4){--spread-x:14px;--spread-y:14px}
+.visual-loader[data-state=revealing] .visual-loader__dots>span{animation:visual-loading-release 400ms cubic-bezier(.2,.65,.25,1) both}
+.audio-visualizer .visual-content-frame{opacity:1;transform:translateX(0);transition:opacity 400ms ease,transform 400ms cubic-bezier(.2,.65,.25,1)}
+.audio-visualizer[data-visual-loading=true] .visual-content-frame{opacity:0;transform:translateX(28px);transition:none}
+.audio-visualizer .visual-departure{position:absolute;inset:0;z-index:3;width:100%;height:100%;pointer-events:none;animation:visual-coin-departure 280ms ease-out both}
 .visual-loader__label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .visual-loader[data-state=unavailable] .visual-loader__dots{display:none}
 .visual-loader[data-state=unavailable] .visual-loader__label{position:static;width:auto;height:auto;margin:0;clip-path:none;white-space:normal;font-size:var(--font-size-small);color:var(--muted,#aaa)}
 @keyframes visual-loading-dot{0%,100%{opacity:.25;transform:scale(.65)}50%{opacity:.9;transform:scale(1)}}
-@media(prefers-reduced-motion:reduce){.visual-loader__dots>span{animation:none;opacity:.65;transform:none}}
+@keyframes visual-loading-release{from{opacity:.65;transform:translate(0,0) scale(1)}to{opacity:0;transform:translate(var(--spread-x),var(--spread-y)) scale(1.5)}}
+@keyframes visual-coin-departure{from{opacity:var(--departure-opacity,1);transform:translateX(0)}to{opacity:0;transform:translateX(-28px)}}
+@media(prefers-reduced-motion:reduce){.visual-loader__dots>span,.visual-loader[data-state=revealing] .visual-loader__dots>span{animation:none;opacity:.65;transform:none}.audio-visualizer .visual-content-frame,.audio-visualizer[data-visual-loading=true] .visual-content-frame{transition:none;transform:none}.audio-visualizer .visual-departure{display:none;animation:none}}

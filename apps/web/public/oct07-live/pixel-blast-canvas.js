@@ -124,6 +124,10 @@ export function createPixelBlastCanvas(host){
    const pixelPresence=clamp(params.pixelPresence??1);
    const markDirection=Number(params.markDirection)||0;
    const shapeWeights=params.shapeWeights||(markDirection>0?[0,1,0]:markDirection<0?[0,0,1]:[1,0,0]);
+   // A morph still contains the dot shape. Keep it in the artwork palette
+   // until it resolves to an actual plus or cross; tiny marks always rasterize
+   // as circles below and must never receive a directional accent.
+   const accentDirection=shapeWeights[0]===0?(shapeWeights[1]===1?1:shapeWeights[2]===1?-1:0):0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
    const candidates=[];
@@ -204,7 +208,8 @@ export function createPixelBlastCanvas(host){
    const selected=requested?candidates.slice(0,requested):candidates;
    canvas.dataset.markCount=String(selected.length);let accentMarkCount=0;
    for(const {centerX,centerY,diameter,accent} of selected){
-    if(accent)accentMarkCount++;
+    const accentGlyph=accent&&diameter>=3&&accentDirection!==0;
+    if(accentGlyph)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
     const x0=Math.max(0,left),y0=Math.max(0,top),x1=Math.min(w,left+diameter),y1=Math.min(h,top+diameter);
     if(x1<=x0||y1<=y0)continue;
@@ -215,18 +220,17 @@ export function createPixelBlastCanvas(host){
      const inside=diameter<3?dx*dx+dy*dy<=radius*radius:
       (Math.hypot(dx,dy)-radius)*weights[0]+(Math.min(Math.abs(dx),Math.abs(dy))-halfStroke)*weights[1]+(Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678-halfStroke)*weights[2]<=0;
      if(!inside)continue;
-     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accent)accents[index]=Math.min(2,accents[index]+1);
+     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);
     }
    }
    canvas.dataset.accentMarkCount=String(accentMarkCount);
    let occupied=0;
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
-   // Stable cells carry the accent. The same weights that morph the glyph
-   // blend its colour, without changing selection, size, or motion.
-   const up=clamp(shapeWeights[1]),down=clamp(shapeWeights[2]),directionWeight=up+down;
-   const accentMix=clamp(directionWeight),denominator=directionWeight||1;
-   const accentR=(up*81+down*255)/255/denominator,accentG=(up*215+down*102)/255/denominator,accentB=(up*123+down*114)/255/denominator;
+   // Only pixels belonging to resolved directional glyphs carry an accent.
+   // Dots, including small-size fallbacks and every transitional shape, retain
+   // the existing baseline/milestone palette.
+   const accentR=(accentDirection>0?81:255)/255,accentG=(accentDirection>0?215:102)/255,accentB=(accentDirection>0?123:114)/255;
    for(let n=0;n<counts.length;n++)if(counts[n]){
     occupied++;const i=n*4;let r=1,g=1,b=1;
     if(color&&mask?.colors){
@@ -236,7 +240,7 @@ export function createPixelBlastCanvas(host){
       r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);
      }
     }
-    if(accents[n]&&accentMix){const amount=accentMix*Math.min(1,accents[n]/counts[n]);r=mix(r,accentR,amount);g=mix(g,accentG,amount);b=mix(b,accentB,amount);}
+    if(accents[n]){const amount=Math.min(1,accents[n]/counts[n]);r=mix(r,accentR,amount);g=mix(g,accentG,amount);b=mix(b,accentB,amount);}
     output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;

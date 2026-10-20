@@ -28,9 +28,9 @@ function render(append=false){
    chain.textContent=[chosen.chain==='off-chain'?'EXCHANGE':chosen.chain==='unknown'?'':chosen.chain.toUpperCase(),item.catalogueRank?'#'+item.catalogueRank:''].filter(Boolean).join(' · ');
    chain.title=chosen.address?chosen.address:'';
    const source=frame?.snapshot;
-   if(source){if(image.getAttribute('src')!==source){image.hidden=true;image.src=source;}}else{image.hidden=true;image.removeAttribute('src');}
+   if(source){if(image.getAttribute('src')!==source){image.style.opacity='0';image.hidden=false;image.src=source;}}else{image.hidden=true;image.removeAttribute('src');}
    capValue.textContent=money(frame?.marketCap??item.marketCap);
-  };update();cardUpdates.set(card,update);image.addEventListener('load',()=>{image.hidden=false;});image.addEventListener('error',()=>{image.hidden=true;});
+  };image.addEventListener('load',()=>{if(image.hasAttribute('src')){image.hidden=false;image.style.opacity='1';}});image.addEventListener('error',()=>{image.hidden=true;});update();cardUpdates.set(card,update);
   info.append(heading,element('p',item.name,'coin-full-name'),chain,capRow);card.append(art,info);const wrapper=element('div',null,'coin-collectible-wrapper');wrapper.append(card);grid.append(wrapper);
  }
  $('coin-gallery-empty').hidden=items.length>0;more.hidden=items.length<=visible;more.textContent='Load more · '+Math.min(visible,items.length)+' / '+items.length.toLocaleString();
