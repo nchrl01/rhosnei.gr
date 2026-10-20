@@ -701,3 +701,4 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
  .player-history-message{align-items:flex-start;flex-wrap:wrap}
  #chart-tick-row{min-height:44px}
 }
+.instrument-page .replay-actions>#replay-restart[hidden]{display:none}
