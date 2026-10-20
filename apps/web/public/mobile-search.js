@@ -1,4 +1,4 @@
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=359';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=390';
 import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=359';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {loadTrendingCoins} from './trending.js?v=345';
@@ -9,6 +9,25 @@ function iconButton(label,icon,cls){const b=node('button',null,cls);b.type='butt
 export function bindMobileCoinSearch(){
  const trigger=document.querySelector('button.header-search'),form=document.querySelector('#coin-form,#marketplace-coin-form'),results=document.querySelector('#coin-search-results');if(!trigger||!form)return;
  const input=form.querySelector('input'),mobile=matchMedia('(max-width:760px)'),nodes=[form,results].filter(Boolean),anchors=nodes.map(n=>{const a=document.createComment('search position');n.before(a);return a;});
+ const desktop=document.querySelector('.header-desktop-search'),header=desktop?.closest('.header-main'),desktopPanel=node('div',null,'header-search-panel');
+ const feedback=[...form.querySelectorAll('#search-loader,#lookup')],feedbackAnchors=feedback.map(n=>{const anchor=document.createComment('search feedback position');n.before(anchor);return anchor;});let desktopOpen=false;
+ desktopPanel.hidden=true;desktop?.append(desktopPanel);form.setAttribute('role','search');form.setAttribute('aria-label','Search coins');
+ function paintDesktop(){
+  if(!desktop)return;
+  const hasFeedback=feedback.some(n=>!n.hidden&&n.textContent.trim()),hasResults=results&&!results.hidden;
+  desktopPanel.hidden=mobile.matches||!desktopOpen||!(hasFeedback||hasResults);
+  if(!mobile.matches)input.setAttribute('aria-expanded',String(!desktopPanel.hidden&&Boolean(hasResults)));
+ }
+ const showDesktop=()=>{if(!mobile.matches){desktopOpen=true;paintDesktop();}};
+ input.addEventListener('focus',showDesktop);input.addEventListener('input',showDesktop);form.addEventListener('submit',showDesktop);
+ if(desktop){
+  const observer=new MutationObserver(paintDesktop);
+  for(const element of [...feedback,results].filter(Boolean))observer.observe(element,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true,characterData:true});
+  desktop.addEventListener('focusin',showDesktop);
+  desktop.addEventListener('focusout',()=>queueMicrotask(()=>{if(!desktop.contains(document.activeElement)){desktopOpen=false;paintDesktop();}}));
+  document.addEventListener('pointerdown',event=>{if(!desktop.contains(event.target)){desktopOpen=false;paintDesktop();}});
+  desktop.addEventListener('keydown',event=>{if(event.key==='Escape')queueMicrotask(()=>{desktopOpen=false;paintDesktop();});},true);
+ }
  const dialog=node('dialog',null,'mobile-coin-search');dialog.id='mobile-coin-search';dialog.setAttribute('aria-label','Search coins');
  const top=node('div',null,'mobile-search-top'),back=iconButton('Back to player','back','mobile-search-back');top.append(back);
  const recent=node('section',null,'mobile-search-recent'),recentTop=node('div',null,'mobile-search-section-heading'),clear=iconButton('Clear recent coins','trash','mobile-search-clear'),chips=node('div',null,'mobile-search-chips');recentTop.append(node('h2','Recent'),clear);recent.append(recentTop,chips);
@@ -19,7 +38,7 @@ export function bindMobileCoinSearch(){
  const network=existingNetwork||node('select'),order=existingOrder||node('select'),filterNodes=[],filterAnchors=[];
  if(!existingNetwork){network.setAttribute('aria-label','Network');const option=node('option','All networks');option.value='all';network.append(option);}
  if(!existingOrder){order.setAttribute('aria-label','Sort');for(const [value,text] of [['discover','Discover'],['recent','Latest capture'],['cap','Market cap'],['name','Name A–Z']]){const option=node('option',text);option.value=value;order.append(option);}}
- for(const [control,label] of [[network,'Network'],[order,'Sort']]){if(control===existingNetwork||control===existingOrder){const wrapper=control.closest('label'),anchor=document.createComment('search filter position');wrapper.before(anchor);filterNodes.push(wrapper);filterAnchors.push(anchor);}else{const wrapper=node('label');wrapper.append(node('span',label),control);filterPanel.append(wrapper);}}
+ for(const [control,label] of [[network,'Network'],[order,'Sort']]){if(control===existingNetwork||control===existingOrder){const wrapper=control.closest('label');if(!wrapper)continue;const anchor=document.createComment('search filter position');wrapper.before(anchor);filterNodes.push(wrapper);filterAnchors.push(anchor);}else{const wrapper=node('label');wrapper.append(node('span',label),control);filterPanel.append(wrapper);}}
  const categories=node('div',null,'mobile-search-category-row');categories.append(tabs,filters);
  const more=node('button','Load more coins','mobile-search-more');more.type='button';more.hidden=true;
  dialog.append(top,recent,categories,status,suggestions,more);document.body.append(dialog);let catalogue=[],trending=[],trendingLoading=null,trendingError='',loading,oldOverflow='',placeholder=input.getAttribute('placeholder');
@@ -52,7 +71,15 @@ export function bindMobileCoinSearch(){
  const refreshCaptures=()=>{if(dialog.open&&!document.hidden){void load(true);if(category==='trending')void loadTrending();}},captureRefresh=setInterval(refreshCaptures,60000);window.addEventListener('focus',refreshCaptures);document.addEventListener('visibilitychange',refreshCaptures);window.addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(captureRefresh);});
 
  function open(){if(!mobile.matches)return;oldOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';dialog.showModal();trigger.setAttribute('aria-expanded','true');paintRecent();paint();void load();if(category==='trending')void loadTrending();input.focus();input.select();}
- function arrange(){close(false);form.dataset.searchNetwork=mobile.matches?network.value:'all';filterNodes.forEach((n,i)=>mobile.matches?filterPanel.append(n):filterAnchors[i].after(n));nodes.forEach((n,i)=>{if(mobile.matches){if(n===form)top.append(n);else dialog.append(n);}else anchors[i].after(n);});if(placeholder===null)input.removeAttribute('placeholder');else input.setAttribute('placeholder',placeholder);}
+ function arrange(){
+  close(false);desktopOpen=false;form.dataset.searchNetwork=mobile.matches?network.value:'all';
+  filterNodes.forEach((n,i)=>mobile.matches?filterPanel.append(n):filterAnchors[i].after(n));
+  nodes.forEach((n,i)=>{if(mobile.matches){if(n===form)top.append(n);else dialog.append(n);}else if(desktop){if(n===form)desktop.prepend(n);else desktopPanel.append(n);}else anchors[i].after(n);});
+  feedback.forEach((n,i)=>mobile.matches||!desktop?feedbackAnchors[i].after(n):desktopPanel.insertBefore(n,results||null));
+  if(desktop)desktop.hidden=mobile.matches;header?.classList.toggle('has-desktop-search',!mobile.matches);
+  document.body.classList.toggle('desktop-header-search',Boolean(desktop)&&!mobile.matches);
+  if(placeholder===null)input.removeAttribute('placeholder');else input.setAttribute('placeholder',placeholder);paintDesktop();
+ }
  trigger.addEventListener('click',open);back.addEventListener('click',()=>close());dialog.addEventListener('cancel',event=>{event.preventDefault();close();});dialog.addEventListener('close',()=>{document.documentElement.style.overflow=oldOverflow;trigger.setAttribute('aria-expanded','false');});
  clear.addEventListener('click',()=>{try{localStorage.removeItem('upic-recent-coins-v1');}catch{}paintRecent();});
  paste.addEventListener('pointerdown',event=>event.stopPropagation());paste.addEventListener('click',async event=>{event.stopPropagation();try{const value=(await navigator.clipboard.readText()).trim();if(!value||value.length>250||/[\r\n]/.test(value))return;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();}catch{status.hidden=false;status.textContent='Touch and hold the search field to paste.';}});

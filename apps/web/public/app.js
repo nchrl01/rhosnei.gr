@@ -19,11 +19,11 @@ import {createTakeShare,loadSharedScore} from './take-share.js?v=220';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
-import {createCoinDither} from './coin-dither.js?v=348';
+import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=373';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=389';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=390';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=373';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
@@ -41,7 +41,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=345';
-import {MarketChart} from './chart.js?v=373';
+import {MarketChart} from './chart.js?v=390';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -186,13 +186,19 @@ async function loadCoinImage(pair,{fallback=false}={}){
  const key=imageKey(pair),requestKey=key+(fallback?':pixels':'');if(imageToken===requestKey)return;imageToken=requestKey;imageController?.abort();
  const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
  const controller=new AbortController();imageController=controller;const timeout=setTimeout(()=>controller.abort(),45000);
+ let accepted=false;
  const accept=value=>{
   const url=safeCoinImage(value);if(!url||controller.signal.aborted||rejectedCoinImage(key,url))return false;
-  tokenImages.set(key,url);if(market&&imageKey(market)===key)displayCoinImage();return true;
+  accepted=true;tokenImages.set(key,url);if(market&&imageKey(market)===key)displayCoinImage();return true;
  };
  try{
   if(!fallback&&[tokenImages.get(key),pair.baseToken?.imageUrl,pair.historyTokenSide!=='quote'?pair.info?.imageUrl:null].some(accept))return;
-  const listed=await (isExchangeMarket(pair)?catalogueNativeArtwork(pair.baseToken.symbol):catalogueCoinArtwork(pair.chainId,pair.baseToken.address));
+  // The shared catalogue fetch has its own lifetime. A stalled lookup must
+  // still release this coin's artwork loading state when its deadline expires.
+  const listed=await Promise.race([
+   isExchangeMarket(pair)?catalogueNativeArtwork(pair.baseToken.symbol):catalogueCoinArtwork(pair.chainId,pair.baseToken.address),
+   new Promise((_,reject)=>{if(controller.signal.aborted)reject(controller.signal.reason);else controller.signal.addEventListener('abort',()=>reject(controller.signal.reason),{once:true});}),
+  ]);
   if(accept(listed)||isExchangeMarket(pair))return;
   // Old shared scores contain no image. Fetch artwork metadata only: their
   // saved prices, market cap and candles must remain exactly as shared.
@@ -204,7 +210,13 @@ async function loadCoinImage(pair,{fallback=false}={}){
   const r=await fetchGecko('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(aliases[pair.chainId]||pair.chainId)+'/tokens/'+encodeURIComponent(pair.baseToken.address)+'/info',{signal:controller.signal,priority:85});
   if(!r.ok)throw Error('Token image unavailable');const data=await r.json();const info=data.data?.attributes;
   for(const value of [info?.image_url,info?.image?.large,info?.image?.small,info?.image?.thumb])if(accept(value))break;
- }catch{}finally{clearTimeout(timeout);if(imageController===controller&&imageToken===requestKey)imageToken='';}
+ }catch{}finally{
+  clearTimeout(timeout);
+  if(imageController===controller&&imageToken===requestKey){
+   imageToken='';
+   if(!accepted&&!coinDither.loading&&market&&imageKey(market)===key)dataVisual.imageUnavailable(key);
+  }
+ }
 }
 function displayCoinImage(){
  const token=market?.baseToken;
@@ -574,7 +586,7 @@ $('play').onclick=async()=>{
   status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;
  }
  vinylStopping=false;audioBusy(true);status('Loading sounds…');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:!replay.state.active});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);vinyl?.play();setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);vinyl?.play();setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
@@ -961,7 +973,7 @@ function seekHistory(bar,dragging=false){
  if(!playing)primeAudio();
  if(!replay.state.active){arpeggioAI.freezeScore();resetEnsemble();replay.freeze(chart.renderedBars,market,chart.interval);replay.state.score=replay.preserveScore(buildReplayScore(replay.state.frozen.bars,seed,chart.interval,replay.state.frozen.market),chart.interval);}
  replayPianoPrimed=false;replayPhrase=null;dataSonification.reset(seed);
- replay.seek(bar,chart.interval,dragging);chart.schedule();
+ chart.resumeReplayFollow();replay.seek(bar,chart.interval,dragging);chart.schedule();
  sharedHarmony=null;pianoReplayCursor=replay.state.cursor;
  session?.controls.push({at:Date.now(),name:'history-seek',cursor:replay.state.cursor,source:'loaded-candle',speed:replay.state.speed});
  if(playing)tick();else{const m=metrics();

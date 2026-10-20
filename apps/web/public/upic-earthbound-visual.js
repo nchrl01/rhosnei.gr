@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=389';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=390';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=380';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -67,9 +67,8 @@ export function earthboundMarketState(m={},coinKey='unselected'){
 }
 export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const host=canvas?.closest('.audio-visualizer');
- if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
- // Keep the complete renderer square in the page and in fullscreen. The field
- // does not crop to changing mark bounds, which would hide its outer marks.
+ if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},imageUnavailable(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
+ // Keep the field in the host's full rectangle, without cropping to mark bounds.
  const field=document.createElement('div');field.className='visual-content-frame';host.append(field);host.dataset.visualFrame='full';
  const overlay=canvas.getContext('2d'),renderer=createEarthboundRenderer(field),fullscreen=createVisualFullscreen(host,{referenceSide});
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
@@ -97,9 +96,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let latest=null,settings={},key='',seed=0,clock=0,presence=0,transportPresence=0,identity=0,identityInput=0,color=0,colorTarget=0;
  let colorStart=0,colorDuration=2.4;
  let staleElapsed=0,colorElapsed=0,last=0,lastRender=0,raf=0,closed=false,visible=true,width=0,height=0,sourceCursor=null;
- let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null;
+ let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null,imageSettled=false,imageReveal=0;
+ let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
  let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
- function reset(){clock=0;transportPresence=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
+ function reset(){clock=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
  function referenceSide(box){
   // CSS owns a stable viewport-sized desktop host. Use its content box so
   // sticky scrolling cannot change the artwork scale, and retain its soft edges.
@@ -140,11 +140,25 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   // Share the market-cap readout's up/down pulse; price change is not a shape input.
   latest.change=latest.chartHistory?Math.sign(latest.chartHistory.at(-1)?.close-latest.chartHistory.at(-1)?.open):Math.sign(Number(state.markDirection)||0);
   const fresh=latest.fresh>0;
-  // Original transport envelope: fast return on Play, cap-scaled release on
-  // Pause, and a dim sparse field left behind. Audio amplitude is not an input.
-  const transportTarget=playing?1:0;
-  transportPresence+=(transportTarget-transportPresence)*(1-Math.exp(-dt/(playing?.08:marketCapReleaseSeconds(latest.marketCap))));
-  if(!playing&&transportPresence<.001)transportPresence=0;
+  // Pause keeps the field coasting as its light dies away. An uninterrupted
+  // envelope also lets Play reverse a fade without jumping to full brightness.
+  const nextTransport=playing?1:0;
+  if(nextTransport!==transportTarget){transportFrom=transportPresence;transportTarget=nextTransport;transportElapsed=0;}
+  if(playing)transportHasPlayed=true;
+  transportElapsed+=dt;
+  const transportProgress=unit(transportElapsed/(reduced.matches ? .2 : playing ? .25 : 2.4));
+  const transportEase=transportProgress*transportProgress*(3-2*transportProgress);
+  transportPresence=transportFrom+(transportTarget-transportFrom)*transportEase;
+  const transportInk=transportHasPlayed?transportPresence:.35;
+  const transportStyle=transportInk.toFixed(3);
+  if(host.style.getPropertyValue('--visual-transport-ink')!==transportStyle)host.style.setProperty('--visual-transport-ink',transportStyle);
+  // The holder count often arrives before the artwork. Do not paint a
+  // temporary unreferenced pattern while the real image is still decoding.
+  if(imageCoinKey!==key||!imageSettled){
+   host.dataset.visualState='loading-artwork';return;
+  }
+  host.dataset.visualState='ready';
+  imageReveal=Math.min(1,imageReveal+dt/.3);
   if(playing){
    if(latest.fresh<presence){staleElapsed+=dt;const steps=Math.floor(staleElapsed);if(steps){staleElapsed-=steps;presence+=(latest.fresh-presence)*(1-Math.exp(-steps/marketCapReleaseSeconds(latest.marketCap)));}}
    else{staleElapsed=0;presence+=(latest.fresh-presence)*(1-Math.exp(-dt/.08));}
@@ -162,18 +176,19 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     else colorElapsed=0;
    }
   }
-  // Transport controls the original dim/sparse resting state; audio gain
-  // and metering remain completely independent of the visual engine.
+  if(!playing&&transportPresence>0&&fresh&&!reduced.matches)clock+=dt*1.35*latest.tempo/100*transportPresence;
+  // A new coin has a resting preview. Once played, Stop fades all the way out.
+  // Keep population and placement stable throughout the fade.
   const frameInterval=1000/(renderer.kind==='canvas'?30:60);
   if(now-lastRender<frameInterval)return;lastRender=now-(now-lastRender)%frameInterval;
   overlay?.clearRect(0,0,canvas.width,canvas.height);
-  renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
+  renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence:presence*imageReveal,pixelPresence:1,inkColor:transportInk,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
   renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
   renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
-  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
+  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String((playing||transportPresence>0)&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
  }
  raf=requestAnimationFrame(draw);
  return {
@@ -184,7 +199,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;}
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    syncHolderLoading();
-   if(changed&&imageCoinKey!==key)renderer.setImage(null);
+   if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);color=colorTarget=latest.marketCap>=5e7?1:0;}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=latest.marketCap>=5e7?1:0;if(target!==colorTarget){colorStart=color;colorTarget=target;colorElapsed=0;colorDuration=Math.max(1.5,2.4*(1.5-.75*latest.activity));}
@@ -192,10 +207,18 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   // Keep the app's audio callback interface without coupling sound to ink.
   event(){},pulse(){},piano(){},
-  setImage(image){identitySource=image;renderer.setImage(image);imageCoinKey=identityKey(getState().coinKey);},
+  setImage(image){
+   identitySource=image;imageCoinKey=identityKey(getState().coinKey);imageSettled=Boolean(image);imageReveal=0;
+   renderer.clear();renderer.setImage(image);
+  },
+  imageUnavailable(rawKey){
+   const currentKey=identityKey(rawKey);
+   if(currentKey!==identityKey(getState().coinKey)||identitySource&&imageCoinKey===currentKey)return;
+   imageCoinKey=currentKey;imageSettled=true;
+  },
   captureStill(size=512){
    const state=getState(),age=Date.now()-renderedAt;
-   if(!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99)throw Error('A current live playing holder frame is required to capture.');
+   if(!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99||imageReveal<1||!imageSettled)throw Error('A current live playing holder frame is required to capture.');
    if(latest.change!==0||(renderer.snapshot().shapeWeights?.[0]??0)<.999)throw Error('Waiting for the live dot state.');
    const output=document.createElement('canvas');output.width=output.height=size;
    const context=output.getContext('2d');if(!context)throw Error('Canvas unavailable.');
@@ -242,6 +265,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

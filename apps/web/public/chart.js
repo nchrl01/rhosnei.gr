@@ -7,12 +7,12 @@ export class MarketChart{
  constructor(container){
   this.capSupply=null;this.container=container;
   this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
-  this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
+  this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.replayFollowing=true;this.publishedGap=0;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
    autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'Unifont, sans-serif',attributionLogo:true},
    grid:{vertLines:{visible:false},horzLines:{color:'#222222'}},
    rightPriceScale:{borderColor:'#3a3a3a',scaleMargins:{top:.1,bottom:.25}},
-   timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
+   timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,shiftVisibleRangeOnNewBar:false,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
    crosshair:{vertLine:{color:'#888888',labelBackgroundColor:'#333333'},horzLine:{color:'#888888',labelBackgroundColor:'#333333'}},
    localization:{timeFormatter:time=>new Date(time*1000).toLocaleString(undefined,{timeZoneName:'short'}),priceFormatter:price=>this.formatMarketCap(price)},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
@@ -34,12 +34,21 @@ export class MarketChart{
    const price=n=>'$'+Number(n).toLocaleString('en',{maximumSignificantDigits:7});
    target.textContent=new Date(bar.time).toLocaleString()+' · Estimated market cap · O '+this.formatMarketCap(bar.open)+'  H '+this.formatMarketCap(bar.high)+'  L '+this.formatMarketCap(bar.low)+'  C '+this.formatMarketCap(bar.close)+(bar.volume!=null?(bar.volumeEstimated?' · Estimated quote volume ':' · USD volume ')+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
   });
-  const interaction=()=>{this.manual=true;this.needsFit=false;};
+  const interaction=()=>{this.manual=true;this.needsFit=false;this.replayFollowing=false;};
+  let gesture=null,dragged=false;
   document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';
-  container.addEventListener('pointerdown',interaction);container.addEventListener('wheel',interaction,{passive:true});
+  container.addEventListener('pointerdown',event=>{
+   interaction();dragged=false;gesture={id:event.pointerId,x:event.clientX,y:event.clientY};
+  },true);
+  container.addEventListener('pointermove',event=>{
+   if(gesture?.id===event.pointerId&&Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)>5)dragged=true;
+  },true);
+  const endGesture=event=>{if(gesture?.id===event.pointerId)gesture=null;};
+  window.addEventListener('pointerup',endGesture,true);window.addEventListener('pointercancel',endGesture,true);
+  container.addEventListener('wheel',interaction,{passive:true});
   setInterval(()=>{if(document.hidden||!document.body.classList.contains('inspecting'))return;const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},1000);
   this.tickView=createChartTicks(this);
-  this.chart.subscribeClick(param=>{if(typeof param.time==='number'){const bar=this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
+  this.chart.subscribeClick(param=>{if(!dragged&&typeof param.time==='number'){const bars=this.readReplay?.().frozen?.bars,bar=bars?bars.find(item=>item.time===param.time*1000):this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
  }
  formatMarketCap(price){
   if(!(this.capSupply>0)||!Number.isFinite(price)||price<0)return '—';
@@ -61,6 +70,7 @@ export class MarketChart{
   const animate=now=>{if(!document.hidden&&now-(this.lastReplayPaint||0)>=32){this.lastReplayPaint=now;this.followReplay();}this.replayFrame=requestAnimationFrame(animate);};
   this.replayFrame=requestAnimationFrame(animate);
  }
+ resumeReplayFollow(){this.replayFollowing=true;this.manual=true;this.needsFit=false;}
  replayLogical(at){
   const bars=this.renderedBars;if(!bars.length)return null;
   let low=0,high=bars.length;
@@ -68,14 +78,14 @@ export class MarketChart{
   const index=Math.max(0,low-1),bar=bars[index],next=bars[index+1];
   const start=candleEnd(bar,this.interval),end=next?candleEnd(next,this.interval):start;
   const fraction=end>start?Math.max(0,Math.min(1,(at-start)/(end-start))):0;
-  return index+fraction+(this.origin&&this.origin<bars[0].time?1:0);
+  return index+fraction+this.publishedGap;
  }
  followReplay(){
   const state=this.readReplay?.(),active=!!state?.active&&this.renderedBars.length>0;
   if(this.playhead)this.playhead.hidden=!active;
   if(!active)return;
   const scale=this.chart.timeScale(),width=scale.width();
-  if(this.playhead){this.playhead.style.left=width/2+'px';this.playhead.style.bottom=scale.height()+'px';}
+  if(this.playhead)this.playhead.style.bottom=scale.height()+'px';
   let cursor=state.cursor;
   if(this.replayIsPlaying()&&!state.dragging&&!state.ended&&state.clock!=null){
    const rate=state.speed==='candle'?this.interval/1000:Number(state.speed)||1;
@@ -85,21 +95,22 @@ export class MarketChart{
   const logical=this.replayLogical(cursor),range=scale.getVisibleLogicalRange();
   if(logical==null||!range)return;
   const span=Math.max(2,range.to-range.from),middle=(range.from+range.to)/2;
-  if(Math.abs(middle-logical)>span/Math.max(1,width)*.35){
+  if(this.replayFollowing&&Math.abs(middle-logical)>span/Math.max(1,width)*.35){
    this.manual=true;this.needsFit=false;
    scale.setVisibleLogicalRange({from:logical-span/2,to:logical+span/2});
   }
+  if(this.playhead){const x=scale.logicalToCoordinate(logical);this.playhead.hidden=x==null||x<0||x>width;if(x!=null)this.playhead.style.left=x+'px';}
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.scale=mode;this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}
- setRange(range){this.range=range;this.manual=false;this.needsFit=true;this.schedule();}
+ setRange(range){this.range=range;this.manual=false;this.replayFollowing=false;this.needsFit=true;this.schedule();}
  setHistory(candles,interval,origin){this.history=candles;this.interval=interval;this.origin=origin;this.rebuild=true;if(!this.manual&&this.range==='history')this.needsFit=true;this.schedule();}
  setInterval(interval){this.history=[];this.interval=interval;this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
- fit(){this.range='history';this.manual=false;this.needsFit=true;this.schedule();}
- goLive(){this.range='live';this.manual=false;this.needsFit=true;this.schedule();}
- zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;}
+ fit(){this.range='history';this.manual=false;this.replayFollowing=false;this.needsFit=true;this.schedule();}
+ goLive(){this.range='live';this.manual=false;this.replayFollowing=true;this.needsFit=true;this.schedule();}
+ zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;this.replayFollowing=false;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
- reset(){this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);if(this.playhead)this.playhead.hidden=true;this.schedule();}
+ reset(){this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.replayFollowing=true;this.publishedGap=0;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);if(this.playhead)this.playhead.hidden=true;this.schedule();}
  merge(point){
   const time=Math.floor(point.at/this.interval)*this.interval;let bar=this.buckets.get(time);
   // Provider coverage takes precedence over observations already included in
@@ -130,7 +141,14 @@ export class MarketChart{
  }
  draw(){
   this.revision=(this.revision||0)+1;
-  const scale=this.chart.timeScale(),visible=scale.getVisibleRange();
+  const scale=this.chart.timeScale(),visible=scale.getVisibleLogicalRange(),previousBars=this.renderedBars,previousGap=this.publishedGap;
+  // Preserve fractional bar positions and zoom, even when older history is added.
+  const restoreViewport=(bars,gap)=>{
+   if(!visible||this.needsFit)return;
+   const index=Math.max(0,Math.min(previousBars.length-1,Math.floor(visible.from-previousGap))),anchor=previousBars[index];
+   const nextIndex=anchor?bars.findIndex(bar=>bar.time===anchor.time):-1,offset=nextIndex<0?0:nextIndex+gap-index-previousGap;
+   scale.setVisibleLogicalRange({from:visible.from+offset,to:visible.to+offset});
+  };
   const frozen=this.readReplay?.().active?this.readReplay().frozen:null;
   if(this.replayDataset&&!frozen){this.replayDataset=null;this.rebuild=true;}
   if(this.rebuild){this.buckets=new Map(this.history.map(b=>[b.time,{...b,observedThrough:b.observedThrough??b.time+this.interval,lastAt:(b.observedThrough??b.time+this.interval)-1}]));this.dirty.clear();for(const p of [...this.points].sort((a,b)=>a.at-b.at))this.merge(p);}
@@ -143,9 +161,12 @@ export class MarketChart{
     this.candles.setData([...gap,...bars.map(b=>({time:b.time/1000,open:b.open,high:b.high,low:b.low,close:b.close}))]);
     this.line.setData([...gap,...bars.map(b=>({time:b.time/1000,value:b.close}))]);
     this.volume.setData([...gap,...bars.map(b=>b.volume!=null?{time:b.time/1000,value:b.volume,color:b.close>=b.open?'#cccccc':'#555555'}:{time:b.time/1000})]);
+    restoreViewport(bars,gap.length);this.publishedGap=gap.length;
     this.replayDataset=frozen;
    }
-   this.rebuild=false;this.dirty.clear();this.followReplay();this.tickView?.update(frozen.bars);return;
+   this.rebuild=false;this.dirty.clear();
+   if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,frozen.bars.length-100),to:frozen.bars.length+4});this.needsFit=false;}
+   this.followReplay();this.tickView?.update(frozen.bars);return;
   }
   const bars=[...this.buckets.values()].sort((a,b)=>a.time-b.time);this.renderedBars=bars;
   if(!bars.length){this.candles.setData([]);this.line.setData([]);this.volume.setData([]);this.tickView?.update([]);this.rebuild=false;return;}
@@ -156,12 +177,12 @@ export class MarketChart{
    const gap=this.origin&&this.origin<bars[0].time?[{time:Math.floor(this.origin/1000)}]:[];
    this.candles.setData([...gap,...bars.map(candle)]);this.line.setData([...gap,...bars.map(b=>({time:b.time/1000,value:b.close}))]);this.volume.setData([...gap,...bars.map(volume)]);
    this.publishedTimes=new Set(bars.map(bar=>bar.time));
-   if(visible&&!this.needsFit)scale.setVisibleRange(visible);
+   restoreViewport(bars,gap.length);this.publishedGap=gap.length;
   }else if(this.dirty.size){for(const time of [...this.dirty].sort((a,b)=>a-b)){const bar=this.buckets.get(time);if(!bar)continue;const historical=time<last;this.candles.update(candle(bar),historical);this.line.update({time:time/1000,value:bar.close},historical);this.volume.update(volume(bar),historical);this.publishedTimes?.add(time);}}
   this.rebuild=false;this.dirty.clear();
   if(this.readReplay?.().active){this.followReplay();}
   else if(this.needsFit){if(this.range==='history')scale.fitContent();else scale.setVisibleLogicalRange({from:Math.max(-2,bars.length-100),to:bars.length+4});this.needsFit=false;}
-  else if(this.range==='live')scale.scrollToRealTime();
+  else if(this.range==='live'&&!this.manual)scale.scrollToRealTime();
   this.tickView?.update(bars);
  }
 }

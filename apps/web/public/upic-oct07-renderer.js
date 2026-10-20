@@ -14,6 +14,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
   kind:'canvas',get surface(){return canvas},get allocation(){return null},
   setImage(source){image=preparePixelIdentity(source);renderer.setImage(image)},
   render({width,height,time=0,seed=0,inputs={},presence=1,artworkColor=0,inkColor=1}={}){
+   if(presence<=0||inkColor<=.001){renderer.clear();return;}
    const history=inputs.chartHistory,bar=history?.at(-1),prior=history?.at(-2);
    const reported=Number.isFinite(inputs.totalHolders)&&inputs.totalHolders>0?Math.round(inputs.totalHolders):0;
    const population=history?.length?4096:reported||inputs.holderBalances?.length||0;

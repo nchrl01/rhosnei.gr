@@ -1,5 +1,5 @@
 import {catalogueNative,NATIVE_COINS} from '../apps/web/public/native-coins.js';
-import {compareCoinNetworks} from '../apps/web/public/coin-network-choice.js';
+import {compareCoinNetworks,supportedCoinNetwork} from '../apps/web/public/coin-network-choice.js';
 // Capture the actual player with current provider inputs and unmodified WebP pixels.
 // Local runs write development artifacts under the system temporary directory.
 // --publish (or CI=true) writes to the shared Cloudflare store using GitHub OIDC.
@@ -9,7 +9,6 @@ import {resolve,extname,dirname,sep,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {createHash,randomUUID} from 'node:crypto';
-import {HOLDER_NETWORKS,validHolderToken} from '../apps/web/public/holder-count-providers.js';
 
 const project=resolve(dirname(fileURLToPath(import.meta.url)),'..'),root=resolve(project,'apps/web/public');
 const endpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures',kind='live-player-frame-v1';
@@ -27,13 +26,10 @@ for(let i=2;i<process.argv.length;i++){
 }
 for(const [name,min,max] of [['limit',1,10000],['timeout',1,3600],['concurrency',1,2],['port',1024,65535],['part',0,4]])if(!Number.isInteger(options[name])||options[name]<min||options[name]>max)throw Error('Invalid --'+name);
 const keyFor=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
-const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro','kucoin-community-chain':'kcc'};
-const explorers=new Set(['ethereum','eth','base','arbitrum','optimism','polygon','polygon_pos','zksync','celo','robinhood']);
 function supported(coin){
  if(coin.address==='native'||coin.address?.startsWith('native:'))return catalogueNative(coin)?.address===coin.address;
  if(!coin.address||!coin.chain||coin.contractStatus==='off-chain')return false;
- if(['solana','sui','tron','ton'].includes(coin.chain))return validHolderToken(coin.chain,coin.address);
- return validHolderToken(coin.chain,coin.address)&&(explorers.has(coin.chain)||Boolean(HOLDER_NETWORKS[aliases[coin.chain]||coin.chain]));
+ return supportedCoinNetwork(coin,coin);
 }
 const catalogue=JSON.parse(await readFile(resolve(root,'marketplace-coin-catalogue.json'),'utf8'));
 if(!Array.isArray(catalogue.coins))throw Error('Invalid coin catalogue');
@@ -213,7 +209,7 @@ try{
    console.log(coin.symbol+' '+coin.chain+' '+(previous?'retained previous live capture':'no live capture')+': '+String(error.message||error).split('\n')[0]);return false;
   }finally{await context.close();}
  }
- await Promise.all(Array.from({length:options.concurrency},async()=>{while(!stopping){const coin=queue[next++];if(!coin)return;const captured=await capture(coin);if(options.top1000&&!captured&&!stopping){for(const alternative of supportedCoins.filter(c=>c.id===coin.id&&c.key!==coin.key).slice(0,2)){if(await capture(alternative))break;}}}}));
+ await Promise.all(Array.from({length:options.concurrency},async()=>{while(!stopping){const coin=queue[next++];if(!coin)return;const captured=await capture(coin);if(options.top1000&&!captured&&!stopping){const primary=catalogue.coins.find(c=>c.id===coin.id);for(const alternative of supportedCoins.filter(c=>c.id===coin.id&&c.key!==coin.key).sort((a,b)=>compareCoinNetworks(primary,{...a,...manifest.get(a.key)},{...b,...manifest.get(b.key)})).slice(0,2)){if(await capture(alternative))break;}}}}));
 }catch(error){console.error(String(error.message||error));process.exitCode=1;}
 finally{
  await browser?.close();if(server.listening)await new Promise(resolve=>server.close(resolve));

@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 389;
+const version = 390;
 const pages = [
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=97', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
@@ -104,6 +104,7 @@ for (const page of pages) {
     html = html.replace('</body>', region('scripts', sharedScripts) + '\n</body>');
   }
   if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${version}"`);
+  if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${version}"`);
   await writeFile(file, html);
 }
 console.log(`Rendered shared shell for ${pages.length} static pages.`);

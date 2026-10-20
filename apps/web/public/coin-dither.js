@@ -49,7 +49,7 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
  function notify(image){try{onPixels(image);}catch(error){console.warn('Coin artwork unavailable to the visual field:',error.message);}}
  function paint(){if(!pixels)return;context.putImageData(new ImageData(ditherPixels(pixels,size,size),size,size),0,0);}
  function load(url,token){
-  stopImageLoad();stopReveal();img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';notify(null);
+  stopImageLoad();stopReveal();img.hidden=true;canvas.hidden=true;fallback.hidden=false;pixels=null;img.style.filter='none';host.dataset.dither=url?'loading':'empty';notify(null);
   if(!url){img.removeAttribute('src');return;}
   let loadTimer,finished=false;
   const decoded=new Image();stopImageLoad=()=>{finished=true;clearTimeout(loadTimer);decoded.onload=decoded.onerror=null;};decoded.crossOrigin='anonymous';decoded.referrerPolicy='no-referrer';
@@ -80,7 +80,7 @@ export function createCoinDither(img,fallback,{onPixels=()=>{},onUnavailable=()=
   try{onUnavailable(url);}catch{}
  }
 
- return {set(url,key=''){if(url===current&&key===currentKey)return;current=url;currentKey=key;load(url,++serial);},close(){serial++;stopImageLoad();stopReveal();canvas.remove();}};
+ return {get loading(){return host.dataset.dither==='loading';},set(url,key=''){if(url===current&&key===currentKey)return;current=url;currentKey=key;load(url,++serial);},close(){serial++;stopImageLoad();stopReveal();canvas.remove();}};
 }
 
 // Reveal the source through ordered pixel holes, rather than an opacity fade.

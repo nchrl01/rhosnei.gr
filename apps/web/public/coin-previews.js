@@ -1,5 +1,5 @@
 import {catalogueNative} from './native-coins.js?v=359';
-import {compareCoinNetworks} from './coin-network-choice.js?v=350';
+import {compareCoinNetworks,supportedCoinNetwork} from './coin-network-choice.js?v=390';
 import {coinOnNetwork} from './coin-catalogue.js?v=359';
 const captureEndpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures';
 let cachedCaptures=[],loadedAt=0,loading;
@@ -9,7 +9,7 @@ function cloudCapture(frame){
  if(frame?.captureKind!=='live-player-frame-v1'||typeof chain!=='string'||!chain||typeof address!=='string'||!address||address.length>250||!Number.isFinite(frame.capturedAt)||frame.capturedAt<=0||frame.capturedAt>Date.now()+60000)return null;
  const key=previewKey(chain,address);if(frame.key&&frame.key!==key)return null;
  const url=new URL(captureEndpoint+'/image');url.search=new URLSearchParams({network:chain,address,v:String(frame.capturedAt)});
- return {key,chain,address,captureKind:frame.captureKind,capturedAt:frame.capturedAt,symbol:frame.symbol,name:frame.name,marketCap:frame.marketCap,liquidity:frame.liquidity,holders:frame.holders,coverage:frame.coverage,snapshot:url.href};
+ return {key,chain,address,captureKind:frame.captureKind,capturedAt:frame.capturedAt,symbol:frame.symbol,name:frame.name,marketCap:frame.marketCap,liquidity:frame.liquidity,holders:frame.holders,coverage:frame.coverage,imageAvailable:frame.imageAvailable,marketObservedAt:frame.marketObservedAt,snapshot:url.href};
 }
 // Metadata is kept in memory only. Images are served by the shared Worker.
 export async function loadCloudCaptures({force=false}={}){
@@ -36,8 +36,13 @@ export function storeCapture(coin,frame){
  coin.captures??={};coin.captures[key]=frame;return true;
 }
 export function coinPreview(coin,network='all'){
- let selection=coinOnNetwork(coin,network);const frames=Object.values(coin.captures||{}).filter(f=>network==='all'||f.chain===selection.chain&&previewKey(f.chain,f.address)===previewKey(selection.chain,selection.address||(catalogueNative(selection)?.address||selection.address))).sort((a,b)=>network==='all'?compareCoinNetworks(coin,a,b):b.capturedAt-a.capturedAt);
+ let selection=coinOnNetwork(coin,network);
+ const frames=Object.values(coin.captures||{}).filter(f=>network==='all'||f.chain===selection.chain&&previewKey(f.chain,f.address)===previewKey(selection.chain,selection.address||(catalogueNative(selection)?.address||selection.address))).sort((a,b)=>network==='all'?compareCoinNetworks(coin,a,b):b.capturedAt-a.capturedAt);
  const capture=frames[0]||null;
  if(capture&&network==='all')selection={...coin,chain:capture.chain,address:capture.address,key:previewKey(capture.chain,capture.address)};
+ else if(network==='all'&&!catalogueNative(coin)&&coin.contractStatus!=='off-chain'){
+  const candidates=[{chain:coin.chain,address:coin.address},...(coin.platforms||[])].filter(candidate=>supportedCoinNetwork(coin,candidate)).sort((a,b)=>compareCoinNetworks(coin,a,b));
+  if(candidates[0])selection={...coin,...candidates[0],key:previewKey(candidates[0].chain,candidates[0].address)};
+ }
  return {selection,capture};
 }
