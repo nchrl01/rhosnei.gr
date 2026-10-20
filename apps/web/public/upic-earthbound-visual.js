@@ -1,7 +1,7 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=379';
-import {createVisualFullscreen} from './visual-fullscreen.js?v=379';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=380';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=380';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing

@@ -49,7 +49,7 @@ export function preparePixelIdentity(source){
  return {width:w,height:h,data,sizeData,rgba,palette:originalArtworkPalette(rgba,{includeNeutrals:true})};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
- const side=.82*Math.min(w,h),x=fx/side,y=fy/side;
+ const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),x=fx/side,y=fy/side;
  const flow=((1-params.identity)*.1+.012)*params.identityMotion,phase=time*.65+offset*.013;
  const u=.5+x+(Math.sin(y*9+phase)+.35*Math.sin(x*5-phase*.7))*flow;
  const v=.5-y+(Math.sin(x*8-phase*.85)+.3*Math.sin(y*5+phase*.6))*flow;
@@ -156,7 +156,7 @@ export function createPixelBlastCanvas(host){
     // to size these marks; it belongs only to the unchanged selection score.
     let artworkSize=1;
     if(requested&&identityMask?.sizeData){
-     const side=.82*Math.min(cssWidth,cssHeight),u=.5+fx/side,v=.5-fy/side;
+     const side=(params.fullscreen?Math.max(cssWidth,cssHeight):.82*Math.min(cssWidth,cssHeight)),u=.5+fx/side,v=.5-fy/side;
      artworkSize=0;
      if(u>=0&&v>=0&&u<1&&v<1){
       const x=u*(identityMask.width-1),y=v*(identityMask.height-1),x0=Math.floor(x),y0=Math.floor(y);
@@ -197,7 +197,7 @@ export function createPixelBlastCanvas(host){
     let rgb=[1,1,1];
     const color=clamp(params.artworkColor||0);
     if(color&&identityMask?.rgba){
-     const side=.82*Math.min(w,h),u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
+     const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
      if(u>=0&&u<1&&v>=0&&v<1){
       const m=(Math.floor(v*identityMask.height)*identityMask.width+Math.floor(u*identityMask.width))*4;
       const source=identityMask.rgba,original=[source[m]/255,source[m+1]/255,source[m+2]/255];

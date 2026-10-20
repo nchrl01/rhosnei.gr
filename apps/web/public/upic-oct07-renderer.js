@@ -1,5 +1,5 @@
 // Production adapter for the approved October 7 pattern-count lab.
-import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=378';
+import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=380';
 import {pixelBlastParameters} from './oct07-live/pixel-blast-parameters.js';
 import {labVisualMappings} from './oct07-live/lab-visual-mappings.js';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -30,7 +30,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const progress=unit((now-shapeStarted)/.24),blend=progress*progress*(3-2*progress);
    if(shapeStarted)shapeWeights=shapeFrom.map((v,i)=>v+(shapeFor(shapeDirection)[i]-v)*blend);
    if(direction!==shapeDirection){shapeFrom=shapeWeights.slice();shapeDirection=direction;shapeStarted=now;}
-   const params={...mapped,identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:direction,shapeWeights,artworkColor,inkColor};
+   const params={...mapped,fullscreen:!!host.closest('.is-expanded'),identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:direction,shapeWeights,artworkColor,inkColor};
    renderer.render({width:renderWidth,height:renderHeight,time,eventTime:time,liquidTime:time,seed,params});
    stats={...stats,shapeWeights:shapeWeights.slice(),markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),renderer:'october7-pattern-count',reconstructed:Boolean(history?.length)};
   },
