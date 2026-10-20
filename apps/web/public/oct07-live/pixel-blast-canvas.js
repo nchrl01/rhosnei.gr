@@ -82,7 +82,7 @@ export function createPixelBlastCanvas(host){
    if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
    counts.fill(0);output.data.fill(0);
    const requested=Math.max(0,Math.round(params.holderCount||0));
-   const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*4))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
+   const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*3))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const pattern=battlePattern(params.patternKey??seed,time);
    const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
