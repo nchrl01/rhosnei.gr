@@ -49,7 +49,7 @@ export class MarketChart{
   const cap=Number(market?.marketCap),price=Number(market?.priceUsd),supply=cap>0&&price>0&&Number.isFinite(cap/price)?cap/price:null;
   if(supply===this.capSupply||(supply&&this.capSupply&&Math.abs(supply/this.capSupply-1)<1e-8))return;
   this.capSupply=supply;
-  const priceFormat={type:'custom',formatter:value=>this.formatMarketCap(value),minMove:supply?Math.max(1e-15,.01/supply):1e-12};
+  const priceFormat={type:'custom',formatter:value=>this.formatMarketCap(value),minMove:1e-12};
   this.candles.applyOptions({priceFormat});this.line.applyOptions({priceFormat});
   this.chart.applyOptions({localization:{priceFormatter:value=>this.formatMarketCap(value)}});
   this.container.setAttribute('aria-label',supply?'Market cap chart, estimated using current circulating supply':'Market cap unavailable');
