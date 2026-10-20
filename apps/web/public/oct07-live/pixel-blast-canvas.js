@@ -66,7 +66,7 @@ function identityInk(mask,fx,fy,w,h,time,offset,params){
 }
 export function createPixelBlastCanvas(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
- const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,output=null,lastCoverage=0;
+ const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,output=null,lastCoverage=0,geometryKey=null,geometry=[];
  const layerCanvas=document.createElement("canvas"),layerContext=layerCanvas.getContext("2d");
  return {
   canvas,
@@ -123,10 +123,11 @@ export function createPixelBlastCanvas(host){
    const markDirection=Number(params.markDirection)||0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
-   let previousInk=-1;const candidates=[];
-   // Share the shader's integer lattice and bottom-up origin. Cell ownership
-   // and mark bounds agree even when either canvas dimension is odd.
-   for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
+   const candidates=[];
+   const nextGeometryKey=[w,h,grid,cellSize,seed,params.edgeFade,pixelPresence,requested].join(':');
+   if(nextGeometryKey!==geometryKey){
+    geometryKey=nextGeometryKey;geometry=[];
+    for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
     if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
     const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
     const centerX=originX+fx*ratio,centerY=originY+fy*ratio;
@@ -142,6 +143,10 @@ export function createPixelBlastCanvas(host){
      taper=smooth(nx/reach)*smooth((1-nx)/reach)*smooth(ny/reach)*smooth((1-ny)/reach);
     }
     if(edge<=0||(!requested&&taper<=.015))continue;
+    geometry.push({px,py,fx,fy,centerX,centerY,taper,threshold:hash(px*73.17+py*193.41+seed*.37)});
+    }
+   }
+   for(const {px,py,fx,fy,centerX,centerY,taper,threshold} of geometry){
     // Sparse stable perimeter: shrink and remove cells rather than draw a rim.
     if(!requested&&hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
@@ -177,7 +182,6 @@ export function createPixelBlastCanvas(host){
     const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
-    const threshold=hash(px*73.17+py*193.41+seed*.37);
     const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
     candidates.push({centerX,centerY,diameter,score});
    }
