@@ -63,8 +63,22 @@ export function deriveFieldRules(inputs={}){
   // In reconstruction mode these are explicitly visual weights from candles,
   // never wallet holdings or an estimate of historical liquidity.
   const chart=Array.isArray(inputs.chartHistory)?inputs.chartHistory.slice(-64).filter(b=>[b.time,b.open,b.high,b.low,b.close].every(finite)&&b.open>0&&b.close>0):null;
-  const peak=chart?.reduce((n,b)=>Math.max(n,Math.max(0,Number(b.volume)||0)),0)||1;
-  const chartMarks=chart?.flatMap(b=>['open','high','low','close'].map(field=>({id:'candle:'+b.time+':'+field,balance:10000*(.35+Math.sqrt(Math.max(0,Number(b.volume)||0)/peak)*2+Math.min(2,Math.abs(b[field]/b.open-1)*5))})));
+  // A persistent visual population, driven only by candles already reached.
+  // These are visual weights, not reconstructed wallet balances.
+  const last=chart?.at(-1),previous=chart?.at(-2);
+  const change=last?(last.close/(previous?.close||last.open)-1):0;
+  const range=last?(last.high-last.low)/last.open:0;
+  const pastVolume=chart?.slice(0,-1).filter(b=>finite(b.volume)&&b.volume>=0)||[];
+  const meanVolume=pastVolume.length?pastVolume.reduce((sum,b)=>sum+b.volume,0)/pastVolume.length:Math.max(1,last?.volume||0);
+  const volumeEnergy=last&&finite(last.volume)?clamp(Math.log1p(Math.max(0,last.volume)/Math.max(1,meanVolume))/Math.log(5),0,1):0;
+  const movement=clamp(Math.abs(change)*30+range*12,0,1);
+  const chartMarks=chart?.length?Array.from({length:4096},(_,i)=>{
+    const phase=hash(String(inputs.coinKey)+':replay:'+i)/4294967295;
+    const bar=chart[Math.min(chart.length-1,Math.floor(phase*chart.length))];
+    const local=clamp(Math.abs(bar.close/bar.open-1)*30+(bar.high-bar.low)/bar.open*8,0,1);
+    return {id:'replay-field:'+i,balance:null,reconstructed:true,
+      visualStrength:clamp(.18+.18*phase+.26*volumeEnergy+.24*movement+.14*local,.18,1)};
+  }):chart?[]:null;
   const liquidity=chart?1000000:finite(inputs.liquidity)&&inputs.liquidity>=0?inputs.liquidity:0;
   // Calibration: liquidity $0..$10M for spacing, $1..$1M for gradual field
   // opening. Dot sizes use USD holdings as a share of liquidity.
@@ -115,6 +129,7 @@ export function deriveFieldRules(inputs={}){
   const liquidityShares=balances.map(h=>!h.aggregate&&liquidity>0?h.balance/liquidity:null);
   // Absolute USD ceiling prevents tiny bags from looking dominant in thin liquidity.
   const markBrightness=liquidityShares.map((share,i)=>{
+    if(balances[i].reconstructed)return balances[i].visualStrength;
     if(balances[i].aggregate)return .35;
     const ratioBrightness=share===null?.01:Math.min(1,Math.max(.01,Math.sqrt(share/.01)));
     const dollarBrightness=Math.min(1,Math.max(.01,Math.pow(balances[i].balance/1e6,.25)));
@@ -175,7 +190,7 @@ export function buildMarkLayout(inputs,settings={},width=512,height=512,previous
     const holder=holders[i];
     // Area ceiling scales with dollars: $1 is about one displayed pixel;
     // $1M unlocks the full field, subject to its cell and liquidity ratio.
-    const dollarDiameter=holder.aggregate?limit*.55:Math.max(referenceScale,Math.min(width,height)*Math.sqrt(Math.min(1,holder.balance/1e6)));
+    const dollarDiameter=holder.reconstructed?limit*Math.sqrt(holder.brightness):holder.aggregate?limit*.55:Math.max(referenceScale,Math.min(width,height)*Math.sqrt(Math.min(1,holder.balance/1e6)));
     const raw=Math.min(limit*Math.sqrt(holder.brightness),dollarDiameter);
     // Keep small marks small even when their shape cannot resolve at this scale.
     const diameter=Math.min(limit,raw>=1?Math.max(1,2*Math.floor((raw-1)/2)+1):raw);
