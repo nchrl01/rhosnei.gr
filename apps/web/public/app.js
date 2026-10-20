@@ -41,7 +41,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=345';
-import {MarketChart} from './chart.js?v=234';
+import {MarketChart} from './chart.js?v=363';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -572,6 +572,7 @@ $('play').onclick=async()=>{
 for(const id of controls)$(id).addEventListener('input',()=>{if(listeningGain)listeningGain.gain.setTargetAtTime(Number($(id).value),ctx.currentTime,.025);session?.controls.push({at:Date.now(),name:id,value:Number($(id).value)});});
 const cash=n=>n!=null&&n!==''&&Number.isFinite(Number(n))?'$'+new Intl.NumberFormat('en',{maximumSignificantDigits:8}).format(n):'—';
 function display(){
+ chart.setMarketCapBasis(replay.state.active?(replay.state.frozen?.market||market):market);
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
  displayCoinImage();
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';

@@ -5,6 +5,7 @@ import {createChartTicks} from './chart-ticks.js?v=220';
 // One series per view, with provider candles and explicitly partial live observations.
 export class MarketChart{
  constructor(container){
+  this.capSupply=null;this.container=container;
   this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
@@ -13,7 +14,7 @@ export class MarketChart{
    rightPriceScale:{borderColor:'#3a3a3a',scaleMargins:{top:.1,bottom:.25}},
    timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
    crosshair:{vertLine:{color:'#888888',labelBackgroundColor:'#333333'},horzLine:{color:'#888888',labelBackgroundColor:'#333333'}},
-   localization:{timeFormatter:time=>new Date(time*1000).toLocaleString(undefined,{timeZoneName:'short'}),priceFormatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9})},
+   localization:{timeFormatter:time=>new Date(time*1000).toLocaleString(undefined,{timeZoneName:'short'}),priceFormatter:price=>this.formatMarketCap(price)},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
@@ -21,7 +22,7 @@ export class MarketChart{
   if(document.fonts)document.fonts.load('400 12px Unifont','0123456789.,$').then(()=>{
    this.chart.applyOptions({layout:{fontFamily:'"Unifont", "Noto Sans", sans-serif',fontSize:12}});
   }).catch(()=>{});
-  const priceFormat={type:'custom',formatter:price=>'$'+Number(price).toLocaleString('en',{maximumSignificantDigits:9}),minMove:1e-12};
+  const priceFormat={type:'custom',formatter:price=>this.formatMarketCap(price),minMove:1e-12};
   this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#000000',downColor:'#f2f2f2',wickUpColor:'#f2f2f2',wickDownColor:'#f2f2f2',borderVisible:true,borderUpColor:'#f2f2f2',borderDownColor:'#f2f2f2',priceLineColor:'#b5b5b5',priceFormat});
   this.line=this.chart.addSeries(LineSeries,{color:'#f2f2f2',lineWidth:2,visible:false,priceFormat});
   this.volume=this.chart.addSeries(HistogramSeries,{priceScaleId:'volume',priceFormat:{type:'volume'},lastValueVisible:false,priceLineVisible:false});
@@ -31,7 +32,7 @@ export class MarketChart{
    const data=param.seriesData.get(series),bar=typeof param.time==='number'?this.buckets.get(param.time*1000):null;
    if(!data||!bar){target.textContent='Drag to pan · scroll or pinch to zoom · hover to inspect';return;}
    const price=n=>'$'+Number(n).toLocaleString('en',{maximumSignificantDigits:7});
-   target.textContent=new Date(bar.time).toLocaleString()+' · O '+price(bar.open)+'  H '+price(bar.high)+'  L '+price(bar.low)+'  C '+price(bar.close)+(bar.volume!=null?(bar.volumeEstimated?' · Estimated quote volume ':' · USD volume ')+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
+   target.textContent=new Date(bar.time).toLocaleString()+' · Estimated market cap · O '+this.formatMarketCap(bar.open)+'  H '+this.formatMarketCap(bar.high)+'  L '+this.formatMarketCap(bar.low)+'  C '+this.formatMarketCap(bar.close)+(bar.volume!=null?(bar.volumeEstimated?' · Estimated quote volume ':' · USD volume ')+price(bar.volume):' · Volume unavailable')+(bar.live?' · partial live observations':' · provider candle');
   });
   const interaction=()=>{this.manual=true;this.needsFit=false;};
   document.getElementById('chart-timezone').textContent='Chart times: '+Intl.DateTimeFormat().resolvedOptions().timeZone+' · local time';
@@ -39,6 +40,19 @@ export class MarketChart{
   setInterval(()=>{if(document.hidden||!document.body.classList.contains('inspecting'))return;const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},1000);
   this.tickView=createChartTicks(this);
   this.chart.subscribeClick(param=>{if(typeof param.time==='number'){const bar=this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
+ }
+ formatMarketCap(price){
+  if(!(this.capSupply>0)||!Number.isFinite(price)||price<0)return '—';
+  return '$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(price*this.capSupply);
+ }
+ setMarketCapBasis(market){
+  const cap=Number(market?.marketCap),price=Number(market?.priceUsd),supply=cap>0&&price>0&&Number.isFinite(cap/price)?cap/price:null;
+  if(supply===this.capSupply||(supply&&this.capSupply&&Math.abs(supply/this.capSupply-1)<1e-8))return;
+  this.capSupply=supply;
+  const priceFormat={type:'custom',formatter:value=>this.formatMarketCap(value),minMove:supply?Math.max(1e-15,.01/supply):1e-12};
+  this.candles.applyOptions({priceFormat});this.line.applyOptions({priceFormat});
+  this.chart.applyOptions({localization:{priceFormatter:value=>this.formatMarketCap(value)}});
+  this.container.setAttribute('aria-label',supply?'Market cap chart, estimated using current circulating supply':'Market cap unavailable');
  }
  // The audio clock owns the cursor; animation only interpolates its display.
  bindReplay(readState,isPlaying){
