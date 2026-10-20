@@ -6,6 +6,8 @@ const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const renderer=createPixelBlastCanvas(host),canvas=renderer.canvas;
  Object.assign(canvas.style,{position:'absolute',width:'100%',height:'100%',inset:'0'});
+ let shapeDirection=null,shapeStarted=0,shapeFrom=[1,0,0],shapeWeights=[1,0,0];
+ const shapeFor=d=>d>0?[0,1,0]:d<0?[0,0,1]:[1,0,0];
  let image=null,stats={markCount:0,shapeWeights:[1,0,0],sizeTransition:false,positionTransition:false};
  return {
   kind:'canvas',get surface(){return canvas},get allocation(){return null},
@@ -23,9 +25,14 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    const artistic={marketCap,referenceCap:100000,seed,activity,level:.5,tempo:100,volume:history?.length?unit(Math.log1p(Math.max(0,bar.volume||0))/20):.5,motion:.4,change:0,depth:.5,drive:.5,pressure:.2,surge:.3,imbalance:.2,balance:.6,fresh:1,piano:.5,transient:.2,active:true};
    const mapped=labVisualMappings(pixelBlastParameters(artistic),artistic);
    const size=inputs.liquidity>0?1+11*unit((Math.log10(inputs.liquidity)-2)/6):1;
-   const params={...mapped,identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:0,shapeWeights:[1,0,0],artworkColor,inkColor};
+   const direction=Math.sign(Number(inputs.change)||0),now=performance.now()/1000;
+   if(shapeDirection===null){shapeDirection=direction;shapeWeights=shapeFor(direction);}
+   const progress=unit((now-shapeStarted)/.24),blend=progress*progress*(3-2*progress);
+   if(shapeStarted)shapeWeights=shapeFrom.map((v,i)=>v+(shapeFor(shapeDirection)[i]-v)*blend);
+   if(direction!==shapeDirection){shapeFrom=shapeWeights.slice();shapeDirection=direction;shapeStarted=now;}
+   const params={...mapped,identity:image?.7:0,identityMotion:0,dotSize:size,pixelSize:size,pixelPresence:1,holderCount:count,markDirection:direction,shapeWeights,artworkColor,inkColor};
    renderer.render({width:renderWidth,height:renderHeight,time,eventTime:time,liquidTime:time,seed,params});
-   stats={...stats,markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),renderer:'october7-pattern-count',reconstructed:Boolean(history?.length)};
+   stats={...stats,shapeWeights:shapeWeights.slice(),markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),renderer:'october7-pattern-count',reconstructed:Boolean(history?.length)};
   },
   snapshot(){return {...stats}},clear(){renderer.clear()},close(){renderer.close()}
  };
