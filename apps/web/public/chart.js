@@ -1,5 +1,5 @@
 import {createChart,CandlestickSeries,LineSeries,HistogramSeries,PriceScaleMode} from './vendor/lightweight-charts.js?v=232';
-import {candleEnd} from './market-replay.js?v=230';
+import {candleEnd} from './market-replay.js?v=395';
 import {createChartTicks} from './chart-ticks.js?v=373';
 
 // One series per view, with provider candles and explicitly partial live observations.
@@ -99,7 +99,20 @@ export class MarketChart{
    this.manual=true;this.needsFit=false;
    scale.setVisibleLogicalRange({from:logical-span/2,to:logical+span/2});
   }
-  if(this.playhead){const x=scale.logicalToCoordinate(logical);this.playhead.hidden=x==null||x<0||x>width;if(x!=null)this.playhead.style.left=x+'px';}
+  if(this.playhead){
+   // The chart applies range changes on its next paint, so following must not
+   // briefly position the cursor using the previous viewport.
+   let x=width/2;
+   if(!this.replayFollowing){
+    // This chart version only accepts integer logical indices. Interpolate
+    // between their coordinates to keep fractional playback off the left edge.
+    const index=Math.floor(logical),fraction=logical-index,start=scale.logicalToCoordinate(index);
+    const end=fraction?scale.logicalToCoordinate(index+1):start;
+    x=start==null||end==null?null:start+(end-start)*fraction;
+   }
+   this.playhead.hidden=x==null||x<0||x>width;
+   if(x!=null)this.playhead.style.left=x+'px';
+  }
  }
  setMode(mode){this.mode=mode;this.candles.applyOptions({visible:mode==='candles'});this.line.applyOptions({visible:mode!=='candles'});}
  setScale(mode){this.scale=mode;this.chart.priceScale('right').applyOptions({mode:mode==='log'?PriceScaleMode.Logarithmic:PriceScaleMode.Normal,autoScale:true});}

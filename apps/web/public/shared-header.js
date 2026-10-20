@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=394';
+import {bindMobileCoinSearch} from './mobile-search.js?v=395';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -59,7 +59,7 @@ removeRetiredSampleStorage();
 // Optional footer features cannot prevent navigation or volume from starting.
 if(document.querySelector('.site-footer')&&new URLSearchParams(location.search).get('capture')!=='live'){
  void import('./footer-prices.js?v=240').catch(()=>{});
- if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=317').catch(()=>{
+ if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=395').catch(()=>{
   const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
   if(button)button.disabled=true;
   if(status)status.textContent='Wallet unavailable. Reload to try again.';
@@ -70,34 +70,19 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 
 const headerWallet=new URLSearchParams(location.search).get('capture')==='live'?null:document.querySelector('.header-wallet');
 if(headerWallet){
- let walletOpening=false,walletSession;
- const paintAccount=account=>{
-  const label=account?.address?'Wallet account':'Sign in';
-  headerWallet.setAttribute('aria-label',label);headerWallet.title=label;
- };
- const loadWalletSession=()=>{
-  if(!walletSession)walletSession=import('./wallet-session.js?v=317').then(session=>{
-   session.subscribeWalletAccount(paintAccount);return session;
-  }).catch(error=>{walletSession=null;throw error;});
-  return walletSession;
- };
- headerWallet.setAttribute('aria-haspopup','dialog');
- void loadWalletSession().catch(()=>{});
- headerWallet.addEventListener('click',async()=>{
-  if(walletOpening)return;walletOpening=true;headerWallet.setAttribute('aria-busy','true');
-  try{const session=await loadWalletSession();paintAccount(session.getWalletAccount());await session.openWalletConnection();}
-  catch(error){headerWallet.title=error.message||'Could not connect. Try again.';}
-  finally{walletOpening=false;headerWallet.removeAttribute('aria-busy');}
+ headerWallet.setAttribute('aria-label','Profile');headerWallet.title='Profile';
+ void import('./profile.js?v=395').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
+  headerWallet.title='Profile is unavailable. Reload to try again.';
  });
 }
 
 function bindMobilePlayerOrder(){
- const transport=document.querySelector('.instrument-page .transport'),title=document.querySelector('.coin-title'),readings=title?.querySelector('.coin-live-readings'),avatar=title?.querySelector('.coin-avatar'),name=title?.querySelector('#coin-name');
+ const transport=document.querySelector('.instrument-page .transport'),title=document.querySelector('.coin-title'),readings=title?.querySelector('.coin-live-readings'),avatar=title?.querySelector('.coin-avatar'),name=title?.querySelector('#coin-name'),address=title?.querySelector('#coin-address');
  if(!transport||!readings||!avatar||!name)return;
- const home=document.createComment('transport position'),avatarHome=document.createComment('avatar position'),nameHome=document.createComment('coin name position');transport.before(home);avatar.before(avatarHome);name.before(nameHome);
+ const home=document.createComment('transport position'),avatarHome=document.createComment('avatar position'),nameHome=document.createComment('coin name position'),addressHome=document.createComment('coin address position');transport.before(home);avatar.before(avatarHome);name.before(nameHome);address?.before(addressHome);
  const heading=document.createElement('div');heading.className='mobile-player-heading';
  const mobile=matchMedia('(max-width:760px)');
- const arrange=()=>{if(mobile.matches){title.append(heading);heading.append(avatar,name);readings.before(transport);}else{avatarHome.after(avatar);nameHome.after(name);heading.remove();home.after(transport);}};
+ const arrange=()=>{if(mobile.matches){title.append(heading);heading.append(avatar,name);if(address)heading.append(address);readings.before(transport);}else{avatarHome.after(avatar);nameHome.after(name);if(address)addressHome.after(address);heading.remove();home.after(transport);}};
  mobile.addEventListener('change',arrange);arrange();
 }
 bindMobilePlayerOrder();

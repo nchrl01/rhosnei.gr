@@ -1,3 +1,4 @@
+import {ProfileService} from './profiles.js';
 import {NativeHolderRelay,nativeLimits} from './native-holders.js';
 import {NATIVE_COINS} from '../../apps/web/public/native-coins.js';
 import {VisualHistory} from './visual-history.js';
@@ -107,11 +108,14 @@ async function holderCount(url,headers,env){
 
 export default {
  async fetch(request,env){
-  const origin=request.headers.get('Origin'),allowed=env.ALLOWED_ORIGIN;
-  if(origin&&origin!==allowed&&!/^http:\/\/(localhost|127\.0\.0\.1):4173$/.test(origin))return json({state:'forbidden'},403);
-  const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'};
+  const url=new URL(request.url),origin=request.headers.get('Origin'),allowed=env.ALLOWED_ORIGIN;
+  const localOrigin=url.pathname.startsWith('/profile/')?/^http:\/\/(localhost|127\.0\.0\.1):(4173|4180)$/:/^http:\/\/(localhost|127\.0\.0\.1):4173$/;
+  if(origin&&origin!==allowed&&!localOrigin.test(origin))return json({state:'forbidden'},403);
+  const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Authorization'};
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
-  const url=new URL(request.url);
+  if(url.pathname.startsWith('/profile/')){
+   try{const store=env.PROFILE_STORE.get(env.PROFILE_STORE.idFromName('private-profiles-v1'));const result=await store.fetch(request);return new Response(result.body,{status:result.status,headers:{...Object.fromEntries(result.headers),...headers,'Vary':'Origin, Authorization','Cache-Control':'private, no-store, max-age=0'}});}catch{return json({error:'profile-unavailable'},503,{...headers,'Cache-Control':'private, no-store'});}
+  }
   if(url.pathname==='/coin-captures'||url.pathname==='/coin-captures/image'){
    if(!['GET','POST'].includes(request.method)||request.method==='POST'&&url.pathname!=='/coin-captures')return json({error:'Method not allowed'},405,headers);
    try{if(request.method==='POST')await authenticateCaptureRequest(request);const store=env.HOLDER_CACHE.get(env.HOLDER_CACHE.idFromName('shared-live-coin-captures-v1'));const result=await store.fetch(request);const response=new Response(result.body,result);for(const [key,value] of Object.entries(headers))response.headers.set(key,value);return response;}catch(error){return json({error:error.status?error.message:'Capture service unavailable'},error.status||503,headers);}
@@ -296,4 +300,9 @@ export class TakeStore extends DurableObject {
   });
   return result?json({id:key},201):json({state:'share-capacity-reached'},429,{'Retry-After':'3600'});
  }
+}
+
+export class ProfileStore extends DurableObject {
+ constructor(ctx,env){super(ctx,env);this.profiles=new ProfileService(ctx,env);}
+ fetch(request){return this.profiles.fetch(request);}
 }

@@ -12,11 +12,11 @@ import {buildReplayScore} from './replay-score.js?v=209';
 import {createUIControls} from './ui-controls.js?v=391';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=359';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
-import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=350';
+import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=395';
+import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=395';
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
-import {isCoinSaved,toggleSavedCoin,savedCoinForMarket} from './saved-coins.js?v=394';
+import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=395';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
@@ -26,13 +26,13 @@ import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=394';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=394';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=395';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle} from './market-replay.js?v=347';
+import {createMarketReplay,candleEnd,scoreCandle,replaySpeed} from './market-replay.js?v=395';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=227';
 import {createPd} from './vendor/libpd-wasm.js?v=220';
@@ -42,7 +42,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=391';
-import {MarketChart} from './chart.js?v=390';
+import {MarketChart} from './chart.js?v=395';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -65,7 +65,6 @@ let envionLoading=null;
 let testExportSession=null;
 let sharedHarmony=null;
 let pd,ctx,gain,listeningGain,outputTap,outputMeters,instrumentTap,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
-let requestedNetwork=null,requestedAutoplay=null;
 let snapshotController,searchController;
 const shouldFetchHistory=()=>!document.hidden||playing;
 let pendingHistoryReplay=false;
@@ -343,7 +342,7 @@ function updateReplayUI(m){
  if(hint){hint.hidden=true;hint.textContent='';}
 
  const rate=Number(replay.state.speed)||1;
- $('replay-state').textContent=active?(replay.state.speed==='jump'?'· Jump':'· '+rate+'×'):'';
+ $('replay-state').textContent=active?'· '+rate+'×':'';
 
  $('replay-info').textContent='Choose a point to replay. Market changes shape the sound.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Historical market cap is unavailable.';
@@ -594,7 +593,7 @@ function display(){
  updatePlayAvailability();
  chart.setMarketCapBasis(replay.state.active?(replay.state.frozen?.market||market):market);
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
- displayCoinImage();syncSavedCoin();
+ displayCoinImage();syncSavedCoin();showCoinAddress(market?.baseToken?.address,market?.chainId);
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
  $('mode').hidden=!!historical||!market;
  $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
@@ -821,7 +820,7 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
   searchFeedback('Opening '+pair.baseToken.symbol+'…','loading');
   if(isExchangeMarket(pair)){status('Loading '+pair.exchangeName+' market…');pair=await prepareExchangeMarket(pair);}
   if(revision!==searchRevision)return;
-  $('address').value=pair.baseToken.address;syncAddressLabel();discovered=[pair];
+  $('address').value='';syncAddressLabel();discovered=[pair];
   $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');chooseMarket(pair);
   searchFeedback('');
   if(autoPlay&&(!playing||ctx?.state!=='running'))await $('play').onclick();
@@ -831,24 +830,24 @@ document.addEventListener('upic:search-coin',event=>{
  const coin=event.detail;if(!coin||typeof(coin.address||coin.query)!=='string')return;
  liveConnection?.abort();liveConnection=null;searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
  if(coin.source==='ccxt'&&['kraken','coinbaseexchange','binance'].includes(coin.exchangeId)&&/^[A-Z0-9.]+\/(USD|USDT|USDC)$/.test(coin.exchangeSymbol||'')){
-  requestedNetwork=null;requestedAutoplay=null;
   void selectSearchMarket({source:'ccxt',chainId:'exchange',exchangeId:coin.exchangeId,exchangeSymbol:coin.exchangeSymbol,exchangeName:coin.exchangeId,nativeId:coin.nativeId||undefined,pairAddress:coin.exchangeId+':'+coin.exchangeSymbol,baseToken:{address:coin.query,symbol:coin.symbol,name:coin.name}},{autoPlay:true,revision:searchRevision});
   return;
  }
- requestedNetwork=coin.address?coin.chain:null;requestedAutoplay=true;
- $('address').value=coin.address||coin.query;syncAddressLabel();$('coin-form').requestSubmit();
+ void searchForCoin(coin.address||coin.query,{network:coin.address?coin.chain:null,autoPlay:true});
 });
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
  if($('address').value.trim().toLowerCase()==='pdata'){const show=$('envion').hidden;$('envion').hidden=!show;$('engine-view').hidden=!show;document.querySelector('.inspector-display').hidden=!show;document.body.classList.toggle('inspecting',show);$('address').value='';syncAddressLabel();status(show?'Pure Data view open':'Pure Data view hidden');return;}
  if(loading)return;
  const selectedNetwork=$('coin-form').dataset.searchNetwork;
- const wantedNetwork=requestedNetwork||(selectedNetwork&&selectedNetwork!=='all'?selectedNetwork:null),autoPlay=requestedAutoplay??true;requestedNetwork=null;requestedAutoplay=null;
- const address=$('address').value.trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
+ return searchForCoin($('address').value,{network:selectedNetwork&&selectedNetwork!=='all'?selectedNetwork:null,autoPlay:true});
+};
+async function searchForCoin(query,{network:wantedNetwork=null,autoPlay=true}={}){
+ const address=String(query||'').trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
  if(autoPlay&&(!playing||ctx?.state!=='running'))primeAudio();
  const revision=++searchRevision,tokenAddress=isTokenIdentifier(address),exchangeOnly=isExchangeQuery(address);
  searchController?.abort();const searchAbort=new AbortController();searchController=searchAbort;
- const current=()=>revision===searchRevision&&$('address').value.trim()===address;
+ const current=()=>revision===searchRevision;
  searchBusy(true);$('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
  searchFeedback(tokenAddress?'Finding this coin…':exchangeOnly?'Finding exchange markets…':'Finding markets…','loading');
  let dexPairs=[],exchangePairs=[],errors=[],remaining=2;
@@ -884,11 +883,28 @@ $('coin-form').onsubmit=async e=>{
   }
  }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
  finally{if(revision===searchRevision)searchBusy(false);}
-};
+}
+function showCoinAddress(address,network=''){
+ const button=$('coin-address');
+ const valid=typeof address==='string'&&isTokenIdentifier(address);
+ button.hidden=!valid;button.dataset.address=valid?address:'';
+ if(!valid)return;
+ const short=address.length>24?address.slice(0,8)+'…'+address.slice(-6):address;
+ button.textContent=(network?network+' · ':'')+short;
+ button.title=address+' · Copy address';
+ button.setAttribute('aria-label','Copy coin address '+address);
+}
+$('coin-address').addEventListener('click',async()=>{
+ const address=$('coin-address').dataset.address;if(!address)return;
+ try{await navigator.clipboard.writeText(address);savedFeedback('Address copied');}
+ catch{savedFeedback('Could not copy the address.');}
+});
+let savingCoin=false;
 function syncSavedCoin(){
  const button=$('save-coin'),coin=savedCoinForMarket(market,market&&coinImageKey===imageKey(market)?coinImageURL:'');
  const saved=Boolean(coin&&isCoinSaved(coin.key));
- button.disabled=!coin;button.setAttribute('aria-pressed',String(saved));
+ button.disabled=!coin||savingCoin||savedCoinsState().status==='loading';button.setAttribute('aria-pressed',String(saved));
+ button.setAttribute('aria-busy',String(savingCoin));
  button.setAttribute('aria-label',saved?'Remove coin from saved':'Save coin for later');
  button.title=saved?'Saved · click to remove':'Save for later';
 }
@@ -898,10 +914,12 @@ function savedFeedback(message){
  node.textContent=message;node.hidden=false;
  savedFeedbackTimer=setTimeout(()=>{node.hidden=true;node.textContent='';},3500);
 }
-$('save-coin').addEventListener('click',()=>{
+$('save-coin').addEventListener('click',async()=>{
  const coin=savedCoinForMarket(market,market&&coinImageKey===imageKey(market)?coinImageURL:'');if(!coin)return;
- try{const saved=toggleSavedCoin(coin);syncSavedCoin();savedFeedback(saved?'Saved for later':'Removed from saved');}
+ savingCoin=true;syncSavedCoin();
+ try{const saved=await toggleSavedCoin(coin);savedFeedback(saved?'Saved to your profile':'Removed from saved');}
  catch(error){savedFeedback(error.message);}
+ finally{savingCoin=false;syncSavedCoin();}
 });
 window.addEventListener('upic:saved-coins-changed',syncSavedCoin);
 const rollCap=rollingText($('coin-cap'));
@@ -932,7 +950,7 @@ async function restoreSharedScore(){
  try{
   const score=await loadSharedScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
-  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=replay.preserveScore(buildReplayScore(bars,seed,score.interval,score.market),score.interval);replay.state.speed=['1','50','jump'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
+  chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=replay.preserveScore(buildReplayScore(bars,seed,score.interval,score.market),score.interval);replay.state.speed=replaySpeed(score.speed);updateSpeedButtons();
   replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());syncSavedCoin();status('Replay ready · press Play');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
@@ -940,7 +958,8 @@ display();
 const restoredScore=await restoreSharedScore();
 const requestedCoin=new URLSearchParams(location.search);
 if(!restoredScore&&requestedCoin.get('coin')?.length<=250&&requestedCoin.get('coin')){
- requestedNetwork=requestedCoin.get('network')||null;requestedAutoplay=false;$('address').value=requestedCoin.get('coin');syncAddressLabel();$('coin-form').requestSubmit();
+ showCoinAddress(requestedCoin.get('coin'),requestedCoin.get('network')||'');
+ void searchForCoin(requestedCoin.get('coin'),{network:requestedCoin.get('network')||null,autoPlay:false});
 }
 if(captureMode)window.__upicCaptureStatus=()=>({market:market?{chain:market.chainId,address:market.baseToken.address,symbol:market.baseToken.symbol}:null,visual:dataVisual.snapshot(),holders:holderMetadata.snapshot().holdings?.state,lookup:$('lookup').textContent});
 if(captureMode)archivePlayerFrames({captureMode,getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active&&!testMint.simulation()});
@@ -950,13 +969,10 @@ if(!captureMode)startTrending((item,options={})=>{
  // Resume in the coin click itself: market discovery completes asynchronously.
  // The unlocked context stays silent until Listen opens the selected coin engine.
  if(!playing)primeAudio();
- requestedNetwork=item.chain;requestedAutoplay=options.autoplay??true;
  if(item.image)tokenImages.set(imageKey({chainId:item.chain,baseToken:{address:item.address}}),item.image);
- $('address').value=item.address;syncAddressLabel();
  if(item.market){
-  requestedNetwork=null;requestedAutoplay=null;
   void selectSearchMarket(item.market,{autoPlay:options.autoplay??!options.initial,revision:searchRevision});
- }else $('coin-form').requestSubmit();
+ }else void searchForCoin(item.address,{network:item.chain,autoPlay:options.autoplay??!options.initial});
 },state=>ui.loading('trending',state.status,state.label,{host:state.host,operation:state.operation}));
 function reconcileIdleFeed(){
  if(document.hidden&&!playing){stopStream?.();stopStream=null;streamPool='';streamConnected=false;return;}
@@ -1038,7 +1054,7 @@ function updateSpeedButtons(){
 $('replay-speed').onclick=event=>{
  const button=event.target.closest('button[data-rate]');if(!button)return;
  replay.advance(chart.renderedBars,chart.interval,playing&&ctx?.state==='running');
- replay.state.speed=button.dataset.rate;replay.release();updateSpeedButtons();
+ replay.state.speed=replaySpeed(button.dataset.rate);replay.release();updateSpeedButtons();
  session?.controls.push({at:Date.now(),name:'history-speed',value:replay.state.speed});
 };
 $('chart-view').onchange=()=>chart.setMode($('chart-view').value);

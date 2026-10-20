@@ -66,7 +66,6 @@ details{border-top:1px solid #333;padding:12px 0}summary{font-size:var(--font-si
 .market-context{margin-top:12px}.timing{display:grid;gap:5px;margin-top:12px;font-size:var(--font-size-small);line-height:1.5;color:#aaa}
 .chart-stage{position:relative;min-width:0}#market-chart{display:block;width:100%;height:136px;min-height:0}
 #replay-playhead{position:absolute;top:0;left:50%;bottom:24px;width:2px;background:var(--playhead);transform:translateX(-50%);pointer-events:none;z-index:3}
-#replay-playhead::before,#replay-playhead::after{content:'';position:absolute;left:50%;width:6px;height:3px;background:var(--playhead);transform:translateX(-50%)}#replay-playhead::before{top:0}#replay-playhead::after{bottom:0}
 .chart-ticks{margin:5px 0 0;padding:0;background:transparent}.tick-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;min-width:0}
 #tick-position{flex-shrink:0;font-size:var(--font-size-small);font-weight:400;line-height:14px;white-space:nowrap}#tick-reading{flex:1;min-width:0;font-size:var(--font-size-small);font-weight:400;line-height:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;color:#aaa;font-variant-numeric:tabular-nums}
 #chart-tick-row{display:flex;align-items:flex-end;gap:2px;height:24px;margin-top:4px;overflow:hidden;cursor:crosshair;touch-action:none;user-select:none}
@@ -421,10 +420,12 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
 /* Keep intrinsic artwork dimensions from expanding the desktop avatar grid. */
 .coin-avatar{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
 .coin-avatar #coin-image-fallback{position:absolute;inset:0;display:grid;place-items:center;min-width:0;min-height:0}
+.coin-avatar #coin-image-fallback[hidden]{display:none}
 .coin-avatar .coin-placeholder-logo{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;box-sizing:border-box;padding:6px;filter:none}
 .coin-avatar #coin-image,.coin-avatar .coin-dither{min-width:0;min-height:0;box-sizing:border-box;object-fit:contain}
 
 .coin-avatar .coin-placeholder-logo{position:absolute;inset:0;width:100%;height:100%;min-width:0;min-height:0}
+@media(max-width:760px){.coin-avatar .coin-placeholder-logo{display:none}}
 
 /* Preserve the chart's geometry when replay controls appear. */
 .playback-speed{transition:opacity .18s ease,transform .18s ease;opacity:1;transform:translateY(0)}
@@ -646,7 +647,7 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
 .audio-visualizer.has-recorded-frame .visual-content-frame{visibility:hidden}
 
 /* Focused player by default; detailed market information is opt-in. */
-#advanced-view{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:44px;margin:16px 0 8px;padding:10px 0;background:transparent;border:0;border-top:1px solid var(--line);color:var(--control-muted);font-size:var(--font-size-small);cursor:pointer}
+#advanced-view{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;min-height:44px;margin:16px 0 8px;padding:10px 0;background:transparent;border:0;border-top:1px solid var(--line);color:var(--control-muted);font-size:var(--font-size-small);cursor:pointer}
 #advanced-view:hover{color:var(--control-ink)}
 #advanced-view:focus-visible{outline:1px solid var(--control-ink);outline-offset:3px}
 body:not(.advanced-view) :is(#advanced-diagnostics,#advanced-readings,#advanced-market-source,.chart-menu){display:none!important}
@@ -655,7 +656,7 @@ body:not(.advanced-view) .coin-live-readings{grid-template-columns:minmax(0,1fr)
 body:not(.advanced-view) .chart-panel{margin-top:16px}
 body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
 
-.instrument>#advanced-view{margin-top:24px;margin-bottom:0}.instrument>#advanced-market-source{margin:16px 0;justify-content:flex-start}.instrument>#advanced-diagnostics{margin:12px 0}
+.instrument>#advanced-view{margin-top:16px;margin-bottom:0;flex:0 0 auto;align-self:start}.instrument>#advanced-market-source{margin:16px 0;justify-content:flex-start}.instrument>#advanced-diagnostics{margin:12px 0}
 /* Collector profile has its own circular frame and room beside the action. */
 .instrument-page .nft-owner-preview,.instrument-page .instrument>.nft-owner-preview{gap:24px;padding-block:28px;margin-block:24px}
 .instrument-page .nft-owner-avatar{width:88px;height:88px;padding:14px;border-radius:50%!important}
@@ -758,7 +759,7 @@ body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility
 .save-coin-feedback[hidden]{display:none}
 
 /* Collection ownership follows Advanced; it remains visible when Advanced is closed. */
-.instrument>.coin-collection-status{display:grid;gap:10px;width:100%;min-width:0;margin:24px 0;padding:24px 0;border-top:1px solid var(--line,#292929)}
+.instrument>.coin-collection-status{display:grid;gap:10px;width:100%;min-width:0;margin:8px 0 24px;padding:20px 0;border-top:1px solid var(--line,#292929)}
 .instrument>.coin-collection-status[hidden]{display:none}
 .coin-collection-status h3,.coin-collection-status p{margin:0;font-weight:400;line-height:1.5}
 .coin-collection-status h3{font-size:var(--font-size-small);color:var(--muted,#aaa)}
@@ -767,3 +768,11 @@ body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility
 .coin-collection-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:6px}
 .coin-collection-actions :is(button,a){min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:var(--font-size-small)}
 .coin-collection-actions button{padding:10px 14px}
+.coin-address{display:block;max-width:100%;min-height:28px;margin:4px 0 0;padding:4px 0;border:0;background:none;color:var(--muted,#aaa);font-size:var(--font-size-small);font-weight:400;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.coin-address[hidden]{display:none}
+.coin-address:hover{color:var(--ink,#eee)}
+.coin-address:focus-visible{outline:1px solid currentColor;outline-offset:3px}
+@media(max-width:760px){
+ .mobile-player-heading{flex-wrap:wrap;row-gap:0}
+ .mobile-player-heading .coin-address{flex:0 0 100%;max-width:100%;text-align:center;margin-top:0}
+}

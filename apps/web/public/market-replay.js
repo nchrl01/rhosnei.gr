@@ -1,12 +1,17 @@
 import {contextualizeMarket} from './market-state.js?v=208';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,bar.observedThrough??bar.lastAt??bar.time+interval);
+export function replaySpeed(value){
+ const speed=String(value);
+ // Older shared replays used the third speed slot for skipping price changes.
+ return speed==='jump'?'100':['1','50','100'].includes(speed)?speed:'1';
+}
 
 // Keep the controls actually observed during this visit, separate from OHLC history.
 export function createMarketReplay(){
  const recordings=new Map(),archives=new Map();let key='demo';
  function archive(){if(!archives.has(key))archives.set(key,{controls:new Map(),scores:new Map()});return archives.get(key);}
- const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,jumpHold:null,ended:false,frozen:null};
+ const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null};
  function frames(){return recordings.get(key)||[];}
  return {
   state,
@@ -23,32 +28,18 @@ export function createMarketReplay(){
    rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,path:[]}})});
    if(rows.length>3600)rows.shift();recordings.set(key,rows);
   },
-  seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.jumpHold=null;state.ended=false;state.controls=null;},
-  release(){state.dragging=false;state.clock=performance.now();state.jumpHold=null;},
-  live(){Object.assign(state,{active:false,cursor:null,dragging:false,clock:null,source:null,price:null,bar:null,controls:null,endHold:null,jumpHold:null,ended:false,frozen:null});},
+  seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.ended=false;state.controls=null;},
+  release(){state.dragging=false;state.clock=performance.now();},
+  live(){Object.assign(state,{active:false,cursor:null,dragging:false,clock:null,source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null});},
   advance(bars,interval,running,now=performance.now()){
    if(state.frozen){bars=state.frozen.bars;interval=state.frozen.interval;}
    if(!state.active||!bars.length)return false;
    const previous=state.clock??now;state.clock=now;
-   const rate=Number(state.speed)||1;
+   const rate=Number(replaySpeed(state.speed));
    // The audio clock keeps advancing during rendering stalls. Preserve elapsed
    // time so the chart cannot force the score backwards after a late frame.
    if(running&&!state.dragging)state.cursor+=Math.max(0,now-previous)*rate;
    const end=candleEnd(bars.at(-1),interval);
-   if(state.speed==='jump'&&running&&!state.dragging){
-    const current=bars.findLast(bar=>candleEnd(bar,interval)<=state.cursor);
-    // Estimated cap follows candle close price. Compare prices directly so
-    // missing snapshot cap cannot make every historical change disappear.
-    const capChange=bar=>{
-     const index=bars.indexOf(bar),price=Number(bar.close);
-     const previous=Number(index>0?bars[index-1].close:bar.open);
-     return price>0&&previous>0&&Number.isFinite(price)&&Number.isFinite(previous)&&price!==previous;
-    };
-    if(!current||!capChange(current)){
-     const next=bars.find(bar=>candleEnd(bar,interval)>state.cursor&&capChange(bar));
-     state.cursor=next?candleEnd(next,interval):end;state.controls=null;state.jumpHold=now;
-    }
-   }else state.jumpHold=null;
    if(state.cursor>=end){state.cursor=end;if(!running||state.dragging){state.endHold=null;return false;}state.endHold??=now;if(now-state.endHold>=1000){state.ended=true;return true;}return false;}
    state.endHold=null;
    return false;
