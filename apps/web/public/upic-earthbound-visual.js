@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=348';
+import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=361';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=345';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -75,8 +75,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
  function syncHolderLoading(rendered=false,now=performance.now()){
-  if(latest?.liveHolders&&latest.holderFetchSettled&&!initialHoldersReady){
+  if(latest?.liveHolders&&latest.holderFetchSettled&&latest.holderBalances.length>0&&!initialHoldersReady){
    initialHoldersReady=true;
+   renderer.clear();identity=identityInput=marketCapIdentity(latest.marketCap);color=colorTarget=latest.marketCap>=5e7?1:0;
    // Wait for the renderer itself: loading may finish while the tab is hidden.
    awaitingHolderRender=initialLoadShown;holderRevealStarted=null;
   }
@@ -131,6 +132,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
   syncHolderLoading();
+  if(latest.liveHolders&&!initialHoldersReady)return;
   const state=getState(),playing=state.playing&&settings.playing!==false&&!settings.seeking&&!settings.ended;
   // A selection can update app state before its first market frame arrives.
   // Never attribute the old coin's pixels to the newly selected coin.
@@ -182,7 +184,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    syncHolderLoading();
    if(changed&&imageCoinKey!==key)renderer.setImage(null);
-   if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);}
+   if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);color=colorTarget=latest.marketCap>=5e7?1:0;}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=latest.marketCap>=5e7?1:0;if(target!==colorTarget){colorStart=color;colorTarget=target;colorElapsed=0;colorDuration=Math.max(1.5,2.4*(1.5-.75*latest.activity));}
    if(!latest.hasMarket){renderer.clear();renderedAt=0;renderedPlaying=false;renderedHolderReady=false;}
@@ -193,6 +195,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   captureStill(size=512){
    const state=getState(),age=Date.now()-renderedAt;
    if(!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99)throw Error('A current live playing holder frame is required to capture.');
+   if(latest.change!==0||(renderer.snapshot().shapeWeights?.[0]??0)<.999)throw Error('Waiting for the live dot state.');
    const output=document.createElement('canvas');output.width=output.height=size;
    const context=output.getContext('2d');if(!context)throw Error('Canvas unavailable.');
    context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;

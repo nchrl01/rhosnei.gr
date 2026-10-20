@@ -20,8 +20,8 @@ async function browserCount(network,address,signal){
 }
 export function holderCountReadout(info={},historical=false){
  const available=Number.isSafeInteger(info.holders)&&info.holders>=0;
- const label=historical?'HOLDERS · LATEST':'HOLDERS';
- const value=!available&&info.native&&info.holdings?.weight>0?'Sample only':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
+ const label=info.native?'ADDRESS SAMPLE':historical?'HOLDERS · LATEST':'HOLDERS';
+ const value=!available&&info.native&&info.holdings?.weight>0?info.holdings.records.length.toLocaleString('en')+' sampled':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
  const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
  const title=info.native?'Native address balances · '+(info.holdings?.source||'provider')+' · total funded-address count unavailable'+(info.holdings?.scope==='transparent-addresses-only'?' · transparent balances only':info.holdings?.scope==='public-addresses-excludes-MWEB'?' · excludes private MWEB balances':''):available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
   :'Waiting for holder data';

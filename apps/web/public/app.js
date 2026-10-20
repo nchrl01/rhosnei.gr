@@ -23,8 +23,8 @@ import {createCoinDither} from './coin-dither.js?v=348';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=220';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=348';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=356';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=361';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
@@ -596,9 +596,9 @@ function display(){
  const latestLiquidity=Boolean(historical)&&!hasRecordedLiquidity;
  const liquidity=historical&&hasRecordedLiquidity?recordedLiquidity:exchangeMarket?currentLiquidity():snapshotLiquidity;
  const liquidityAvailable=liquidity!=null&&Number.isFinite(Number(liquidity));
- $('liquidity-label').textContent=(exchangeMarket?'BOOK DEPTH · ±1%'+(market.dexId==='coinbaseexchange'?' / 5S':' / ≤25 LEVELS'):'LIQUIDITY')+(latestLiquidity?' · LATEST':'');
+ $('liquidity-label').textContent=(exchangeMarket?'ORDER BOOK · ±1%':'LIQUIDITY')+(latestLiquidity?' · LATEST':'');
  $('liquidity').textContent=liquidityAvailable?cash(liquidity):'Unavailable';
- $('liquidity').title=historical&&hasRecordedLiquidity?'Liquidity recorded at this replay point':exchangeMarket?'Current exchange order-book depth':liquidityAvailable?'Selected pool liquidity · snapshot received '+new Date(poolSnapshot?.at||lastSnapshot).toLocaleTimeString()+(Date.now()-(poolSnapshot?.at||lastSnapshot)>liquiditySnapshotMaxAge()?' · updates delayed':'')+(latestLiquidity?' · latest available, not historical liquidity':''): 'Selected pool liquidity is unavailable';
+ $('liquidity').title=historical&&hasRecordedLiquidity?'Liquidity recorded at this replay point':exchangeMarket?'Current exchange buy/sell orders within 1% of price; up to 25 levels. This is not total on-chain liquidity or historical liquidity.':liquidityAvailable?'Selected pool liquidity · snapshot received '+new Date(poolSnapshot?.at||lastSnapshot).toLocaleTimeString()+(Date.now()-(poolSnapshot?.at||lastSnapshot)>liquiditySnapshotMaxAge()?' · updates delayed':'')+(latestLiquidity?' · latest available, not historical liquidity':''): 'Selected pool liquidity is unavailable';
  displayHolderCount();
  updateContext();
 }
