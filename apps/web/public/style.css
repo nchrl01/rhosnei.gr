@@ -655,3 +655,14 @@ body:not(.advanced-view) .chart-panel{margin-top:16px}
 body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
 
 .instrument>#advanced-view{margin-top:24px;margin-bottom:0}.instrument>#advanced-market-source{margin:16px 0;justify-content:flex-start}.instrument>#advanced-diagnostics{margin:12px 0}
+/* Collector profile has its own circular frame and room beside the action. */
+.instrument-page .nft-owner-preview,.instrument-page .instrument>.nft-owner-preview{gap:24px;padding-block:28px;margin-block:24px}
+.instrument-page .nft-owner-avatar{width:88px;height:88px;padding:14px;border-radius:50%!important}
+.instrument-page .nft-owner-copy{flex:1;min-width:180px;gap:8px}
+.instrument-page .nft-owner-preview .tokenize-coin{min-height:48px;padding:12px 18px}
+@media(max-width:760px){
+ .instrument-page .nft-owner-preview,.instrument-page .instrument>.nft-owner-preview{gap:20px;padding-block:24px;margin-block:24px}
+ .instrument-page .nft-owner-avatar{width:80px;height:80px;padding:12px}
+ .instrument-page .nft-owner-copy{min-width:0;flex:1 1 calc(100% - 100px)}
+ .instrument-page .nft-owner-preview .tokenize-coin{margin-top:4px}
+}
