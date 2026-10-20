@@ -1,7 +1,7 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=393';
-import {createVisualFullscreen} from './visual-fullscreen.js?v=380';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=394';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=394';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
@@ -104,33 +104,14 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
  let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
  let visualReady=false,loaderHasPlayed=false,loaderSignature='',loaderRevealUntil=0;
- let departure=null,departureMarks=null,navigationActive=false;
- function clearDeparture(){if(departure){departure.remove();departure.width=departure.height=1;departure=null;}departureMarks=null;delete host.dataset.visualHandoff;}
- function stageDeparture(){
-  clearDeparture();
-  if(reduced.matches||!visualReady||!renderedAt||host.classList.contains('has-recorded-frame')||transportHasPlayed&&transportPresence<=.001)return;
-  const surface=renderer.surface;if(!surface?.width||!surface.height)return;
-  const copy=document.createElement('canvas');copy.width=surface.width;copy.height=surface.height;
-  const context=copy.getContext('2d');if(!context)return;
-  try{context.drawImage(surface,0,0);}catch{return;}
-  departureMarks=renderer.captureMarks();if(!departureMarks?.marks.length)return;
-  copy.className='visual-departure';copy.setAttribute('aria-hidden','true');
-  copy.style.setProperty('--departure-opacity',String(unit(surface.style.opacity||1)*unit(getComputedStyle(field).opacity)));
-  departure=copy;
- }
- function showDeparture(){
-  if(!departure||departure.isConnected)return;
-  host.append(departure);host.dataset.visualHandoff='waiting';
- }
  function syncVisualLoading(){
   if(visualReady&&loaderSignature==='hidden')return;
   const state=getState(),playing=Boolean(state.playing);
   if(playing)loaderHasPlayed=true;
   const stopped=loaderHasPlayed&&!playing||settings.seeking||settings.ended;
   const current=identityKey(state.coinKey)===key;
-  if(!visualReady&&!departureMarks&&current&&renderedCoinKey===key&&renderedAt&&imageSettled&&imageCoinKey===key&&imageReveal>=1&&host.dataset.holderLoading!=='true'&&renderer.snapshot().markCount>0){visualReady=true;loaderRevealUntil=reduced.matches||stopped?0:performance.now()+400;}
+  if(!visualReady&&current&&renderedCoinKey===key&&renderedAt&&imageSettled&&imageCoinKey===key&&imageReveal>=1&&host.dataset.holderLoading!=='true'&&renderer.snapshot().markCount>0){visualReady=true;loaderRevealUntil=reduced.matches||stopped?0:performance.now()+400;}
   const unavailable=Boolean(current&&latest?.hasMarket&&latest.liveHolders&&!initialHoldersReady&&latest.holderFetchSettled&&!latest.holderFetchLoading);
-  if((stopped||unavailable||reduced.matches||latest&&!latest.liveHolders)&&departure)clearDeparture();
   const pending=!visualReady&&!stopped;
   const revealing=visualReady&&!stopped&&performance.now()<loaderRevealUntil;
   const signature=pending?(unavailable?'unavailable':'loading'):revealing?'revealing':'hidden';
@@ -141,7 +122,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const label=revealing?'Visual ready':unavailable?'Visual unavailable':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
   host.dataset.visualLoading=String(pending&&!unavailable);host.setAttribute('aria-busy',String(pending&&!unavailable));
  }
- function reset(){clock=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;navigationActive=false;renderer.cancelNavigation();renderer.clear();}
+ function reset(){clock=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
  function referenceSide(box){
   // CSS owns a stable viewport-sized desktop host. Use its content box so
   // sticky scrolling cannot change the artwork scale, and retain its soft edges.
@@ -177,7 +158,6 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   syncHolderLoading();
   if(latest.liveHolders&&!initialHoldersReady)return;
   const state=getState(),playing=state.playing&&settings.playing!==false&&!settings.seeking&&!settings.ended;
-  if(navigationActive&&(transportHasPlayed&&!playing||settings.seeking||settings.ended||reduced.matches)){renderer.cancelNavigation();navigationActive=false;delete host.dataset.visualHandoff;}
   // A selection can update app state before its first market frame arrives.
   // Never attribute the old coin's pixels to the newly selected coin.
   if(identityKey(state.coinKey)!==key)return;
@@ -226,15 +206,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const frameInterval=1000/(renderer.kind==='canvas'?30:60);
   if(now-lastRender<frameInterval)return;lastRender=now-(now-lastRender)%frameInterval;
   overlay?.clearRect(0,0,canvas.width,canvas.height);
-  const beginNavigation=Boolean(departureMarks&&imageReveal>=1&&host.dataset.holderLoading!=='true'&&latest.liveHolders&&fresh&&!reduced.matches&&!settings.seeking&&!settings.ended);
-  if(beginNavigation)renderer.beginNavigation(departureMarks);
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence:presence*imageReveal,pixelPresence:1,inkColor:transportInk,reducedMotion:reduced.matches});
-  navigationActive=renderer.snapshot().navigationTransition===true;
-  if(beginNavigation&&navigationActive){clearDeparture();host.dataset.visualHandoff='morphing';}
-  else if(!navigationActive&&host.dataset.visualHandoff==='morphing')delete host.dataset.visualHandoff;
   syncHolderLoading(true,now);
   renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
-  renderedHolderReady=Boolean(!navigationActive&&initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
+  renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
   syncVisualLoading();
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
@@ -246,8 +221,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
-   if(changed){showDeparture();initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;}
-   else if(departure&&!departure.isConnected)clearDeparture();
+   if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;}
    key=nextKey;seed=seedFor(key);settings=options;latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
    syncHolderLoading();
    if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
@@ -270,7 +244,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   captureStill(size=512){
    const state=getState(),age=Date.now()-renderedAt;
-   if(navigationActive||departureMarks||!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99||imageReveal<1||!imageSettled)throw Error('A current live playing holder frame is required to capture.');
+   if(!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99||imageReveal<1||!imageSettled)throw Error('A current live playing holder frame is required to capture.');
    if(latest.change!==0||(renderer.snapshot().shapeWeights?.[0]??0)<.999)throw Error('Waiting for the live dot state.');
    const output=document.createElement('canvas');output.width=output.height=size;
    const context=output.getContext('2d');if(!context)throw Error('Canvas unavailable.');
@@ -316,12 +290,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    };
   },
   snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,transportPresence};},
-  refresh(){lastRender=0;size();},reset(){
-   stageDeparture();reset();
-   // Selection assigns its new identity synchronously after reset. Start the
-   // handoff before the next market tick, without treating replay resets as navigation.
-   queueMicrotask(()=>{if(closed)return;if(identityKey(getState().coinKey)!==key){showDeparture();visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;syncVisualLoading();}else if(departure&&!departure.isConnected)clearDeparture();});
-  },
-  close(){closed=true;cancelAnimationFrame(raf);clearDeparture();fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  refresh(){lastRender=0;size();},reset,
+  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

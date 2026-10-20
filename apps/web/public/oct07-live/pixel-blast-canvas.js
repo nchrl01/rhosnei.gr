@@ -69,15 +69,10 @@ function identityInk(mask,fx,fy,w,h,time,offset,params){
 export function createPixelBlastCanvas(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
  const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,accents=null,output=null,lastCoverage=0,geometryKey=null,geometry=[];
- let lastFrame=null,navigation=null,transitionAlpha=null;
  const layerCanvas=document.createElement("canvas"),layerContext=layerCanvas.getContext("2d");
  return {
   canvas,
   coverage(){return lastCoverage;},
-  captureMarks(){return lastFrame?{inkColor:lastFrame.inkColor,opacity:canvas.style.opacity==null||canvas.style.opacity===''?1:clamp(Number(canvas.style.opacity)),marks:lastFrame.marks.filter(mark=>(mark.alpha??1)>.001).map(mark=>({x:mark.centerX/lastFrame.width,y:mark.centerY/lastFrame.height,diameter:mark.diameter/Math.min(lastFrame.width,lastFrame.height),accent:mark.accent,alpha:mark.alpha??1}))}:null;},
-  beginNavigation(source){navigation=source?.marks?.length?{source,started:null,progress:0,targets:null,paint:null}:null;},
-  cancelNavigation(){navigation=null;},
-  navigationState(){return {active:Boolean(navigation),progress:navigation?.progress??1,sourceOpacity:navigation?.source.opacity??1};},
   setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown'});},
   render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
@@ -211,36 +206,8 @@ export function createPixelBlastCanvas(host){
     }
    }
    const selected=requested?candidates.slice(0,requested):candidates;
-   let painted=selected,displayInk=params.inkColor??1,alphaField=null;
-   if(navigation&&selected.length){
-    const now=performance.now();
-    if(navigation.started===null){
-     navigation.started=now;
-     const ordered=(a,b)=>a.y-b.y||a.x-b.x;
-     navigation.source.marks.sort(ordered);
-     navigation.targets=selected.map(mark=>({x:mark.centerX/w,y:mark.centerY/h,diameter:mark.diameter/Math.min(w,h),accent:mark.accent})).sort(ordered);
-     navigation.paint=Array.from({length:Math.max(navigation.source.marks.length,navigation.targets.length)},()=>({}));
-    }
-    const progress=clamp((now-navigation.started)/800),ease=progress*progress*(3-2*progress);navigation.progress=ease;
-    if(progress>=1){navigation=null;}
-    else{
-     const from=navigation.source.marks,to=navigation.targets,count=navigation.paint.length;
-     // Match spatial ranks once. Extra marks grow/fade without inventing final holders.
-     for(let i=0;i<count;i++){
-      const aIndex=Math.floor(i*from.length/count),bIndex=Math.floor(i*to.length/count),a=from[aIndex],b=to[bIndex],mark=navigation.paint[i];
-      const aAlpha=from.length>=to.length||i===Math.ceil(aIndex*count/from.length)?a.alpha:0;
-      const bAlpha=to.length>=from.length||i===Math.ceil(bIndex*count/to.length)?1:0;
-      mark.centerX=mix(a.x,b.x,ease)*w;mark.centerY=mix(a.y,b.y,ease)*h;mark.diameter=Math.max(1,Math.round(mix(a.diameter,b.diameter,ease)*Math.min(w,h)));mark.accent=ease<.5?a.accent:b.accent;mark.alpha=mix(aAlpha,bAlpha,ease);
-     }
-     painted=navigation.paint;displayInk=mix(navigation.source.inkColor,displayInk,ease);
-     if(!transitionAlpha||transitionAlpha.length!==w*h)transitionAlpha=new Float32Array(w*h);
-     transitionAlpha.fill(0);alphaField=transitionAlpha;
-    }
-   }
-   lastFrame={marks:painted,width:w,height:h,inkColor:displayInk};
    canvas.dataset.markCount=String(selected.length);let accentMarkCount=0;
-   for(const {centerX,centerY,diameter,accent,alpha=1} of painted){
-    if(alpha<=.001)continue;
+   for(const {centerX,centerY,diameter,accent} of selected){
     const accentGlyph=accent&&diameter>=3&&accentDirection!==0;
     if(accentGlyph)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
@@ -253,12 +220,12 @@ export function createPixelBlastCanvas(host){
      const inside=diameter<3?dx*dx+dy*dy<=radius*radius:
       (Math.hypot(dx,dy)-radius)*weights[0]+(Math.min(Math.abs(dx),Math.abs(dy))-halfStroke)*weights[1]+(Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678-halfStroke)*weights[2]<=0;
      if(!inside)continue;
-     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);if(alphaField)alphaField[index]=Math.max(alphaField[index],alpha);
+     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);
     }
    }
    canvas.dataset.accentMarkCount=String(accentMarkCount);
    let occupied=0;
-   const ink=displayInk*255,color=clamp(params.artworkColor||0);
+   const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
    // Only pixels belonging to resolved directional glyphs carry an accent.
    // Dots, including small-size fallbacks and every transitional shape, retain
@@ -274,14 +241,14 @@ export function createPixelBlastCanvas(host){
      }
     }
     if(accents[n]){const amount=Math.min(1,accents[n]/counts[n]);r=mix(r,accentR,amount);g=mix(g,accentG,amount);b=mix(b,accentB,amount);}
-    output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=alphaField?Math.round(alphaField[n]*255):255;
+    output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;
    layerContext.putImageData(output,0,0);ctx.drawImage(layerCanvas,0,0);
    canvas.hidden=false;
    Object.assign(canvas.dataset,{renderer:'canvas',density:params.density.toFixed(3),pixelSize:params.pixelSize.toFixed(3),basePixelSize:params.pixelSize.toFixed(3),cellSize:cellSize.toFixed(3),dotSize:params.dotSize.toFixed(3),dotStrength:params.dotStrength.toFixed(3),patternScale:params.scale.toFixed(3),speed:params.speed.toFixed(3),edgeFade:params.edgeFade.toFixed(3),ecosystem:params.ecosystem.toFixed(3),jitter:params.jitter.toFixed(3),ripples:String(params.ripples?ripples.length:0),rippleIntensity:params.rippleIntensity.toFixed(3),rippleSpeed:params.rippleSpeed.toFixed(3),rippleThickness:params.rippleThickness.toFixed(3),liquid:String(params.liquid),liquidStrength:params.liquidStrength.toFixed(3),liquidRadius:params.liquidRadius.toFixed(3),liquidWobbleSpeed:params.liquidWobbleSpeed.toFixed(3),noiseAmount:params.noiseAmount.toFixed(3),balance:params.balance.toFixed(3),direction:params.direction.toFixed(3),identity:identity.toFixed(3),identityMotion:params.identityMotion.toFixed(3),identityImage:String(!!identityMask)});
   },
-  clear(){ctx?.clearRect(0,0,canvas.width,canvas.height);lastFrame=null;navigation=null;},
-  close(){identityMask=null;lastFrame=null;navigation=null;transitionAlpha=null;canvas.remove();}
+  clear(){ctx?.clearRect(0,0,canvas.width,canvas.height);lastCoverage=0;canvas.dataset.markCount='0';canvas.dataset.accentMarkCount='0';},
+  close(){identityMask=null;canvas.remove();}
  };
 }

@@ -355,11 +355,11 @@ body.credits-page>.site-footer { margin-inline:0; }
 
 /* Icon buttons keep their shape. Play remains the filled primary action. */
 .header-links #volume-button:not(:disabled):hover,.header-links #volume-button[aria-expanded=true],
-.transport #share:not(:disabled):hover,.visual-fullscreen:not(:disabled):hover{
+.transport #save-coin:not(:disabled):hover,.visual-fullscreen:not(:disabled):hover{
  color:var(--control-ink);background:var(--control-hover);
 }
 .transport #play:not(:disabled):not([aria-busy=true]):hover{color:#000;background:var(--control-selected-hover)}
-:is(#volume-button,#play,#share,.visual-fullscreen):focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}
+:is(#volume-button,#play,#save-coin,.visual-fullscreen):focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}
 /* Network marks remain unboxed; selection is their existing underline. */
 .marketplace-networks button[data-chain]:not([data-chain=all]):not(:disabled):hover{
  background:transparent;color:var(--control-ink);opacity:.75;
@@ -429,6 +429,23 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
 /* Search opens its own full-screen mobile view, with the actual search form. */
 .mobile-search-paste{display:none}
 .mobile-coin-search:not([open]){display:none}
+/* Saved markets stay available locally in both search layouts. */
+.saved-search-section{padding:0 0 12px;margin:0 0 12px;border-bottom:1px solid var(--line)}
+.saved-search-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.saved-search-heading h2{margin:0;font:inherit;font-size:var(--font-size-small);font-weight:400;color:var(--muted)}
+.saved-search-heading .saved-search-show-all{min-height:36px;margin:0;padding:4px 0;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small)}
+.saved-search-row{display:grid;grid-template-columns:minmax(0,1fr) 40px;align-items:center;gap:8px;width:100%;border-bottom:1px solid var(--line)}
+.saved-search-row:last-child{border-bottom:0}
+.saved-search-row .saved-search-pick{display:flex;align-items:center;gap:12px;width:100%;min-width:0;min-height:84px;margin:0;padding:12px 4px;border:0;background:transparent;color:var(--control-ink);text-align:left;font:inherit;font-size:var(--font-size-body)}
+.saved-search-pick>img{display:block;flex:none;width:36px;height:36px;object-fit:cover}
+.saved-search-identity{display:grid;gap:4px;min-width:0}
+.saved-search-identity>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.saved-search-identity>small{color:var(--muted);font-size:var(--font-size-small)}
+.saved-search-row .saved-search-remove{display:grid;place-items:center;width:40px;height:44px;min-height:44px;margin:0;padding:10px;border:0;background:transparent;color:var(--muted)}
+.saved-search-remove>svg{width:18px;height:18px}
+.saved-search-empty{margin:12px 0 8px;color:var(--muted);font-size:var(--font-size-small);line-height:1.6}
+:is(.saved-search-pick,.saved-search-remove,.saved-search-show-all):hover{color:var(--control-ink);background:var(--control-hover)}
+:is(.saved-search-pick,.saved-search-remove,.saved-search-show-all):focus-visible{outline:2px solid var(--control-ink);outline-offset:-2px}
 @media(max-width:760px){
  .mobile-coin-search{inset:0!important;width:100vw;max-width:none;height:100dvh;max-height:none;margin:0;padding:0 16px calc(24px + env(safe-area-inset-bottom));border:0;box-sizing:border-box;overflow-y:auto;overscroll-behavior:contain;background:#000;color:var(--control-ink);font:inherit}
  .mobile-coin-search::backdrop{background:#000}
@@ -456,7 +473,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .mobile-search-chip-artwork{position:relative;display:block;flex:none;width:24px;height:24px;overflow:hidden;border-radius:4px!important}
  .mobile-search-chip-artwork>img,.mobile-search-artwork>img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit!important}
  .mobile-search-chip .mobile-search-remove{padding-inline:6px 8px;color:#888}
- .mobile-search-categories{display:flex;gap:24px;min-height:44px;border-bottom:1px solid var(--line)}
+ .mobile-search-categories{display:flex;gap:clamp(12px,4vw,24px);min-height:44px;border-bottom:1px solid var(--line)}
  .mobile-search-categories button{min-height:44px;margin:0;padding:0 0 10px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:var(--font-size-body)}
  .mobile-search-categories button[aria-pressed=true]{color:var(--control-ink);box-shadow:inset 0 -2px var(--control-ink)}
  .mobile-search-status{margin:16px 0 4px;color:var(--muted);font-size:var(--font-size-small);line-height:1.5}
@@ -470,6 +487,10 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .mobile-coin-search :is(.mobile-search-recent,.mobile-search-categories,.mobile-search-suggestions,.mobile-search-status)[hidden]{display:none}
  .mobile-coin-search #coin-search-results{width:100%;max-width:none;margin:0;padding:0;border-bottom:0}
  .mobile-coin-search .coin-search-result{padding-block:16px}
+ .mobile-coin-search[data-category=saved] #coin-search-results{display:none}
+ .mobile-coin-search .mobile-search-filters[hidden]{display:none}
+ .mobile-coin-search .saved-search-row{grid-template-columns:minmax(0,1fr) 44px}
+ .mobile-coin-search .saved-search-row .saved-search-remove{width:44px}
 }
 
 /* Search market artwork uses the same ordered-pixel treatment as collection art. */

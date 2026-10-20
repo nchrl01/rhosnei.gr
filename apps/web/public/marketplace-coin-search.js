@@ -1,8 +1,9 @@
-import {bindSearchField} from './search-field.js?v=381';
+import {bindSearchField} from './search-field.js?v=394';
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {findOnchainMarkets} from './market-search.js?v=350';
 import {isExchangeQuery,searchExchangeMarkets} from './ccxt-market.js?v=359';
 import {rememberRecentCoin} from './coin-catalogue.js?v=359';
+import {savedCoins} from './saved-coins.js?v=394';
 
 // Search live markets using the same discovery, ranking and result UI as home.
 export function bindMarketplaceCoinSearch(){
@@ -30,6 +31,8 @@ export function bindMarketplaceCoinSearch(){
  document.addEventListener('close',event=>{if(event.target.id==='mobile-coin-search')cancel();},true);
  document.addEventListener('upic:search-coin',event=>{
   const coin=event.detail;if(!coin||typeof(coin.address||coin.query)!=='string')return;
+  const saved=coin.key&&savedCoins().find(item=>item.key===coin.key);
+  if(saved){cancel();rememberRecentCoin(saved);location.href=new URL(saved.url,document.baseURI).href;return;}
   cancel();requestedNetwork=coin.address?coin.chain:null;input.value=coin.address||coin.query;sync();form.requestSubmit();
  });
  form.addEventListener('submit',async event=>{

@@ -12,10 +12,10 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
  button.disabled=host.dataset.marketLoaded!=='true';
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],volumePlaceholder=null;
- const share=document.querySelector('#share');
+ const secondaryAction=document.querySelector('#save-coin,#share');
  const volumeWidget=document.querySelector('.volume-widget'),volumeButton=document.querySelector('#volume-button');
  function placeButton(){
-  if(!expanded&&matchMedia('(max-width:760px)').matches&&share)share.after(button);
+  if(!expanded&&matchMedia('(max-width:760px)').matches&&secondaryAction)secondaryAction.after(button);
   else if(button.parentElement!==host)host.append(button);
  }
  placeButton();

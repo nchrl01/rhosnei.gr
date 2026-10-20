@@ -4,7 +4,7 @@ import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=359';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=351';
 import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
-import {bindSearchField} from './search-field.js?v=381';
+import {bindSearchField} from './search-field.js?v=394';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
@@ -15,7 +15,8 @@ import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlo
 import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=350';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=350';
 import {rollingText} from './coin-readout.js?v=53';
-import {createTakeShare,loadSharedScore} from './take-share.js?v=220';
+import {loadSharedScore} from './take-share.js?v=220';
+import {isCoinSaved,toggleSavedCoin,savedCoinForMarket} from './saved-coins.js?v=394';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
@@ -23,9 +24,9 @@ import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=393';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=394';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=391';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=394';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -111,15 +112,7 @@ const displaySettings={dither:false};
 const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
 const replayVisualHistory=createReplayVisualHistory($('audio-dots').closest('.audio-visualizer'));
 const coinSummary=createCoinSummary($('nft-owner-preview'));
-const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'),$('audio-dots').closest('.audio-visualizer'),{
- isEligible:pair=>!isExchangeMarket(pair),
- onTestMint:()=>{
-  const toggle=document.querySelector('.test-mint-toggle');if(!toggle||toggle.disabled)return false;
-  if(toggle.getAttribute('aria-checked')!=='true')toggle.click();
-  const controls=document.querySelector('.test-evolution');if(controls){controls.open=true;controls.scrollIntoView({block:'nearest'});controls.querySelector('input')?.focus({preventScroll:true});}
-  return true;
- },
-});
+const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'));
 $('coin-image').closest('.coin-avatar').addEventListener('dragstart',event=>event.preventDefault());
 const coinDither=createCoinDither($('coin-image'),$('coin-image-fallback'),{onPixels:image=>dataVisual.setImage(image),onUnavailable:url=>{if(market){rejectCoinImage(imageKey(market),url);void loadCoinImage(market,{fallback:true});}}});
 $('display-dither').onclick=()=>{displaySettings.dither=!displaySettings.dither;$('display-dither').setAttribute('aria-pressed',String(displaySettings.dither));$('display-dither').textContent='Dither'+(displaySettings.dither?' on':' off');dataVisual.refresh();};
@@ -584,14 +577,14 @@ $('play').onclick=async()=>{
   const stopped=()=>{
    if(playing||starting)return;
    vinylStopping=false;stopLegacyPlayback();dataSonification.reset(seed);piano?.setRunning(false);send('run',0);envion.setRunning(false);
-   if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);outputGateOpen=false;send('master',0);pd?.flush?.();void takeShare.finish();
+   if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);outputGateOpen=false;send('master',0);pd?.flush?.();
    idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},100);
   };
   if(vinyl)vinyl.pause(stopped);else stopped();
   status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;
  }
  vinylStopping=false;audioBusy(true);status('Loading sounds…');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);vinyl?.play();setPlayState(true);takeShare.start(ctx,outputTap);audioStatus();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!pd||!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1.5,ctx.currentTime,.04);send('master',engineMaster());playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();send('seed',seed%16777216);envion.setSeed(seed);loop();send('run',1);envion.setRunning(true);vinyl?.play();setPlayState(true);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };
@@ -601,7 +594,7 @@ function display(){
  updatePlayAvailability();
  chart.setMarketCapBasis(replay.state.active?(replay.state.frozen?.market||market):market);
  document.querySelector('.audio-visualizer').dataset.marketLoaded=String(!!market);
- displayCoinImage();
+ displayCoinImage();syncSavedCoin();
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
  $('mode').hidden=!!historical||!market;
  $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
@@ -769,13 +762,12 @@ function chooseMarket(pair,{shared=false}={}){
  if(!captureMode)rememberRecentCoin({key:imageKey(pair),chain:pair.chainId,address:pair.source==='ccxt'?null:pair.baseToken.address,query:pair.source==='ccxt'?pair.exchangeSymbol:undefined,symbol:pair.baseToken.symbol,name:pair.baseToken.name,image:pair.info?.imageUrl||pair.baseToken.imageUrl});
  document.dispatchEvent(new CustomEvent('upic:market-selected'));
  liveConnection?.abort();liveConnection=null;pendingHistoryReplay=false;
- void takeShare.finish();takeShare.reset();
  pendingPianoTrade=null;tradePollingAt=0;if(!captureMode)preloadPianoSamples(hash(pair.chainId+':'+pair.baseToken.address)).catch(error=>engineView.log('Piano preload: '+error.message));
  pianoHistory=[];pianoChordCount=0;piano?.reset();pianoReplayCursor=null;
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  lastMarketActivityAt=0;generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;void replayVisualHistory.setMarket(pair);nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)&&!pair.nativeAsset?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);if(playing)takeShare.start(ctx,outputTap);
+ resetEnsemble();mode='live';market=pair;void replayVisualHistory.setMarket(pair);nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)&&!pair.nativeAsset?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);
  if(!isExchangeMarket(pair)){const version=generation;void loadPoolLiquidity(pair).then(()=>{if(version===generation)display();});}
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
@@ -838,6 +830,11 @@ async function selectSearchMarket(pair,{autoPlay=false,revision=searchRevision}=
 document.addEventListener('upic:search-coin',event=>{
  const coin=event.detail;if(!coin||typeof(coin.address||coin.query)!=='string')return;
  liveConnection?.abort();liveConnection=null;searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
+ if(coin.source==='ccxt'&&['kraken','coinbaseexchange','binance'].includes(coin.exchangeId)&&/^[A-Z0-9.]+\/(USD|USDT|USDC)$/.test(coin.exchangeSymbol||'')){
+  requestedNetwork=null;requestedAutoplay=null;
+  void selectSearchMarket({source:'ccxt',chainId:'exchange',exchangeId:coin.exchangeId,exchangeSymbol:coin.exchangeSymbol,exchangeName:coin.exchangeId,nativeId:coin.nativeId||undefined,pairAddress:coin.exchangeId+':'+coin.exchangeSymbol,baseToken:{address:coin.query,symbol:coin.symbol,name:coin.name}},{autoPlay:true,revision:searchRevision});
+  return;
+ }
  requestedNetwork=coin.address?coin.chain:null;requestedAutoplay=true;
  $('address').value=coin.address||coin.query;syncAddressLabel();$('coin-form').requestSubmit();
 });
@@ -888,15 +885,25 @@ $('coin-form').onsubmit=async e=>{
  }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
  finally{if(revision===searchRevision)searchBusy(false);}
 };
-function shareSnapshot(){
- if(!market)return null;
- const frozen=replay.state.frozen,interval=frozen?.interval||chart.interval;
- const rows=(frozen?.bars||chart.renderedBars).filter(bar=>!replay.state.active||candleEnd(bar,interval)<=replay.state.cursor).slice(-128);
- if(!rows.length)return null;
- const basis=frozen?.market||market;
- return {version:1,engine:214,arpeggio:arpeggioAI.snapshot(),interval,seed,speed:replay.state.speed,market:{source:basis.source,exchangeId:basis.exchangeId,exchangeSymbol:basis.exchangeSymbol,exchangeName:basis.exchangeName,quoteApproximate:basis.quoteApproximate,snapshotProvider:basis.snapshotProvider,geckoNetwork:basis.geckoNetwork,chainId:basis.chainId,dexId:basis.dexId,pairAddress:basis.pairAddress,baseToken:{address:basis.baseToken.address,symbol:basis.baseToken.symbol,name:basis.baseToken.name||basis.baseToken.symbol,imageUrl:safeCoinImage(coinImageURL)||undefined},quoteToken:{address:basis.quoteToken.address,symbol:basis.quoteToken.symbol,name:basis.quoteToken.name||basis.quoteToken.symbol},priceUsd:basis.priceUsd,priceNative:basis.priceNative,marketCap:basis.marketCap},rows:rows.map(b=>[b.time,b.open,b.high,b.low,b.close,b.volume??null])};
+function syncSavedCoin(){
+ const button=$('save-coin'),coin=savedCoinForMarket(market,market&&coinImageKey===imageKey(market)?coinImageURL:'');
+ const saved=Boolean(coin&&isCoinSaved(coin.key));
+ button.disabled=!coin;button.setAttribute('aria-pressed',String(saved));
+ button.setAttribute('aria-label',saved?'Remove coin from saved':'Save coin for later');
+ button.title=saved?'Saved · click to remove':'Save for later';
 }
-const takeShare=createTakeShare({button:$('share'),dialog:$('share-dialog'),snapshot:shareSnapshot,onContinue:()=>{if(playing)takeShare.start(ctx,outputTap);}});
+let savedFeedbackTimer;
+function savedFeedback(message){
+ const node=$('save-coin-status');clearTimeout(savedFeedbackTimer);
+ node.textContent=message;node.hidden=false;
+ savedFeedbackTimer=setTimeout(()=>{node.hidden=true;node.textContent='';},3500);
+}
+$('save-coin').addEventListener('click',()=>{
+ const coin=savedCoinForMarket(market,market&&coinImageKey===imageKey(market)?coinImageURL:'');if(!coin)return;
+ try{const saved=toggleSavedCoin(coin);syncSavedCoin();savedFeedback(saved?'Saved for later':'Removed from saved');}
+ catch(error){savedFeedback(error.message);}
+});
+window.addEventListener('upic:saved-coins-changed',syncSavedCoin);
 const rollCap=rollingText($('coin-cap'));
 let marketMovement={key:null,cap:null,at:0,until:0,direction:''};
 function updateCoinReadout(m){
@@ -926,7 +933,7 @@ async function restoreSharedScore(){
   const score=await loadSharedScore(location.hash);if(!score)return false;
   chooseMarket(score.market,{shared:true});arpeggioAI.setSeed(seed,score.arpeggio||arpeggioAI.snapshot());setHistoryLoading({candles:score.rows,state:"pool-start"});const bars=score.rows.map(([time,open,high,low,close,volume])=>({time,open,high,low,close,volume,volumeEstimated:isExchangeMarket(score.market),observedThrough:time+score.interval}));
   chart.setHistory(bars,score.interval,bars[0].time);chart.draw();replay.freeze(bars,score.market,score.interval);replay.state.score=replay.preserveScore(buildReplayScore(bars,seed,score.interval,score.market),score.interval);replay.state.speed=['1','50','jump'].includes(String(score.speed))?String(score.speed):'1';updateSpeedButtons();
-  replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());$('share').disabled=false;status('Replay ready · press Play');return true;
+  replay.seek(bars[0],score.interval);chart.schedule();syncLevels(metrics());syncSavedCoin();status('Replay ready · press Play');return true;
  }catch(error){status('Cannot open shared score: '+error.message);return false;}
 }
 display();

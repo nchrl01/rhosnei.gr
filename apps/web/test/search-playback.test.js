@@ -4,7 +4,7 @@ import {describe,expect,it,vi} from 'vitest';
 
 // Exercise the actual page handlers without initializing audio, feeds or WebGL.
 const app=readFileSync(new URL('../public/app.js',import.meta.url),'utf8');
-const handlers=app.slice(app.indexOf('async function selectSearchMarket('),app.indexOf('function shareSnapshot('));
+const handlers=app.slice(app.indexOf('async function selectSearchMarket('),app.indexOf('function syncSavedCoin('));
 const coin={chainId:'ethereum',baseToken:{address:'0x123',symbol:'TEST'}};
 function fixture({playing=false,requestedAutoplay=null}={}){
  const events=new Map(),elements=new Map(),calls=[];
@@ -65,6 +65,12 @@ describe('search playback intent',()=>{
   expect(f.context.market).toBe(coin);
   expect(f.$('play').onclick).toHaveBeenCalledTimes(1);
   expect(f.calls.indexOf('prime')).toBeLessThan(f.calls.indexOf('lookup'));
+ });
+ it('reopens a saved exchange market with its exact native identity and venue',async()=>{
+  const f=fixture();f.context.selectSearchMarket=vi.fn();
+  f.events.get('upic:search-coin')({detail:{source:'ccxt',chain:'exchange',query:'cex:coinbaseexchange:ETH/USD',exchangeId:'coinbaseexchange',exchangeSymbol:'ETH/USD',nativeId:'ethereum',symbol:'ETH',name:'Ethereum'}});
+  expect(f.context.selectSearchMarket).toHaveBeenCalledWith(expect.objectContaining({exchangeId:'coinbaseexchange',exchangeSymbol:'ETH/USD',nativeId:'ethereum'}),expect.objectContaining({autoPlay:true}));
+  expect(f.context.findOnchainMarkets).not.toHaveBeenCalled();
  });
  it('treats clicking a result as playback intent even after a quiet initial query',async()=>{
   const f=fixture({requestedAutoplay:false});f.$('address').value='TEST';
