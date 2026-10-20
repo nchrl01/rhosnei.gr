@@ -3,9 +3,9 @@ import {getWalletAccount,subscribeWalletAccount,openWalletConnection} from './wa
 export function createNftOwnerPreview(panel,visual,{onTestMint=()=>false,isEligible=()=>true}={}){
  if(!panel||!visual)return {setMarket(){},close(){}};
  let market=null,pendingWallet=false,openingWallet=false;
- const action=document.createElement('button');action.type='button';action.className='tokenize-coin';action.textContent='Tokenize this coin';action.disabled=true;panel.append(action);
+ const action=document.createElement('button');action.type='button';action.className='tokenize-coin';action.textContent='Preview collection';action.disabled=true;panel.append(action);
  const dialog=document.createElement('dialog');dialog.id='tokenize-coin-dialog';dialog.setAttribute('aria-labelledby','tokenize-coin-title');
- dialog.innerHTML='<form method="dialog"><button aria-label="Close tokenization">×</button></form><p class="tokenize-preview-label">NFT COLLECTION · TEST PREVIEW</p><h2 id="tokenize-coin-title">Tokenize this coin</h2><p>Turn this coin into an evolving audiovisual NFT collection.</p><p data-tokenize-coin></p><p class="tokenize-address" data-tokenize-address></p><p>Real minting is not available yet. This preview sends no transaction.</p><button type="button" data-tokenize-test>Try test mint</button><p data-tokenize-status role="status"></p>';
+ dialog.innerHTML='<form method="dialog"><button aria-label="Close tokenization">×</button></form><p class="tokenize-preview-label">NFT COLLECTION · TEST PREVIEW</p><h2 id="tokenize-coin-title">Tokenize this coin</h2><p>Turn this coin into an evolving audiovisual NFT collection.</p><p data-tokenize-coin></p><p class="tokenize-address" data-tokenize-address></p><p>Real minting is not available yet. This preview sends no transaction.</p><p data-tokenize-status role="status"></p>';
  document.querySelector('main').append(dialog);
  const walletStatus=document.createElement('p');walletStatus.className='tokenize-wallet-status';walletStatus.setAttribute('role','status');walletStatus.hidden=true;panel.append(walletStatus);
  function showPreview(){
@@ -30,11 +30,6 @@ export function createNftOwnerPreview(panel,visual,{onTestMint=()=>false,isEligi
   finally{openingWallet=false;action.disabled=!market||!isEligible(market);action.removeAttribute('aria-busy');continueAfterConnection();}
  }
  action.addEventListener('click',begin);
- dialog.querySelector('[data-tokenize-test]').addEventListener('click',()=>{
-  dialog.close();
-  if(!getWalletAccount()){void begin();return;}
-  if(!onTestMint()){dialog.showModal();dialog.querySelector('[data-tokenize-status]').textContent='Finish the current operation, then try again.';}
- });
  const mobile=matchMedia('(max-width:760px)'),anchor=document.createComment('NFT owner preview position');
  panel.parentNode.insertBefore(anchor,panel);
  function arrange(){
@@ -48,7 +43,7 @@ export function createNftOwnerPreview(panel,visual,{onTestMint=()=>false,isEligi
   panel.hidden=!pair;
   if(pair){
    const token=pair.baseToken?.symbol||pair.baseToken?.name||'Coin';
-   panel.querySelector('[data-owner-edition]').textContent=token+' · Example edition #001 / 100';
+   panel.querySelector('[data-owner-edition]').textContent=token+' · Minting is not available yet.';
   }
   arrange();
  }

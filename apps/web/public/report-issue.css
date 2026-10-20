@@ -20,3 +20,5 @@ body.report-page>.issue-report-page{flex:1;width:min(100%,720px);margin:0 auto;p
 .report-actions button:focus-visible{outline:1px solid var(--control-ink);outline-offset:3px}
 body.report-page>.site-footer{margin-inline:0;width:100%;flex:none}
 @media(max-width:760px){.report-intro{margin-bottom:30px}.report-actions{flex-direction:column;gap:20px}.report-actions button{width:100%}.report-actions p{max-width:none}body.report-page>.site-footer{margin-top:0}}
+/* This header sits outside the padded page content. */
+body.report-page>.market-header{width:100%;margin:0;flex:none}

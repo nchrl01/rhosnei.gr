@@ -21,11 +21,11 @@ import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
 import {createCoinDither} from './coin-dither.js?v=348';
 import {createUpicBrand} from './upic-brand.js?v=115';
-import {createTransportIndicator} from './transport-indicator.js?v=220';
+import {createTransportIndicator} from './transport-indicator.js?v=373';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=372';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=317';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=373';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -41,7 +41,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=345';
-import {MarketChart} from './chart.js?v=364';
+import {MarketChart} from './chart.js?v=373';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -327,13 +327,15 @@ function updateReplayUI(m){
  transportIndicator.render({playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active||!!liveConnection;
  $('replay-play').disabled=!market||pendingHistoryReplay;
- $('replay-play').textContent=active?'Restart':'Replay';
- $('replay-play').setAttribute('aria-label',active?'Restart loaded history':'Play loaded history');
- $('replay-live').textContent=liveConnection?'Connecting…':active?'Back to live':'Live';
+ $('replay-restart').hidden=!active;
+ $('replay-restart').disabled=pendingHistoryReplay;
+ $('replay-play').textContent='Replay';
+ $('replay-play').setAttribute('aria-label','Switch to replay');
+ $('replay-live').textContent=liveConnection?'Connecting…':'Live';
  $('replay-live').setAttribute('aria-pressed',String(!active));
  $('replay-play').setAttribute('aria-pressed',String(active));
  const hint=$('replay-hint');
- if(hint){const text=!(chart.renderedBars?.length)?'Loading history · live playback is available.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the strip to move through the replay.'):'Choose a point on the strip to replay.';if(hint.textContent!==text)hint.textContent=text;}
+ if(hint){const text=!(chart.renderedBars?.length)?'Loading history · live playback is available.':active?(replay.state.ended?'Replay finished. Restart or return to live.':'Drag the timeline to explore another moment.'):'Choose a moment on the timeline to replay.';if(hint.textContent!==text)hint.textContent=text;}
 
  const rate=Number(replay.state.speed)||1;
  $('replay-state').textContent=active?(replay.state.speed==='jump'?'· Jump':'· '+rate+'×'):'';
@@ -533,8 +535,8 @@ function setPlayState(active){
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
  button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
- button.title=interrupted?'Resume':active?'Pause':'Listen';
- button.setAttribute('aria-label',interrupted?'Resume interrupted audio':active?'Pause audio':'Listen to market');
+ button.title=interrupted?'Resume':active?'Pause':'Play';
+ button.setAttribute('aria-label',interrupted?'Resume interrupted audio':active?'Pause experience':'Play audiovisual experience');
  button.setAttribute('aria-pressed',String(active&&!interrupted));
  button.setAttribute('aria-busy',String(starting));
 }
@@ -585,7 +587,7 @@ function display(){
  const historical=replay.state.active?replay.state.controls:null,recorded=historical?.replay?.source==='recorded';
  $('mode').hidden=!!historical||!market;
  $('mode').textContent=historical||!market?'':streamConnected&&streamKind==='rpc-poll'?'DIRECT RPC · ≥2 SEC':streamConnected&&streamKind==='exchange'?'LIVE EXCHANGE'+(market.quoteApproximate?' · '+market.quoteToken.symbol+' ≈ USD':''):streamConnected&&streamKind==='swap'?'LIVE SWAPS':streamConnected&&streamKind==='trade-poll'?'CACHED TRADE POLLING':streamConnected&&streamKind==='pool'?'POOL ACTIVITY + SNAPSHOTS':'MARKET SNAPSHOTS';
- $('coin-name').textContent=market?market.baseToken.symbol+(document.body.classList.contains('advanced-view')?' / '+market.quoteToken.symbol:''):'';
+ $('coin-name').textContent=market?market.baseToken.symbol:'';
  $('chain').textContent=market?market.chainId.toUpperCase()+' · '+market.dexId.toUpperCase():'GENERATIVE SESSION';
 
  $('price').textContent=historical?cash(historical.replay.price):market?cash(currentPrice()):'—';
@@ -653,6 +655,9 @@ function startHistory(pair){
 }
 function setHistoryLoading(data={}){
  const host=$('history-loading'),has=data.candles?.length>0,waiting=data.state==='waiting',failed=Boolean(data.error)||data.state==='unavailable',busy=!failed&&['loading','cached'].includes(data.state);
+ const message=$('player-history-message');message.hidden=has&&!failed&&!waiting;message.querySelector('span').textContent=failed?(has?'Earlier history is delayed. Loaded history is still available.':'History is unavailable. You can switch to live playback.'):waiting?'Waiting for earlier history. You can switch to live playback.':'Loading earlier history. Live playback is available.';
+ $('player-history-retry').hidden=!failed;
+
  if(pendingHistoryReplay&&failed&&!data.retrying&&!historyReplayReady()){
   pendingHistoryReplay=false;status('History unavailable · retry history to replay');updateReplayUI({});
  }
@@ -661,6 +666,7 @@ function setHistoryLoading(data={}){
  $('history-retry').hidden=busy||waiting;
  ui.loading('history',waiting?null:busy?'working':failed||!has?'error':'done',data.retrying&&busy?'Retrying history':has?'Updating history':'Loading history',{operation:data.operation??null,startedAt:data.startedAt,endedAt:data.endedAt});
 }
+$('player-history-retry').onclick=()=>$('history-retry').click();
 $('history-retry').onclick=()=>{$('chart-timeframe').value==='auto'?startHistory(market):loadChartTimeframe();};
 const chartFrames={'1m':{timeframe:'minute',aggregate:1},'5m':{timeframe:'minute',aggregate:5},'15m':{timeframe:'minute',aggregate:15},'1h':{timeframe:'hour',aggregate:1},'4h':{timeframe:'hour',aggregate:4},'1d':{timeframe:'day',aggregate:1}};
 function loadChartTimeframe(){
@@ -887,7 +893,8 @@ function updateCoinReadout(m){
  const at=replay.state.active?replay.state.cursor:Date.now(),date=new Date(at);
  ui.clock({timestamp:at,rate:replay.state.active?Number(replay.state.speed)||1:1,replay:replay.state.active,seeking:replay.state.dragging,label:replay.state.active?'Playback time':'Local time'});
  document.body.dataset.playback=replay.state.active?'replay':'live';
- const advanced=document.body.classList.contains('advanced-view');
+ const advanced=false;
+ $('advanced-cap').textContent=cap>0?'$'+Math.round(cap).toLocaleString('en'):'—';
  rollCap(cap>0?'$'+(advanced?Math.round(cap).toLocaleString('en'):new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(cap)):'—',cap||0);
  $('coin-cap').title=cap>0?'Estimated market cap · $'+Math.round(cap).toLocaleString('en'):'';
  $('coin-clock-label').textContent=replay.state.active?'REPLAY · DATE / TIME':'LIVE · DATE / TIME';
@@ -962,14 +969,16 @@ function seekHistory(bar,dragging=false){
 }
 chart.onHistorySeek=seekHistory;
 chart.onHistorySeekEnd=()=>replay.release();
-$('replay-play').onclick=()=>{
+function restartHistory(){
  if(!historyReplayReady()){
   pendingHistoryReplay=true;primeAudio();status('Loading history for replay');
   if(!contextHistoryState||contextHistoryState.error)startHistory(market);
   updateReplayUI({});return;
  }
  chart.draw();seekHistory((replay.state.frozen?.bars||chart.history)[0]);
-};
+}
+$('replay-play').onclick=()=>{if(!replay.state.active)restartHistory();};
+$('replay-restart').onclick=restartHistory;
 $('replay-live').onclick=async()=>{
  if(liveConnection)return false;
  pendingHistoryReplay=false;

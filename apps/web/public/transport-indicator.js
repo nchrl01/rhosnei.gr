@@ -21,44 +21,44 @@ export function createTransportIndicator(host) {
     if (playing) hasPlayed = true;
     if (replay) {
       if (ended) {
-        text = 'REPLAY ENDED';
+        text = 'Replay ended';
         detail = 'Replay finished.';
       } else if (seeking) {
-        text = 'SEEKING';
+        text = 'Choosing a moment';
         kind = 'replay';
         detail = 'Choose where to replay.';
       } else if (running) {
-        text = 'PLAYBACK';
+        text = 'Playing replay';
         kind = 'replay';
         pulse = true;
         detail = 'Replaying this market’s history.';
       } else {
-        text = playing ? 'AUDIO PAUSED' : 'PAUSED';
+        text = playing ? 'Tap Play to resume' : 'Paused';
         detail = playing ? 'Tap Resume to continue the replay.' : 'Replay paused.';
       }
     } else if (!running) {
-      text = playing ? 'AUDIO PAUSED' : hasPlayed ? 'PAUSED' : 'READY';
-      detail = playing ? 'Tap Resume to continue.' : hasPlayed ? 'Tap Listen to resume.' : 'Tap Listen to hear this market.';
+      text = playing ? 'Tap Play to resume' : hasPlayed ? 'Paused' : 'Ready to play';
+      detail = playing ? 'Tap Resume to continue.' : hasPlayed ? 'Tap Play to resume.' : 'Tap Play to experience this market.';
     } else if (streamConnected && (streamKind === 'swap' || streamKind === 'rpc-poll' || streamKind === 'exchange')) {
-      text = 'LIVE NOW';
+      text = 'Playing live';
       kind = 'live';
       pulse = true;
       detail = streamKind === 'exchange' ? 'Following current trades.' : streamKind === 'rpc-poll' ? 'Following trades · updates may be delayed.' : 'Following current trades.';
     } else if (streamConnected && streamKind === 'pool') {
-      text = 'ACTIVITY NOW';
+      text = 'Playing live';
       kind = 'live';
       pulse = true;
       detail = 'Following activity · prices update periodically.';
     } else if (streamConnected && streamKind === 'trade-poll') {
-      text = 'CACHED TRADES';
+      text = 'Playing · updates delayed';
       kind = 'delayed';
       detail = 'Trade updates may be delayed.';
     } else if (fresh > 0) {
-      text = 'SNAPSHOTS';
+      text = 'Playing · periodic updates';
       kind = 'delayed';
       detail = 'Prices update periodically.';
     } else {
-      text = 'WAITING';
+      text = 'Waiting for updates';
       detail = 'Waiting for market updates.';
     }
     const signature = [text, kind, pulse, detail].join('|');

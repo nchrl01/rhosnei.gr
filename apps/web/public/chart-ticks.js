@@ -13,12 +13,14 @@ export function createChartTicks(chart){
   return best;
  }
  function paint(){
-  if(!samples.length){position.textContent='LATEST';reading.textContent='Waiting for market history';row.setAttribute('aria-disabled','true');row.setAttribute('aria-valuenow','100');row.setAttribute('aria-valuetext','No market history');return;}
+  if(!samples.length){for(const id of ['timeline-start','timeline-end']){const el=document.getElementById(id);if(el)el.textContent='—';}position.textContent='LATEST';reading.textContent='Waiting for market history';row.setAttribute('aria-disabled','true');row.setAttribute('aria-valuenow','100');row.setAttribute('aria-valuetext','No market history');return;}
   const playback=selected(),index=hover??playback,bar=samples[index],percent=samples.length===1?100:Math.round(playback/(samples.length-1)*100);
   const latest=samples.at(-1).close,delta=(bar.close/latest-1)*100,date=new Date(bar.time).toLocaleString();
-  position.textContent=percent+'% OF LOADED HISTORY';
-  reading.textContent=date+' · '+money(bar.close)+(hover!=null?' · '+(delta>=0?'+':'')+delta.toFixed(2)+'% vs latest':'');
-  row.setAttribute('aria-disabled','false');row.setAttribute('aria-valuenow',String(percent));row.setAttribute('aria-valuetext',new Date(samples[playback].time).toLocaleString()+', '+money(samples[playback].close));
+  position.textContent=selectedTime==null?'Latest':new Date(samples[playback].time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  reading.textContent=(hover!=null?new Date(bar.time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})+' · ':'')+chart.formatMarketCap(bar.close);
+ const start=document.getElementById('timeline-start'),end=document.getElementById('timeline-end');
+ if(start)start.textContent=new Date(samples[0].time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});if(end)end.textContent=new Date(samples.at(-1).time).toLocaleString(undefined,{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  row.setAttribute('aria-disabled','false');row.setAttribute('aria-valuenow',String(percent));row.setAttribute('aria-valuetext',new Date(samples[playback].time).toLocaleString()+', '+chart.formatMarketCap(samples[playback].close));
   elements.forEach((el,i)=>{el.dataset.on=String(i<=playback);el.dataset.cursor=String(hover===i);});
  }
  function preview(index){hover=index;paint();}
