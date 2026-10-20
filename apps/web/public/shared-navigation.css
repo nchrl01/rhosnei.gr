@@ -547,14 +547,6 @@ html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:
 .footer-price-toggle>[hidden]{display:none!important}
 .footer-prices .footer-price-toggle:hover{background:transparent;color:var(--control-ink);text-decoration:underline;text-underline-offset:4px}
 .footer-prices .footer-price-toggle:focus-visible{outline:2px solid var(--control-ink);outline-offset:3px}
-/* Shared report form follows the site's black, square controls and type scale. */
-.issue-report-dialog{width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 32px);box-sizing:border-box;margin:auto;padding:24px;border:1px solid #777;background:#000;color:#fff;overflow:auto;font-family:inherit;font-size:var(--font-size-body)}
-.issue-report-dialog::backdrop{background:rgb(0 0 0/.8)}
-.issue-report-dialog form{display:grid;gap:18px}.issue-report-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}.issue-report-heading h2{font-size:var(--font-size-body);font-weight:400;margin:0}.issue-report-heading button{border:0;background:transparent;color:#fff;font:inherit;font-size:var(--font-size-title);padding:0 6px}
-.issue-report-dialog label{display:grid;gap:8px;font-size:var(--font-size-small)}.issue-report-dialog :is(input,select,textarea){width:100%;min-width:0;box-sizing:border-box;border:1px solid #777;border-radius:0;background:#000;color:#fff;padding:12px;font:inherit}.issue-report-dialog select{padding-right:32px}.issue-report-dialog textarea{resize:vertical}.issue-report-dialog p{margin:0;color:#aaa;font-size:var(--font-size-small);line-height:1.6}.issue-report-dialog button[type=submit]{padding:12px;border:1px solid #fff;background:#000;color:#fff;font:inherit;cursor:pointer}.issue-report-dialog button:hover{background:#fff;color:#000}.issue-report-dialog :focus-visible{outline:1px solid #fff;outline-offset:3px}
-@media(max-width:760px){.issue-report-dialog{padding:20px;max-height:calc(100dvh - 24px)}}
-
-.issue-report-page{width:min(100%,680px);margin:40px auto;padding:0 var(--site-gutter);box-sizing:border-box}.issue-report-page form{display:grid;gap:24px}.issue-report-page label{display:grid;gap:10px}.issue-report-page :is(input,select,textarea){width:100%;box-sizing:border-box;background:#000;color:#fff;border:1px solid var(--line);padding:12px;font:inherit}.issue-report-page p{color:var(--muted);line-height:1.5}
 @media(max-width:760px){
  body .site-footer{position:static;display:flex;flex-direction:column;align-items:stretch;height:auto;min-height:0;gap:20px;padding:24px var(--site-gutter) calc(24px + env(safe-area-inset-bottom));margin-top:28px}
  .site-footer>.footer-links,.site-footer>.footer-tools{display:flex!important;flex-direction:column;align-items:stretch;gap:0;width:100%}
@@ -562,5 +554,3 @@ html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:
  .site-footer nav>*{display:flex;align-items:center;min-height:44px;white-space:normal}
  .site-footer>.footer-prices{order:3;display:flex;padding-top:16px;border-top:1px solid var(--line)}
 }
-
-.issue-report-page button[type=submit]{padding:12px;border:1px solid #fff;background:#000;color:#fff;font:inherit;cursor:pointer}.issue-report-page button[type=submit]:hover{background:#fff;color:#000}

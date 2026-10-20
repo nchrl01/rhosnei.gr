@@ -1,0 +1,22 @@
+/* Dedicated page: the shared shell remains full width. */
+body.report-page{display:flex;flex-direction:column;min-height:100svh}
+body.report-page>.issue-report-page{flex:1;width:min(100%,720px);margin:0 auto;padding:clamp(32px,6vw,72px) var(--site-gutter) clamp(40px,6vw,72px)}
+.report-intro{display:grid;gap:12px;margin-bottom:36px}
+.report-intro h1{font-size:var(--font-size-title);line-height:1.2}
+.report-intro p{color:var(--control-muted);font-size:var(--font-size-body)}
+#issue-report-form{display:grid;gap:28px;min-width:0}
+.report-field{position:relative;min-width:0}
+.report-field label{position:absolute;z-index:1;top:-8px;left:12px;display:block;padding:0 5px;background:var(--bg);color:var(--control-ink);font-size:var(--font-size-small);line-height:16px}
+.report-field label span{color:var(--control-muted)}
+.report-field :is(input,select,textarea){display:block;width:100%;min-width:0;min-height:52px;margin:0;padding:15px 16px 12px;border:1px solid var(--control-line);border-radius:0;background-color:var(--bg);color:var(--control-ink);font-size:var(--font-size-body);line-height:1.5;box-shadow:none}
+.report-field select{appearance:none;padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath d='m3 6 5 5 5-5' fill='none' stroke='%23fff' stroke-width='1.5'/%3E%3C/svg%3E");background-position:right 16px center;background-repeat:no-repeat}
+.report-field select:invalid,.report-field ::placeholder{color:var(--control-muted);opacity:1}
+.report-field textarea{resize:vertical;min-height:180px}
+.report-field :is(input,select,textarea):focus-visible{outline:1px solid var(--control-ink);outline-offset:2px;border-color:var(--control-ink)}
+.report-actions{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;padding-top:4px}
+.report-actions p{max-width:380px;color:var(--control-muted);font-size:var(--font-size-small);line-height:1.6}
+.report-actions button{flex:none;min-height:48px;padding:12px 16px;background:var(--bg);color:var(--control-ink);border:1px solid var(--control-ink);cursor:pointer}
+.report-actions button:hover{background:var(--control-ink);color:var(--bg)}
+.report-actions button:focus-visible{outline:1px solid var(--control-ink);outline-offset:3px}
+body.report-page>.site-footer{margin-inline:0;width:100%;flex:none}
+@media(max-width:760px){.report-intro{margin-bottom:30px}.report-actions{flex-direction:column;gap:20px}.report-actions button{width:100%}.report-actions p{max-width:none}body.report-page>.site-footer{margin-top:0}}
