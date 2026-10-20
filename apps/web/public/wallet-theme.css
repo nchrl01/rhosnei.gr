@@ -1,7 +1,7 @@
 /* Reown 1.8 theme tokens, scoped to its modal. No shadow-DOM overrides. */
 w3m-modal {
- --apkt-fontFamily-regular:Unifont,"Noto Sans",sans-serif;
- --apkt-fontFamily-mono:Unifont,"Noto Sans",sans-serif;
+ --apkt-fontFamily-regular:var(--font-family);
+ --apkt-fontFamily-mono:var(--font-family);
  --apkt-fontWeight-regular:400;
  --apkt-fontWeight-medium:400;
  --apkt-textSize-h1:var(--font-size-title,24px);

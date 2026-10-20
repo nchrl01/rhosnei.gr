@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 398;
+const version = 399;
 const pages = [
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
@@ -56,11 +56,12 @@ function prepareTechnologyDocument(html) {
   if (/<head\b/.test(html)) return html;
   const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0];
   if (!main) throw new Error('Missing technology content');
-  return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="theme-color" content="#000000">\n<title>$AV Technology</title>\n<link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin>\n<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">\n</head>\n<body class="credits-page">\n<header class="site-navigation"></header>\n' + main.replace('<main class="credits-page">', '<main class="credits-content">') + '\n</body>\n</html>\n';
+  return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="theme-color" content="#000000">\n<title>$AV Technology</title>\n<link rel="preload" href="fonts/NDS12/NDS12.woff" as="font" type="font/woff" crossorigin>\n<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">\n</head>\n<body class="credits-page">\n<header class="site-navigation"></header>\n' + main.replace('<main class="credits-page">', '<main class="credits-content">') + '\n</body>\n</html>\n';
 }
 for (const page of pages) {
   const file = path.join(publicRoot, page.file);
   let html = await readFile(file, 'utf8');
+  html = html.replace(/<link\b(?=[^>]*\brel=["']preload["'])(?=[^>]*fonts\/Unifont\/Unifont-ui\.woff2)[^>]*>/g, '<link rel="preload" href="fonts/NDS12/NDS12.woff" as="font" type="font/woff" crossorigin>');
   if (page.type === 'technology') html = prepareTechnologyDocument(html);
   if (html.includes('<!-- site-shell:intro:start -->')) {
     html = replaceRegion(html, 'intro', partials.intro);

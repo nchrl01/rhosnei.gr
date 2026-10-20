@@ -1,5 +1,5 @@
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=395';
-import {openWalletConnection} from './wallet-session.js?v=395';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=399';
+import {openWalletConnection} from './wallet-session.js?v=399';
 
 const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(cls)node.className=cls;return node;};
 const shortAddress=address=>address?address.slice(0,6)+'…'+address.slice(-4):'';
