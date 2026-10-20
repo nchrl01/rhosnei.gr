@@ -701,7 +701,7 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
  .playback-modes button,.instrument-page .replay-actions>#replay-restart,.instrument-page .replay-actions .playback-speed button{min-height:44px;height:auto}
  .instrument-page .replay-actions .playback-speed{flex:0 0 auto;margin:0}
  .instrument-page .replay-actions .playback-speed button{display:none}
- .instrument-page .replay-actions .playback-speed .replay-speed-select{display:block;width:68px;min-height:44px;padding:6px;font-size:var(--font-size-body);border-color:#555}
+ .instrument-page .replay-actions .playback-speed .replay-speed-select{display:block;width:80px;min-height:44px;padding:6px;font-size:var(--font-size-body);border-color:#555}
  .instrument-page .replay-actions .playback-modes{flex:1;min-width:0}
  .instrument-page .playback-modes button{flex:1;min-width:0;padding-inline:clamp(6px,2vw,12px)}
  .instrument-page .replay-actions>#replay-restart{flex:none;padding-inline:8px;font-size:var(--font-size-small)}
