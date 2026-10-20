@@ -131,7 +131,6 @@ function displayHolderCount(info=holderMetadata.snapshot()){
  const node=$('holders'),label=$('holders-label');if(!node||!label)return;
  const readout=holderCountReadout(info,replay.state.active);
  label.textContent=readout.label;node.textContent=readout.value;node.title=readout.title;
- let sample=$('holders-visual-sample');if(!sample){sample=document.createElement('small');sample.id='holders-visual-sample';node.after(sample);}const holdings=info.holdings;const count=holdings?.weight>0?holdings.records?.length:0;sample.hidden=Boolean(info.native||replay.state.active||!count);sample.textContent=count?count.toLocaleString('en')+(info.holders>count?' individual · rest grouped':' individual in visual'):'';
 }
 $('ai-retry').onclick=()=>{arpeggioAI.retry();};
 chart.bindReplay(()=>replay.state,()=>playing);
