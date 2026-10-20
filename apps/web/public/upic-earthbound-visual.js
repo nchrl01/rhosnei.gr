@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-earthbound-renderer.js?v=372';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=374';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=345';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -75,7 +75,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  const anchor=document.createComment('earthbound visual home');host.after(anchor);
  let initialHoldersReady=false,initialLoadShown=false,awaitingHolderRender=false,holderRevealStarted=null;
  function syncHolderLoading(rendered=false,now=performance.now()){
-  if(latest?.liveHolders&&latest.holderFetchSettled&&latest.holderBalances.length>0&&!initialHoldersReady){
+  if(latest?.liveHolders&&(latest.totalHolders>0||latest.holderFetchSettled&&latest.holderBalances.length>0)&&!initialHoldersReady){
    initialHoldersReady=true;
    renderer.clear();identity=identityInput=marketCapIdentity(latest.marketCap);color=colorTarget=latest.marketCap>=5e7?1:0;
    // Wait for the renderer itself: loading may finish while the tab is hidden.
@@ -169,7 +169,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence,pixelPresence:Math.max(.32,transportPresence),inkColor:.18+.82*transportPresence,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
   renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
-  renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&latest.holderBalances.length&&host.dataset.holderLoading!=='true');
+  renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
   Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String(playing&&fresh&&!reduced.matches),motion:clock.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
@@ -203,7 +203,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   },
   createCapture(){
    if(!latest?.hasMarket)throw Error('Load a coin and choose a test milestone first.');
-   if(!latest.holderBalances.length)throw Error('Individual wallet balances are required to export this holder-based visual.');
+   if(!(latest.totalHolders>0)&&!latest.holderBalances.length&&!latest.chartHistory?.length)throw Error('A holder count or replay history is required to export this visual.');
    // Use the exact player renderer, with an independent fixed-size surface.
    // The on-page layout and live canvas are never resized or screen-captured.
    const holderAllocation=renderer.allocation;
