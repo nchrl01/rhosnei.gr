@@ -28,12 +28,12 @@ export function bindMobileCoinSearch(){
  function paintDesktop(){
   if(!desktop)return;
   const hasFeedback=feedback.some(n=>!n.hidden&&n.textContent.trim()),hasResults=results&&!results.hidden;
-  desktopPanel.hidden=mobile.matches||!desktopOpen||!(hasFeedback||hasResults||desktopSaved.childElementCount);
+  desktopPanel.hidden=mobile.matches||!desktopOpen||!(hasFeedback||hasResults||desktopSaved.childElementCount||desktopPanel.contains(categories));
   if(!mobile.matches)input.setAttribute('aria-expanded',String(!desktopPanel.hidden));
  }
- const showDesktop=()=>{if(!mobile.matches){desktopOpen=true;paintDesktop();}};
+ const showDesktop=()=>{if(!mobile.matches){const opening=!desktopOpen;desktopOpen=true;if(opening){paintRecent();paint();void load();if(category==='trending')void loadTrending();}paintDesktop();}};
  input.addEventListener('focus',()=>{paintDesktopSaved();showDesktop();if(!mobile.matches)void loadSavedCoins().catch(()=>{});});input.addEventListener('input',()=>{paintDesktopSaved();showDesktop();});form.addEventListener('submit',showDesktop);
- input.addEventListener('keydown',event=>{if(event.key==='ArrowDown'&&!mobile.matches&&desktopOpen&&(!results||results.hidden)){const first=desktopSaved.querySelector('.saved-search-pick');if(first){event.preventDefault();first.focus();}}});
+ input.addEventListener('keydown',event=>{if(event.key==='ArrowDown'&&!mobile.matches&&desktopOpen&&(!results||results.hidden)){const first=desktopPanel.querySelector('.mobile-search-coin,.saved-search-pick');if(first){event.preventDefault();first.focus();}}});
  if(desktop){
   let pointerInside=false;
   const observer=new MutationObserver(paintDesktop);
@@ -131,7 +131,7 @@ export function bindMobileCoinSearch(){
   const signedIn=Boolean(savedCoinsState().account);
   const savedTab=tabs.querySelector('[data-category="saved"]');if(savedTab)savedTab.hidden=!signedIn;
   if(category==='saved'&&!signedIn){category='coins';for(const button of tabs.children)button.setAttribute('aria-pressed',String(button.dataset.category==='coins'));}
-  dialog.dataset.category=category;paintNetworks();
+  dialog.dataset.category=category;if(desktop)desktopPanel.dataset.category=category;paintNetworks();
   const q=input.value.trim().toLowerCase(),liveResults=category!=='saved'&&results&&!results.hidden;recent.hidden=Boolean(q)||!chips.childElementCount;suggestions.hidden=Boolean(liveResults);tabs.hidden=false;status.hidden=Boolean(liveResults);more.hidden=Boolean(liveResults);if(liveResults)return;
   if(category==='saved'){paintedRows='';status.dataset.loading='false';content.setAttribute('aria-busy','false');status.textContent=savedCoinsState().status==='ready'?'Saved in your profile':'';status.hidden=!status.textContent;more.hidden=true;renderSaved(suggestions);return;}
   const source=category==='trending'?trending:catalogue;
@@ -139,7 +139,7 @@ export function bindMobileCoinSearch(){
   status.dataset.loading=String(pending);content.setAttribute('aria-busy',String(pending));
   let rows=source.filter(r=>(network.value==='all'||r.chain===network.value||r.nativeChains?.includes(network.value)||r.platforms?.some(p=>p.chain===network.value))&&(!q||[r.name,r.symbol,r.address,...(r.platforms||[]).map(p=>p.address)].some(v=>String(v||'').toLowerCase().includes(q))));
   rows.sort((a,b)=>form.id==='marketplace-coin-form'&&category==='coins'?(b.marketCap||0)-(a.marketCap||0):q?Number(b.symbol.toLowerCase()===q)-Number(a.symbol.toLowerCase()===q)||(b.marketCap||0)-(a.marketCap||0):Number(Boolean(b.featured))-Number(Boolean(a.featured))||(a.trendingRank||999)-(b.trendingRank||999)||(b.marketCap||0)-(a.marketCap||0));
-  status.textContent=rows.length?(q?'Matching coins':category==='trending'?'Trending · 24H':form.id==='marketplace-coin-form'?'Genesis Collection':'Coins'):((category==='trending'?trendingLoading:loading)?category==='trending'?'Loading trending coins…':'Loading coins…':q?'No local matches. Press Search to search live markets.':category==='trending'?trendingError||'No trending coins above $1M on this network.':'No coins available.');
+  status.textContent=rows.length?(q?'Matching coins':category==='trending'?'Trending · 24H':form.id==='marketplace-coin-form'?'Genesis Collection':'Coins'):(pending?category==='trending'?'Loading trending coins…':'Loading coins…':q?'No local matches. Press Search to search live markets.':category==='trending'?trendingError||'No trending coins above $1M on this network.':'No coins available.');
   more.hidden=rows.length<=visible;
   const rowsKey=JSON.stringify([category,network.value,q,visible,rows.slice(0,visible).map(row=>{const view=coinPreview(row,network.value);return [row.key,view.selection.key,view.capture?.capturedAt,row.image,row.marketCap];})]);
   if(rowsKey===paintedRows)return;paintedRows=rowsKey;
@@ -152,7 +152,7 @@ export function bindMobileCoinSearch(){
   if(key==='saved'&&!savedCoinsState().account)key='coins';
   category=key;visible=30;filters.open=false;if(results){results.hidden=true;input.setAttribute('aria-expanded','false');}for(const button of tabs.children)button.setAttribute('aria-pressed',String(button.dataset.category===key));
   if(key==='saved'){input.value='';input.dispatchEvent(new Event('input',{bubbles:true}));void loadSavedCoins().catch(()=>{});}paint();
-  if(dialog.open&&key!=='saved')void load();if(key==='trending')void loadTrending();
+  if((dialog.open||desktopOpen)&&key!=='saved')void load();if(key==='trending')void loadTrending();
  }
  for(const [key,label] of [['coins','Coins'],['trending','Trending'],['saved','Saved']]){const button=node('button',label);button.type='button';button.dataset.category=key;button.setAttribute('aria-pressed',String(key===category));button.addEventListener('click',()=>setCategory(key));tabs.append(button);}
  form.addEventListener('submit',()=>{if(category!=='coins')setCategory('coins');});
@@ -180,13 +180,15 @@ export function bindMobileCoinSearch(){
   });
   loading=Promise.allSettled([data,previews]).finally(()=>{loading=null;paint();});paint();return loading;
  }
- const refreshCaptures=()=>{if(dialog.open&&category!=='saved'&&!document.hidden){void load(true);if(category==='trending')void loadTrending();}},captureRefresh=setInterval(refreshCaptures,60000);window.addEventListener('focus',refreshCaptures);document.addEventListener('visibilitychange',refreshCaptures);window.addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(captureRefresh);});
+ const refreshCaptures=()=>{if((dialog.open||desktopOpen)&&category!=='saved'&&!document.hidden){void load(true);if(category==='trending')void loadTrending();}},captureRefresh=setInterval(refreshCaptures,60000);window.addEventListener('focus',refreshCaptures);document.addEventListener('visibilitychange',refreshCaptures);window.addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(captureRefresh);});
 
  function open({refresh=true}={}){if(!mobile.matches)return;form.dataset.searchNetwork=network.value;oldOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';dialog.showModal();trigger.setAttribute('aria-expanded','true');paintRecent();paint();if(refresh){if(category==='saved')void loadSavedCoins().catch(()=>{});else void load();if(category==='trending')void loadTrending();}input.focus();input.select();}
  function arrange(){
-  close(false);desktopOpen=false;form.dataset.searchNetwork=mobile.matches?network.value:'all';
-  nodes.forEach((n,i)=>{if(mobile.matches){if(n===form)top.append(n);else content.insertBefore(n,suggestions);}else if(desktop){if(n===form)desktop.prepend(n);else desktopPanel.append(n);}else anchors[i].after(n);});
-  feedback.forEach((n,i)=>{if(mobile.matches)mobileFeedback.append(n);else if(desktop)desktopPanel.insertBefore(n,results||null);else feedbackAnchors[i].after(n);});
+  close(false);desktopOpen=false;form.dataset.searchNetwork=network.value;
+  const panel=!mobile.matches&&desktop?desktopPanel:dialog;
+  panel.append(categories,recent,content);desktopSaved.hidden=true;
+  nodes.forEach((n,i)=>{if(n===form){if(mobile.matches)top.append(n);else if(desktop)desktop.prepend(n);else anchors[i].after(n);}else content.insertBefore(n,suggestions);});
+  feedback.forEach(n=>mobileFeedback.append(n));
   if(desktop)desktop.hidden=mobile.matches;header?.classList.toggle('has-desktop-search',!mobile.matches);
   input.setAttribute('aria-controls',!mobile.matches&&desktop?desktopPanel.id:results?.id||dialog.id);
   document.body.classList.toggle('desktop-header-search',Boolean(desktop)&&!mobile.matches);
@@ -195,6 +197,6 @@ export function bindMobileCoinSearch(){
  trigger.addEventListener('click',open);back.addEventListener('click',()=>close());dialog.addEventListener('cancel',event=>{event.preventDefault();close();});dialog.addEventListener('close',()=>{document.documentElement.style.overflow=oldOverflow;trigger.setAttribute('aria-expanded','false');});
  clear.addEventListener('click',()=>{try{localStorage.removeItem('upic-recent-coins-v1');}catch{}paintRecent();});
  paste.addEventListener('pointerdown',event=>event.stopPropagation());paste.addEventListener('click',async event=>{event.stopPropagation();try{const value=(await navigator.clipboard.readText()).trim();if(!value||value.length>250||/[\r\n]/.test(value))return;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();}catch{status.hidden=false;status.textContent='Touch and hold the search field to paste.';}});
- const grow=()=>{visible+=30;paint();};more.addEventListener('click',grow);if('IntersectionObserver' in window){let scheduled=false;const observer=new IntersectionObserver(entries=>{if(scheduled||!dialog.open||more.hidden||!entries.some(e=>e.isIntersecting))return;scheduled=true;requestAnimationFrame(()=>{if(dialog.open&&!more.hidden)grow();scheduled=false;});},{root:dialog,rootMargin:'240px'});observer.observe(more);}network.addEventListener('change',()=>{form.dataset.searchNetwork=mobile.matches?network.value:'all';if(results){input.dispatchEvent(new Event('input',{bubbles:true}));results.hidden=true;results.replaceChildren();}visible=30;paint();});input.addEventListener('input',()=>{visible=30;paint();});if(results)new MutationObserver(paint).observe(results,{attributes:true,attributeFilter:['hidden']});
- document.addEventListener('upic:market-selected',()=>{if(dialog.open)close();});mobile.addEventListener('change',arrange);arrange();if(location.hash==='#search'&&mobile.matches)open();
+ const grow=()=>{visible+=30;paint();};more.addEventListener('click',grow);if('IntersectionObserver' in window){let scheduled=false;const observer=new IntersectionObserver(entries=>{if(scheduled||!dialog.open||more.hidden||!entries.some(e=>e.isIntersecting))return;scheduled=true;requestAnimationFrame(()=>{if(dialog.open&&!more.hidden)grow();scheduled=false;});},{root:dialog,rootMargin:'240px'});observer.observe(more);}network.addEventListener('change',()=>{form.dataset.searchNetwork=network.value;if(results){input.dispatchEvent(new Event('input',{bubbles:true}));results.hidden=true;results.replaceChildren();}visible=30;paint();});input.addEventListener('input',()=>{visible=30;paint();});if(results)new MutationObserver(paint).observe(results,{attributes:true,attributeFilter:['hidden']});
+ document.addEventListener('upic:market-selected',()=>{desktopOpen=false;paintDesktop();if(dialog.open)close();});mobile.addEventListener('change',arrange);arrange();if(location.hash==='#search'&&mobile.matches)open();
 }
