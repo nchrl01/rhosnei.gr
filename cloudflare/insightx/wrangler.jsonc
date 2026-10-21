@@ -44,6 +44,7 @@
   ],
   "vars": {
     "ALLOWED_ORIGIN": "https://nchrl01.github.io",
+    "ADDITIONAL_ALLOWED_ORIGINS": "https://upic-art.github.io",
     "REOWN_PROJECT_ID": "c031a5adef7742a64daa372ef925894e",
     "PROFILE_APP_URL": "https://nchrl01.github.io/rhosnei.gr/"
   },

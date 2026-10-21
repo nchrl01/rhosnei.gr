@@ -1,7 +1,8 @@
 import {catalogueNative} from '../../apps/web/public/native-coins.js';
 import catalogue from './coin-capture-catalogue.json' with {type:'json'};
 const ISSUER='https://token.actions.githubusercontent.com',JWKS=ISSUER+'/.well-known/jwks';
-const REPOSITORY='nchrl01/rhosnei.gr',WORKFLOW=REPOSITORY+'/.github/workflows/captures.yml@refs/heads/main';
+// The numeric ID survives a transfer and prevents a replacement at the old name from publishing.
+const REPOSITORY_ID='981774121',REPOSITORIES=new Set(['nchrl01/rhosnei.gr','upic-art/rhosnei.gr']);
 const KIND='live-player-frame-v1',MAX_IMAGE=750000,MAX_BODY=1048576,MAX_TOTAL=64*1024*1024;
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 export const captureKey=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
@@ -37,7 +38,7 @@ export async function verifyCapturePublisher(token,{now=Math.floor(Date.now()/10
  const parts=token.split('.');if(parts.length!==3)fail('Invalid publisher token',401);
  let header,claims;try{header=JSON.parse(new TextDecoder().decode(decodeURL(parts[0])));claims=JSON.parse(new TextDecoder().decode(decodeURL(parts[1])));}catch{fail('Invalid publisher token',401);}
  if(header?.alg!=='RS256'||header.typ!=='JWT'||typeof header.kid!=='string'||header.kid.length>200||header.crit||header.jku||header.jwk||header.x5u)fail('Invalid publisher token',401);
- if(claims?.iss!==ISSUER||claims.aud!=='upic-live-captures'||claims.repository!==REPOSITORY||claims.ref!=='refs/heads/main'||(claims.job_workflow_ref??claims.workflow_ref)!==WORKFLOW)fail('Untrusted capture publisher',401);
+ if(claims?.iss!==ISSUER||claims.aud!=='upic-live-captures'||!REPOSITORIES.has(claims.repository)||claims.repository_id!==REPOSITORY_ID||claims.ref!=='refs/heads/main'||(claims.job_workflow_ref??claims.workflow_ref)!==claims.repository+'/.github/workflows/captures.yml@refs/heads/main')fail('Untrusted capture publisher',401);
  if(!['schedule','workflow_dispatch','push'].includes(claims.event_name))fail('Untrusted capture trigger',401);
  if(!Number.isInteger(claims.exp)||!Number.isInteger(claims.iat)||claims.exp<=now||claims.iat>now+30||claims.iat<now-900||claims.exp<=claims.iat||claims.exp-claims.iat>900||(claims.nbf!==undefined&&(!Number.isInteger(claims.nbf)||claims.nbf>now+30)))fail('Expired or invalid publisher token',401);
  const keys=jwks||await githubKeys(),matches=keys.filter(key=>key.kid===header.kid&&key.kty==='RSA'&&(!key.alg||key.alg==='RS256')&&(!key.use||key.use==='sig'));

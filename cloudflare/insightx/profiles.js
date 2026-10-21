@@ -1,3 +1,4 @@
+import {allowedAppOrigin} from './app-origins.js';
 import {verifyMessage,getAddress} from 'viem';
 import {createSiweMessage} from 'viem/siwe';
 import {base58} from '@scure/base';
@@ -96,7 +97,7 @@ export class ProfileService{
  }
  async handle(request){
   const origin=request.headers.get('Origin')||'',allowed=this.env.ALLOWED_ORIGIN;
-  if(!origin||origin!==allowed&&!/^http:\/\/(localhost|127\.0\.0\.1):(4173|4180)$/.test(origin))fail('origin-forbidden',403);
+  if(!origin||!allowedAppOrigin(origin,this.env)&&!/^http:\/\/(localhost|127\.0\.0\.1):(4173|4180)$/.test(origin))fail('origin-forbidden',403);
   const path=new URL(request.url).pathname,now=Date.now();
   const methods={'/profile/challenge':'POST','/profile/login':'POST','/profile/session':'GET','/profile/saved':request.method==='GET'?'GET':'POST','/profile/saved/remove':'POST','/profile/logout':'POST'};
   if(!methods[path])fail('not-found',404);if(request.method!==methods[path])fail('method-not-allowed',405);
@@ -109,7 +110,7 @@ export class ProfileService{
     const account=profileAccount(body);this.rate('challenge-account:'+account.key,5,5*MINUTE,now);
     if(this.one('SELECT COUNT(*) AS count FROM profile_challenges').count>=MAX_CHALLENGES)fail('profile-capacity',429);
     const challengeId=random(16),nonce=random(16),expiresAt=now+CHALLENGE_TTL;
-    const domain=new URL(origin).host,uri=origin===allowed?(this.env.PROFILE_APP_URL||origin+'/'):origin+'/';
+    const domain=new URL(origin).host,uri=allowedAppOrigin(origin,this.env)?new URL(new URL(this.env.PROFILE_APP_URL||allowed+'/').pathname,origin).href:origin+'/';
     const statement='Sign in to your UPIC profile to access your private saved coins. This does not authorize a transaction.';
     const message=account.namespace==='eip155'?createSiweMessage({domain,address:getAddress(account.address),statement,uri,version:'1',chainId:account.chainId,nonce,issuedAt:new Date(now),expirationTime:new Date(expiresAt)}):domain+' wants you to sign in with your Solana account:\n'+account.address+'\n\n'+statement+'\n\nURI: '+uri+'\nVersion: 1\nNonce: '+nonce+'\nIssued At: '+new Date(now).toISOString()+'\nExpiration Time: '+new Date(expiresAt).toISOString();
     this.sql.exec('DELETE FROM profile_challenges WHERE account=? AND origin=?',account.key,origin);

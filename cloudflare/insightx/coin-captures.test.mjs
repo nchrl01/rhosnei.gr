@@ -6,7 +6,7 @@ import {CoinCaptures,verifyCapturePublisher,validateCapturePayload,captureIdenti
 const now=Math.floor(Date.now()/1000),workflow='nchrl01/rhosnei.gr/.github/workflows/captures.yml@refs/heads/main';
 const pair=await webcrypto.subtle.generateKey({name:'RSASSA-PKCS1-v1_5',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['sign','verify']);
 const jwk={...await webcrypto.subtle.exportKey('jwk',pair.publicKey),kid:'test-key',alg:'RS256',use:'sig'};
-const claims={iss:'https://token.actions.githubusercontent.com',aud:'upic-live-captures',repository:'nchrl01/rhosnei.gr',ref:'refs/heads/main',workflow_ref:workflow,event_name:'schedule',iat:now-5,nbf:now-5,exp:now+300};
+const claims={iss:'https://token.actions.githubusercontent.com',aud:'upic-live-captures',repository:'nchrl01/rhosnei.gr',repository_id:'981774121',ref:'refs/heads/main',workflow_ref:workflow,event_name:'schedule',iat:now-5,nbf:now-5,exp:now+300};
 async function token(changes={},header={}){const a=Buffer.from(JSON.stringify({alg:'RS256',typ:'JWT',kid:jwk.kid,...header})).toString('base64url'),b=Buffer.from(JSON.stringify({...claims,...changes})).toString('base64url');const signature=await webcrypto.subtle.sign('RSASSA-PKCS1-v1_5',pair.privateKey,new TextEncoder().encode(a+'.'+b));return a+'.'+b+'.'+Buffer.from(signature).toString('base64url');}
 const identity=captureIdentity('ethereum','0x6982508145454ce325ddbe47a25d4ec3d2311933');
 const image=Buffer.alloc(24);image.write('RIFF');image.writeUInt32LE(16,4);image.write('WEBPVP8 ',8);image.writeUInt32LE(4,16);
