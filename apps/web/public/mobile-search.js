@@ -61,7 +61,7 @@ export function bindMobileCoinSearch(){
  filters.addEventListener('click',()=>{filters.open=!filters.open;paint();});
  filterPanel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.stopPropagation();filters.open=false;paint();filters.focus();}});
  const more=node('button','Load more coins','mobile-search-more');more.type='button';more.hidden=true;
- content.append(mobileFeedback,status,suggestions,more);dialog.append(top,categories,recent,content);document.body.append(dialog);let catalogue=[],trending=[],trendingLoading=null,trendingError='',loading,oldOverflow='',placeholder=input.getAttribute('placeholder');
+ content.append(mobileFeedback,status,suggestions,more);dialog.append(top,categories,recent,content);document.body.append(dialog);let catalogue=[],trending=[],trendingLoading=null,trendingError='',loading,paintedRows='',oldOverflow='',placeholder=input.getAttribute('placeholder');
  const paste=iconButton('Paste address','paste','mobile-search-paste');input.after(paste);
  function close(focus=true){if(dialog.open)dialog.close();document.documentElement.style.overflow=oldOverflow;if(focus)trigger.focus({preventScroll:true});trigger.setAttribute('aria-expanded','false');}
  function select(coin){coin=coinOnNetwork(coin,network.value);rememberRecentCoin(coin);paintRecent();document.dispatchEvent(new CustomEvent('upic:search-coin',{detail:coin}));}
@@ -133,11 +133,20 @@ export function bindMobileCoinSearch(){
   if(category==='saved'&&!signedIn){category='coins';for(const button of tabs.children)button.setAttribute('aria-pressed',String(button.dataset.category==='coins'));}
   dialog.dataset.category=category;paintNetworks();
   const q=input.value.trim().toLowerCase(),liveResults=category!=='saved'&&results&&!results.hidden;recent.hidden=Boolean(q)||!chips.childElementCount;suggestions.hidden=Boolean(liveResults);tabs.hidden=false;status.hidden=Boolean(liveResults);more.hidden=Boolean(liveResults);if(liveResults)return;
-  if(category==='saved'){status.textContent=savedCoinsState().status==='ready'?'Saved in your profile':'';status.hidden=!status.textContent;more.hidden=true;renderSaved(suggestions);return;}
-  const source=category==='trending'?trending:catalogue;let rows=source.filter(r=>(network.value==='all'||r.chain===network.value||r.nativeChains?.includes(network.value)||r.platforms?.some(p=>p.chain===network.value))&&(!q||[r.name,r.symbol,r.address,...(r.platforms||[]).map(p=>p.address)].some(v=>String(v||'').toLowerCase().includes(q))));
+  if(category==='saved'){paintedRows='';status.dataset.loading='false';content.setAttribute('aria-busy','false');status.textContent=savedCoinsState().status==='ready'?'Saved in your profile':'';status.hidden=!status.textContent;more.hidden=true;renderSaved(suggestions);return;}
+  const source=category==='trending'?trending:catalogue;
+  const pending=Boolean(category==='trending'?trendingLoading:loading)&&!source.length;
+  status.dataset.loading=String(pending);content.setAttribute('aria-busy',String(pending));
+  let rows=source.filter(r=>(network.value==='all'||r.chain===network.value||r.nativeChains?.includes(network.value)||r.platforms?.some(p=>p.chain===network.value))&&(!q||[r.name,r.symbol,r.address,...(r.platforms||[]).map(p=>p.address)].some(v=>String(v||'').toLowerCase().includes(q))));
   rows.sort((a,b)=>form.id==='marketplace-coin-form'&&category==='coins'?(b.marketCap||0)-(a.marketCap||0):q?Number(b.symbol.toLowerCase()===q)-Number(a.symbol.toLowerCase()===q)||(b.marketCap||0)-(a.marketCap||0):Number(Boolean(b.featured))-Number(Boolean(a.featured))||(a.trendingRank||999)-(b.trendingRank||999)||(b.marketCap||0)-(a.marketCap||0));
-  suggestions.replaceChildren();status.textContent=rows.length?(q?'Matching coins':category==='trending'?'Trending · 24H':form.id==='marketplace-coin-form'?'Genesis Collection':'Coins'):((category==='trending'?trendingLoading:loading)?category==='trending'?'Loading trending coins…':'Loading coins…':q?'No local matches. Press Search to search live markets.':category==='trending'?trendingError||'No trending coins above $1M on this network.':'No coins available.');
-  more.hidden=rows.length<=visible;for(const row of rows.slice(0,visible)){const {selection:coin,capture}=coinPreview(row,network.value);const button=node('button',null,'mobile-search-coin');button.type='button';const artwork=node('span',null,'mobile-search-artwork'),img=node('img');img.alt='';if(capture?.snapshot||coin.image)img.src=capture?.snapshot||coin.image;else artwork.dataset.unavailable='true';img.draggable=false;img.loading='lazy';artwork.append(img);const identity=node('span',null,'mobile-search-identity');identity.append(node('span',coin.symbol,'mobile-search-symbol'),node('small',coin.name||coin.symbol),node('small',(coin.chain==='unknown'?'MARKET SEARCH':(coin.chain||'').toUpperCase())+(coin.address?' · '+coin.address.slice(0,5)+'…'+coin.address.slice(-4):'')));let fallback=false;img.addEventListener('error',()=>{if(capture?.snapshot&&coin.image&&!fallback){fallback=true;img.src=coin.image;attachArtworkDither(img);}else artwork.dataset.unavailable='true';});const metrics=node('span',null,'mobile-search-metrics');metrics.append(node('span',money(coin.marketCap)),node('small','Market cap'));button.append(artwork,identity,metrics);button.addEventListener('click',()=>select(coin));suggestions.append(button);if(!capture?.snapshot&&coin.image)attachArtworkDither(img);}
+  status.textContent=rows.length?(q?'Matching coins':category==='trending'?'Trending · 24H':form.id==='marketplace-coin-form'?'Genesis Collection':'Coins'):((category==='trending'?trendingLoading:loading)?category==='trending'?'Loading trending coins…':'Loading coins…':q?'No local matches. Press Search to search live markets.':category==='trending'?trendingError||'No trending coins above $1M on this network.':'No coins available.');
+  more.hidden=rows.length<=visible;
+  const rowsKey=JSON.stringify([category,network.value,q,visible,rows.slice(0,visible).map(row=>{const view=coinPreview(row,network.value);return [row.key,view.selection.key,view.capture?.capturedAt,row.image,row.marketCap];})]);
+  if(rowsKey===paintedRows)return;paintedRows=rowsKey;
+  const focusedKey=suggestions.contains(document.activeElement)?document.activeElement.dataset.key:null;
+  suggestions.replaceChildren();
+  for(const row of rows.slice(0,visible)){const {selection:coin,capture}=coinPreview(row,network.value);const button=node('button',null,'mobile-search-coin');button.type='button';button.dataset.key=row.key;const artwork=node('span',null,'mobile-search-artwork'),img=node('img');img.alt='';if(capture?.snapshot||coin.image)img.src=capture?.snapshot||coin.image;else artwork.dataset.unavailable='true';img.draggable=false;img.loading='lazy';artwork.append(img);const identity=node('span',null,'mobile-search-identity');identity.append(node('span',coin.symbol,'mobile-search-symbol'),node('small',coin.name||coin.symbol),node('small',(coin.chain==='unknown'?'MARKET SEARCH':(coin.chain||'').toUpperCase())+(coin.address?' · '+coin.address.slice(0,5)+'…'+coin.address.slice(-4):'')));let fallback=false;img.addEventListener('error',()=>{if(capture?.snapshot&&coin.image&&!fallback){fallback=true;img.src=coin.image;attachArtworkDither(img);}else artwork.dataset.unavailable='true';});const metrics=node('span',null,'mobile-search-metrics');metrics.append(node('span',money(coin.marketCap)),node('small','Market cap'));button.append(artwork,identity,metrics);button.addEventListener('click',()=>select(coin));suggestions.append(button);if(!capture?.snapshot&&coin.image)attachArtworkDither(img);}
+  if(focusedKey)[...suggestions.children].find(row=>row.dataset.key===focusedKey)?.focus({preventScroll:true});
  }
  function setCategory(key){
   if(key==='saved'&&!savedCoinsState().account)key='coins';
@@ -157,11 +166,20 @@ export function bindMobileCoinSearch(){
    for(const chain of new Set(trending.map(coin=>coin.chain))){if(existing.has(chain))continue;const option=node('option',chain.toUpperCase());option.value=chain;network.append(option);}
   }).catch(()=>{trendingError='Trending is unavailable. Tap Trending to retry.';}).finally(()=>{trendingLoading=null;paint();});paint();return trendingLoading;
  }
- async function load(force=false){if(loading)return loading;loading=Promise.allSettled([catalogue.length?Promise.resolve(null):loadCoinCatalogue(),loadCloudCaptures({force})]).then(([data,previews])=>{
-  if(data.status==='fulfilled'&&data.value)catalogue=data.value.coins.filter(c=>form.id==='marketplace-coin-form'?c.top1000:c.top1000||(!(c.trendingRank||c.featured)||c.marketCap>=1e6)).map(c=>({...c,captures:{}}));const map=new Map();for(const row of catalogue){map.set(row.key,row);for(const p of row.platforms||[])map.set(previewKey(p.chain,p.address),row);}
-  if(previews.status==='fulfilled'){for(const row of catalogue)row.captures={};for(const frame of previews.value){const row=map.get(previewKey(frame.chain,frame.address));if(row)storeCapture(row,frame);}}
-  if(!existingNetwork){const added=new Set([...network.options].map(o=>o.value));for(const chain of [...new Set(catalogue.flatMap(c=>[c.chain,...(c.nativeChains||[]),...(c.platforms||[]).map(p=>p.chain)]))].sort()){if(added.has(chain))continue;const option=node('option',chain==='unknown'?'Other markets':chain.toUpperCase());option.value=chain;network.append(option);}}
- }).finally(()=>{loading=null;paint();});paint();return loading;}
+ async function load(force=false){
+  if(loading)return loading;
+  // Publish the usable catalogue immediately; preview images arrive independently.
+  const data=catalogue.length?Promise.resolve():loadCoinCatalogue().then(data=>{
+   catalogue=data.coins.filter(c=>form.id==='marketplace-coin-form'?c.top1000:c.top1000||(!(c.trendingRank||c.featured)||c.marketCap>=1e6)).map(c=>({...c,captures:{}}));
+   if(!existingNetwork){const added=new Set([...network.options].map(o=>o.value));for(const chain of [...new Set(catalogue.flatMap(c=>[c.chain,...(c.nativeChains||[]),...(c.platforms||[]).map(p=>p.chain)]))].sort()){if(added.has(chain))continue;const option=node('option',chain==='unknown'?'Other markets':chain.toUpperCase());option.value=chain;network.append(option);}}
+   paint();
+  });
+  const previews=loadCloudCaptures({force}).then(async frames=>{
+   await data;const map=new Map();for(const row of catalogue){map.set(row.key,row);for(const p of row.platforms||[])map.set(previewKey(p.chain,p.address),row);row.captures={};}
+   for(const frame of frames){const row=map.get(previewKey(frame.chain,frame.address));if(row)storeCapture(row,frame);}
+  });
+  loading=Promise.allSettled([data,previews]).finally(()=>{loading=null;paint();});paint();return loading;
+ }
  const refreshCaptures=()=>{if(dialog.open&&category!=='saved'&&!document.hidden){void load(true);if(category==='trending')void loadTrending();}},captureRefresh=setInterval(refreshCaptures,60000);window.addEventListener('focus',refreshCaptures);document.addEventListener('visibilitychange',refreshCaptures);window.addEventListener('pagehide',event=>{if(!event.persisted)clearInterval(captureRefresh);});
 
  function open({refresh=true}={}){if(!mobile.matches)return;form.dataset.searchNetwork=network.value;oldOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';dialog.showModal();trigger.setAttribute('aria-expanded','true');paintRecent();paint();if(refresh){if(category==='saved')void loadSavedCoins().catch(()=>{});else void load();if(category==='trending')void loadTrending();}input.focus();input.select();}

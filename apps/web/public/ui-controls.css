@@ -23,7 +23,7 @@
 }
 .component-loader{margin:7px 0;min-width:0;color:#f5f5f5}
 .component-loader .lattice-loader{max-width:100%;flex-wrap:wrap;row-gap:4px;font-family:inherit}
-.component-loader .lattice-loader[data-shape=round] .lattice-loader__cell{border-radius:50%!important}
+.component-loader .lattice-loader .lattice-loader__cell{border-radius:0!important}
 .component-loader .lattice-loader__label{min-width:0;max-width:100%;white-space:normal}
 .component-loader .lattice-loader__text[data-active]{white-space:normal}
 .component-loader .lattice-loader__timer{white-space:nowrap;font-family:inherit}
