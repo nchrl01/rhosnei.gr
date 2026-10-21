@@ -9,7 +9,7 @@ import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
 import {buildReplayScore} from './replay-score.js?v=209';
-import {createUIControls} from './ui-controls.js?v=391';
+import {createUIControls} from './ui-controls.js?v=405';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=359';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {bindPlaybackShortcuts} from './playback-shortcuts.js?v=397';
@@ -17,7 +17,7 @@ import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=395';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=395';
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
-import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=399';
+import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=395';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
@@ -27,7 +27,7 @@ import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
 import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=394';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=399';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=401';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -43,7 +43,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=391';
-import {MarketChart} from './chart.js?v=399';
+import {MarketChart} from './chart.js?v=403';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -100,6 +100,8 @@ const chart=new MarketChart($('market-chart'));
 $('advanced-view').addEventListener('click',()=>{
  const expanded=document.body.classList.toggle('advanced-view');
  $('advanced-view').setAttribute('aria-expanded',String(expanded));
+ $('advanced-panel').inert=!expanded;
+ $('advanced-panel').setAttribute('aria-hidden',String(!expanded));
  $('advanced-view').querySelector('span').textContent=expanded?'−':'+';
  display();if(expanded)requestAnimationFrame(()=>chart.draw());
 });
@@ -1090,7 +1092,7 @@ setInterval(()=>{
  $('event-count').textContent=receivedTradeCount+' trades received';
 },500);
 const playerScreen=window.matchMedia('(max-width:760px)');
-function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:'NDS12, sans-serif',fontSize:12}});}
+function syncChartTypography(){chart.chart.applyOptions({layout:{fontFamily:getComputedStyle(document.documentElement).getPropertyValue('--font-family').trim(),fontSize:12}});}
 playerScreen.addEventListener('change',syncChartTypography);
 document.fonts.ready.then(syncChartTypography);
 

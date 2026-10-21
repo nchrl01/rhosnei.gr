@@ -19,6 +19,8 @@ export function createUIControls(){
   }catch{host.dataset.uiReady='false';host.hidden=true;}
  }
  function loading(name,status,label='',{restart=false,host=null,operation=null,startedAt=null,endedAt=null}={}){
+  // Search results are the completion state; do not leave a success loader above them.
+  if(name==='search'&&status==='done')status=null;
   const now=performance.now(),old=states.get(name);
   clearTimeout(timers.get(name));
   if(!['working','done','error'].includes(status)){

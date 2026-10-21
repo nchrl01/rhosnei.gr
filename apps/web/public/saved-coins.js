@@ -1,4 +1,4 @@
-import {getWalletAccount,subscribeWalletAccount,ensureWalletAccount,signWalletMessage} from './wallet-session.js?v=399';
+import {getWalletAccount,subscribeWalletAccount,ensureWalletAccount,signWalletMessage} from './wallet-session.js?v=395';
 const ENDPOINT='https://upic-insightx.nchrl01.workers.dev/profile',LIMIT=100;
 const venues=new Set(['kraken','coinbaseexchange','binance']);
 let cache=[],session=null,epoch=0,loading=null,signingIn=null,mutation=Promise.resolve();

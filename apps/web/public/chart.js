@@ -9,7 +9,7 @@ export class MarketChart{
   this.points=[];this.history=[];this.renderedBars=[];this.buckets=new Map();this.interval=60000;this.origin=null;
   this.scale='linear';this.mode='candles';this.range='live';this.frame=null;this.rebuild=true;this.needsFit=true;this.manual=false;this.replayFollowing=true;this.publishedGap=0;this.dirty=new Set();this.received=0;this.lastReceived=null;
   this.chart=createChart(container,{
-   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'NDS12, Unifont, "Noto Sans", sans-serif',attributionLogo:true},
+   autoSize:true,layout:{background:{color:'#000000'},textColor:'#b5b5b5',fontSize:12,fontFamily:'Unifont, sans-serif',attributionLogo:true},
    grid:{vertLines:{visible:false},horzLines:{color:'#222222'}},
    rightPriceScale:{borderColor:'#3a3a3a',scaleMargins:{top:.1,bottom:.25}},
    timeScale:{borderColor:'#3a3a3a',timeVisible:true,secondsVisible:false,rightOffset:4,lockVisibleTimeRangeOnResize:true,shiftVisibleRangeOnNewBar:false,tickMarkFormatter:(time,type)=>{const date=new Date(time*1000);return type===0?String(date.getFullYear()):type===1?date.toLocaleDateString(undefined,{month:'short',year:'numeric'}):type===2?date.toLocaleDateString(undefined,{month:'short',day:'numeric'}):date.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit',...(type===4?{second:'2-digit'}:{})});}},
@@ -19,8 +19,8 @@ export class MarketChart{
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
   });
   // Canvas axes must invalidate their measurements after the webfont loads.
-  if(document.fonts)document.fonts.load('400 12px NDS12','0123456789.,$').then(()=>{
-   this.chart.applyOptions({layout:{fontFamily:'NDS12, Unifont, "Noto Sans", sans-serif',fontSize:12}});
+  if(document.fonts)document.fonts.load('400 12px Unifont','0123456789.,$').then(()=>{
+   this.chart.applyOptions({layout:{fontFamily:'"Unifont", "Noto Sans", sans-serif',fontSize:12}});
   }).catch(()=>{});
   const priceFormat={type:'custom',formatter:price=>this.formatMarketCap(price),minMove:1e-12};
   this.candles=this.chart.addSeries(CandlestickSeries,{upColor:'#000000',downColor:'#f2f2f2',wickUpColor:'#f2f2f2',wickDownColor:'#f2f2f2',borderVisible:true,borderUpColor:'#f2f2f2',borderDownColor:'#f2f2f2',priceLineColor:'#b5b5b5',priceFormat});
@@ -51,7 +51,16 @@ export class MarketChart{
   },true);
   const endGesture=event=>{if(gesture?.id===event.pointerId){gesture=null;requestAnimationFrame(()=>this.finishReplayPan());}};
   window.addEventListener('pointerup',endGesture,true);window.addEventListener('pointercancel',endGesture,true);
-  container.addEventListener('wheel',()=>{interaction();clearTimeout(this.replayWheelTimer);this.replayWheelTimer=setTimeout(()=>this.finishReplayPan(),180);},{passive:true});
+  container.addEventListener('wheel',event=>{
+   // Vertical wheel/pinch changes scale, not playback position. Only a
+   // horizontal pan enters the seeking state used by the sound and visual.
+   if(Math.abs(event.deltaX||0)<=Math.abs(event.deltaY||0)){
+    this.manual=true;this.needsFit=false;
+    if(this.readReplay?.().active&&!this.replayPanning)this.replayFollowing=true;
+    return;
+   }
+   interaction();clearTimeout(this.replayWheelTimer);this.replayWheelTimer=setTimeout(()=>this.finishReplayPan(),180);
+  },{passive:true});
   setInterval(()=>{if(document.hidden||!document.body.classList.contains('inspecting'))return;const target=document.getElementById('chart-update');target.textContent=this.lastReceived?'Last price received '+((Date.now()-this.lastReceived.receivedAt)/1000).toFixed(1)+'s ago · '+this.received+' observations · $'+this.lastReceived.price.toPrecision(9)+(this.lastReceived.source==='demo'?' · synthetic demo':this.lastReceived.source==='snapshot'?' · polled snapshot':this.lastReceived.source==='rpc-state'?' · direct RPC pool state':' · received trade'):'Waiting for price observations';},1000);
   this.tickView=createChartTicks(this);
   this.chart.subscribeClick(param=>{if(!dragged&&typeof param.time==='number'){const bars=this.readReplay?.().frozen?.bars,bar=bars?bars.find(item=>item.time===param.time*1000):this.buckets.get(param.time*1000);if(bar)this.onHistorySeek?.(bar,false);}});
@@ -136,7 +145,7 @@ export class MarketChart{
  setInterval(interval){this.history=[];this.interval=interval;this.rebuild=true;this.manual=false;this.needsFit=true;this.schedule();}
  fit(){this.range='history';this.manual=false;this.replayFollowing=false;this.needsFit=true;this.schedule();}
  goLive(){this.range='live';this.manual=false;this.replayFollowing=true;this.needsFit=true;this.schedule();}
- zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;this.replayFollowing=false;}
+ zoom(factor){const scale=this.chart.timeScale(),range=scale.getVisibleLogicalRange();if(!range)return;const middle=(range.from+range.to)/2,half=(range.to-range.from)*factor/2;scale.setVisibleLogicalRange({from:middle-half,to:middle+half});this.manual=true;this.needsFit=false;this.replayFollowing=!!this.readReplay?.().active;}
  schedule(){if(this.frame!==null)return;this.frame=requestAnimationFrame(()=>{this.frame=null;this.draw();});}
  reset(){clearTimeout(this.replayWheelTimer);this.replayPanning=false;this.replayPanRange=null;this.points=[];this.history=[];this.renderedBars=[];this.origin=null;this.received=0;this.lastReceived=null;this.buckets.clear();this.dirty.clear();this.rebuild=true;this.manual=false;this.replayFollowing=true;this.publishedGap=0;this.needsFit=true;this.tickView?.live();this.tickView?.update([]);if(this.playhead)this.playhead.hidden=true;this.schedule();}
  merge(point){

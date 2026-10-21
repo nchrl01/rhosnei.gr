@@ -1,3 +1,4 @@
+import {allowedAppOrigin} from './app-origins.js';
 import {ProfileService} from './profiles.js';
 import {NativeHolderRelay,nativeLimits} from './native-holders.js';
 import {NATIVE_COINS} from '../../apps/web/public/native-coins.js';
@@ -110,7 +111,7 @@ export default {
  async fetch(request,env){
   const url=new URL(request.url),origin=request.headers.get('Origin'),allowed=env.ALLOWED_ORIGIN;
   const localOrigin=url.pathname.startsWith('/profile/')?/^http:\/\/(localhost|127\.0\.0\.1):(4173|4180)$/:/^http:\/\/(localhost|127\.0\.0\.1):4173$/;
-  if(origin&&origin!==allowed&&!localOrigin.test(origin))return json({state:'forbidden'},403);
+  if(origin&&!allowedAppOrigin(origin,env)&&!localOrigin.test(origin))return json({state:'forbidden'},403);
   const headers={'Vary':'Origin','Access-Control-Allow-Origin':origin||allowed,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Authorization'};
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(url.pathname.startsWith('/profile/')){

@@ -3,3 +3,7 @@ body,input,button,select,textarea{font-size:var(--font-size-body)}
 h1,h2,h3{font-size:var(--font-size-title)}
 small{font-size:var(--font-size-small)}
 html body,html body *,html body *::before,html body *::after{font-family:var(--font-family)!important;font-weight:400!important}
+
+/* Uppercase interface copy; typed queries and contract addresses keep their case. */
+body{text-transform:uppercase}
+input,textarea,.coin-address,.tokenize-address{ text-transform:none }

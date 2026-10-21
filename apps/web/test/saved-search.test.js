@@ -31,7 +31,7 @@ function fixture(initial=[dex,native]){
  }
  const context=vm.createContext({
   document,Event,CustomEvent,rows:[...initial],input:new Element('input'),
-  desktop:true,desktopOpen:true,desktopSaved:new Element('section'),dialog:{open:true,dataset:{}},mobile:{matches:true},open:vi.fn(),
+  desktop:true,desktopOpen:true,desktopPanel:new Element('section'),desktopSaved:new Element('section'),dialog:{open:true,dataset:{}},mobile:{matches:true},open:vi.fn(),
   tabs:new Element('div'),category:'coins',visible:30,network:new Element('select'),filters:new Element('button'),results:new Element('div'),catalogue:[],trending:[],
   filterPanel:new Element('div'),filterNodes:[],recent:new Element('section'),chips:new Element('div'),suggestions:new Element('div'),status:new Element('p'),more:new Element('button'),
   node:(tag,text,cls)=>new Element(tag,text,cls),
