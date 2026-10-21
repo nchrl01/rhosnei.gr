@@ -54,7 +54,7 @@ export function createNftOwnerPreview(panel){
  const player=document.querySelector('.instrument'),summary=panel.querySelector('.coin-ai-summary');
  if(summary&&player){summary.classList.add('coin-background');player.append(summary);}
  panel.replaceChildren();panel.className='coin-collection-status';panel.setAttribute('aria-label','Coin collection');panel.hidden=true;
- const advanced=document.getElementById('advanced-diagnostics');
+ const advanced=document.getElementById('advanced-panel')||document.getElementById('advanced-diagnostics');
  if(advanced&&player?.contains(advanced))advanced.after(panel);else player?.append(panel);
  const heading=node('h3','Coin collection'),state=node('p','','coin-collection-state'),note=node('p','','coin-collection-note'),owner=node('p','','coin-collection-owner');
  state.setAttribute('role','status');state.setAttribute('aria-live','polite');

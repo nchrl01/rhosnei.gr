@@ -651,10 +651,9 @@ body.visual-expanded>.visual-volume-control{z-index:1010}
 #advanced-view{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:100%;min-height:44px;margin:16px 0 8px;padding:10px 0;background:transparent;border:0;border-top:1px solid var(--line);color:var(--control-muted);font-size:var(--font-size-small);cursor:pointer}
 #advanced-view:hover{color:var(--control-ink)}
 #advanced-view:focus-visible{outline:1px solid var(--control-ink);outline-offset:3px}
-body:not(.advanced-view) :is(#advanced-diagnostics,#advanced-readings,#advanced-market-source,.chart-menu){display:none!important}
-body:not(.advanced-view):not([data-playback=replay]) .coin-live-readings>.coin-clock-reading{display:none}
-body:not(.advanced-view) .coin-live-readings{grid-template-columns:minmax(0,1fr)}
-body:not(.advanced-view) .chart-panel{margin-top:16px}
+body:not(.advanced-view) .chart-menu{display:none!important}
+.coin-live-readings{grid-template-columns:minmax(0,1fr)}
+.instrument .chart-panel{margin-top:16px}
 body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
 
 .instrument>#advanced-view{margin-top:16px;margin-bottom:0;flex:0 0 auto;align-self:start}.instrument>#advanced-market-source{margin:16px 0;justify-content:flex-start}.instrument>#advanced-diagnostics{margin:12px 0}
@@ -783,3 +782,12 @@ body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility
  .mobile-player-heading{flex-wrap:wrap;row-gap:0}
  .mobile-player-heading .coin-address{flex:0 0 100%;max-width:100%;text-align:center;margin-top:0}
 }
+
+/* Keep the disclosure in flow so the collection follows its reveal. */
+#advanced-panel{display:grid;grid-template-rows:0fr;min-width:0;width:100%;opacity:0;visibility:hidden;transition:grid-template-rows 220ms cubic-bezier(.4,0,1,1),opacity 160ms ease,visibility 0s 220ms}
+#advanced-panel>.advanced-panel-content{min-height:0;overflow:hidden;transform:translateY(-6px);transition:transform 220ms cubic-bezier(.4,0,1,1)}
+body.advanced-view #advanced-panel{grid-template-rows:1fr;opacity:1;visibility:visible;transition:grid-template-rows 320ms cubic-bezier(.2,0,0,1),opacity 220ms ease,visibility 0s}
+body.advanced-view #advanced-panel>.advanced-panel-content{transform:translateY(0);transition:transform 320ms cubic-bezier(.2,0,0,1)}
+@media(prefers-reduced-motion:reduce){#advanced-panel,#advanced-panel>.advanced-panel-content,body.advanced-view #advanced-panel,body.advanced-view #advanced-panel>.advanced-panel-content{transition:none;transform:none}}
+/* Interface labels use one case; coin names, addresses and values retain theirs. */
+:is(#advanced-view,.advanced-group h3,.advanced-group dt,#advanced-market-source h3,#chain,#mode,#history-loading,.coin-live-readings small,.chart-measure,#tick-position,.transport-readout,#transport-status,.coin-collection-status h3,.coin-collection-actions a,.coin-collection-actions button,.playback-modes button,.replay-actions button,.replay-speed-select){text-transform:lowercase}
