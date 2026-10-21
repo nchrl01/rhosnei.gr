@@ -14,7 +14,13 @@ const address=name=>privateKeyToAccount(keys[name]).address;
 const vars={MINT_SIGNER:address('MINT_PRIVATE_KEY'),VERIFIER_SIGNER:address('VERIFIER_PRIVATE_KEY')};
 
 if(process.argv.includes('--gh')){
- const run=(args,input)=>{const r=spawnSync('gh',args,{input,encoding:'utf8'});if(r.status!==0)throw Error(`gh ${args.slice(0,3).join(' ')} failed: ${r.stderr}`);};
+ const run=(args,input)=>{const r=spawnSync('gh',args,{input,encoding:'utf8'});if(r.status!==0)throw Error(`gh ${args.slice(0,3).join(' ')} failed: ${r.stderr}`);return r.stdout.trim();};
+ // Environments must exist before environment secrets can be stored (needs repo admin).
+ const repo=run(['repo','view','--json','nameWithOwner','-q','.nameWithOwner']);
+ for(const env of ['testnet','staging']){
+  try{run(['api','-X','PUT',`repos/${repo}/environments/${env}`,'--silent']);}
+  catch(error){throw Error(`Could not create the "${env}" environment in ${repo}. Creating environments needs admin rights on the repo; ask the owner to create "testnet" and "staging" under Settings → Environments, then rerun.\n${error.message}`);}
+ }
  run(['secret','set','TESTNET_DEPLOYER_KEY','--env','testnet'],keys.TESTNET_DEPLOYER_KEY);
  for(const [k,v] of Object.entries(vars))run(['variable','set',k,'--env','testnet','--body',v]);
  for(const k of ['MINT_PRIVATE_KEY','VERIFIER_PRIVATE_KEY','RELAYER_PRIVATE_KEY','FAUCET_PRIVATE_KEY'])run(['secret','set',k,'--env','staging'],keys[k]);
