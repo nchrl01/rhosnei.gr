@@ -1,9 +1,100 @@
 {
-  "name":"upic-api", "main":"src/index.ts", "compatibility_date":"2026-10-01",
-  "durable_objects":{"bindings":[{"name":"MARKET","class_name":"MarketCoordinator"}]},
-  "migrations":[{"tag":"v1","new_sqlite_classes":["MarketCoordinator"]}],
-  "triggers":{"crons":["* * * * *"]},
-  "vars":{"MODE":"local","CHAIN_ID":"31337","ALLOWED_ORIGIN":"http://localhost:5173","POSTGREST_URL":"http://127.0.0.1:54321","MAX_ASSETS":"100","OKX_BASIC_LIMIT":"90000","OKX_PREMIUM_LIMIT":"90000","DEX_RPM":"180"},
-  "env":{"testnet":{"name":"upic-api-testnet","vars":{"MODE":"testnet","CHAIN_ID":"46630","MAX_ASSETS":"100","OKX_BASIC_LIMIT":"90000","OKX_PREMIUM_LIMIT":"90000","DEX_RPM":"180"},"durable_objects":{"bindings":[{"name":"MARKET","class_name":"MarketCoordinator"}]},"triggers":{"crons":["* * * * *"]}}},
-  "observability":{"enabled":true}
+  "name": "upic-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MARKET",
+        "class_name": "MarketCoordinator"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "MarketCoordinator"
+      ]
+    }
+  ],
+  "triggers": {
+    "crons": [
+      "* * * * *"
+    ]
+  },
+  "vars": {
+    "MODE": "local",
+    "CHAIN_ID": "31337",
+    "ALLOWED_ORIGIN": "http://localhost:5173",
+    "POSTGREST_URL": "http://127.0.0.1:54321",
+    "MAX_ASSETS": "100",
+    "OKX_BASIC_LIMIT": "90000",
+    "OKX_PREMIUM_LIMIT": "90000",
+    "DEX_RPM": "180"
+  },
+  "env": {
+    "testnet": {
+      "name": "upic-api-testnet",
+      "vars": {
+        "MODE": "testnet",
+        "CHAIN_ID": "46630",
+        "MAX_ASSETS": "100",
+        "OKX_BASIC_LIMIT": "90000",
+        "OKX_PREMIUM_LIMIT": "90000",
+        "DEX_RPM": "180"
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "MARKET",
+            "class_name": "MarketCoordinator"
+          }
+        ]
+      },
+      "triggers": {
+        "crons": [
+          "* * * * *"
+        ]
+      }
+    },
+    "staging": {
+      "name": "pv-api",
+      "workers_dev": false,
+      "preview_urls": false,
+      "vars": {
+        "MODE": "testnet",
+        "CHAIN_ID": "46630",
+        "ALLOWED_ORIGIN": "https://staging.invalid",
+        "PUBLIC_APP_URL": "https://staging.invalid",
+        "POSTGREST_URL": "",
+        "MAX_ASSETS": "100",
+        "OKX_BASIC_LIMIT": "90000",
+        "OKX_PREMIUM_LIMIT": "90000",
+        "DEX_RPM": "180",
+        "UPKEEP_ENABLED": "true",
+        "UPKEEP_DAILY_WEI": "20000000000000",
+        "FAUCET_DRIP_WEI": "5000000000000000"
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "MARKET",
+            "class_name": "MarketCoordinator"
+          }
+        ]
+      },
+      "triggers": {
+        "crons": [
+          "* * * * *"
+        ]
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
+  },
+  "observability": {
+    "enabled": true
+  }
 }

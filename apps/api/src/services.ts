@@ -1,7 +1,7 @@
 import {createPublicClient,createWalletClient,http,keccak256,stringToHex,type Address,type Hex,decodeEventLog,toEventSelector,parseAbi} from 'viem';
 import {privateKeyToAccount} from 'viem/accounts';
 import {type Evidence,type Collection,type Edition,type Job,type ArtworkInput,type MarketFrame,chainFor,stageFor,decimal,units,ENGINE_VERSION} from '@upic/domain';
-import {factoryAbi,nftAbi,marketAbi,tokenAbi,creationTypes,mintTypes,evolutionTypes,domain,seedFor,assetKey} from '@upic/sdk';
+import {factoryAbi,nftAbi,marketAbi,tokenAbi,vaultAbi,creationTypes,mintTypes,evolutionTypes,domain,seedFor,assetKey,DOMAINS} from '@upic/sdk';
 import {DB} from './db';import {deployment,type Env} from './env';import {verifyPool,type PoolPolicy} from './verification';import {sha256,pinJSON,retrieveJSON} from './archive';
 export interface AssetRow {asset_key:Hex;chain:PoolPolicy['chain'];token:Address;pool:Address;policy:PoolPolicy;name:string;symbol:string;approved:boolean;latest:MarketFrame|null;evidence:Evidence|null;confirmed_evidence:Evidence|null;historical_confirmed_evidence:Evidence|null;evidence_hash:Hex|null;evidence_uri:string|null;verified_at:string|null}
 export interface Intent {id:string;wallet:Address;asset_key:Hex;collection:Address|null;edition:number;stage:number;payload:Record<string,unknown>;state:string;expires_at:string;artifact?:Record<string,string>}
@@ -41,7 +41,7 @@ export async function processAttestation(env:Env){
   if(collection){
    const account=privateKeyToAccount(env.VERIFIER_PRIVATE_KEY);
    const message={next,cap:BigInt(evidence.capUsd8),evidenceHash:hash,evidenceURI:uri,nonce:BigInt('0x'+crypto.randomUUID().replace(/-/g,'')),deadline:BigInt(Math.floor(Date.now()/1000)+600)};
-   const signature=await account.signTypedData({domain:domain('UPIC Collection',d.chainId,collection.address),types:evolutionTypes,primaryType:'Evolution',message});
+   const signature=await account.signTypedData({domain:domain(DOMAINS.collection,d.chainId,collection.address),types:evolutionTypes,primaryType:'Evolution',message});
    const relayer=privateKeyToAccount(env.RELAYER_PRIVATE_KEY),wallet=createWalletClient({account:relayer,transport:http(env.RH_RPC_URL,{batch:true})});
    const tx=await wallet.writeContract({chain:null,address:collection.address,abi:nftAbi,functionName:'evolve',args:[message.next,message.cap,message.evidenceHash,message.evidenceURI,message.nonce,message.deadline,signature]});
    const receipt=await client.waitForTransactionReceipt({hash:tx});if(receipt.status!=='success')throw Error('evolution-reverted');
@@ -58,11 +58,11 @@ export async function prepare(env:Env,wallet:Address,key:Hex,creation:boolean){
  const d=deployment(env),db=new DB(env),asset=await db.one<AssetRow>('upic_assets',{asset_key:'eq.'+key});
  if(!asset?.approved)throw Error('preview-only-asset');
  const client=clientFor(env);if(await client.getChainId()!==d.chainId)throw Error('wrong-nft-chain');
- if(creation){const balance=await client.readContract({address:d.upic,abi:tokenAbi,functionName:'balanceOf',args:[wallet]});if(balance<500n*10n**18n)throw Error('insufficient-upic');}
- else if(await client.getBalance({address:wallet})<50000000000000000n)throw Error('insufficient-mint-balance');
+ if(creation){const [balance,fee]=await Promise.all([client.readContract({address:d.upic,abi:tokenAbi,functionName:'balanceOf',args:[wallet]}),client.readContract({address:d.factory,abi:factoryAbi,functionName:'creationFee'})]);if(balance<fee)throw Error('insufficient-upic');}
  if(!asset.evidence||!asset.verified_at||Date.now()-Date.parse(asset.verified_at)>1800000){await db.enqueue('verify','verify:'+key+':'+Math.floor(Date.now()/60000),{assetKey:key});return {state:'verification-pending'};}
  const c=await db.one<Collection>('upic_collections',{asset_key:'eq.'+key});
  if(creation&&c)throw Error('collection-exists');if(!creation&&!c)throw Error('collection-not-found');
+ if(!creation&&c){const price=await client.readContract({address:c.address,abi:nftAbi,functionName:'currentPrice'}).catch(()=>{throw Error('collection-sold-out');});if(await client.getBalance({address:wallet})<price)throw Error('insufficient-mint-balance');}
  const onchain=await clientFor(env).readContract({address:d.factory,abi:factoryAbi,functionName:'collections',args:[key]});
  if(creation&&onchain!=='0x0000000000000000000000000000000000000000')throw Error('collection-exists');
  const current=c?Number(await clientFor(env).readContract({address:c.address,abi:nftAbi,functionName:'stage'})):stageFor(BigInt(asset.evidence.capUsd8));
@@ -92,11 +92,11 @@ export async function renderFinished(env:Env,job:Job,result:{uri:string;image:st
   if(intent.collection){
    if(Number(await clientFor(env).readContract({address:intent.collection,abi:nftAbi,functionName:'stage'}))!==intent.stage)throw Error('stage-changed-reprepare');
    const mint={recipient:intent.wallet,edition:intent.edition,stage:intent.stage,uri:result.uri,nonce,deadline};message=mint;
-   signature=await privateKeyToAccount(env.MINT_PRIVATE_KEY).signTypedData({domain:domain('UPIC Collection',d.chainId,intent.collection),types:mintTypes,primaryType:'Mint',message:mint});
+   signature=await privateKeyToAccount(env.MINT_PRIVATE_KEY).signTypedData({domain:domain(DOMAINS.collection,d.chainId,intent.collection),types:mintTypes,primaryType:'Mint',message:mint});
   }else{
    if(!asset.evidence_hash||!asset.evidence_uri||stageFor(BigInt(asset.evidence.capUsd8))!==intent.stage)throw Error('verification-changed-reprepare');
    const create={sourceChain:BigInt(chainFor(asset.chain).chainId!),token:asset.token,initiator:intent.wallet,stage:intent.stage,cap:BigInt(String(payload.verifiedCapUsd8)),evidenceHash:payload.evidenceHash as Hex,evidenceURI:String(payload.evidenceURI),genesisURI:result.uri,name:asset.name,symbol:asset.symbol,nonce,deadline};message=create;
-   signature=await privateKeyToAccount(env.VERIFIER_PRIVATE_KEY).signTypedData({domain:domain('UPIC Factory',d.chainId,d.factory),types:creationTypes,primaryType:'Create',message:create});
+   signature=await privateKeyToAccount(env.VERIFIER_PRIVATE_KEY).signTypedData({domain:domain(DOMAINS.factory,d.chainId,d.factory),types:creationTypes,primaryType:'Create',message:create});
   }
   await db.call('upic_intents?id=eq.'+intent.id,{state:'ready',artifact:result,payload:jsonSafe(message),signature,expires_at:new Date(Number(deadline)*1000).toISOString()},'PATCH');
  }else{

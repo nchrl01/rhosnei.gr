@@ -1,0 +1,25 @@
+// Private staging gateway. Deployed by .github/workflows/staging.yml; do not deploy by hand
+// without `--var` values for ACCESS_TEAM_DOMAIN and ACCESS_AUD.
+// The name is deliberately neutral: it becomes part of the workers.dev hostname.
+{
+  "name": "pv-gate",
+  "main": "gateway.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "../../apps/web/dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  "services": [
+    { "binding": "DATA", "service": "pv-data" },
+    { "binding": "API", "service": "pv-api" }
+  ],
+  "vars": {
+    "REQUIRE_ACCESS": "true",
+    "CAPTURE_SOURCE": "https://upic-insightx.nchrl01.workers.dev"
+  },
+  "observability": { "enabled": true }
+}

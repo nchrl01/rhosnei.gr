@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import {createPublicClient,createWalletClient,http,type Address,type Abi} from 'viem';
 import {mnemonicToAccount} from 'viem/accounts';
 import {anvil} from 'viem/chains';
-import {type Deployment,type Collection,type Hex,MINT_PRICE} from '@upic/domain';
-import {factoryAbi,nftAbi,tokenAbi,marketAbi,vaultAbi,orderTypes,domain,assetKey,seedFor} from '@upic/sdk';
+import {type Deployment,type Collection,type Hex} from '@upic/domain';
+import {factoryAbi,nftAbi,tokenAbi,marketAbi,vaultAbi,orderTypes,domain,assetKey,seedFor,DOMAINS} from '@upic/sdk';
 const api='http://127.0.0.1:8787';
 const d=(await request('/v1/config')).deployment as Deployment;
 assert.equal(d.chainId,31337);assert.equal(d.mode,'local');
@@ -31,7 +31,7 @@ async function wait<T>(label:string,read:()=>Promise<T|undefined>,minutes=20){
 }
 const fixture='0x0000000000000000000000000000000000001111' as Address,key=assetKey(1,fixture);
 assert.equal((await request('/v1/collections') as Collection[]).some(c=>c.asset_key===key),false,'Use a fresh local deployment/database for this exercise');
-await send(alice,d.upic,tokenAbi,'faucet',[alice.address,1000n*10n**18n]);
+await send(alice,d.upic,tokenAbi,'faucet',[alice.address,2000n*10n**18n]);
 const aliceCookie=await login(alice),bobCookie=await login(bob);
 async function ready(creation:boolean,cookie:string){
  const queued=await wait<any>('verification',async()=>{
@@ -40,13 +40,14 @@ async function ready(creation:boolean,cookie:string){
  return wait<any>('render/signature',async()=>{const intent=await request('/v1/intents/'+queued.intentId,undefined,cookie);if(intent.state==='expired')throw Error('Preparation expired');return intent.state==='ready'?intent:undefined;});
 }
 const initial=await ready(true,aliceCookie),p=initial.payload;
+await send(alice,d.upic,tokenAbi,'approve',[d.factory,await client.readContract({address:d.factory,abi:factoryAbi,functionName:'creationFee'})]);
 await send(alice,d.factory,factoryAbi,'create',[{...p,sourceChain:BigInt(p.sourceChain),cap:BigInt(p.cap),nonce:BigInt(p.nonce),deadline:BigInt(p.deadline)},initial.signature]);
 const nft=await client.readContract({address:d.factory,abi:factoryAbi,functionName:'collections',args:[key]});
 assert.equal((await client.readContract({address:nft,abi:nftAbi,functionName:'ownerOf',args:[1n]})).toLowerCase(),alice.address.toLowerCase());
 assert.equal(await client.readContract({address:d.upic,abi:tokenAbi,functionName:'balanceOf',args:[alice.address]}),1000n*10n**18n);
 await wait('collection index',async()=>(await request('/v1/collections') as Collection[]).find(c=>c.address===nft.toLowerCase()));
 const paid=await ready(false,bobCookie),m=paid.payload;
-await send(bob,nft,nftAbi,'mint',[{...m,nonce:BigInt(m.nonce),deadline:BigInt(m.deadline)},paid.signature],MINT_PRICE);
+await send(bob,nft,nftAbi,'mint',[{...m,nonce:BigInt(m.nonce),deadline:BigInt(m.deadline)},paid.signature],await client.readContract({address:nft,abi:nftAbi,functionName:'currentPrice'}));
 assert.equal(paid.edition,2);
 const seed=await client.readContract({address:nft,abi:nftAbi,functionName:'seedOf',args:[2n]});
 assert.equal(seed,seedFor(31337,d.factory,key,2));
@@ -57,16 +58,16 @@ assert.equal((await client.readContract({address:nft,abi:nftAbi,functionName:'in
 await wait('edition index',async()=>{const v=await request('/v1/collections/'+nft);return v.editions.find((e:any)=>e.edition===2);});
 await send(bob,nft,nftAbi,'approve',[d.marketplace,2n]);
 const order={seller:bob.address,collection:nft,tokenId:2n,price:10n**17n,expiry:BigInt(Math.floor(Date.now()/1000)+600),nonce:98765n,ownershipNonce:await client.readContract({address:nft,abi:nftAbi,functionName:'transferNonce',args:[2n]})};
-const signature=await bob.signTypedData({domain:domain('UPIC Marketplace',31337,d.marketplace),types:orderTypes,primaryType:'Order',message:order});
+const signature=await bob.signTypedData({domain:domain(DOMAINS.marketplace,31337,d.marketplace),types:orderTypes,primaryType:'Order',message:order});
 await request('/v1/orders',{order:JSON.parse(JSON.stringify(order,(_,v)=>typeof v==='bigint'?v.toString():v)),signature},bobCookie);
 await send(alice,d.marketplace,marketAbi,'purchase',[order,signature],order.price);
-assert.equal(await client.readContract({address:d.vault,abi:vaultAbi,functionName:'claimable',args:[alice.address]}),1375n*10n**13n);
-assert.equal(await client.readContract({address:d.vault,abi:vaultAbi,functionName:'buybackReserve'}),27n*10n**15n);
+assert.equal(await client.readContract({address:d.vault,abi:vaultAbi,functionName:'claimable',args:[alice.address]}),26n*10n**14n); // 30% of 0.002 primary + 2% of 0.1 resale
+assert.equal(await client.readContract({address:d.vault,abi:vaultAbi,functionName:'buybackReserve'}),14n*10n**14n); // 20% of 0.002 + 1% of 0.1
 await send(bob,d.vault,vaultAbi,'claim',[bob.address]);
 assert.equal(await client.readContract({address:d.vault,abi:vaultAbi,functionName:'claimable',args:[bob.address]}),0n);
 const supply=await client.readContract({address:d.upic,abi:tokenAbi,functionName:'totalSupply'});
-await send(admin,d.vault,vaultAbi,'executeBuyback',[27n*10n**15n,27n*10n**18n,BigInt(Math.floor(Date.now()/1000)+600)]);
-assert.equal(await client.readContract({address:d.upic,abi:tokenAbi,functionName:'totalSupply'}),supply-27n*10n**18n);
+await send(admin,d.vault,vaultAbi,'executeBuyback',[14n*10n**14n,14n*10n**17n,BigInt(Math.floor(Date.now()/1000)+600)]);
+assert.equal(await client.readContract({address:d.upic,abi:tokenAbi,functionName:'totalSupply'}),supply-14n*10n**17n);
 await fetch('http://127.0.0.1:3890/fixture/price',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quoteReserveUnits:'2000000000000'})});
 await wait('permanent evolution',async()=>{const stage=await client.readContract({address:nft,abi:nftAbi,functionName:'stage'});return stage>=4?stage:undefined;});
 await wait('new media publication',async()=>{const uri=await client.readContract({address:nft,abi:nftAbi,functionName:'tokenURI',args:[2n]});return uri!==originalURI?uri:undefined;});

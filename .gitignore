@@ -20,3 +20,5 @@ contracts/lib/
 infra/.data/
 artifacts/
 playwright-report/
+contracts/deployments/*.json
+infra/staging/wrangler.generated.json

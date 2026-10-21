@@ -41,6 +41,13 @@ export class MarketCoordinator extends DurableObject<Env>{
    }
    return Response.json(await pending);
   }
+  if(u.pathname==='/faucet-claim'){
+   // One drip per wallet per 24h, serialized by this Durable Object.
+   const {wallet}=await request.json() as {wallet:string};const key='faucet:'+wallet.toLowerCase(),last=await this.ctx.storage.get<number>(key)||0;
+   if(Date.now()-last<86400000)return Response.json({ok:false,retryAt:last+86400000},{status:429});
+   await this.ctx.storage.put(key,Date.now());return Response.json({ok:true});
+  }
+  if(u.pathname==='/faucet-release'){const {wallet}=await request.json() as {wallet:string};await this.ctx.storage.delete('faucet:'+wallet.toLowerCase());return Response.json({ok:true});}
   if(u.pathname==='/rate'){
    const {key}=await request.json() as {key:string};const minute=Math.floor(Date.now()/60000),rate=this.rates.get(key);
    const next=rate?.minute===minute?{minute,count:rate.count+1}:{minute,count:1};this.rates.set(key,next);

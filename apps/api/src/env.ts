@@ -6,11 +6,12 @@ export interface Env {
  OKX_API_KEY:string;OKX_SECRET:string;OKX_PASSPHRASE:string;SOURCE_RPC_JSON:string;
  PINATA_JWT:string;PINATA_GATEWAY:string;PUBLIC_APP_URL:string;
  IPFS_API?:string;
+ UPKEEP_ENABLED?:string;UPKEEP_DAILY_WEI?:string;FAUCET_PRIVATE_KEY?:`0x${string}`;FAUCET_DRIP_WEI?:string;
  MAX_ASSETS:string;OKX_BASIC_LIMIT:string;OKX_PREMIUM_LIMIT:string;DEX_RPM:string;
 }
 export function deployment(env:Env):Deployment {
  const d=JSON.parse(env.DEPLOYMENT_JSON||'{}') as Deployment;
- if(!d.factory||d.chainId!==Number(env.CHAIN_ID)||!['local','testnet'].includes(env.MODE)||d.mode!==env.MODE||d.chainId!==(env.MODE==='local'?31337:46630))throw Error('deployment-unconfigured');
+ if(!d.factory||d.chainId!==Number(env.CHAIN_ID)||!['local','testnet'].includes(env.MODE)||d.mode!==env.MODE||(env.MODE==='local'?d.chainId!==31337:![46630,421614].includes(d.chainId)))throw Error('deployment-unconfigured');
  return d;
 }
 export const coordinator=(env:Env)=>env.MARKET.get(env.MARKET.idFromName('global-v1'));

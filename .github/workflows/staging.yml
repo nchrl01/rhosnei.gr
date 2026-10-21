@@ -1,0 +1,152 @@
+name: Staging
+# Continuous private staging on Cloudflare: builds the web app, deploys the data and platform
+# Workers without public URLs, protects the gateway hostname with Cloudflare Access, then smoke
+# tests it with the CI service token. Skips cleanly (no failure) until Cloudflare is configured.
+on:
+  push:
+    branches: [main, 'staging/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read # to fetch the latest testnet deployment artifact
+concurrency: {group: staging, cancel-in-progress: true}
+env:
+  WRANGLER: npx -y wrangler@4.76.0
+  CHAIN: ${{ vars.TESTNET_CHAIN_ID || '46630' }}
+  GATEWAY: ${{ vars.STAGING_GATEWAY_NAME || 'pv-gate' }}
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    environment: staging
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PLATFORM_API: ${{ vars.DEPLOY_PLATFORM_API == 'true' }}
+    steps:
+      - name: Check Cloudflare configuration
+        id: ready
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::notice::Staging is not configured yet (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID). See docs/TESTNET.md."; echo "ok=false" >> "$GITHUB_OUTPUT"
+          else echo "ok=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.ready.outputs.ok == 'true'
+        uses: actions/checkout@v4
+        with: {persist-credentials: false}
+      - if: steps.ready.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - name: Resolve staging hostname
+        if: steps.ready.outputs.ok == 'true'
+        id: host
+        run: |
+          sub=$(curl -fsS -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" | jq -r '.result.subdomain // empty')
+          [[ -n "$sub" ]] || { echo "::error::No workers.dev subdomain on this account (Workers → Overview to create one)."; exit 1; }
+          host="$GATEWAY.$sub.workers.dev"; echo "::add-mask::$host"
+          echo "host=$host" >> "$GITHUB_OUTPUT"; echo "origin=https://$host" >> "$GITHUB_OUTPUT"
+      - name: Protect hostname with Cloudflare Access
+        if: steps.ready.outputs.ok == 'true'
+        id: access
+        env:
+          STAGING_HOST: ${{ steps.host.outputs.host }}
+          ACCESS_EMAILS: ${{ vars.ACCESS_EMAILS }}
+          ACCESS_EMAIL_DOMAIN: ${{ vars.ACCESS_EMAIL_DOMAIN }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+        run: node infra/staging/setup-access.mjs
+      - name: Build web app for staging
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          ORIGIN: ${{ steps.host.outputs.origin }}
+        run: |
+          npm ci --ignore-scripts
+          node scripts/build-site-shell.mjs
+          VITE_API_URL=/api npm run build -w @upic/web
+          # Route the instrument's data calls to the private staging data worker (same origin).
+          grep -rlF 'https://upic-insightx.nchrl01.workers.dev' apps/web/dist | xargs -r sed -i "s#https://upic-insightx.nchrl01.workers.dev#$ORIGIN/x#g"
+          rm -f apps/web/dist/_redirects
+          find apps/web/dist -name '*.map' -delete
+      - name: Deploy data worker (no public URL)
+        if: steps.ready.outputs.ok == 'true'
+        working-directory: cloudflare/insightx
+        env:
+          ORIGIN: ${{ steps.host.outputs.origin }}
+          REOWN: ${{ vars.STAGING_REOWN_PROJECT_ID }}
+          S_GOPLUS_APP_KEY: ${{ secrets.GOPLUS_APP_KEY }}
+          S_GOPLUS_APP_SECRET: ${{ secrets.GOPLUS_APP_SECRET }}
+          S_BLOCKSCOUT_API_KEY: ${{ secrets.BLOCKSCOUT_API_KEY }}
+          S_OPENSEA_API_KEY: ${{ secrets.OPENSEA_API_KEY }}
+          S_INSIGHTX_API_KEY: ${{ secrets.INSIGHTX_API_KEY }}
+        run: |
+          npm ci --ignore-scripts
+          $WRANGLER deploy --env staging --var "ALLOWED_ORIGIN:$ORIGIN" --var "PROFILE_APP_URL:$ORIGIN/" --var "REOWN_PROJECT_ID:$REOWN"
+          node ../../infra/staging/secrets-json.mjs > "$RUNNER_TEMP/data-secrets.json"
+          if [[ $(jq length "$RUNNER_TEMP/data-secrets.json") -gt 0 ]]; then $WRANGLER secret bulk "$RUNNER_TEMP/data-secrets.json" --env staging; fi
+          rm -f "$RUNNER_TEMP/data-secrets.json"
+      - name: Fetch latest testnet deployment
+        if: steps.ready.outputs.ok == 'true'
+        id: chain
+        env: {GH_TOKEN: '${{ github.token }}'}
+        run: |
+          # Newest unexpired deployment from this branch or main.
+          id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=testnet-deployment-$CHAIN&per_page=30" \
+            -q "[.artifacts[]|select((.expired|not) and (.workflow_run.head_branch==\"$GITHUB_REF_NAME\" or .workflow_run.head_branch==\"main\"))][0].id // empty" || true)
+          if [[ -z "$id" ]]; then echo "::notice::No testnet deployment yet; run the Contracts workflow."; echo "file=" >> "$GITHUB_OUTPUT"; exit 0; fi
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "$RUNNER_TEMP/deployment.zip"
+          unzip -o -q "$RUNNER_TEMP/deployment.zip" -d "$RUNNER_TEMP/deployment"
+          file=$(find "$RUNNER_TEMP/deployment" -name "$CHAIN.json" | head -1); echo "file=$file" >> "$GITHUB_OUTPUT"
+      - name: Deploy platform API (no public URL)
+        if: steps.ready.outputs.ok == 'true' && env.PLATFORM_API == 'true'
+        working-directory: apps/api
+        env:
+          ORIGIN: ${{ steps.host.outputs.origin }}
+          POSTGREST_URL: ${{ vars.POSTGREST_URL }}
+          DEPLOYMENT_FILE: ${{ steps.chain.outputs.file }}
+          S_POSTGREST_TOKEN: ${{ secrets.POSTGREST_TOKEN }}
+          S_SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          S_ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          S_RENDERER_TOKEN: ${{ secrets.RENDERER_TOKEN }}
+          S_RH_RPC_URL: ${{ env.CHAIN == '421614' && secrets.ARB_SEPOLIA_RPC_URL || secrets.RH_RPC_URL }}
+          S_MINT_PRIVATE_KEY: ${{ secrets.MINT_PRIVATE_KEY }}
+          S_VERIFIER_PRIVATE_KEY: ${{ secrets.VERIFIER_PRIVATE_KEY }}
+          S_RELAYER_PRIVATE_KEY: ${{ secrets.RELAYER_PRIVATE_KEY }}
+          S_FAUCET_PRIVATE_KEY: ${{ secrets.FAUCET_PRIVATE_KEY }}
+          S_PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          S_PINATA_GATEWAY: ${{ secrets.PINATA_GATEWAY }}
+          S_OKX_API_KEY: ${{ secrets.OKX_API_KEY }}
+          S_OKX_SECRET: ${{ secrets.OKX_SECRET }}
+          S_OKX_PASSPHRASE: ${{ secrets.OKX_PASSPHRASE }}
+          S_SOURCE_RPC_JSON: ${{ secrets.SOURCE_RPC_JSON }}
+        run: |
+          # The API uses one RPC for the NFT chain; it must match CHAIN.
+          [[ -n "$S_RH_RPC_URL" ]] || export S_RH_RPC_URL=$([[ "$CHAIN" == 421614 ]] && echo https://sepolia-rollup.arbitrum.io/rpc || echo https://rpc.testnet.chain.robinhood.com)
+          [[ -n "$DEPLOYMENT_FILE" ]] && export S_DEPLOYMENT_JSON="$(jq -c . "$DEPLOYMENT_FILE")"
+          $WRANGLER deploy --env staging --var "ALLOWED_ORIGIN:$ORIGIN" --var "PUBLIC_APP_URL:$ORIGIN" --var "POSTGREST_URL:$POSTGREST_URL" --var "CHAIN_ID:$CHAIN"
+          node ../../infra/staging/secrets-json.mjs > "$RUNNER_TEMP/api-secrets.json"
+          $WRANGLER secret bulk "$RUNNER_TEMP/api-secrets.json" --env staging; rm -f "$RUNNER_TEMP/api-secrets.json"
+      - name: Deploy gateway
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          TEAM: ${{ steps.access.outputs.team }}
+          AUD: ${{ steps.access.outputs.aud }}
+          DEPLOYMENT_FILE: ${{ steps.chain.outputs.file }}
+        run: |
+          node infra/staging/render-config.mjs --name "$GATEWAY" --access-team "$TEAM" --access-aud "$AUD" $([[ "$PLATFORM_API" == true ]] || echo --no-api)
+          $WRANGLER deploy -c infra/staging/wrangler.generated.json
+          if [[ -n "$DEPLOYMENT_FILE" ]]; then jq -c . "$DEPLOYMENT_FILE" | $WRANGLER secret put DEPLOYMENT_JSON -c infra/staging/wrangler.generated.json; fi
+      - name: Smoke test through Access
+        if: steps.ready.outputs.ok == 'true'
+        env:
+          ORIGIN: ${{ steps.host.outputs.origin }}
+          ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          sleep 10
+          anon=$(curl -s -o /dev/null -w '%{http_code}' "$ORIGIN/")
+          [[ "$anon" == 302 || "$anon" == 403 ]] || { echo "::error::Staging answered $anon without Access credentials. It must not be public."; exit 1; }
+          if [[ -z "$ID" ]]; then echo "::notice::Add CF_ACCESS_CLIENT_ID/SECRET to smoke test as CI."; exit 0; fi
+          h=(-H "CF-Access-Client-Id: $ID" -H "CF-Access-Client-Secret: $SECRET")
+          # Workers assets serve /page.html at /page (a 307 redirects the .html form).
+          for path in / /instrument /robots.txt; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${h[@]}" "$ORIGIN$path"); echo "$path → $code"; [[ "$code" == 200 ]]
+          done
+          curl -fsS "${h[@]}" -I "$ORIGIN/" | grep -i '^x-robots-tag: noindex'
+          echo "### Staging deployed (behind Cloudflare Access)" >> "$GITHUB_STEP_SUMMARY"

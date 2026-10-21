@@ -2,9 +2,9 @@ import {Hono} from 'hono';
 import {bodyLimit} from 'hono/body-limit';
 import {createPublicClient,http,hashTypedData,verifyTypedData,type Address,type Hex,isAddress} from 'viem';
 import {CHAINS,canonicalToken,type ChainId,type Collection,type Edition,type Job} from '@upic/domain';
-import {assetKey,domain,orderTypes,nftAbi,marketAbi} from '@upic/sdk';
+import {assetKey,domain,orderTypes,nftAbi,marketAbi,DOMAINS} from '@upic/sdk';
 import {DB} from './db';import {deployment,coordinator,type Env} from './env';import {challenge,login,walletFor,authorized} from './auth';
-import {prepare,renderFinished,type Intent,type AssetRow,clientFor} from './services';import type {PoolPolicy} from './verification';
+import {prepare,renderFinished,type Intent,type AssetRow,clientFor} from './services';import {upkeepStatus,runUpkeep} from './upkeep';import {drip} from './faucet';import type {PoolPolicy} from './verification';
 export {MarketCoordinator} from './coordinator';
 const app=new Hono<{Bindings:Env;Variables:{wallet:Address}}>();
 app.use('*',bodyLimit({maxSize:250000,onError:c=>c.json({error:'request-too-large'},413)}));
@@ -34,6 +34,8 @@ app.get('/v1/archives/:address/:edition',async c=>{const address=c.req.param('ad
 app.get('/v1/markets/:chain/:token',async c=>{const chain=c.req.param('chain') as ChainId,token=canonicalToken(chain,c.req.param('token'));const asset=await new DB(c.env).one<AssetRow>('upic_assets',{chain:'eq.'+chain,token:'eq.'+token});return c.json({frame:asset?.latest||null,verification:asset?.evidence||null,evidenceURI:asset?.evidence_uri||null,historyComplete:false});});
 app.get('/v1/history/:key',c=>coordinator(c.env).fetch('https://internal/history?key='+encodeURIComponent(c.req.param('key'))));
 app.get('/v1/stream/:key',c=>{if(c.req.header('Upgrade')!=='websocket')return c.json({error:'websocket-required'},400);return coordinator(c.env).fetch(new Request('https://internal/stream?key='+encodeURIComponent(c.req.param('key')),c.req.raw));});
+app.get('/v1/upkeep/:address',async c=>{const a=c.req.param('address');if(!isAddress(a))return c.json({error:'invalid-address'},400);return c.json(await upkeepStatus(c.env,a));});
+app.post('/v1/faucet',async c=>{const wallet=await walletFor(c.env,c.req.header('Cookie')||'');return c.json(await drip(c.env,wallet));});
 app.post('/v1/auth/challenge',async c=>{const {wallet}=await c.req.json<{wallet:Address}>();if(!isAddress(wallet))return c.json({error:'invalid-wallet'},400);return c.json({message:await challenge(c.env,wallet)});});
 app.post('/v1/auth/login',async c=>{const {message,signature}=await c.req.json<{message:string;signature:Hex}>();if(message.length>4096)return c.json({error:'invalid-message'},400);const token=await login(c.env,message,signature);c.header('Set-Cookie','upic_session='+token+'; HttpOnly; Path=/; Max-Age=3600; '+(c.env.MODE==='local'?'SameSite=Lax':'SameSite=None; Secure'));return c.json({ok:true});});
 app.post('/v1/auth/logout',c=>{c.header('Set-Cookie','upic_session=; HttpOnly; Path=/; Max-Age=0');return c.json({ok:true});});
@@ -47,10 +49,10 @@ app.post('/v1/orders',async c=>{
  if(o.seller.toLowerCase()!==wallet||!isAddress(o.collection)||!/^\d+$/.test(o.price)||BigInt(o.price)<=0n||BigInt(o.expiry)<=BigInt(Math.floor(Date.now()/1000)))return c.json({error:'invalid-order'},400);
  const collection=o.collection.toLowerCase() as Address,db=new DB(c.env);if(!await db.one('upic_collections',{address:'eq.'+collection}))return c.json({error:'unregistered-collection'},400);
  const order={...o,tokenId:BigInt(o.tokenId),price:BigInt(o.price),expiry:BigInt(o.expiry),nonce:BigInt(o.nonce),ownershipNonce:BigInt(o.ownershipNonce)};
- const client=clientFor(c.env);const valid=await client.verifyTypedData({address:wallet,domain:domain('UPIC Marketplace',d.chainId,d.marketplace),types:orderTypes,primaryType:'Order',message:order,signature:body.signature});
+ const client=clientFor(c.env);const valid=await client.verifyTypedData({address:wallet,domain:domain(DOMAINS.marketplace,d.chainId,d.marketplace),types:orderTypes,primaryType:'Order',message:order,signature:body.signature});
  const owner=await client.readContract({address:collection,abi:nftAbi,functionName:'ownerOf',args:[order.tokenId]}),ownershipNonce=await client.readContract({address:collection,abi:nftAbi,functionName:'transferNonce',args:[order.tokenId]});
  if(!valid||owner.toLowerCase()!==wallet||ownershipNonce!==order.ownershipNonce)return c.json({error:'invalid-listing-signature'},400);
- const id=hashTypedData({domain:domain('UPIC Marketplace',d.chainId,d.marketplace),types:orderTypes,primaryType:'Order',message:order});
+ const id=hashTypedData({domain:domain(DOMAINS.marketplace,d.chainId,d.marketplace),types:orderTypes,primaryType:'Order',message:order});
  await db.call('upic_orders',{id,collection,edition:Number(order.tokenId),seller:wallet,price:o.price,expiry:Number(o.expiry),nonce:o.nonce,ownership_nonce:o.ownershipNonce,signature:body.signature,order_data:o});return c.json({id},201);
 });
 app.use('/admin/*',async(c,next)=>{if(!await authorized(c.req.header('Authorization')||'',c.env.ADMIN_TOKEN))return c.json({error:'unauthorized'},401);await next();});
@@ -65,6 +67,7 @@ app.post('/admin/assets',async c=>{
  if((await db.list('upic_assets',{select:'asset_key',limit:String(Number(c.env.MAX_ASSETS||100))})).length>=Number(c.env.MAX_ASSETS||100))return c.json({error:'tracked-asset-capacity'},429);
  await db.call('upic_assets',{asset_key:key,chain:p.chain,token:p.token.toLowerCase(),pool:p.pool.toLowerCase(),policy:p,name:input.name,symbol:input.symbol,approved:true});await db.enqueue('verify','onboard:'+key,{assetKey:key});return c.json({assetKey:key},201);
 });
+app.post('/admin/upkeep',async c=>c.json(await runUpkeep(c.env)));
 app.post('/admin/tick',c=>coordinator(c.env).fetch('https://internal/tick',{method:'POST'}));
 app.post('/admin/verify',async c=>{const {assetKey}=await c.req.json<{assetKey:Hex}>();if(!/^0x[0-9a-f]{64}$/.test(assetKey))return c.json({error:'invalid-asset'},400);await new DB(c.env).enqueue('verify','manual:'+assetKey+':'+Date.now(),{assetKey});return c.json({queued:true},202);});
 app.post('/admin/backfill',async c=>{
@@ -81,4 +84,4 @@ app.post('/internal/render/:id/complete',async c=>{
  await renderFinished(c.env,job,body.result);return c.json({ok:true});
 });
 app.post('/internal/render/:id/fail',async c=>{const {lease}=await c.req.json<{lease:string}>();return c.json({ok:await new DB(c.env).rpc('upic_job_finish',{p_id:c.req.param('id'),p_lease:lease,p_result:null,p_error:'render-failed'})});});
-export default {fetch:app.fetch,scheduled(_controller:ScheduledController,env:Env,ctx:ExecutionContext){ctx.waitUntil(coordinator(env).fetch('https://internal/tick',{method:'POST'}));}};
+export default {fetch:app.fetch,scheduled(controller:ScheduledController,env:Env,ctx:ExecutionContext){ctx.waitUntil(coordinator(env).fetch('https://internal/tick',{method:'POST'}));if(new Date(controller.scheduledTime).getUTCMinutes()===7)ctx.waitUntil(runUpkeep(env).catch(()=>undefined));}};

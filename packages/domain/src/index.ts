@@ -18,8 +18,11 @@ export const THRESHOLDS = [100_000n,500_000n,1_000_000n,2_000_000n,5_000_000n,10
 export const STAGES = ['Origin','Genesis','Pulse','Rhythm','Harmony','Expansion','Ascension','Transcendence','Final Form'];
 export const USD_SCALE = 100_000_000n;
 export const ENGINE_VERSION = 'upic-nft-v1';
+/** @deprecated Primary price is now stepped per collection; read UPICCollection.currentPrice(). */
 export const MINT_PRICE = 50_000_000_000_000_000n;
 export const TESTNET = {id:46630,name:'Robinhood Testnet',rpc:'https://rpc.testnet.chain.robinhood.com',explorer:'https://explorer.testnet.chain.robinhood.com'};
+/** Supported NFT test chains. Arbitrum Sepolia is the warm fallback (also an Arbitrum chain). */
+export const TESTNETS:Record<number,{id:number;name:string;rpc:string;explorer:string}>={46630:TESTNET,421614:{id:421614,name:'Arbitrum Sepolia',rpc:'https://sepolia-rollup.arbitrum.io/rpc',explorer:'https://sepolia.arbiscan.io'}};
 export const LOCAL_CHAIN_ID = 31337;
 export function chainFor(id:string) {const c=CHAINS.find(c=>c.id===id);if(!c)throw Error('unsupported-chain');return c;}
 export function canonicalToken(chain:ChainId,input:string):string {
@@ -40,8 +43,10 @@ export function decimal(value:bigint,decimals=8):Decimal {
   const f=(value%base).toString().padStart(decimals,'0').replace(/0+$/,'');return (value/base).toString()+(f?'.'+f:'');
 }
 export function stageFor(capUsd8:bigint){return THRESHOLDS.filter(t=>capUsd8>=t*USD_SCALE).length;}
-export function primarySplit(value:bigint){const buyback=value/2n,initiator=value/4n;return {buyback,initiator,protocol:value-buyback-initiator};}
-export function secondarySplit(value:bigint){const fee=value*450n/10000n,initiator=value*125n/10000n,protocol=value*125n/10000n;return {seller:value-fee,initiator,protocol,buyback:fee-initiator-protocol};}
+/** Mirrors RevenueVault: 30% initiator, 25% protocol, 25% maintenance, remainder buyback. */
+export function primarySplit(value:bigint){const initiator=value*3000n/10000n,protocol=value*2500n/10000n,maintenance=value*2500n/10000n;return {initiator,protocol,maintenance,buyback:value-initiator-protocol-maintenance};}
+/** Mirrors RevenueVault: 2% initiator, 2% maintenance, 1% buyback, 1% protocol, remainder seller. */
+export function secondarySplit(value:bigint){const initiator=value*200n/10000n,maintenance=value*200n/10000n,buyback=value*100n/10000n,protocol=value*100n/10000n;return {seller:value-initiator-maintenance-buyback-protocol,initiator,maintenance,buyback,protocol};}
 export interface MarketFrame {chain:ChainId;token:string;at:number;priceUsd:Decimal|null;marketCapUsd:Decimal|null;liquidityUsd:Decimal|null;volumeUsd:Decimal|null;source:string;stale:boolean;simulated:boolean;trades?:Trade[]}
 export interface Trade {id:string;at:number;priceUsd:Decimal;volumeUsd:Decimal;side:'buy'|'sell';tx:string}
 export interface Candle {time:number;open:Decimal;high:Decimal;low:Decimal;close:Decimal;volume:Decimal;complete:boolean}

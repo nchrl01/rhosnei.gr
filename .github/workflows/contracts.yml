@@ -1,0 +1,129 @@
+name: Contracts
+# Tests every contract change; deploys the test protocol to a testnet behind the `testnet`
+# GitHub Environment (add required reviewers there to make deploys approval-gated).
+on:
+  pull_request:
+    paths: ['contracts/**', '.github/workflows/contracts.yml']
+  push:
+    branches: [main, 'staging/**']
+    paths: ['contracts/**', '.github/workflows/contracts.yml']
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy a fresh test protocol after tests pass'
+        type: boolean
+        default: true
+      chain:
+        description: 'Target test chain'
+        type: choice
+        options: ['46630', '421614']
+        default: '46630'
+      verify:
+        description: 'Publish verified source on the explorer (makes contracts easier to discover)'
+        type: boolean
+        default: false
+permissions: {contents: read}
+concurrency:
+  group: contracts-${{ github.ref }}
+  cancel-in-progress: false
+env:
+  FORGE_STD: b013eff2ac4fce26f34d789e6f5c49021c5ee817 # v1.17.0
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci --ignore-scripts
+      - uses: foundry-rs/foundry-toolchain@v1
+        with: {version: stable}
+      - name: Fetch pinned forge-std
+        run: |
+          git init -q contracts/lib/forge-std && cd contracts/lib/forge-std
+          git fetch -q --depth 1 https://github.com/foundry-rs/forge-std "$FORGE_STD" && git checkout -q FETCH_HEAD
+      - name: Build with size report
+        working-directory: contracts
+        run: forge build --sizes
+      - name: Unit, fuzz and invariant tests
+        working-directory: contracts
+        run: forge test -vv
+      - name: Export ABIs
+        run: node scripts/export-contracts.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: contract-abis, path: packages/sdk/generated, retention-days: 14}
+
+  deploy:
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy || github.event_name == 'push' && vars.AUTO_DEPLOY_CONTRACTS == 'true'
+    runs-on: ubuntu-24.04
+    environment: testnet
+    env:
+      CHAIN: ${{ inputs.chain || vars.TESTNET_CHAIN_ID || '46630' }}
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - name: Check deployment secrets
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.TESTNET_DEPLOYER_KEY }}
+          MINT_SIGNER: ${{ vars.MINT_SIGNER }}
+          VERIFIER_SIGNER: ${{ vars.VERIFIER_SIGNER }}
+        run: |
+          missing=()
+          [[ -n "$DEPLOYER_PRIVATE_KEY" ]] || missing+=(secret:TESTNET_DEPLOYER_KEY)
+          [[ -n "$MINT_SIGNER" ]] || missing+=(var:MINT_SIGNER)
+          [[ -n "$VERIFIER_SIGNER" ]] || missing+=(var:VERIFIER_SIGNER)
+          if (( ${#missing[@]} )); then echo "::error::Configure the testnet environment first: ${missing[*]} (see docs/TESTNET.md)"; exit 1; fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: 22, cache: npm}
+      - run: npm ci --ignore-scripts
+      - uses: foundry-rs/foundry-toolchain@v1
+        with: {version: stable}
+      - name: Fetch pinned forge-std
+        run: |
+          git init -q contracts/lib/forge-std && cd contracts/lib/forge-std
+          git fetch -q --depth 1 https://github.com/foundry-rs/forge-std "$FORGE_STD" && git checkout -q FETCH_HEAD
+      - name: Deploy test protocol
+        id: deploy
+        working-directory: contracts
+        env:
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.TESTNET_DEPLOYER_KEY }}
+          MINT_SIGNER: ${{ vars.MINT_SIGNER }}
+          VERIFIER_SIGNER: ${{ vars.VERIFIER_SIGNER }}
+          UPKEEPER: ${{ vars.UPKEEPER || vars.MINT_SIGNER }}
+          TOKEN_NAME: ${{ vars.TEST_TOKEN_NAME || 'Staging Utility Token (TEST)' }}
+          TOKEN_SYMBOL: ${{ vars.TEST_TOKEN_SYMBOL || 'tSTG' }}
+          GIT_SHA: ${{ github.sha }}
+          RPC_46630: ${{ secrets.RH_RPC_URL || 'https://rpc.testnet.chain.robinhood.com' }}
+          RPC_421614: ${{ secrets.ARB_SEPOLIA_RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc' }}
+          VERIFY: ${{ inputs.verify && 'true' || 'false' }}
+        run: |
+          rpc_var="RPC_$CHAIN"; rpc="${!rpc_var}"
+          args=(script script/Deploy.s.sol:Deploy --rpc-url "$rpc" --broadcast --slow)
+          if [[ "$VERIFY" == "true" && "$CHAIN" == 46630 ]]; then
+            args+=(--verify --verifier blockscout --verifier-url https://explorer.testnet.chain.robinhood.com/api/)
+          elif [[ "$VERIFY" == "true" ]]; then echo "::notice::Source verification is only automated for Robinhood Chain testnet (Blockscout)."; fi
+          forge "${args[@]}"
+          test -s "deployments/$CHAIN.json"
+          echo "file=contracts/deployments/$CHAIN.json" >> "$GITHUB_OUTPUT"
+          jq '{chainId,factory,marketplace,vault,upic,gitSha}' "deployments/$CHAIN.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: testnet-deployment-${{ env.CHAIN }}
+          path: |
+            ${{ steps.deploy.outputs.file }}
+            contracts/broadcast/Deploy.s.sol/${{ env.CHAIN }}/run-latest.json
+          retention-days: 90
+      - name: Publish addresses to staging Workers
+        if: env.HAS_CF == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          FILE: ${{ steps.deploy.outputs.file }}
+        run: |
+          json=$(jq -c . "$FILE")
+          for worker in "${{ vars.STAGING_GATEWAY_NAME || 'pv-gate' }}" pv-api; do
+            if npx -y wrangler@4.76.0 deployments list --name "$worker" >/dev/null 2>&1; then
+              printf '%s' "$json" | npx -y wrangler@4.76.0 secret put DEPLOYMENT_JSON --name "$worker"
+            else echo "::notice::$worker is not deployed yet; run the Staging workflow and it will pick up this deployment from the artifact."; fi
+          done

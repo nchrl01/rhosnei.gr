@@ -49,5 +49,40 @@
   },
   "observability": {
     "enabled": false
+  },
+  "env": {
+    "staging": {
+      "name": "pv-data",
+      "workers_dev": false,
+      "preview_urls": false,
+      "ai": {
+        "binding": "AI"
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "HOLDER_CACHE",
+            "class_name": "HolderCache"
+          },
+          {
+            "name": "TAKE_STORE",
+            "class_name": "TakeStore"
+          },
+          {
+            "name": "PROFILE_STORE",
+            "class_name": "ProfileStore"
+          }
+        ]
+      },
+      "vars": {
+        "ALLOWED_ORIGIN": "https://staging.invalid",
+        "REOWN_PROJECT_ID": "",
+        "PROFILE_APP_URL": "https://staging.invalid/",
+        "HISTORY_REQUESTS_PER_DAY": "2000"
+      },
+      "observability": {
+        "enabled": true
+      }
+    }
   }
 }

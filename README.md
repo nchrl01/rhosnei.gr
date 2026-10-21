@@ -52,6 +52,7 @@ browser must download them to run the site.
 - `src/site/` — shared header and footer templates
 - `cloudflare/` — optional InsightX worker and the market backend foundation
 - `supabase/` — market observation database migration
+- `docs/TESTNET.md` — private staging, testnet contracts, tokenomics and upkeep funding
 
 The new market backend uses server-side GeckoTerminal/CoinGecko access and
 Supabase storage, with optional QuickNode block context. See

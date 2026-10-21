@@ -14,10 +14,10 @@ contract UPICMarketplace is EIP712,ReentrancyGuard {
     event Sale(address indexed collection,uint256 indexed tokenId,address indexed seller,address buyer,uint256 price,uint256 nonce);
     event Cancelled(address indexed seller,uint256 nonce);
     error Invalid();
-    constructor(address vault_) EIP712("UPIC Marketplace","1"){vault=RevenueVault(vault_);}
+    constructor(address vault_) EIP712("Market","1"){vault=RevenueVault(vault_);}
     function cancel(uint256 nonce) external {used[msg.sender][nonce]=true;emit Cancelled(msg.sender,nonce);}
     function purchase(Order calldata o,bytes calldata signature) external payable nonReentrant {
-        if(IMarketFactory(vault.factory()).paused()||o.price==0||msg.value!=o.price||block.timestamp>o.expiry||used[o.seller][o.nonce]||vault.initiators(o.collection)==address(0))revert Invalid();
+        if(IMarketFactory(vault.factory()).paused()||o.price==0||msg.value!=o.price||block.timestamp>o.expiry||used[o.seller][o.nonce]||vault.initiators(o.collection)==address(0)||msg.sender==o.seller)revert Invalid();
         UPICCollection nft=UPICCollection(payable(o.collection));
         if(nft.ownerOf(o.tokenId)!=o.seller||nft.transferNonce(o.tokenId)!=o.ownershipNonce)revert Invalid();
         bytes32 digest=_hashTypedDataV4(keccak256(abi.encode(ORDER_TYPEHASH,o.seller,o.collection,o.tokenId,o.price,o.expiry,o.nonce,o.ownershipNonce)));
