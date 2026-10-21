@@ -43,7 +43,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=391';
-import {MarketChart} from './chart.js?v=396';
+import {MarketChart} from './chart.js?v=403';
 import {loadHistory} from './history.js?v=356';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);

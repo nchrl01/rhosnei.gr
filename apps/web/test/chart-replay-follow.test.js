@@ -111,13 +111,29 @@ describe('centered replay chart cursor',()=>{
   expect(f.chart.replayFollowing).toBe(true);
  });
  it('keeps the line centered through wheel navigation and resumes at its new center',()=>{
-  const f=fixture();f.events.get('wheel')();f.range({from:20,to:40});f.chart.followReplay();
+  const f=fixture();f.events.get('wheel')({deltaX:80,deltaY:0});f.range({from:20,to:40});f.chart.followReplay();
   expect(f.chart.replayFollowing).toBe(false);
   expect(f.scale.setVisibleLogicalRange).not.toHaveBeenCalled();
   expect(f.chart.playhead.style.left).toBe('500px');
   expect(f.state.cursor).toBe(31*interval);
   f.flushTimers();expect(f.chart.replayFollowing).toBe(true);
   expect(f.state.dragging).toBe(false);
+ });
+ it('zooms out without putting playback into the seeking state',()=>{
+  const f=fixture(),cursor=f.state.cursor;
+  f.events.get('wheel')({deltaX:0,deltaY:120});
+  expect(f.state.dragging).toBe(false);
+  expect(f.chart.replayPanning).toBeFalsy();
+  expect(f.chart.onReplayPan).not.toHaveBeenCalled();
+  expect(f.state.cursor).toBe(cursor);
+  expect(f.chart.replayFollowing).toBe(true);
+  f.range({from:-20,to:40});f.chart.followReplay();
+  expect(f.scale.setVisibleLogicalRange).toHaveBeenLastCalledWith({from:-30,to:30});
+ });
+ it('treats a mostly vertical trackpad gesture as zoom, even with horizontal noise',()=>{
+  const f=fixture();f.events.get('wheel')({deltaX:2,deltaY:80,ctrlKey:true});
+  expect(f.state.dragging).toBe(false);
+  expect(f.chart.replayFollowing).toBe(true);
  });
  it('keeps the final candle centered and hides the cursor when returning live',()=>{
   const f=fixture();f.state.cursor=40*interval;f.state.ended=true;f.chart.followReplay();
