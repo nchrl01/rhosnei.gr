@@ -691,9 +691,9 @@ body.advanced-view #advanced-diagnostics{min-width:0;width:100%}
 .advanced-group dl>div{display:flex;justify-content:space-between;align-items:baseline;gap:16px;min-width:0}
 .advanced-group dt{color:#999;font-size:var(--font-size-small)}
 .advanced-group dd{margin:0;color:#ddd;font-size:var(--font-size-small);overflow-wrap:anywhere;text-align:right}
-#advanced-market-source{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:12px;padding:20px 0 8px;margin:0}
+#advanced-market-source{display:flex;flex-direction:row;flex-wrap:wrap;align-items:baseline;justify-content:flex-start;gap:12px;padding:20px 0 8px;margin:0;text-align:left}
 #advanced-market-source h3{flex-basis:100%;margin:0}
-#advanced-diagnostics{padding-bottom:20px}
+#advanced-diagnostics{padding-bottom:20px;text-align:left}
 @media(max-width:760px){
  .instrument-page .compact-chart-toolbar{align-items:flex-start;flex-wrap:wrap;gap:12px}
  .instrument-page .replay-actions{margin-left:0;width:100%;flex-wrap:nowrap;gap:8px}
