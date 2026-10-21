@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 406;
+const version = 407;
 const pages = [
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
@@ -69,7 +69,18 @@ for (const page of pages) {
     html = html.replace(/<div class="site-intro"[^>]*>[\s\S]*?<\/div>/, '');
     html = html.replace(/<body\b[^>]*>/, match => match + '\n' + region('intro', partials.intro));
   }
-  html = replaceRegion(html, 'header', header(page), /<header\b[^>]*>[\s\S]*?<\/header>/);
+  // Render the desktop search in its final position before the first paint.
+  // Extract it before replacing a previously built header, keeping rebuilds idempotent.
+  const searchForm = html.match(/<form\b(?=[^>]*\bid=["'](?:coin-form|marketplace-coin-form)["'])[^>]*>[\s\S]*?<\/form>/)?.[0];
+  let pageHeader = header(page);
+  if (searchForm) {
+    html = html.replace(searchForm, '');
+    pageHeader = pageHeader.replace('class="header-main"', 'class="header-main has-desktop-search"')
+      .replace('<div class="header-desktop-search" hidden></div>', '<div class="header-desktop-search">' + searchForm + '</div>');
+    html = html.replace(/<body\b([^>]*?)class="([^"]*)"/, (_, before, classes) =>
+      '<body' + before + 'class="' + [...new Set([...classes.split(/\s+/).filter(Boolean), 'desktop-header-search'])].join(' ') + '"');
+  }
+  html = replaceRegion(html, 'header', pageHeader, /<header\b[^>]*>[\s\S]*?<\/header>/);
   if (page.type === 'lab') {
     // The navigation is one header; the lab's transport/actions are another.
     html = html.replace(/<!-- site-shell:header:end -->(\s*)<header>/, '<!-- site-shell:header:end -->$1<header class="lab-toolbar-header">');
