@@ -1,3 +1,4 @@
+import {captureFetch} from './capture-network.mjs';
 import {catalogueNative,NATIVE_COINS} from '../apps/web/public/native-coins.js';
 import {compareCoinNetworks,supportedCoinNetwork} from '../apps/web/public/coin-network-choice.js';
 // Capture the actual player with current provider inputs and unmodified WebP pixels.
@@ -55,7 +56,7 @@ async function loadManifest(){
  let cursor=null;const seen=new Set();
  do{
   const url=new URL(endpoint);if(cursor)url.searchParams.set('cursor',cursor);
-  const response=await fetch(url,{signal:AbortSignal.timeout(20000)});if(!response.ok)throw Error('Cloud capture metadata HTTP '+response.status);
+  const response=await captureFetch(url);if(!response.ok)throw Error('Cloud capture metadata HTTP '+response.status);
   const body=await response.json();if(!Array.isArray(body.captures))throw Error('Invalid cloud capture metadata');
   for(const frame of body.captures)if(frame?.captureKind===kind&&frame.key===keyFor(frame.chain||frame.network,frame.address)&&identities.has(frame.key)&&Number.isFinite(frame.capturedAt))manifest.set(frame.key,frame);
   cursor=body.nextCursor||null;if(cursor){if(seen.has(cursor)||seen.size>=20)throw Error('Invalid cloud capture pagination');seen.add(cursor);}
@@ -74,8 +75,8 @@ const uncovered=missing.filter(c=>!coveredCoins.has(c.id)&&preferred.get(c.id)?.
 const rotate=rows=>{const offset=rows.length&&!options.ids&&process.env.GITHUB_EVENT_NAME==='schedule'?Math.floor(Date.now()/3600000)*options.limit%rows.length:0;return [...rows.slice(offset),...rows.slice(0,offset)];};
 const missingQueue=[...rotate(uncovered),...rotate(alternate)],existing=supportedCoins.filter(c=>manifest.has(c.key)).sort((a,b)=>manifest.get(a.key).capturedAt-manifest.get(b.key).capturedAt||a.key.localeCompare(b.key));
 let pending=[...missingQueue,...existing];
-if(process.env.GITHUB_EVENT_NAME==='schedule'&&!options.ids&&!options.all){
- // Reserve half the batch for refreshes; failed first captures must never
+if(!options.ids&&!options.all){
+ // Reserve half of scheduled and manual batches for refreshes; failed first captures must never
  // prevent existing shared frames from receiving newer observed inputs.
  const stale=existing.filter(c=>manifest.get(c.key).capturedAt<Date.now()-3600000),refresh=stale.slice(0,Math.ceil(options.limit/2));
  pending=[...refresh,...missingQueue.slice(0,options.limit-refresh.length),...stale.slice(refresh.length)];
@@ -93,7 +94,7 @@ let oidc=null;
 async function publisherToken(force=false){
  if(!force&&oidc?.until>Date.now())return oidc.value;
  const url=new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);url.searchParams.set('audience','upic-live-captures');
- const response=await fetch(url,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN},signal:AbortSignal.timeout(20000)});
+ const response=await captureFetch(url,{headers:{Authorization:'Bearer '+process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}});
  if(!response.ok)throw Error('GitHub publisher identity unavailable (HTTP '+response.status+')');
  const body=await response.json();if(typeof body.value!=='string'||body.value.split('.').length!==3)throw Error('Invalid GitHub publisher identity');
  // Refresh well before token expiry and the server's maximum identity age.
@@ -116,7 +117,7 @@ async function serverError(response){
  finally{reader.releaseLock();}
 }
 async function checkPublisher(){
- const token=await publisherToken(),response=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}',signal:AbortSignal.timeout(30000)});
+ const token=await publisherToken(),response=await captureFetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:'{}'},{timeoutMs:30000});
  // Authentication runs before payload validation. An empty body must reach
  // validation (400), without writing an image or requiring a browser.
  if(response.status!==400)throw Error('Cloud publisher preflight failed (HTTP '+response.status+')'+await serverError(response));
@@ -124,7 +125,7 @@ async function checkPublisher(){
 }
 async function publish(metadata,bytes){
  for(let attempt=0;attempt<2;attempt++){
-  const token=await publisherToken(attempt>0),response=await fetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({metadata,imageBase64:bytes.toString('base64')}),signal:AbortSignal.timeout(30000)});
+  const token=await publisherToken(attempt>0),response=await captureFetch(endpoint,{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({metadata,imageBase64:bytes.toString('base64')})},{timeoutMs:30000});
   if(response.status===401&&attempt===0)continue;
   if(response.status===409)return {state:'retained-newer'};
   if(!response.ok)throw Error('Cloud publication failed (HTTP '+response.status+')'+await serverError(response));

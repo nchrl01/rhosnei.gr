@@ -44,8 +44,9 @@ export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligi
   try{
    frame=visual.captureStill(512);if(!meaningfulCapture(frame,{verifiedMarks:state.markCount})){status('rejected','empty-or-insufficient-live-pixels',{markCount:state.markCount});return;}
    const blob=await new Promise(resolve=>frame.toBlob(resolve,'image/webp',.86));
-   if(closed||!blob||getMarket()!==market||document.hidden||!eligible())return;
-   const current=visual.snapshot();if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderLoading)return;
+   if(closed||!blob||getMarket()!==market||document.hidden||!eligible()){status('rejected','capture-context-changed-during-encoding');return;}
+   const current=visual.snapshot(),completedAt=Date.now();
+   if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderSnapshotReady!==true||current.holderSource!=='observed-wallet-sample'||current.holderLoading||!(current.markCount>0)||!(current.transportPresence>=.99)||!Number.isFinite(current.renderedAt)||completedAt-current.renderedAt<0||completedAt-current.renderedAt>2000){status('rejected','live-frame-changed-during-encoding');return;}
    const saved=publishCapture({key,chain,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',imageAvailable:state.imageAvailable===true,coverage:state.holderCoverage,captureKind:KIND,blob});
    status(saved?'captured':'rejected',saved?'live-frame-ready':'invalid-capture-payload',{markCount:state.markCount});
    if(saved){lastAt.set(key,state.renderedAt);if(lastAt.size>LIMIT)lastAt.delete(lastAt.keys().next().value);}
