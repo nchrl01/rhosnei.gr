@@ -1,13 +1,18 @@
 // Expand the existing renderer, keeping its audio clock and GPU/canvas alive.
 export function createVisualFullscreen(host,{referenceSide=null}={}){
+ const hostAttributes=new Map(['role','tabindex','aria-label','aria-expanded','aria-disabled','title'].map(name=>[name,host.getAttribute(name)]));
+ host.setAttribute('role','button');
  const button=document.createElement('button');button.type='button';button.className='visual-fullscreen';host.append(button);
  function icon(expanded){
   const label=expanded?'Collapse visualization':'Expand visualization';
   button.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true" focusable="false"><path d="${expanded?'M5 5l14 14M11 19h8v-8':'M19 19 5 5M5 13V5h8'}"/></svg>`;
   button.setAttribute('aria-label',label);button.title=label;button.setAttribute('aria-expanded',String(expanded));
+  host.setAttribute('aria-label',label);host.title=label;host.setAttribute('aria-expanded',String(expanded));
+  host.tabIndex=expanded||host.dataset.marketLoaded==='true'?0:-1;
+  host.setAttribute('aria-disabled',String(!expanded&&host.dataset.marketLoaded!=='true'));
  }
  icon(false);
- const availability=new MutationObserver(()=>{button.disabled=host.dataset.marketLoaded!=='true';});
+ const availability=new MutationObserver(()=>{button.disabled=host.dataset.marketLoaded!=='true';icon(expanded);});
  availability.observe(host,{attributes:true,attributeFilter:['data-market-loaded']});
  button.disabled=host.dataset.marketLoaded!=='true';
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
@@ -87,12 +92,21 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
    icon(false);
   }
-  busy=false;button.focus({preventScroll:true});
+  busy=false;host.focus({preventScroll:true});
  }
  function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
- function tapToClose(event){if((expanded||matchMedia('(min-width:761px)').matches)&&!event.target.closest('button,a,input,select,textarea'))void toggle();}
- host.addEventListener('click',tapToClose);
+ function tapToToggle(event){
+  if(event.defaultPrevented||event.button!==0)return;
+  const control=event.target.closest('button,a,input,select,textarea,summary,[role="button"],[role="slider"],[contenteditable="true"]');
+  if(control&&control!==host)return;
+  void toggle();
+ }
+ function keyboardToggle(event){
+  if(event.target!==host||event.defaultPrevented||!['Enter',' '].includes(event.key))return;
+  event.preventDefault();if(!event.repeat)void toggle();
+ }
+ host.addEventListener('click',tapToToggle);host.addEventListener('keydown',keyboardToggle);
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);
- return {close(){host.removeEventListener('click',tapToClose);availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
+ return {close(){host.removeEventListener('click',tapToToggle);host.removeEventListener('keydown',keyboardToggle);availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();for(const [name,value] of hostAttributes){if(value===null)host.removeAttribute(name);else host.setAttribute(name,value);}}};
 }

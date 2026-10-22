@@ -1,9 +1,9 @@
-import {ApiController,PublicStateController,ChainController,ConnectorController} from '@reown/appkit-controllers';
+import {PublicStateController,ChainController,ConnectorController,ModalController,RouterController} from '@reown/appkit-controllers';
 import {createAppKit} from '@reown/appkit';
 import {EthersAdapter} from '@reown/appkit-adapter-ethers';
 import {SolanaAdapter} from '@reown/appkit-adapter-solana';
 import {mainnet,base,arbitrum,polygon,optimism,avalanche,bsc,solana} from '@reown/appkit/networks';
-let modal,opening,shell,closing;
+let modal,opening,shell,closing,picker;
 const accountListeners=new Set();
 function publishAccount(account){for(const listener of accountListeners)listener(account);}
 export async function connect(projectId,onAccount,options={}){
@@ -23,7 +23,12 @@ export async function connect(projectId,onAccount,options={}){
   shell.addEventListener('pointerdown',event=>{backdropPress=matchMedia('(min-width:761px)').matches&&outside(event);});
   shell.addEventListener('click',event=>{if(backdropPress&&outside(event))void closePicker();backdropPress=false;});
   shell.addEventListener('cancel',event=>{event.preventDefault();void closePicker();});
-  modal.subscribeState(state=>{if(!state.open&&shell.open)shell.close();});
+  // Embedded AppKit deliberately leaves PublicState.open unchanged on close.
+  // Follow the actual modal state so back/network changes also dismiss our shell.
+  ModalController.subscribeKey('open',open=>{if(!open)dismissShell();});
+  // Account details already live on the profile page. SDK action completion
+  // can return here internally; it must not display a second account panel.
+  RouterController.subscribeKey('view',view=>{if(view==='Account'&&shell.open){dismissShell();ModalController.close();}});
  }
  onAccount?.(modal.getAccount());
  if(!options?.silent)await openPicker(options?.view);
@@ -46,19 +51,37 @@ function walletDetails(){
 }
 async function openPicker(view){
  if(closing)await closing;
- if(!opening)opening=modal.open(view?{view}:{view:modal.getAccount()?.isConnected?'Account':'Connect'}).finally(()=>{opening=null;});
- await opening;await ApiController.prefetch();
- let picker=shell.querySelector('w3m-modal');
- if(!picker){picker=document.createElement('w3m-modal');picker.className='appkit-modal';shell.append(picker);}
- shell.classList.toggle('is-wallet-action',Boolean(view));
- if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}
+ if(opening)return opening;
+ opening=(async()=>{
+  if(!picker){
+   // close() loads the SDK UI without opening it. Its first render resets a
+   // restored account, so finish that render before choosing the action route.
+   await modal.close();
+   picker=document.createElement('w3m-modal');picker.className='appkit-modal';shell.append(picker);
+   await picker.updateComplete;
+  }
+  await modal.open({view:view||'Connect'});
+  if(!ModalController.state.open||RouterController.state.view==='Account'){ModalController.close();dismissShell();return;}
+  const signingIn=!view||view==='Connect';
+  shell.classList.toggle('is-wallet-action',!signingIn);
+  shell.setAttribute('aria-label',signingIn?'Sign in':'Wallet action');
+  shell.querySelector('header button').setAttribute('aria-label',signingIn?'Close sign in':'Close wallet action');
+  if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}
+ })();
+ try{await opening;}finally{opening=null;}
+}
+
+function dismissShell(){
+ if(shell?.open)shell.close();
+ shell?.classList.remove('is-closing');
+ PublicStateController.set({open:false});
 }
 
 async function closePicker(){
  if(closing)return closing;
  closing=(async()=>{
   if(shell?.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){shell.classList.add('is-closing');await new Promise(resolve=>setTimeout(resolve,180));}
-  await modal.close();if(shell?.open)shell.close();shell?.classList.remove('is-closing');PublicStateController.set({open:false});
+  await modal.close();dismissShell();
  })();
  try{await closing;}finally{closing=null;}
 }

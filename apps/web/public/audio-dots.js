@@ -1,6 +1,6 @@
 import {advancePixelSurvival,marketCapReleaseSeconds,marketCapIdentity} from './pixel-blast-parameters.js?v=220';
 import {walletSizeVariation} from './visual-context.js?v=214';
-import {createVisualFullscreen} from './visual-fullscreen.js?v=414';
+import {createVisualFullscreen} from './visual-fullscreen.js?v=420';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=276';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 const finite=n=>n==null||n===''?null:Number.isFinite(Number(n))?Number(n):null;

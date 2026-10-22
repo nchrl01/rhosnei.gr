@@ -1,5 +1,5 @@
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=419';
-import {profileWalletController} from './wallet-session.js?v=419';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=420';
+import {profileWalletController} from './wallet-session.js?v=420';
 
 const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
 const shortAddress=value=>value?value.slice(0,6)+'…'+value.slice(-4):'';
@@ -30,7 +30,7 @@ const icons={
 export function bindProfile(button){
  if(!button||button.dataset.profileReady)return;button.dataset.profileReady='true';
  const originalIcon=button.innerHTML,page=document.getElementById('profile-page-content');
- if(!document.querySelector('link[data-profile-style]')){const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=419',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);}
+ if(!document.querySelector('link[data-profile-style]')){const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=420',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);}
  const matrix=tintFilter();let signingIn=false;
  const notice=make('p',null,'profile-notice');notice.hidden=true;notice.setAttribute('role','status');document.body.append(notice);
  function paintHeader(){
