@@ -1,7 +1,7 @@
 name: Publish instrument
 on:
   push:
-    branches: [main]
+    branches: [main, staging/testnet-readiness]
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -25,6 +27,24 @@ jobs:
         run: node scripts/build-site-shell.mjs
       - name: Preserve existing instrument homepage
         run: cp apps/web/public/instrument.html apps/web/public/index.html
+      - name: Check out testnet staging interface
+        uses: actions/checkout@v4
+        with:
+          ref: staging/testnet-readiness
+          path: .staging-source
+          persist-credentials: false
+      - name: Build testnet staging at its own subpath
+        working-directory: .staging-source
+        env:
+          UPIC_BASE_PATH: /rhosnei.gr/staging/
+          UPIC_PAGES_STAGING: 'true'
+          VITE_PAGES_STAGING: 'true'
+          VITE_API_URL: ${{ vars.STAGING_PUBLIC_API_URL }}
+        run: |
+          npm ci --ignore-scripts
+          npm run build -w @upic/web
+          mkdir -p ../apps/web/public/staging
+          cp -a apps/web/dist/. ../apps/web/public/staging/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
