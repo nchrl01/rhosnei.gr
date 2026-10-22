@@ -90,7 +90,9 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
   busy=false;button.focus({preventScroll:true});
  }
  function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
+ function tapToClose(event){if(expanded&&matchMedia('(max-width:760px)').matches&&!event.target.closest('button,a,input,select,textarea'))void toggle();}
+ host.addEventListener('click',tapToClose);
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);
- return {close(){availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
+ return {close(){host.removeEventListener('click',tapToClose);availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
 }

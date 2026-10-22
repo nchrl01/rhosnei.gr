@@ -1,5 +1,5 @@
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=395';
-import {openWalletConnection} from './wallet-session.js?v=410';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=411';
+import {openWalletConnection} from './wallet-session.js?v=411';
 
 const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(cls)node.className=cls;return node;};
 const shortAddress=address=>address?address.slice(0,6)+'…'+address.slice(-4):'';
@@ -73,7 +73,7 @@ export function bindProfile(button){
   matrix.setAttribute('values',rgb.map(c=>[.2126*c,.7152*c,.0722*c,0,0].join(' ')).join(' ')+' 0 0 0 1 0');
   tabs.hidden=!authenticated;collection.hidden=!authenticated||activeTab!=='collection';list.hidden=authenticated&&activeTab!=='saved';sectionHeading.hidden=!authenticated||activeTab!=='saved';savedTab.setAttribute('aria-pressed',String(activeTab==='saved'));collectionTab.setAttribute('aria-pressed',String(activeTab==='collection'));
   button.classList.toggle('has-profile-avatar',authenticated);if(authenticated){const mark=make('img');mark.src=logo.src;mark.alt='';button.replaceChildren(mark);button.style.setProperty('--profile-hue',String(state.account.avatarHue??180));}else{button.innerHTML=originalIcon;}
-  dialog.classList.toggle('is-authenticated',authenticated);title.textContent=authenticated?'Your UPIC':'Connect with UPIC';
+  dialog.classList.toggle('is-authenticated',authenticated);title.textContent=authenticated?'Your UPIC':'Sign in';
   savedTitle.hidden=!authenticated;intro.hidden=authenticated;logo.hidden=authenticated;
   dialog.style.setProperty('--profile-hue',String(Number.isFinite(state.account?.avatarHue)?state.account.avatarHue:180));
   account.hidden=!authenticated;identity.replaceChildren();

@@ -17,7 +17,7 @@ async function configuration(){
 }
 export async function openWalletConnection(){
  if(opening)return opening;
- opening=(async()=>{const config=await configuration();const {connect}=await import('./vendor/wallet/connect.js?v=410');return connect(config.projectId,accountChanged);})();
+ opening=(async()=>{const config=await configuration();const {connect}=await import('./vendor/wallet/connect.js?v=411');return connect(config.projectId,accountChanged);})();
  try{return await opening;}finally{opening=null;}
 }
 export async function ensureWalletAccount(){
@@ -50,7 +50,7 @@ export async function ensureWalletAccount(){
 export async function signWalletMessage(message,expectedAccount=getWalletAccount()){
  if(!expectedAccount?.address)throw Error('Connect a wallet to sign in.');
  const namespace=expectedAccount.namespace||String(expectedAccount.caipAddress||'').split(':')[0];
- const {signProfileMessage}=await import('./vendor/wallet/connect.js?v=410');
+ const {signProfileMessage}=await import('./vendor/wallet/connect.js?v=411');
  const signature=await signProfileMessage(message,{...expectedAccount,namespace});
  return {account:{...expectedAccount,namespace},signature,namespace};
 }

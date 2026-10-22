@@ -1,5 +1,5 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
-@import url("wallet-theme.css?v=410");
+@import url("wallet-theme.css?v=411");
 
 body:is(.instrument-page,.marketplace-page,.about-page)>main {
   padding:0 var(--site-gutter) 28px;
@@ -565,7 +565,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .header-main.has-desktop-search>.header-links{justify-self:end}
  .header-main.has-desktop-search>.header-desktop-search{position:relative;display:block;width:100%;min-width:0;align-self:center}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form){display:block;width:100%;max-width:none;margin:0!important;padding:0}
- .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row{display:flex;align-items:stretch;gap:0;height:30px;box-sizing:border-box;margin:0;padding:0;border:0}
+ .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row{display:flex;align-items:stretch;gap:0;height:30px;box-sizing:border-box;margin:0;padding:0;border:0;border-bottom:1px solid var(--muted,#888)}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-field{height:100%;min-width:0;border:0;border-radius:0;background:transparent;box-shadow:none}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-field::after{display:none}
  .header-desktop-search :is(#address,#coin-gallery-search){display:block;width:100%;height:100%;min-width:0;padding:0 6px;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-body);line-height:20px}

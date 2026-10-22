@@ -797,3 +797,5 @@ body.advanced-view #advanced-panel>.advanced-panel-content{transform:translateY(
 button.coin-address:not(:disabled):hover,button.coin-address{background:transparent!important;text-decoration:none;box-shadow:none}
 .coin-address:hover .coin-address-value{text-decoration:underline;text-underline-offset:3px}
 .coin-address-network{text-decoration:none}
+
+@media(max-width:760px){.audio-visualizer.is-expanded .visual-fullscreen{display:none}}

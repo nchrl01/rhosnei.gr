@@ -106,3 +106,5 @@ w3m-modal {
  .upic-wallet-dialog>header button{flex:0 0 44px;min-width:44px;min-height:44px;padding:0}
  .upic-wallet-logo{width:36px;height:50px;margin:4px auto 12px}
 }
+
+.upic-wallet-dialog>header{justify-content:flex-end}

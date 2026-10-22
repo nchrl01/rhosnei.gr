@@ -12,12 +12,17 @@ export async function connect(projectId,onAccount){
  if(!modal){
   modal=createAppKit({adapters:[new EthersAdapter(),new SolanaAdapter()],networks:[mainnet,base,arbitrum,polygon,optimism,avalanche,bsc,solana],projectId,enableEmbedded:true,featuredWalletIds:['a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393','c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96'],metadata:{name:'UPIC',description:'Audiovisual instrument and NFT marketplace',url:location.origin,icons:[new URL('upic-logo-transparent.svg',document.baseURI).href]},themeMode:'dark',themeVariables:{'--w3m-accent':'#ffffff','--w3m-font-family':'Unifont, "Noto Sans", sans-serif','--w3m-font-size-master':'10px','--w3m-border-radius-master':'0px','--w3m-qr-color':'#ffffff'},features:{connectorTypeOrder:['featured','injected','walletConnect','recent','external','recommended'],analytics:false,email:false,socials:false,swaps:false,onramp:false}});
   modal.subscribeAccount(publishAccount);
-  shell=document.createElement('dialog');shell.className='upic-wallet-dialog';shell.setAttribute('aria-label','Connect with UPIC');
-  const heading=document.createElement('header'),title=document.createElement('h2'),close=document.createElement('button'),logo=document.createElement('img');
-  title.textContent='Connect with UPIC';close.type='button';close.textContent='×';close.setAttribute('aria-label','Close sign in');heading.append(title,close);
+  shell=document.createElement('dialog');shell.className='upic-wallet-dialog';shell.setAttribute('aria-label','Sign in');
+  const heading=document.createElement('header'),close=document.createElement('button'),logo=document.createElement('img');
+  close.type='button';close.textContent='×';close.setAttribute('aria-label','Close sign in');heading.append(close);
   logo.src=new URL('upic-logo-transparent.svg',document.baseURI).href;logo.alt='UPIC';logo.className='upic-wallet-logo';
   shell.append(heading,logo);document.body.append(shell);
-  close.addEventListener('click',()=>void closePicker());shell.addEventListener('cancel',event=>{event.preventDefault();void closePicker();});
+  close.addEventListener('click',()=>void closePicker());
+  let backdropPress=false;
+  const outside=event=>{const rect=shell.getBoundingClientRect();return event.target===shell&&(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom);};
+  shell.addEventListener('pointerdown',event=>{backdropPress=matchMedia('(min-width:761px)').matches&&outside(event);});
+  shell.addEventListener('click',event=>{if(backdropPress&&outside(event))void closePicker();backdropPress=false;});
+  shell.addEventListener('cancel',event=>{event.preventDefault();void closePicker();});
   modal.subscribeState(state=>{if(!state.open&&shell.open)shell.close();});
  }
  onAccount?.(modal.getAccount());
