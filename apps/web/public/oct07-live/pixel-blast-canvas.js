@@ -15,10 +15,14 @@ const clamp=x=>Math.max(0,Math.min(1,x));
 const b2=(x,y)=>fract(Math.floor(x)/2+Math.floor(y)**2*.75);
 const b4=(x,y)=>b2(x*.5,y*.5)*.25+b2(x,y);
 const b8=(x,y)=>b4(x*.5,y*.5)*.25+b2(x,y);
+// Noise revisits the same integer corners across marks and adjacent frames.
+// Cache their exact values in a bounded table, rather than repeat sine calls.
+const noiseKeys=new Float64Array(4096).fill(NaN),noiseValues=new Float64Array(4096);
+function noiseHash(n){const index=n&4095;if(noiseKeys[index]!==n){noiseKeys[index]=n;noiseValues[index]=hash(n);}return noiseValues[index];}
 function noise(x,y,z){
  const ix=Math.floor(x),iy=Math.floor(y),iz=Math.floor(z),n=ix+iy*57+iz*113;
  const a=fade(fract(x)),b=fade(fract(y)),c=fade(fract(z));
- return mix(mix(mix(hash(n),hash(n+1),a),mix(hash(n+57),hash(n+58),a),b),mix(mix(hash(n+113),hash(n+114),a),mix(hash(n+170),hash(n+171),a),b),c)*2-1;
+ return mix(mix(mix(noiseHash(n),noiseHash(n+1),a),mix(noiseHash(n+57),noiseHash(n+58),a),b),mix(mix(noiseHash(n+113),noiseHash(n+114),a),mix(noiseHash(n+170),noiseHash(n+171),a),b),c)*2-1;
 }
 // Prepare once when coin artwork changes, using the same image levels and
 // Bayer grain as the coin avatar. Select the subject, rather than always
@@ -70,6 +74,7 @@ export function createPixelBlastCanvas(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
  const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,accents=null,output=null,lastCoverage=0,geometryKey=null,geometry=[];
  const layerCanvas=document.createElement("canvas"),layerContext=layerCanvas.getContext("2d");
+ const candidates=[],sampleCache=new Map();let sampleFrame=0,occupiedPixels=null;
  return {
   canvas,
   coverage(){return lastCoverage;},
@@ -81,13 +86,14 @@ export function createPixelBlastCanvas(host){
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
    if(!preserve)ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
-   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);accents=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
+   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);accents=new Uint8Array(w*h);occupiedPixels=new Uint32Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
    counts.fill(0);accents.fill(0);output.data.fill(0);
+   let occupied=0;sampleFrame++;
    const requested=Math.max(0,Math.round(params.holderCount||0));
    const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*3))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const pattern=battlePattern(params.patternKey??seed,time);
-   const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
+   const cell=16,offset=(seed%65521)/65521*173.6;
    const liquidRadius=Math.max(.001,.12*params.liquidRadius),grainFrame=Math.floor(time*12);
    const touches=params.liquid?ripples.filter(p=>eventTime-p.time>=0&&eventTime-p.time<3).map(p=>{
     let dx=Number.isFinite(p.dx)?p.dx:params.direction,dy=Number.isFinite(p.dy)?p.dy:(params.balance-.5)*.6;
@@ -99,9 +105,14 @@ export function createPixelBlastCanvas(host){
     const age=eventTime-p.time,t=clamp(age/.16),out=clamp((age-.25)/1.55);
     return {...p,x:(p.x*w-originX)/ratio,y:(p.y*h-originY)/ratio,envelope:t*t*(3-2*t)*(1-out*out*(3-2*out))};
    });
-   function sampleAt(cx,cy){
-    const key=cx+cy*65536;let sample=cache.get(key);
-    if(sample===undefined){
+   function samplePoint(cx,cy){
+    const key=cx+cy*65536;let sample=sampleCache.get(key);
+    if(sample===undefined){sample={cx,cy,frame:0,feed:0,warpX:0,warpY:0};sampleCache.set(key,sample);}
+    return sample;
+   }
+   function sampleAt(sample){
+    if(sample.frame!==sampleFrame){
+     const {cx,cy}=sample;
      const u0=cx*cell/cssHeight,v0=cy*cell/cssHeight;
      let warpX=0,warpY=0;
      for(const p of packets){
@@ -116,7 +127,7 @@ export function createPixelBlastCanvas(host){
      feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
      feed=battlePatternFeed(u*Math.max(.2,params.scale/.25),v*Math.max(.2,params.scale/.25),time,pattern,feed);
      feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
-     sample={feed,warpX,warpY};cache.set(key,sample);
+     sample.frame=sampleFrame;sample.feed=feed;sample.warpX=warpX;sample.warpY=warpY;
     }
     return sample;
    }
@@ -130,10 +141,10 @@ export function createPixelBlastCanvas(host){
    const accentDirection=shapeWeights[0]===0?(shapeWeights[1]===1?1:shapeWeights[2]===1?-1:0):0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
-   const candidates=[];
+   candidates.length=0;
    const nextGeometryKey=[w,h,grid,cellSize,seed,params.edgeFade,pixelPresence,requested].join(':');
    if(nextGeometryKey!==geometryKey){
-    geometryKey=nextGeometryKey;geometry=[];
+    geometryKey=nextGeometryKey;geometry=[];sampleCache.clear();
     for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
     if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
     const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
@@ -150,16 +161,18 @@ export function createPixelBlastCanvas(host){
      taper=smooth(nx/reach)*smooth((1-nx)/reach)*smooth(ny/reach)*smooth((1-ny)/reach);
     }
     if(edge<=0||(!requested&&taper<=.015))continue;
-    geometry.push({px,py,fx,fy,centerX,centerY,taper,threshold:hash(px*73.17+py*193.41+seed*.37),accent:hash(px*157.31+py*97.13+seed*.113)<.2});
+    const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy);
+    geometry.push({px,py,fx,fy,centerX,centerY,taper,tx:fract(sx),ty:fract(sy),a:samplePoint(cx,cy),b:samplePoint(cx+1,cy),c:samplePoint(cx,cy+1),d:samplePoint(cx+1,cy+1),threshold:hash(px*73.17+py*193.41+seed*.37),accent:hash(px*157.31+py*97.13+seed*.113)<.2});
     }
    }
-   for(const {px,py,fx,fy,centerX,centerY,taper,threshold,accent} of geometry){
+   for(const mark of geometry){
+    const {px,py,fx,fy,centerX,centerY,taper,threshold,accent}=mark;
     // Sparse stable perimeter: shrink and remove cells rather than draw a rim.
     if(!requested&&hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
     // small liquid movement survives without moving the square lattice.
-    const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy),tx=fract(sx),ty=fract(sy);
-    const a=sampleAt(cx,cy),b=sampleAt(cx+1,cy),cc=sampleAt(cx,cy+1),dd=sampleAt(cx+1,cy+1);
+    const {tx,ty}=mark;
+    const a=sampleAt(mark.a),b=sampleAt(mark.b),cc=sampleAt(mark.c),dd=sampleAt(mark.d);
     let feed=mix(mix(a.feed,b.feed,tx),mix(cc.feed,dd.feed,tx),ty);
     const warpX=mix(mix(a.warpX,b.warpX,tx),mix(cc.warpX,dd.warpX,tx),ty),warpY=mix(mix(a.warpY,b.warpY,tx),mix(cc.warpY,dd.warpY,tx),ty);
     let maskInk=0;
@@ -190,7 +203,7 @@ export function createPixelBlastCanvas(host){
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
     const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
-    candidates.push({centerX,centerY,diameter,score,accent});
+    mark.diameter=diameter;mark.score=score;candidates.push(mark);
    }
    // Partition the highest-scoring population without sorting every cell.
    if(requested&&requested<candidates.length){
@@ -205,9 +218,10 @@ export function createPixelBlastCanvas(host){
      if(target<=j)hi=j;else if(target>=i)lo=i;else break;
     }
    }
-   const selected=requested?candidates.slice(0,requested):candidates;
-   canvas.dataset.markCount=String(selected.length);let accentMarkCount=0;
-   for(const {centerX,centerY,diameter,accent} of selected){
+   const selectedCount=requested?Math.min(requested,candidates.length):candidates.length;
+   canvas.dataset.markCount=String(selectedCount);let accentMarkCount=0;
+   for(let selectedIndex=0;selectedIndex<selectedCount;selectedIndex++){
+    const {centerX,centerY,diameter,accent}=candidates[selectedIndex];
     const accentGlyph=accent&&diameter>=3&&accentDirection!==0;
     if(accentGlyph)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
@@ -220,19 +234,19 @@ export function createPixelBlastCanvas(host){
      const inside=diameter<3?dx*dx+dy*dy<=radius*radius:
       (Math.hypot(dx,dy)-radius)*weights[0]+(Math.min(Math.abs(dx),Math.abs(dy))-halfStroke)*weights[1]+(Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678-halfStroke)*weights[2]<=0;
      if(!inside)continue;
-     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);
+     const index=y*w+x;if(!counts[index])occupiedPixels[occupied++]=index;
+     counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);
     }
    }
    canvas.dataset.accentMarkCount=String(accentMarkCount);
-   let occupied=0;
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
    // Only pixels belonging to resolved directional glyphs carry an accent.
    // Dots, including small-size fallbacks and every transitional shape, retain
    // the existing baseline/milestone palette.
    const accentR=(accentDirection>0?81:255)/255,accentG=(accentDirection>0?215:102)/255,accentB=(accentDirection>0?123:114)/255;
-   for(let n=0;n<counts.length;n++)if(counts[n]){
-    occupied++;const i=n*4;let r=1,g=1,b=1;
+   for(let pixel=0;pixel<occupied;pixel++){
+    const n=occupiedPixels[pixel],i=n*4;let r=1,g=1,b=1;
     if(color&&mask?.colors){
      const u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
      if(u>=0&&u<1&&v>=0&&v<1){
