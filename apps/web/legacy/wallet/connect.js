@@ -6,7 +6,7 @@ import {mainnet,base,arbitrum,polygon,optimism,avalanche,bsc,solana} from '@reow
 let modal,opening,shell,closing;
 const accountListeners=new Set();
 function publishAccount(account){for(const listener of accountListeners)listener(account);}
-export async function connect(projectId,onAccount){
+export async function connect(projectId,onAccount,target=null){
  if(!projectId)throw Error('Wallet connections are being configured.');
  if(onAccount)accountListeners.add(onAccount);
  if(!modal){
@@ -27,7 +27,13 @@ export async function connect(projectId,onAccount){
  }
  onAccount?.(modal.getAccount());
  if(!opening)opening=modal.open().finally(()=>{opening=null;});
- await opening;await ApiController.prefetch();if(!shell.querySelector('w3m-modal')){const picker=document.createElement('w3m-modal');picker.className='appkit-modal';shell.append(picker);}if(closing)await closing;if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}return {close:closePicker,getAccount:()=>modal.getAccount(),getState:()=>modal.getState(),subscribeAccount:listener=>modal.subscribeAccount(listener),subscribeState:listener=>modal.subscribeState(listener)};
+ await opening;await ApiController.prefetch();
+ let picker=document.querySelector('w3m-modal.appkit-modal');
+ if(!picker){picker=document.createElement('w3m-modal');picker.className='appkit-modal';}
+ if(closing)await closing;
+ if(target){if(shell.open)shell.close();target.append(picker);}
+ else{shell.append(picker);if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}}
+ return {close:closePicker,getAccount:()=>modal.getAccount(),getState:()=>modal.getState(),subscribeAccount:listener=>modal.subscribeAccount(listener),subscribeState:listener=>modal.subscribeState(listener)};
 }
 
 async function closePicker(){

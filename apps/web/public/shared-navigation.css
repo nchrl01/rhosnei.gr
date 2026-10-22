@@ -1,7 +1,7 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
 @import url("wallet-theme.css?v=414");
 
-body:is(.instrument-page,.marketplace-page,.about-page)>main {
+body:is(.instrument-page,.marketplace-page,.about-page,.profile-page)>main {
   padding:0 var(--site-gutter) 28px;
 }
 body.instrument-page>main { min-height:100svh;padding-bottom:0; }

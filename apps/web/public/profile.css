@@ -83,3 +83,12 @@
 .profile-dialog .profile-account-address{border:0;padding:0;min-height:44px;width:fit-content;background:transparent;text-align:left;text-transform:none;cursor:pointer}
 .profile-dialog .profile-account-address:hover{background:transparent;text-decoration:underline;text-underline-offset:3px}
 @media(max-width:760px){.profile-dialog.profile-page-content{padding:24px 20px;min-height:60vh}.profile-page-content .profile-layout{grid-template-columns:1fr}}
+
+.profile-wallet-panel{max-width:440px;margin-inline:auto;width:100%}.profile-wallet-panel w3m-modal.appkit-modal{--apkt-modal-width:100%;position:relative;inset:auto;display:block;background:transparent;opacity:1;pointer-events:auto}
+
+.header-wallet.has-profile-color svg>circle:first-child{fill:hsl(var(--profile-hue) 70% 38%)}
+
+.profile-page>main{padding-bottom:0;min-width:0}
+.profile-page-content :is(.profile-layout,.profile-account,.profile-saved,.profile-saved-list,.profile-wallet-panel){min-width:0;max-width:100%}
+.profile-dialog .profile-tabs button:focus-visible{outline:none;box-shadow:0 2px var(--control-ink);color:var(--control-ink)}
+.profile-dialog.is-authenticated .profile-saved{border-top:0;padding-top:0}

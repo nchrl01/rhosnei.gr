@@ -1,5 +1,5 @@
 import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=414';
-import {openWalletConnection} from './wallet-session.js?v=411';
+import {openWalletConnection} from './wallet-session.js?v=415';
 
 const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(cls)node.className=cls;return node;};
 const shortAddress=address=>address?address.slice(0,6)+'…'+address.slice(-4):'';
@@ -12,7 +12,7 @@ export function bindProfile(button){
  const page=document.getElementById('profile-page-content'),onPage=Boolean(page),profileURL=new URL('./profile.html',import.meta.url);
  button.dataset.profileReady='true';
  if(!document.querySelector('link[data-profile-style]')){
-  const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=414',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);
+  const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=416',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);
  }
  const dialog=make('section',null,'profile-dialog profile-page-content');dialog.id='profile-dialog';dialog.setAttribute('aria-labelledby','profile-title');
  const heading=make('div',null,'profile-heading'),title=make('h1','Profile'),close=make('button','×','profile-close');title.id='profile-title';close.type='button';close.setAttribute('aria-label','Close profile');heading.append(title);
@@ -28,7 +28,7 @@ export function bindProfile(button){
  const intro=make('p','Your audiovisual collection. Your saved coins.','profile-intro');
  const layout=make('div',null,'profile-layout');layout.append(account,section);dialog.replaceChildren(heading,logo,intro,layout);
  const tabs=make('div',null,'profile-tabs'),savedTab=make('button','Saved'),collectionTab=make('button','Collection');savedTab.type=collectionTab.type='button';tabs.setAttribute('role','group');tabs.setAttribute('aria-label','Profile sections');tabs.append(savedTab,collectionTab);section.prepend(tabs);
- const collection=make('div',null,'profile-collection');collection.append(make('h2','Your UPIC collection'),make('p','Tokenized artworks will live here when collecting is available.'));const explore=make('a','Explore artworks');explore.href=new URL('./upic/marketplace/',import.meta.url).href;collection.append(explore);section.append(collection);let activeTab='saved';
+ const collection=make('div',null,'profile-collection');collection.append(make('h2','Your UPIC collection'),make('p','Tokenized artworks will live here when collecting is available.'));const explore=make('a','Explore artworks');explore.href=new URL('./upic/marketplace/',import.meta.url).href;collection.append(explore);section.append(collection);const walletPanel=make('div',null,'profile-wallet-panel');walletPanel.hidden=true;section.append(walletPanel);let activeTab='saved';
  savedTab.addEventListener('click',()=>{activeTab='saved';paint();});collectionTab.addEventListener('click',()=>{activeTab='collection';paint();});
  const pending=new Set();let busy=false,busyLabel='',errorMessage='',oldOverflow='';
 
@@ -64,13 +64,14 @@ export function bindProfile(button){
   }
  }
  function paint(){
+  walletPanel.hidden=activeTab!=='wallet';
   const state=savedCoinsState(),authenticated=Boolean(state.account),loading=state.status==='loading',rows=authenticated?savedCoins():[];
   button.setAttribute('aria-label',authenticated?'Profile':'Sign in');button.title=authenticated?'Profile':'Sign in';
   const hue=Number.isFinite(state.account?.avatarHue)?state.account.avatarHue:0;
   const channel=n=>{const k=(n+hue/30)%12;return 1-Math.max(-1,Math.min(k-3,9-k,1));};const rgb=[channel(0)/2,channel(8)/2,channel(4)/2];
   matrix.setAttribute('values',rgb.map(c=>[.2126*c,.7152*c,.0722*c,0,0].join(' ')).join(' ')+' 0 0 0 1 0');
   tabs.hidden=!authenticated;collection.hidden=!authenticated||activeTab!=='collection';list.hidden=authenticated&&activeTab!=='saved';sectionHeading.hidden=!authenticated||activeTab!=='saved';savedTab.setAttribute('aria-pressed',String(activeTab==='saved'));collectionTab.setAttribute('aria-pressed',String(activeTab==='collection'));
-  button.classList.toggle('has-profile-avatar',authenticated);if(authenticated){const mark=make('img');mark.src=logo.src;mark.alt='';button.replaceChildren(mark);button.style.setProperty('--profile-hue',String(state.account.avatarHue??180));}else{button.innerHTML=originalIcon;}
+  button.classList.remove('has-profile-avatar');button.classList.toggle('has-profile-color',authenticated);button.style.setProperty('--profile-hue',String(hue));button.innerHTML=originalIcon;
   dialog.classList.toggle('is-authenticated',authenticated);title.textContent=authenticated?'Your UPIC':'Sign in';
   savedTitle.hidden=!authenticated;intro.hidden=authenticated;logo.hidden=authenticated;
   dialog.style.setProperty('--profile-hue',String(Number.isFinite(state.account?.avatarHue)?state.account.avatarHue:180));
@@ -86,7 +87,7 @@ export function bindProfile(button){
    !authenticated?'Connect an Ethereum or Solana wallet, then sign in to access your private saved coins.':
    pending.size?'Removing from Saved…':
    !rows.length?'Your saved coins will appear here.':'');
-  status.textContent=message;status.hidden=!message||(authenticated&&activeTab==='collection'&&!errorMessage&&!busy);status.setAttribute('role',errorMessage||state.status==='error'?'alert':'status');
+  status.textContent=message;status.hidden=!message||(authenticated&&activeTab!=='saved'&&!errorMessage&&!busy);status.setAttribute('role',errorMessage||state.status==='error'?'alert':'status');
   renderRows(rows);
  }
  async function refreshSaved(){
@@ -100,12 +101,12 @@ export function bindProfile(button){
  signIn.addEventListener('click',beginSignIn);
  wallet.addEventListener('click',async()=>{
   if(busy)return;busy=true;busyLabel='Opening account…';errorMessage='';hide();
-  try{await openWalletConnection();}
+  try{activeTab='wallet';paint();await openWalletConnection(walletPanel);}
   catch(error){errorMessage=plainError(error);show();}
   finally{busy=false;paint();}
  });
  signOut.addEventListener('click',async()=>{if(busy)return;busy=true;busyLabel='Signing out…';errorMessage='';paint();try{await signOutSavedCoins();}catch(error){errorMessage=plainError(error);}finally{busy=false;paint();}});
  refresh.addEventListener('click',refreshSaved);retry.addEventListener('click',refreshSaved);
- button.addEventListener('click',()=>{if(onPage){if(!savedCoinsState().account)void beginSignIn();return;}location.assign(profileURL.href);});
+ button.addEventListener('click',()=>{if(!savedCoinsState().account){void beginSignIn();return;}if(!onPage)location.assign(profileURL.href);});
  window.addEventListener('upic:saved-coins-changed',paint);paint();if(onPage)void refreshSaved();
 }
