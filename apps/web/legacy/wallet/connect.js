@@ -1,4 +1,4 @@
-import {PublicStateController,ChainController,ConnectorController,ModalController,RouterController} from '@reown/appkit-controllers';
+import {PublicStateController,ChainController,ConnectorController,ModalController,RouterController,ModalUtil} from '@reown/appkit-controllers';
 import {createAppKit} from '@reown/appkit';
 import {EthersAdapter} from '@reown/appkit-adapter-ethers';
 import {SolanaAdapter} from '@reown/appkit-adapter-solana';
@@ -13,11 +13,9 @@ export async function connect(projectId,onAccount,options={}){
   modal=createAppKit({adapters:[new EthersAdapter(),new SolanaAdapter()],networks:[mainnet,base,arbitrum,polygon,optimism,avalanche,bsc,solana],projectId,enableEmbedded:true,featuredWalletIds:['a797aa35c0fadbfc1a53e7f675162ed5226968b44a19ee3d24385c64d1d3c393','c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96'],metadata:{name:'UPIC',description:'Audiovisual instrument and NFT marketplace',url:location.origin,icons:[new URL('upic-logo-transparent.svg',document.baseURI).href]},themeMode:'dark',themeVariables:{'--w3m-accent':'#ffffff','--w3m-font-family':'Unifont, "Noto Sans", sans-serif','--w3m-font-size-master':'10px','--w3m-border-radius-master':'0px','--w3m-qr-color':'#ffffff'},features:{connectorTypeOrder:['featured','injected','walletConnect','recent','external','recommended'],analytics:false,email:false,socials:false,swaps:false,onramp:false}});
   modal.subscribeAccount(publishAccount);
   shell=document.createElement('dialog');shell.className='upic-wallet-dialog';shell.setAttribute('aria-label','Sign in');
-  const heading=document.createElement('header'),close=document.createElement('button'),logo=document.createElement('img');
-  close.type='button';close.textContent='×';close.setAttribute('aria-label','Close sign in');heading.append(close);
+  const logo=document.createElement('img');
   logo.src=new URL('upic-logo-transparent.svg',document.baseURI).href;logo.alt='UPIC';logo.className='upic-wallet-logo';
-  shell.append(heading,logo);document.body.append(shell);
-  close.addEventListener('click',()=>void closePicker());
+  shell.append(logo);document.body.append(shell);
   let backdropPress=false;
   const outside=event=>{const rect=shell.getBoundingClientRect();return event.target===shell&&(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom);};
   shell.addEventListener('pointerdown',event=>{backdropPress=matchMedia('(min-width:761px)').matches&&outside(event);});
@@ -59,13 +57,21 @@ async function openPicker(view){
    await modal.close();
    picker=document.createElement('w3m-modal');picker.className='appkit-modal';shell.append(picker);
    await picker.updateComplete;
+   // Use the SDK's single title/back/close row, keeping our fade on dismissal.
+   picker.addEventListener('click',event=>{
+    if(event.composedPath().some(node=>node?.dataset?.testid==='w3m-header-close')){
+     event.stopPropagation();void closePicker({safe:true});
+    }
+   },{capture:true});
   }
   await modal.open({view:view||'Connect'});
   if(!ModalController.state.open||RouterController.state.view==='Account'){ModalController.close();dismissShell();return;}
   const signingIn=!view||view==='Connect';
   shell.classList.toggle('is-wallet-action',!signingIn);
   shell.setAttribute('aria-label',signingIn?'Sign in':'Wallet action');
-  shell.querySelector('header button').setAttribute('aria-label',signingIn?'Close sign in':'Close wallet action');
+  const header=picker.shadowRoot?.querySelector('w3m-header');await header?.updateComplete;
+  const close=header?.shadowRoot?.querySelector('[data-testid="w3m-header-close"]');await close?.updateComplete;
+  close?.shadowRoot?.querySelector('button')?.setAttribute('aria-label',signingIn?'Close sign in':'Close wallet action');
   if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}
  })();
  try{await opening;}finally{opening=null;}
@@ -77,11 +83,12 @@ function dismissShell(){
  PublicStateController.set({open:false});
 }
 
-async function closePicker(){
+async function closePicker({safe=false}={}){
  if(closing)return closing;
  closing=(async()=>{
   if(shell?.open&&!matchMedia('(prefers-reduced-motion: reduce)').matches){shell.classList.add('is-closing');await new Promise(resolve=>setTimeout(resolve,180));}
-  await modal.close();dismissShell();
+  if(safe)await ModalUtil.safeClose();else await modal.close();
+  if(!ModalController.state.open)dismissShell();else shell?.classList.remove('is-closing');
  })();
  try{await closing;}finally{closing=null;}
 }

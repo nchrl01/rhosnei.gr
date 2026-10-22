@@ -1,5 +1,5 @@
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=420';
-import {profileWalletController} from './wallet-session.js?v=420';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=422';
+import {profileWalletController} from './wallet-session.js?v=422';
 
 const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
 const shortAddress=value=>value?value.slice(0,6)+'…'+value.slice(-4):'';
@@ -30,7 +30,7 @@ const icons={
 export function bindProfile(button){
  if(!button||button.dataset.profileReady)return;button.dataset.profileReady='true';
  const originalIcon=button.innerHTML,page=document.getElementById('profile-page-content');
- if(!document.querySelector('link[data-profile-style]')){const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=420',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);}
+ if(!document.querySelector('link[data-profile-style]')){const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=422',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);}
  const matrix=tintFilter();let signingIn=false;
  const notice=make('p',null,'profile-notice');notice.hidden=true;notice.setAttribute('role','status');document.body.append(notice);
  function paintHeader(){
@@ -55,8 +55,7 @@ export function bindProfile(button){
 }
 
 function mountProfile(page){
- const root=make('section',null,'profile-content');root.setAttribute('aria-labelledby','profile-title');
- const title=make('h1','Your UPIC');title.id='profile-title';
+ const root=make('section',null,'profile-content');root.setAttribute('aria-label','Your UPIC profile');
  const layout=make('div',null,'profile-layout'),account=make('aside',null,'profile-account');account.setAttribute('aria-label','Wallet');
  const identity=make('div',null,'profile-identity'),avatar=make('img',null,'profile-avatar');avatar.src=logoURL;avatar.alt='Your UPIC avatar';
  const address=make('button',null,'profile-account-address');address.type='button';
@@ -85,7 +84,7 @@ function mountProfile(page){
  const list=make('div',null,'profile-saved-list'),retry=make('button','Try again','profile-retry');retry.type='button';saved.append(toolbar,status,list,retry);
  const collection=make('div',null,'profile-collection');collection.id='profile-collection';collection.setAttribute('role','tabpanel');collection.setAttribute('aria-labelledby',collectionTab.id);
  collection.append(make('p','Tokenized artworks will appear here when collecting is available.'));const explore=make('a','Explore artworks');explore.href=new URL('./upic/marketplace/',import.meta.url).href;collection.append(explore);
- content.append(tabs,saved,collection);layout.append(account,content);root.append(title,layout);page.replaceChildren(root);
+ content.append(tabs,saved,collection);layout.append(account,content);root.append(layout);page.replaceChildren(root);
  let active='saved',error='',controller=null,details=null,pending=new Set(),disconnecting=false,rowsSignature='';
  function choose(tab){active=tab;paint();}
  savedTab.addEventListener('click',()=>choose('saved'));collectionTab.addEventListener('click',()=>choose('collection'));
