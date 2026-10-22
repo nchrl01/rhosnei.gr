@@ -12,11 +12,11 @@ export function bindProfile(button){
  const page=document.getElementById('profile-page-content'),onPage=Boolean(page),profileURL=new URL('./profile.html',import.meta.url);
  button.dataset.profileReady='true';
  if(!document.querySelector('link[data-profile-style]')){
-  const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=416',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);
+  const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=418',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);
  }
  const dialog=make('section',null,'profile-dialog profile-page-content');dialog.id='profile-dialog';dialog.setAttribute('aria-labelledby','profile-title');
  const heading=make('div',null,'profile-heading'),title=make('h1','Profile'),close=make('button','×','profile-close');title.id='profile-title';close.type='button';close.setAttribute('aria-label','Close profile');heading.append(title);
- const account=make('div',null,'profile-account'),identity=make('div',null,'profile-identity'),accountActions=make('div',null,'profile-account-actions'),wallet=make('button','Account','profile-account-action'),signOut=make('button','Sign out','profile-sign-out');wallet.type=signOut.type='button';accountActions.append(wallet,signOut);account.append(identity,accountActions);
+ const account=make('div',null,'profile-account'),identity=make('div',null,'profile-identity'),accountActions=make('div',null,'profile-account-actions'),wallet=make('button','Account','profile-account-action'),signOut=make('button','Sign out','profile-sign-out');wallet.type=signOut.type='button';accountActions.append(signOut);account.append(identity,accountActions);
  const section=make('section',null,'profile-saved'),sectionHeading=make('div',null,'profile-section-heading'),savedTitle=make('h2','Saved'),refresh=make('button','Refresh','profile-refresh');
  savedTitle.id='profile-saved-title';section.setAttribute('aria-labelledby',savedTitle.id);refresh.type='button';sectionHeading.append(savedTitle,refresh);
  const status=make('p',null,'profile-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
@@ -28,7 +28,7 @@ export function bindProfile(button){
  const intro=make('p','Your audiovisual collection. Your saved coins.','profile-intro');
  const layout=make('div',null,'profile-layout');layout.append(account,section);dialog.replaceChildren(heading,logo,intro,layout);
  const tabs=make('div',null,'profile-tabs'),savedTab=make('button','Saved'),collectionTab=make('button','Collection');savedTab.type=collectionTab.type='button';tabs.setAttribute('role','group');tabs.setAttribute('aria-label','Profile sections');tabs.append(savedTab,collectionTab);section.prepend(tabs);
- const collection=make('div',null,'profile-collection');collection.append(make('h2','Your UPIC collection'),make('p','Tokenized artworks will live here when collecting is available.'));const explore=make('a','Explore artworks');explore.href=new URL('./upic/marketplace/',import.meta.url).href;collection.append(explore);section.append(collection);const walletPanel=make('div',null,'profile-wallet-panel');walletPanel.hidden=true;section.append(walletPanel);let activeTab='saved';
+ const collection=make('div',null,'profile-collection');collection.append(make('h2','Your UPIC collection'),make('p','Tokenized artworks will live here when collecting is available.'));const explore=make('a','Explore artworks');explore.href=new URL('./upic/marketplace/',import.meta.url).href;collection.append(explore);section.append(collection);const walletPanel=make('div',null,'profile-wallet-panel');walletPanel.hidden=true;account.append(walletPanel);let walletPanelStarted=false;let activeTab='saved';
  savedTab.addEventListener('click',()=>{activeTab='saved';paint();});collectionTab.addEventListener('click',()=>{activeTab='collection';paint();});
  const pending=new Set();let busy=false,busyLabel='',errorMessage='',oldOverflow='';
 
@@ -64,11 +64,13 @@ export function bindProfile(button){
   }
  }
  function paint(){
-  walletPanel.hidden=activeTab!=='wallet';
   const state=savedCoinsState(),authenticated=Boolean(state.account),loading=state.status==='loading',rows=authenticated?savedCoins():[];
+  walletPanel.hidden=!authenticated;
+  if(onPage&&authenticated&&!walletPanelStarted){walletPanelStarted=true;void openWalletConnection(walletPanel).catch(error=>{errorMessage=plainError(error);paint();});}
   button.setAttribute('aria-label',authenticated?'Profile':'Sign in');button.title=authenticated?'Profile':'Sign in';
   const hue=Number.isFinite(state.account?.avatarHue)?state.account.avatarHue:0;
   const channel=n=>{const k=(n+hue/30)%12;return 1-Math.max(-1,Math.min(k-3,9-k,1));};const rgb=[channel(0)/2,channel(8)/2,channel(4)/2];
+  button.style.setProperty('--profile-color',`rgb(${rgb.map(c=>Math.round(c*255)).join(' ')})`);
   matrix.setAttribute('values',rgb.map(c=>[.2126*c,.7152*c,.0722*c,0,0].join(' ')).join(' ')+' 0 0 0 1 0');
   tabs.hidden=!authenticated;collection.hidden=!authenticated||activeTab!=='collection';list.hidden=authenticated&&activeTab!=='saved';sectionHeading.hidden=!authenticated||activeTab!=='saved';savedTab.setAttribute('aria-pressed',String(activeTab==='saved'));collectionTab.setAttribute('aria-pressed',String(activeTab==='collection'));
   button.classList.remove('has-profile-avatar');button.classList.toggle('has-profile-color',authenticated);button.style.setProperty('--profile-hue',String(hue));button.innerHTML=originalIcon;
