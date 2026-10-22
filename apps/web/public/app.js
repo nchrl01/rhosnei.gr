@@ -2,7 +2,7 @@ import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=3
 import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=359';
-import {archivePlayerFrames} from './coin-snapshot-store.js?v=351';
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=429';
 import {bindSearchField} from './search-field.js?v=394';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
@@ -16,7 +16,7 @@ import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=395';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=395';
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
-import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=428';
+import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=429';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
@@ -24,9 +24,9 @@ import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=428';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=429';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=428';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=429';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -913,8 +913,9 @@ if(!restoredScore&&requestedCoin.get('coin')?.length<=250&&requestedCoin.get('co
  showCoinAddress(requestedCoin.get('coin'),requestedCoin.get('network')||'');
  void searchForCoin(requestedCoin.get('coin'),{network:requestedCoin.get('network')||null,autoPlay:false});
 }
-if(captureMode)window.__upicCaptureStatus=()=>({market:market?{chain:market.chainId,address:market.baseToken.address,symbol:market.baseToken.symbol}:null,visual:dataVisual.snapshot(),holders:holderMetadata.snapshot().holdings?.state,lookup:$('lookup').textContent});
-if(captureMode)archivePlayerFrames({captureMode,getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active});
+let captureArchiveStatus=null;
+if(captureMode)window.__upicCaptureStatus=()=>({market:market?{chain:market.chainId,address:market.baseToken.address,symbol:market.baseToken.symbol}:null,visual:dataVisual.snapshot(),capture:captureArchiveStatus,holders:holderMetadata.snapshot().holdings?.state,lookup:$('lookup').textContent});
+if(captureMode)archivePlayerFrames({captureMode,getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active,onStatus:status=>{captureArchiveStatus=status;}});
 if(!captureMode)startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');
