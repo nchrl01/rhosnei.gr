@@ -55,7 +55,8 @@ export function bindMobileCoinSearch(){
  const mobileFeedback=node('div',null,'mobile-search-feedback'),content=node('div',null,'mobile-search-content');
  const suggestions=node('div',null,'mobile-search-suggestions'),status=node('p','Loading coins…','mobile-search-status');status.setAttribute('role','status');
  const filters=node('button','Networks','mobile-search-filters'),filterPanel=node('div',null,'mobile-search-filter-panel');filters.type='button';filters.open=false;filters.setAttribute('aria-expanded','false');filters.setAttribute('aria-controls','mobile-search-networks');filterPanel.id='mobile-search-networks';filterPanel.hidden=true;filterPanel.setAttribute('role','group');filterPanel.setAttribute('aria-label','Filter by network');
- const existingNetwork=document.getElementById('coin-gallery-network'),network=existingNetwork||node('select');
+ // Search filters are independent of the marketplace gallery filter.
+ const existingNetwork=null,network=node('select');
  if(!existingNetwork){const option=node('option','All networks');option.value='all';network.append(option);}
  const categories=node('div',null,'mobile-search-category-row');categories.append(tabs,filters,filterPanel);
  filters.addEventListener('click',()=>{filters.open=!filters.open;paint();});

@@ -38,3 +38,41 @@
  .profile-account-actions{justify-content:flex-start}
  .profile-dialog::backdrop{background:#000}
 }
+
+.profile-logo{display:block;width:72px;height:100px;object-fit:contain;margin:12px auto 28px}
+.profile-intro{text-align:center;color:var(--muted);line-height:1.6}
+.profile-dialog:not(.is-authenticated) .profile-heading h1{font-size:var(--font-size-body)}
+.profile-dialog:not(.is-authenticated) .profile-saved{text-align:center;padding-top:20px}
+.profile-dialog:not(.is-authenticated) .profile-sign-in{width:100%;min-height:60px;margin-top:8px}
+.profile-avatar{width:96px;height:120px;object-fit:contain;box-sizing:border-box;padding:16px;background:hsl(var(--profile-hue) 55% 52%);margin-bottom:20px}
+.profile-dialog.is-authenticated{width:min(1200px,calc(100vw - 48px));min-height:70dvh;padding:32px}
+.profile-dialog.is-authenticated .profile-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:48px}
+.profile-dialog.is-authenticated .profile-account{display:block;border:0;padding:0;margin:0}
+.profile-dialog.is-authenticated .profile-account-actions{justify-content:flex-start;margin-top:24px}
+.profile-dialog.is-authenticated .profile-saved{border-top:1px solid var(--line);padding-top:16px}
+@media(max-width:760px){.profile-dialog.is-authenticated{width:100%;padding:24px 20px}.profile-dialog.is-authenticated .profile-layout{grid-template-columns:1fr;gap:28px}.profile-avatar{width:64px;height:88px;margin-bottom:12px}.profile-dialog:not(.is-authenticated) .profile-logo{margin-top:10dvh}}
+
+.profile-dialog button{text-transform:uppercase}
+.profile-tabs{display:flex;gap:24px;margin-bottom:24px;border-bottom:1px solid var(--line)}
+.profile-dialog .profile-tabs button{border:0;padding:8px 0;color:var(--muted)}
+.profile-dialog .profile-tabs button[aria-pressed=true]{box-shadow:0 1px var(--control-ink);color:var(--control-ink)}
+.profile-collection{padding:40px 0;display:grid;gap:24px;line-height:1.6}
+.profile-collection p{color:var(--muted)}
+.profile-collection a{color:inherit;text-underline-offset:6px}
+:is(.market-header,.site-navigation) .header-wallet:not(.has-profile-avatar){width:auto;min-width:44px;font-size:var(--font-size-small);text-transform:uppercase}
+.header-wallet.has-profile-avatar{background:hsl(var(--profile-hue) 55% 52%)}
+.header-wallet.has-profile-avatar img{width:24px;height:30px;object-fit:contain}
+
+.profile-dialog{text-transform:uppercase}
+.profile-avatar,.header-wallet.has-profile-avatar img{filter:sepia(1) saturate(3) hue-rotate(calc(var(--profile-hue) * 1deg))}
+
+/* Tint the light pixels of the UPIC mark, preserving the black detail. */
+.profile-avatar{background:#000;padding:0;filter:url(#upic-profile-tint);image-rendering:pixelated}
+.header-wallet.has-profile-avatar{background:transparent}
+.header-wallet.has-profile-avatar img{filter:url(#upic-profile-tint);image-rendering:pixelated}
+
+.profile-account-address{text-transform:none}
+
+:is(.market-header,.site-navigation) .header-wallet:not(.has-profile-avatar){width:28px;min-width:28px}
+
+@media(max-width:760px){.profile-dialog:not(.is-authenticated){inset:0;margin:auto;width:calc(100% - 32px);height:auto;max-height:calc(100dvh - 48px);padding:20px;border:1px solid #333}.profile-dialog:not(.is-authenticated) .profile-logo{margin-top:12px}}

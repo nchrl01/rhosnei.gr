@@ -779,8 +779,9 @@ body.visual-expanded>.market-header,body.visual-expanded .site-footer{visibility
 .coin-address:hover{color:var(--ink,#eee)}
 .coin-address:focus-visible{outline:1px solid currentColor;outline-offset:3px}
 @media(max-width:760px){
- .mobile-player-heading{flex-wrap:wrap;row-gap:0}
- .mobile-player-heading .coin-address{flex:0 0 100%;max-width:100%;text-align:center;margin-top:0}
+ .mobile-player-heading{flex-wrap:wrap;column-gap:16px;row-gap:10px}
+ .mobile-player-heading .coin-address{flex:0 0 100%;max-width:100%;min-height:44px;text-align:center;margin:0;padding:8px 0;line-height:1.5}
+ .instrument-page .mobile-player-heading #coin-name{max-width:calc(100% - 52px)}
 }
 
 /* Keep the disclosure in flow so the collection follows its reveal. */
@@ -791,3 +792,8 @@ body.advanced-view #advanced-panel>.advanced-panel-content{transform:translateY(
 @media(prefers-reduced-motion:reduce){#advanced-panel,#advanced-panel>.advanced-panel-content,body.advanced-view #advanced-panel,body.advanced-view #advanced-panel>.advanced-panel-content{transition:none;transform:none}}
 /* Interface labels use one case; coin names, addresses and values retain theirs. */
 :is(#advanced-view,.advanced-group h3,.advanced-group dt,#advanced-market-source h3,#chain,#mode,#history-loading,.coin-live-readings small,.chart-measure,#tick-position,.transport-readout,#transport-status,.coin-collection-status h3,.coin-collection-actions a,.coin-collection-actions button,.playback-modes button,.replay-actions button,.replay-speed-select){text-transform:uppercase}
+
+#advanced-panel,#advanced-panel .advanced-panel-content,#advanced-readings,.advanced-group{background:#000!important}
+button.coin-address:not(:disabled):hover,button.coin-address{background:transparent!important;text-decoration:none;box-shadow:none}
+.coin-address:hover .coin-address-value{text-decoration:underline;text-underline-offset:3px}
+.coin-address-network{text-decoration:none}

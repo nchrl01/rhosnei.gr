@@ -490,7 +490,7 @@ function updatePlayAvailability(active=playing){
  button.setAttribute('aria-label',waiting?'Loading coin':interrupted?'Resume interrupted audio':active?'Pause experience':'Play audiovisual experience');
  button.setAttribute('aria-busy',String(starting||waiting));
 }
-const playbackShortcuts=bindPlaybackShortcuts({button:$('play'),getState:()=>({ready:!!market,starting,playing:playing&&ctx?.state==='running'}),getMetadata:()=>market?{title:market.baseToken.symbol+(market.baseToken.name&&market.baseToken.name!==market.baseToken.symbol?' · '+market.baseToken.name:''),artist:'$AV',album:'Live market artwork'}:null});
+const playbackShortcuts=bindPlaybackShortcuts({button:$('play'),getState:()=>({ready:!!market,starting,playing:playing&&ctx?.state==='running'}),getMetadata:()=>market?{title:market.baseToken.symbol+(market.baseToken.name&&market.baseToken.name!==market.baseToken.symbol?' · '+market.baseToken.name:''),artist:'UPIC',album:'Live market artwork'}:null});
 function setPlayState(active){
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
@@ -840,7 +840,9 @@ function showCoinAddress(address,network=''){
  button.hidden=!valid;button.dataset.address=valid?address:'';
  if(!valid)return;
  const short=address.length>24?address.slice(0,8)+'…'+address.slice(-6):address;
- button.textContent=(network?network+' · ':'')+short;
+ const chainLabel=network.toLowerCase()==='solana'?'SOL':network.toUpperCase();
+ const chain=document.createElement('span');chain.className='coin-address-network';chain.textContent=chainLabel?chainLabel+' · ':'';
+ const ca=document.createElement('span');ca.className='coin-address-value';ca.textContent=short;button.replaceChildren(chain,ca);
  button.title=address+' · Copy address';
  button.setAttribute('aria-label','Copy coin address '+address);
 }

@@ -76,9 +76,16 @@ export class ProfileService{
   this.sql.exec('CREATE TABLE IF NOT EXISTS profile_sessions (hash TEXT PRIMARY KEY, account TEXT NOT NULL, account_json TEXT NOT NULL, origin TEXT NOT NULL, expires INTEGER NOT NULL, created INTEGER NOT NULL)');
   this.sql.exec('CREATE INDEX IF NOT EXISTS profile_sessions_account ON profile_sessions(account)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS profile_saved (account TEXT NOT NULL, coin_key TEXT NOT NULL, payload TEXT NOT NULL, saved INTEGER NOT NULL, PRIMARY KEY(account,coin_key))');
+  this.sql.exec('CREATE TABLE IF NOT EXISTS profile_identity (account TEXT PRIMARY KEY, hue INTEGER NOT NULL, created INTEGER NOT NULL)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS profile_rate (key TEXT PRIMARY KEY, used INTEGER NOT NULL, expires INTEGER NOT NULL)');
  }
  one(query,...args){return this.sql.exec(query,...args).toArray()[0];}
+ profile(account){
+  const hue=crypto.getRandomValues(new Uint32Array(1))[0]%360;
+  this.sql.exec('INSERT OR IGNORE INTO profile_identity (account,hue,created) VALUES (?,?,?)',account,hue,Date.now());
+  const row=this.one('SELECT hue,created FROM profile_identity WHERE account=?',account);
+  return {avatarHue:row.hue,createdAt:row.created};
+ }
  rate(key,limit,period,now){
   const bucket=key+':'+Math.floor(now/period),row=this.one('SELECT used FROM profile_rate WHERE key=?',bucket);
   if((row?.used||0)>=limit)fail('profile-rate-limited',429);
@@ -132,7 +139,7 @@ export class ProfileService{
     this.sql.exec('DELETE FROM profile_sessions WHERE hash IN (SELECT hash FROM profile_sessions WHERE account=? ORDER BY created DESC LIMIT -1 OFFSET 7)',account.key);
     this.sql.exec('INSERT INTO profile_sessions (hash,account,account_json,origin,expires,created) VALUES (?,?,?,?,?,?)',hash,account.key,challenge.account_json,origin,expiresAt,Date.now());
    });
-   return response({token,expiresAt,account});
+   return response({token,expiresAt,account:{...account,...this.profile(account.key)}});
   }
   const session=await this.authenticate(request,origin,now);this.rate('account:'+session.account,120,MINUTE,now);
   if(path==='/profile/session')return response({account:session.accountData,expiresAt:session.expires});

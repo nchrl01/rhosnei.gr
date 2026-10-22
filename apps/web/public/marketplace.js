@@ -25,7 +25,7 @@ function render(append=false){
   const chain=element('p','','coin-chain'),capValue=element('span',money(item.marketCap)),capRow=element('div',null,'coin-collectible-cap');capRow.append(element('span','Market cap'),capValue);
   const update=()=>{
    const {selection:chosen,capture:frame}=coinPreview(item,network.value);card.href=coinPlayerURL(chosen);
-   chain.textContent=[chosen.chain==='off-chain'?'EXCHANGE':chosen.chain==='unknown'?'':chosen.chain.toUpperCase(),item.catalogueRank?'#'+item.catalogueRank:''].filter(Boolean).join(' · ');
+   chain.textContent=[chosen.chain==='off-chain'?'EXCHANGE':chosen.chain==='unknown'?'':(chosen.chain==='solana'?'SOL':chosen.chain.toUpperCase()),item.catalogueRank?'#'+item.catalogueRank:''].filter(Boolean).join(' · ');
    chain.title=chosen.address?chosen.address:'';
    const source=frame?.snapshot;
    if(source){if(image.getAttribute('src')!==source){image.style.opacity='0';image.hidden=false;image.src=source;}}else{image.hidden=true;image.removeAttribute('src');}
@@ -49,7 +49,7 @@ async function loadFrames(){
  function applyFrames(frames){for(const row of records)row.captures={};for(const frame of frames){const row=byKey.get(previewKey(frame.chain,frame.address));if(row)storeCapture(row,frame);}}
  if(previews.status==='fulfilled')applyFrames(previews.value);
  refreshSaved=async()=>{if(document.hidden||gallery.hidden)return;try{applyFrames(await loadCloudCaptures({force:true}));refreshCards();}catch{}};
- const chains=[...new Set(records.flatMap(r=>[r.chain,...(r.nativeChains||[]),...(r.platforms||[]).map(p=>p.chain)]))].sort();for(const chain of chains){const option=element('option',chain==='unknown'?'Other markets':chain.toUpperCase());option.value=chain;network.append(option);}for(const icon of networkIcons){const chain=networkAliases[icon]||icon;if(chains.includes(chain))networkButton(chain,chain.toUpperCase(),icon);}render();
+ const chains=[...new Set(records.flatMap(r=>[r.chain,...(r.nativeChains||[]),...(r.platforms||[]).map(p=>p.chain)]))].sort();for(const chain of chains){const option=element('option',chain==='unknown'?'Other markets':chain.toUpperCase());option.value=chain;network.append(option);}for(const icon of networkIcons){const chain=networkAliases[icon]||icon;if(chains.includes(chain))networkButton(chain,chain==='solana'?'SOL':chain.toUpperCase(),icon);}render();
 }
 bindMarketplaceCoinSearch();
 const reset=()=>{visible=40;render();};network.addEventListener('change',reset);

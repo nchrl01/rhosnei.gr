@@ -1,5 +1,5 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
-@import url("wallet-theme.css?v=281");
+@import url("wallet-theme.css?v=410");
 
 body:is(.instrument-page,.marketplace-page,.about-page)>main {
   padding:0 var(--site-gutter) 28px;
@@ -707,4 +707,16 @@ body.help-page>main>.site-footer,body.report-page>.site-footer{position:static;i
  .mobile-search-more{display:block;width:100%;min-height:44px;margin:16px 0;padding:8px 12px;border:1px solid var(--line);background:none;color:var(--control-ink);font:inherit;font-size:var(--font-size-small)}
  .mobile-search-more[hidden]{display:none}
 
+}
+
+/* Keep search lettering on the same scale as the header navigation. */
+@media(min-width:761px){.header-desktop-search :is(#address,#coin-gallery-search,#address-label,#coin-gallery-label){font-size:var(--font-size-small)!important}}
+
+/* Keep informational-page footers at the viewport edge without covering copy. */
+body.about-page{display:flex;flex-direction:column;min-height:100dvh;padding-bottom:0}
+body.about-page>main{display:flex;flex-direction:column;flex:1 0 auto;min-height:100dvh;padding-bottom:0}
+body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;margin-top:auto;z-index:110;background:var(--bg,#000)}
+
+@media(max-width:760px){
+ body.about-page>main>.site-footer{position:static;inset:auto;margin-top:28px;z-index:auto}
 }

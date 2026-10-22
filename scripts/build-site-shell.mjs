@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 408;
+const version = 410;
 const pages = [
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
@@ -39,7 +39,7 @@ function header(page) {
   const isSiteNavigation = page.type === 'lab' || page.type === 'technology';
   const fields = {
     headerClass: isSiteNavigation ? 'site-navigation' : page.type === 'instrument' ? 'market-header trending-header' : 'market-header',
-    headerLabel: page.type === 'instrument' ? '$AV navigation and trending markets' : '$AV navigation',
+    headerLabel: page.type === 'instrument' ? 'UPIC navigation and trending markets' : 'UPIC navigation',
     brandClass: isSiteNavigation ? 'upic-brand site-navigation-brand' : 'upic-brand',
     brandImage: page.type === 'instrument'
       ? '<img id="upic-mark" alt="" width="125" height="173" decoding="async" hidden><span id="upic-mark-fallback">U</span>'
@@ -56,7 +56,7 @@ function prepareTechnologyDocument(html) {
   if (/<head\b/.test(html)) return html;
   const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0];
   if (!main) throw new Error('Missing technology content');
-  return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="theme-color" content="#000000">\n<title>$AV Technology</title>\n<link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin>\n<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">\n</head>\n<body class="credits-page">\n<header class="site-navigation"></header>\n' + main.replace('<main class="credits-page">', '<main class="credits-content">') + '\n</body>\n</html>\n';
+  return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="theme-color" content="#000000">\n<title>UPIC Technology</title>\n<link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin>\n<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">\n</head>\n<body class="credits-page">\n<header class="site-navigation"></header>\n' + main.replace('<main class="credits-page">', '<main class="credits-content">') + '\n</body>\n</html>\n';
 }
 for (const page of pages) {
   const file = path.join(publicRoot, page.file);

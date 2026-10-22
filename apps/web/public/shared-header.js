@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=406';
+import {bindMobileCoinSearch} from './mobile-search.js?v=409';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -71,7 +71,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 const headerWallet=new URLSearchParams(location.search).get('capture')==='live'?null:document.querySelector('.header-wallet');
 if(headerWallet){
  headerWallet.setAttribute('aria-label','Profile');headerWallet.title='Profile';
- void import('./profile.js?v=395').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
+ void import('./profile.js?v=410').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
   headerWallet.title='Profile is unavailable. Reload to try again.';
  });
 }
