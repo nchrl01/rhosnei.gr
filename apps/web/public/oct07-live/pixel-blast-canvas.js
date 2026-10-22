@@ -1,5 +1,6 @@
 import {originalArtworkPalette} from '../upic-artwork-palette.js';
-import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=214';
+import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=427';
+import {EARTHBOUND_LOOP_DURATION,TAU,loopTime,loopPhase} from './earthbound-loop.js?v=427';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -81,6 +82,8 @@ export function createPixelBlastCanvas(host){
   setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown'});},
   render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
+   time=loopTime(time);
+   const angle=loopPhase(time),orbitX=(Math.cos(angle)-1)*EARTHBOUND_LOOP_DURATION/TAU,orbitZ=Math.sin(angle)*EARTHBOUND_LOOP_DURATION/TAU;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt((params.pixelBudget||1.2e6)/(viewWidth*viewHeight)));
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
@@ -121,10 +124,10 @@ export function createPixelBlastCanvas(host){
       warpX+=((p.dx??1)-dy*.35)*weight;warpY+=((p.dy??0)+dx*.35)*weight;
      }
      const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
-     for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
+     for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset+orbitX*.05)*freq,(v*params.scale+offset*.317)*freq,orbitZ*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
-     feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
-     feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
+     feed+=params.ecosystem*noise(u*6+offset*.19+orbitX*.04,v*6+offset*.41,orbitZ*.04);
+     feed=Math.max(feed,.07+.045*noise(u*14+offset+orbitX*.03,v*14+offset,orbitZ*.03));
      feed=battlePatternFeed(u*Math.max(.2,params.scale/.25),v*Math.max(.2,params.scale/.25),time,pattern,feed);
      feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
      sample.frame=sampleFrame;sample.feed=feed;sample.warpX=warpX;sample.warpY=warpY;

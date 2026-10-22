@@ -1,4 +1,5 @@
-import {earthboundVisualSeed} from './earthbound-visual-seed.js?v=214';
+import {earthboundVisualSeed} from './earthbound-visual-seed.js?v=427';
+import {EARTHBOUND_LOOP_DURATION,TAU,loopPhase,loopTurns} from './earthbound-loop.js?v=427';
 export {suggestedLayers} from './earthbound-motion-presets.js?v=167';
 const mod=(n,m)=>((n%m)+m)%m;
 const int16=n=>mod(Math.trunc(n)+32768,65536)-32768;
@@ -6,8 +7,11 @@ const bound=(n,a,b)=>Math.max(a,Math.min(b,n));
 // Exact sequence selection and signed-register accumulation from the reference;
 // displacement is bounded for a fluid, full-screen mark field.
 export function battleMotion(seed,time){
+ const angle=loopPhase(time),sine=Math.sin(angle),cosine=Math.cos(angle);
  return earthboundVisualSeed(seed).layers.map(layer=>{
-  const effects=layer.meta[9];let elapsed=Math.max(0,time)*60*layer.motionRate;
+  // Metadata envelopes travel out and back smoothly; distortion phase and
+  // scroll follow closed paths instead of resetting accumulated offsets.
+  const effects=layer.meta[9];let elapsed=(1-cosine)*.5*EARTHBOUND_LOOP_DURATION*60*layer.motionRate;
   let total=0,terminal=false;for(const e of effects){if(!e[1]){terminal=true;break;}total+=e[1];}
   if(!terminal&&total>0)elapsed=mod(elapsed,total);
   let effect=effects.at(-1);
@@ -15,9 +19,9 @@ export function battleMotion(seed,time){
   const [type,,frequency,amplitude,compression,frequencyAcceleration,amplitudeAcceleration,speed,compressionAcceleration]=effect;
   const amp=bound(int16(amplitude+amplitudeAcceleration*elapsed)/512/256*layer.motionDepth,-.16,.16);
   const freq=int16(frequency+frequencyAcceleration*elapsed)*8*Math.PI/1024;
-  const phase=layer.phase+Math.PI/60*speed*elapsed/2;
+  const phase=layer.phase+angle*(speed?loopTurns(speed*Math.PI*.5*layer.motionRate):0);
   const squeeze=bound((1+int16(compression+compressionAcceleration*elapsed)/256)*layer.stretch,.35,3);
-  return [type,amp,freq,phase,squeeze,time*layer.scroll[0],time*layer.scroll[1],layer.bands];
+  return [type,amp,freq,phase,squeeze,sine*EARTHBOUND_LOOP_DURATION/TAU*layer.scroll[0],(1-cosine)*EARTHBOUND_LOOP_DURATION/TAU*layer.scroll[1],layer.bands];
  });
 }
 export function battleWarp(x,y,motions){

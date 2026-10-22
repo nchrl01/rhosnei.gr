@@ -1,4 +1,5 @@
 import {backgroundMetadata} from './earthbound-layer-metadata.js?v=214';
+import {loopPhase,loopTurns} from './earthbound-loop.js?v=427';
 // Each labeled draw hashes the complete chain/address, so parameters are not
 // derived from a small preset index. Numeric lab seeds use the same generator.
 const cache=new Map();
@@ -33,6 +34,6 @@ export function earthboundVisualSeed(value=0){
 }
 export function layerCycle(layer,time){
  const rate=layer.cycleRate*60/Math.max(6,layer.meta[8]||20);
- const phase=layer.phase+time*rate;
+ const phase=layer.phase+loopPhase(time)*loopTurns(rate);
  return [layer.mirror,layer.cycle,phase,layer.levels];
 }
