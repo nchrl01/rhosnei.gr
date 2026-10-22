@@ -7,6 +7,11 @@ body:is(.instrument-page,.marketplace-page,.about-page,.profile-page)>main {
 body.instrument-page>main { min-height:100svh;padding-bottom:0; }
 @media(min-width:761px){ body.instrument-page>main { padding-bottom:var(--navigation-row-height); } }
 body.about-page>main { padding-bottom:0; }
+body.profile-page>main { padding-bottom:0; }
+@media(min-width:761px){
+ body.profile-page>main { padding-bottom:calc(var(--navigation-row-height) + env(safe-area-inset-bottom)); }
+ body.profile-page>main>.site-footer { position:fixed;inset:auto 0 0;z-index:10;margin:0; }
+}
 .marketplace-page main,.about-page main { align-items:stretch; }
 
 /* The header's 8px inset is independent of the page's content gutter. */
