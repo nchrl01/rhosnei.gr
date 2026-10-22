@@ -312,20 +312,17 @@ body.credits-page>.site-footer { margin-inline:0; }
 
 /* Search, replay, option groups and pagination use the same secondary action. */
 :is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button,
-.marketplace-content>button,.marketplace-networks button[data-chain=all]{
+.marketplace-content>button{
  color:var(--control-ink);background:#000;border-color:var(--control-line);
 }
 :is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:not(:disabled):not([aria-disabled=true]):hover,
-.marketplace-content>button:not(:disabled):not([aria-disabled=true]):hover,
-.marketplace-networks button[data-chain=all]:not(:disabled):hover{
+.marketplace-content>button:not(:disabled):not([aria-disabled=true]):hover{
  color:var(--control-ink);background:var(--control-hover);border-color:var(--control-ink);
 }
-:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true],
-.marketplace-networks button[data-chain=all][aria-pressed=true]{
+:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]{
  color:#000;background:var(--control-ink);border-color:var(--control-ink);
 }
-:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]:not(:disabled):hover,
-.marketplace-networks button[data-chain=all][aria-pressed=true]:not(:disabled):hover{
+:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]:not(:disabled):hover{
  color:#000;background:var(--control-selected-hover);border-color:var(--control-selected-hover);
 }
 :is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:focus-visible,
@@ -722,3 +719,8 @@ body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;ma
 }
 
 @media(min-width:761px){.header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row:focus-within{border-bottom-color:var(--control-ink)}}
+
+/* Match the search network selector's circular ALL state. */
+.marketplace-networks button[data-chain=all]{position:relative;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;margin:0;padding:8px;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small);box-shadow:none}
+.marketplace-networks button[data-chain=all][aria-pressed=true]::after{content:"";position:absolute;inset:3px;border:1px solid var(--control-ink);border-radius:50%!important;pointer-events:none}
+.marketplace-networks button[data-chain=all]:focus-visible{outline:2px solid var(--control-ink);outline-offset:-2px}
