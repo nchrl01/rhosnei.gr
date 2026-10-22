@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=427';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=428';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -245,7 +245,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   captureStill(size=512){
    const state=getState(),age=Date.now()-renderedAt;
    if(!renderedAt||age<0||age>2000||!renderedPlaying||!state.playing||settings.playing===false||settings.seeking||settings.ended||!latest?.hasMarket||!latest.liveHolders||!latest.fresh||!renderedHolderReady||host.dataset.holderLoading==='true'||renderedCoinKey!==key||sourceCoinKey!==String(state.coinKey||'unselected')||transportPresence<.99||imageReveal<1||!imageSettled)throw Error('A current live playing holder frame is required to capture.');
-   if(latest.change!==0||(renderer.snapshot().shapeWeights?.[0]??0)<.999)throw Error('Waiting for the live dot state.');
+   // Capture the actual live shape, including directional price movement.
    const output=document.createElement('canvas');output.width=output.height=size;
    const context=output.getContext('2d');if(!context)throw Error('Canvas unavailable.');
    context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;

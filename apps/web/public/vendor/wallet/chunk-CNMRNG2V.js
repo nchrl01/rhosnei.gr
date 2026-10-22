@@ -1,4 +1,4 @@
-import{a}from"./chunk-ARUMBOQO.js";import{e as r,k as h,m as p,q as u,r as g,u as x}from"./chunk-5MTHK2ID.js";var b=p`
+import{a}from"./chunk-ARUMBOQO.js";import{e as r,k as c,m as p,q as g,r as u,u as x}from"./chunk-5MTHK2ID.js";var f=p`
   button {
     display: block;
     display: flex;
@@ -121,7 +121,9 @@ import{a}from"./chunk-ARUMBOQO.js";import{e as r,k as h,m as p,q as u,r as g,u a
     background-color: ${({tokens:t})=>t.theme.foregroundSecondary};
     opacity: 0.5;
   }
-`;var n=function(t,e,s,m){var d=arguments.length,o=d<3?e:m===null?m=Object.getOwnPropertyDescriptor(e,s):m,l;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")o=Reflect.decorate(t,e,s,m);else for(var c=t.length-1;c>=0;c--)(l=t[c])&&(o=(d<3?l(o):d>3?l(e,s,o):l(e,s))||o);return d>3&&o&&Object.defineProperty(e,s,o),o},f={lg:"lg-regular",md:"lg-regular",sm:"md-regular"},w={lg:"lg",md:"md",sm:"sm"},i=class extends h{constructor(){super(...arguments),this.size="md",this.disabled=!1,this.text="",this.loading=!1}render(){return this.loading?r` <wui-flex alignItems="center" gap="01" padding="01">
+
+button{gap:8px;min-height:36px;color:#fff}button .token-image{width:26px!important;height:26px!important}wui-text{color:#fff;--local-color:#fff!important;padding:0}
+`;var n=function(t,e,s,m){var d=arguments.length,o=d<3?e:m===null?m=Object.getOwnPropertyDescriptor(e,s):m,l;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")o=Reflect.decorate(t,e,s,m);else for(var h=t.length-1;h>=0;h--)(l=t[h])&&(o=(d<3?l(o):d>3?l(e,s,o):l(e,s))||o);return d>3&&o&&Object.defineProperty(e,s,o),o},b={lg:"lg-regular",md:"lg-regular",sm:"md-regular"},w={lg:"lg",md:"md",sm:"sm"},i=class extends c{constructor(){super(...arguments),this.size="md",this.disabled=!1,this.text="",this.loading=!1}render(){return this.loading?r` <wui-flex alignItems="center" gap="01" padding="01">
         <wui-shimmer width="20px" height="20px"></wui-shimmer>
         <wui-shimmer width="32px" height="18px" borderRadius="4xs"></wui-shimmer>
       </wui-flex>`:r`
@@ -133,6 +135,6 @@ import{a}from"./chunk-ARUMBOQO.js";import{e as r,k as h,m as p,q as u,r as g,u a
         <wui-image src=${this.chainImageSrc} class="chain-image"></wui-image>
       </wui-flex>`;if(this.imageSrc)return r`<wui-image src=${this.imageSrc} class="token-image"></wui-image>`;let e=w[this.size];return r`<wui-flex class="left-icon-container">
       <wui-icon size=${e} name="networkPlaceholder"></wui-icon>
-    </wui-flex>`}textTemplate(){let e=f[this.size];return r`<wui-text color="primary" variant=${e}
+    </wui-flex>`}textTemplate(){let e=b[this.size];return r`<wui-text color="primary" variant=${e}
       >${this.text}</wui-text
-    >`}};i.styles=[u,g,b];n([a()],i.prototype,"size",void 0);n([a()],i.prototype,"imageSrc",void 0);n([a()],i.prototype,"chainImageSrc",void 0);n([a({type:Boolean})],i.prototype,"disabled",void 0);n([a()],i.prototype,"text",void 0);n([a({type:Boolean})],i.prototype,"loading",void 0);i=n([x("wui-token-button")],i);
+    >`}};i.styles=[g,u,f];n([a()],i.prototype,"size",void 0);n([a()],i.prototype,"imageSrc",void 0);n([a()],i.prototype,"chainImageSrc",void 0);n([a({type:Boolean})],i.prototype,"disabled",void 0);n([a()],i.prototype,"text",void 0);n([a({type:Boolean})],i.prototype,"loading",void 0);i=n([x("wui-token-button")],i);

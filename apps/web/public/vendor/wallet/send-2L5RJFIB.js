@@ -1,4 +1,4 @@
-import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.js";import"./chunk-UIMFABJG.js";import"./chunk-TMPEOBKZ.js";import"./chunk-6EXPULJE.js";import"./chunk-5MU77HEZ.js";import"./chunk-ZM5O5AWK.js";import"./chunk-XPUYOWLL.js";import"./chunk-EF3IS7VR.js";import"./chunk-JEWQBEMQ.js";import{a as K,b as G}from"./chunk-CSFLJRTZ.js";import"./chunk-RI24VZ65.js";import"./chunk-7N7RQWF5.js";import"./chunk-25UVVQYF.js";import"./chunk-MXD6LUFN.js";import"./chunk-3V7T2ZXI.js";import{a as d,b as u,c as ee}from"./chunk-ARUMBOQO.js";import{e as l,k as p,m,q as j,r as V,s as $,u as f}from"./chunk-5MTHK2ID.js";import{k as T}from"./chunk-OTDYLYSB.js";import"./chunk-IV5FR2YO.js";import{J as b,L as q,O as U,Q as X,U as h,da as _,ea as Z,h as S,ia as a,ja as w,la as W,n as M,w as Q,y as A}from"./chunk-SHBKPEEO.js";import"./chunk-ABLSBJRG.js";import"./chunk-JG6YPVA3.js";import"./chunk-M5Z5WUB7.js";import"./chunk-JTYV7RXW.js";import"./chunk-KL2DZ7E2.js";var te=m`
+import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.js";import"./chunk-UIMFABJG.js";import"./chunk-TMPEOBKZ.js";import"./chunk-6EXPULJE.js";import"./chunk-CNMRNG2V.js";import"./chunk-ZM5O5AWK.js";import"./chunk-XPUYOWLL.js";import"./chunk-EF3IS7VR.js";import"./chunk-JEWQBEMQ.js";import{a as K,b as G}from"./chunk-CSFLJRTZ.js";import"./chunk-RI24VZ65.js";import"./chunk-7N7RQWF5.js";import"./chunk-25UVVQYF.js";import"./chunk-MXD6LUFN.js";import"./chunk-3V7T2ZXI.js";import{a as d,b as u,c as ee}from"./chunk-ARUMBOQO.js";import{e as l,k as p,m,q as j,r as V,s as $,u as h}from"./chunk-5MTHK2ID.js";import{k as T}from"./chunk-OTDYLYSB.js";import"./chunk-IV5FR2YO.js";import{J as b,L as q,O as U,Q as X,U as f,da as _,ea as Z,h as S,ia as a,ja as w,la as W,n as M,w as Q,y as A}from"./chunk-SHBKPEEO.js";import"./chunk-ABLSBJRG.js";import"./chunk-JG6YPVA3.js";import"./chunk-M5Z5WUB7.js";import"./chunk-JTYV7RXW.js";import"./chunk-KL2DZ7E2.js";var te=m`
   :host {
     width: 100%;
     height: 100px;
@@ -58,13 +58,15 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
     resize: none;
     overflow: hidden;
   }
+
+:host{display:block;height:auto;min-height:88px;box-sizing:border-box} :host>wui-flex{box-sizing:border-box;min-height:88px;padding:20px!important}.instruction{display:flex!important;align-items:center;justify-content:space-between;gap:12px;left:20px;right:20px;white-space:nowrap}.paste{display:inline-flex;flex:none;margin:0}textarea{min-width:0;overflow-wrap:anywhere}
 `;var O=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},E=class extends p{constructor(){super(...arguments),this.inputElementRef=K(),this.instructionElementRef=K(),this.readOnly=!1,this.instructionHidden=!!this.value,this.pasting=!1,this.onDebouncedSearch=A.debounce(async t=>{if(!t.length){this.setReceiverAddress("");return}let i=w.state.activeChain;if(A.isAddress(t,i)){this.setReceiverAddress(t);return}try{let o=await _.getEnsAddress(t);if(o){a.setReceiverProfileName(t),a.setReceiverAddress(o);let r=await _.getEnsAvatar(t);a.setReceiverProfileImageUrl(r||void 0)}}catch{this.setReceiverAddress(t)}finally{a.setLoading(!1)}})}firstUpdated(){this.value&&(this.instructionHidden=!0),this.checkHidden()}render(){return this.readOnly?l` <wui-flex
         flexDirection="column"
         justifyContent="center"
         gap="01"
         .padding=${["8","4","5","4"]}
       >
-        <textarea
+        <textarea aria-label="Recipient address"
           spellcheck="false"
           ?disabled=${!0}
           autocomplete="off"
@@ -77,13 +79,13 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
       gap="01"
       .padding=${["8","4","5","4"]}
     >
-      <wui-text
+      <div
         ${G(this.instructionElementRef)}
         class="instruction"
         color="secondary"
         variant="md-medium"
       >
-        Type or
+        <wui-text color="secondary" variant="md-medium">Recipient address</wui-text>
         <wui-button
           class="paste"
           size="md"
@@ -94,9 +96,8 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
           <wui-icon size="sm" color="inherit" slot="iconLeft" name="copy"></wui-icon>
           Paste
         </wui-button>
-        address
-      </wui-text>
-      <textarea
+      </div>
+      <textarea aria-label="Recipient address"
         spellcheck="false"
         ?disabled=${!this.instructionHidden}
         ${G(this.inputElementRef)}
@@ -105,7 +106,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
         .value=${this.value??""}
         autocomplete="off"
       ></textarea>
-    </wui-flex>`}async focusInput(){this.instructionElementRef.value&&(this.instructionHidden=!0,await this.toggleInstructionFocus(!1),this.instructionElementRef.value.style.pointerEvents="none",this.inputElementRef.value?.focus(),this.inputElementRef.value&&(this.inputElementRef.value.selectionStart=this.inputElementRef.value.selectionEnd=this.inputElementRef.value.value.length))}async focusInstruction(){this.instructionElementRef.value&&(this.instructionHidden=!1,await this.toggleInstructionFocus(!0),this.instructionElementRef.value.style.pointerEvents="auto",this.inputElementRef.value?.blur())}async toggleInstructionFocus(t){this.instructionElementRef.value&&await this.instructionElementRef.value.animate([{opacity:t?0:1},{opacity:t?1:0}],{duration:100,easing:"ease",fill:"forwards"}).finished}onBoxClick(){!this.value&&!this.instructionHidden&&this.focusInput()}onBlur(){!this.value&&this.instructionHidden&&!this.pasting&&this.focusInstruction()}checkHidden(){this.instructionHidden&&this.focusInput()}async onPasteClick(){this.pasting=!0;let t=await navigator.clipboard.readText();a.setReceiverAddress(t),this.focusInput()}onInputChange(t){let i=t.target;this.pasting=!1,this.value=t.target?.value,i.value&&!this.instructionHidden&&this.focusInput(),a.setLoading(!0),this.onDebouncedSearch(i.value)}setReceiverAddress(t){a.setReceiverAddress(t),a.setReceiverProfileName(void 0),a.setReceiverProfileImageUrl(void 0),a.setLoading(!1)}};E.styles=te;O([d()],E.prototype,"value",void 0);O([d({type:Boolean})],E.prototype,"readOnly",void 0);O([u()],E.prototype,"instructionHidden",void 0);O([u()],E.prototype,"pasting",void 0);E=O([f("w3m-input-address")],E);var ie=m`
+    </wui-flex>`}async focusInput(){this.instructionElementRef.value&&(this.instructionHidden=!0,await this.toggleInstructionFocus(!1),this.instructionElementRef.value.style.pointerEvents="none",this.inputElementRef.value?.focus(),this.inputElementRef.value&&(this.inputElementRef.value.selectionStart=this.inputElementRef.value.selectionEnd=this.inputElementRef.value.value.length))}async focusInstruction(){this.instructionElementRef.value&&(this.instructionHidden=!1,await this.toggleInstructionFocus(!0),this.instructionElementRef.value.style.pointerEvents="auto",this.inputElementRef.value?.blur())}async toggleInstructionFocus(t){this.instructionElementRef.value&&await this.instructionElementRef.value.animate([{opacity:t?0:1},{opacity:t?1:0}],{duration:100,easing:"ease",fill:"forwards"}).finished}onBoxClick(){!this.value&&!this.instructionHidden&&this.focusInput()}onBlur(){!this.value&&this.instructionHidden&&!this.pasting&&this.focusInstruction()}checkHidden(){this.instructionHidden&&this.focusInput()}async onPasteClick(){this.pasting=!0;let t=await navigator.clipboard.readText();a.setReceiverAddress(t),this.focusInput()}onInputChange(t){let i=t.target;this.pasting=!1,this.value=t.target?.value,i.value&&!this.instructionHidden&&this.focusInput(),a.setLoading(!0),this.onDebouncedSearch(i.value)}setReceiverAddress(t){a.setReceiverAddress(t),a.setReceiverProfileName(void 0),a.setReceiverProfileImageUrl(void 0),a.setLoading(!1)}};E.styles=te;O([d()],E.prototype,"value",void 0);O([d({type:Boolean})],E.prototype,"readOnly",void 0);O([u()],E.prototype,"instructionHidden",void 0);O([u()],E.prototype,"pasting",void 0);E=O([h("w3m-input-address")],E);var ie=m`
   :host {
     width: 100%;
     height: 100px;
@@ -149,6 +150,8 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
   .totalValue {
     width: 100%;
   }
+
+:host{display:block;height:auto;min-height:112px;box-sizing:border-box}wui-flex{box-sizing:border-box;min-width:0} :host>wui-flex{padding:20px!important;gap:12px!important}:host>wui-flex>wui-flex:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center}wui-input-amount{min-width:0;width:100%;mask-image:none}wui-token-button{flex:none;justify-self:end;width:auto}:host>wui-flex>wui-flex:last-child>wui-flex{width:auto;margin-left:auto;gap:8px!important}
 `;var N=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},C=class extends p{constructor(){super(...arguments),this.readOnly=!1,this.isInsufficientBalance=!1}render(){let t=this.readOnly||!this.token;return l` <wui-flex
       flexDirection="column"
       gap="01"
@@ -174,7 +177,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
       variant="neutral-secondary"
       @click=${this.handleSelectButtonClick.bind(this)}
       >Select token</wui-button
-    >`}handleSelectButtonClick(){this.readOnly||h.push("WalletSendSelectToken")}sendValueTemplate(){if(!this.readOnly&&this.token&&this.sendTokenAmount){let i=this.token.price*Number(this.sendTokenAmount);return l`<wui-text class="totalValue" variant="sm-regular" color="secondary"
+    >`}handleSelectButtonClick(){this.readOnly||f.push("WalletSendSelectToken")}sendValueTemplate(){if(!this.readOnly&&this.token&&this.sendTokenAmount){let i=this.token.price*Number(this.sendTokenAmount);return l`<wui-text class="totalValue" variant="sm-regular" color="secondary"
         >${i?`$${S.formatNumberToLocalString(i,2)}`:"Incorrect value"}</wui-text
       >`}return null}maxAmountTemplate(){return this.token?l` <wui-text variant="sm-regular" color="secondary">
         ${$.roundNumber(Number(this.token.quantity.numeric),6,5)}
@@ -183,7 +186,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
       <wui-flex alignItems="center" gap="01" justifyContent="flex-end">
         ${this.maxAmountTemplate()} ${this.actionTemplate()}
       </wui-flex>
-    </wui-flex>`}onInputChange(t){a.setTokenAmount(String(t.detail))}onMaxClick(){if(this.token){let t=Number(this.token.quantity.decimals),i=S.bigNumber(this.token.quantity.numeric);if(!this.token.address&&this.gasPrice){let o=65000n*BigInt(this.gasPrice),r=S.bigNumber(o.toString()).div(S.bigNumber(10).pow(t)),s=i.minus(r);a.setTokenAmount(s.gt(0)?s.toFixed(t,0):"0")}else a.setTokenAmount(i.toFixed(t,0))}}};C.styles=ie;N([d({type:Object})],C.prototype,"token",void 0);N([d({type:Boolean})],C.prototype,"readOnly",void 0);N([d({type:String})],C.prototype,"sendTokenAmount",void 0);N([d({type:Boolean})],C.prototype,"isInsufficientBalance",void 0);N([d({type:String})],C.prototype,"gasPrice",void 0);C=N([f("w3m-input-token")],C);var re=m`
+    </wui-flex>`}onInputChange(t){a.setTokenAmount(String(t.detail))}onMaxClick(){if(this.token){let t=Number(this.token.quantity.decimals),i=S.bigNumber(this.token.quantity.numeric);if(!this.token.address&&this.gasPrice){let o=65000n*BigInt(this.gasPrice),r=S.bigNumber(o.toString()).div(S.bigNumber(10).pow(t)),s=i.minus(r);a.setTokenAmount(s.gt(0)?s.toFixed(t,0):"0")}else a.setTokenAmount(i.toFixed(t,0))}}};C.styles=ie;N([d({type:Object})],C.prototype,"token",void 0);N([d({type:Boolean})],C.prototype,"readOnly",void 0);N([d({type:String})],C.prototype,"sendTokenAmount",void 0);N([d({type:Boolean})],C.prototype,"isInsufficientBalance",void 0);N([d({type:String})],C.prototype,"gasPrice",void 0);C=N([h("w3m-input-token")],C);var re=m`
   :host {
     display: block;
   }
@@ -212,7 +215,9 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
   .inputContainer {
     height: fit-content;
   }
-`;var k=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},v={INSUFFICIENT_FUNDS:"Insufficient Funds",INCORRECT_VALUE:"Incorrect Value",INVALID_ADDRESS:"Invalid Address",ADD_ADDRESS:"Add Address",ADD_AMOUNT:"Add Amount",SELECT_TOKEN:"Select Token",PREVIEW_SEND:"Preview Send"},g=class extends p{constructor(){super(),this.unsubscribe=[],this.isTryingToChooseDifferentWallet=!1,this.token=a.state.token,this.sendTokenAmount=a.state.sendTokenAmount,this.receiverAddress=a.state.receiverAddress,this.receiverProfileName=a.state.receiverProfileName,this.loading=a.state.loading,this.params=h.state.data?.send,this.caipAddress=w.getAccountData()?.caipAddress,this.disconnecting=!1,this.gasFee=T.state.gasFee,this.token&&!this.params&&(this.fetchBalances(),this.fetchNetworkPrice());let t=w.subscribeKey("activeCaipAddress",i=>{!i&&this.isTryingToChooseDifferentWallet&&(this.isTryingToChooseDifferentWallet=!1,W.open({view:"Connect",data:{redirectView:"WalletSend"}}).catch(()=>null),t())});this.unsubscribe.push(w.subscribeAccountStateProp("caipAddress",i=>{this.caipAddress=i}),a.subscribe(i=>{this.token=i.token,this.sendTokenAmount=i.sendTokenAmount,this.receiverAddress=i.receiverAddress,this.receiverProfileName=i.receiverProfileName,this.loading=i.loading}),T.subscribeKey("gasFee",i=>{this.gasFee=i}))}disconnectedCallback(){this.unsubscribe.forEach(t=>t())}async firstUpdated(){await this.handleSendParameters()}render(){let t=this.getMessage(),i=!!this.params;return l` <wui-flex flexDirection="column" .padding=${["0","4","4","4"]}>
+
+.inputContainer{gap:12px!important}wui-icon-box{position:relative;top:auto;left:auto;transform:none;align-self:center;flex:none;box-sizing:border-box;width:28px;height:28px;border:0;background:transparent}w3m-input-token,w3m-input-address{box-sizing:border-box;min-width:0}
+`;var k=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},v={INSUFFICIENT_FUNDS:"Insufficient Funds",INCORRECT_VALUE:"Incorrect Value",INVALID_ADDRESS:"Invalid Address",ADD_ADDRESS:"Add Address",ADD_AMOUNT:"Add Amount",SELECT_TOKEN:"Select Token",PREVIEW_SEND:"Preview Send"},g=class extends p{constructor(){super(),this.unsubscribe=[],this.isTryingToChooseDifferentWallet=!1,this.token=a.state.token,this.sendTokenAmount=a.state.sendTokenAmount,this.receiverAddress=a.state.receiverAddress,this.receiverProfileName=a.state.receiverProfileName,this.loading=a.state.loading,this.params=f.state.data?.send,this.caipAddress=w.getAccountData()?.caipAddress,this.disconnecting=!1,this.gasFee=T.state.gasFee,this.token&&!this.params&&(this.fetchBalances(),this.fetchNetworkPrice());let t=w.subscribeKey("activeCaipAddress",i=>{!i&&this.isTryingToChooseDifferentWallet&&(this.isTryingToChooseDifferentWallet=!1,W.open({view:"Connect",data:{redirectView:"WalletSend"}}).catch(()=>null),t())});this.unsubscribe.push(w.subscribeAccountStateProp("caipAddress",i=>{this.caipAddress=i}),a.subscribe(i=>{this.token=i.token,this.sendTokenAmount=i.sendTokenAmount,this.receiverAddress=i.receiverAddress,this.receiverProfileName=i.receiverProfileName,this.loading=i.loading}),T.subscribeKey("gasFee",i=>{this.gasFee=i}))}disconnectedCallback(){this.unsubscribe.forEach(t=>t())}async firstUpdated(){await this.handleSendParameters()}render(){let t=this.getMessage(),i=!!this.params;return l` <wui-flex flexDirection="column" .padding=${["0","4","4","4"]}>
       <wui-flex class="inputContainer" gap="2" flexDirection="column">
         <w3m-input-token
           .token=${this.token}
@@ -228,7 +233,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
         ></w3m-input-address>
       </wui-flex>
       ${this.buttonTemplate(t)}
-    </wui-flex>`}async fetchBalances(){await a.fetchTokenBalance(),a.fetchNetworkBalance()}async fetchNetworkPrice(){await T.getNetworkTokenPrice(),await T.getInitialGasPrice()}onButtonClick(){h.push("WalletSendPreview",{send:this.params})}onFundWalletClick(){h.push("FundWallet",{redirectView:"WalletSend"})}async onConnectDifferentWalletClick(){try{this.isTryingToChooseDifferentWallet=!0,this.disconnecting=!0,await _.disconnect()}finally{this.disconnecting=!1}}getMessage(){return this.token?this.sendTokenAmount?this.token.price&&!(Number(this.sendTokenAmount)*this.token.price)?v.INCORRECT_VALUE:S.bigNumber(this.sendTokenAmount).gt(this.token.quantity.numeric)?v.INSUFFICIENT_FUNDS:this.receiverAddress?A.isAddress(this.receiverAddress,w.state.activeChain)?v.PREVIEW_SEND:v.INVALID_ADDRESS:v.ADD_ADDRESS:v.ADD_AMOUNT:v.SELECT_TOKEN}buttonTemplate(t){let i=!t.startsWith(v.PREVIEW_SEND),n=t===v.INSUFFICIENT_FUNDS,o=!!this.params;return n&&!o?l`
+    </wui-flex>`}async fetchBalances(){await a.fetchTokenBalance(),a.fetchNetworkBalance()}async fetchNetworkPrice(){await T.getNetworkTokenPrice(),await T.getInitialGasPrice()}onButtonClick(){f.push("WalletSendPreview",{send:this.params})}onFundWalletClick(){f.push("FundWallet",{redirectView:"WalletSend"})}async onConnectDifferentWalletClick(){try{this.isTryingToChooseDifferentWallet=!0,this.disconnecting=!0,await _.disconnect()}finally{this.disconnecting=!1}}getMessage(){return this.token?this.sendTokenAmount?this.token.price&&!(Number(this.sendTokenAmount)*this.token.price)?v.INCORRECT_VALUE:S.bigNumber(this.sendTokenAmount).gt(this.token.quantity.numeric)?v.INSUFFICIENT_FUNDS:this.receiverAddress?A.isAddress(this.receiverAddress,w.state.activeChain)?v.PREVIEW_SEND:v.INVALID_ADDRESS:v.ADD_ADDRESS:v.ADD_AMOUNT:v.SELECT_TOKEN}buttonTemplate(t){let i=!t.startsWith(v.PREVIEW_SEND),n=t===v.INSUFFICIENT_FUNDS,o=!!this.params;return n&&!o?l`
         <wui-flex .margin=${["4","0","0","0"]} flexDirection="column" gap="4">
           <wui-button
             @click=${this.onFundWalletClick.bind(this)}
@@ -262,7 +267,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
       >
         ${t}
       </wui-button>
-    </wui-flex>`}async handleSendParameters(){if(this.loading=!0,!this.params){this.loading=!1;return}let t=Number(this.params.amount);if(isNaN(t)){b.showError("Invalid amount"),this.loading=!1;return}let{namespace:i,chainId:n,assetAddress:o}=this.params;if(!Q.SEND_PARAMS_SUPPORTED_CHAINS.includes(i)){b.showError(`Chain "${i}" is not supported for send parameters`),this.loading=!1;return}let r=w.getCaipNetworkById(n,i);if(!r){b.showError(`Network with id "${n}" not found`),this.loading=!1;return}try{let{balance:s,name:c,symbol:H,decimals:J}=await Z.fetchERC20Balance({caipAddress:this.caipAddress,assetAddress:o,caipNetwork:r});if(!c||!H||!J||!s){b.showError("Token not found");return}a.setToken({name:c,symbol:H,chainId:r.id.toString(),address:`${r.chainNamespace}:${r.id}:${o}`,value:0,price:0,quantity:{decimals:J.toString(),numeric:s.toString()},iconUrl:U.getTokenImage(H)??""}),a.setTokenAmount(String(t)),a.setReceiverAddress(this.params.to)}catch(s){console.error("Failed to load token information:",s),b.showError("Failed to load token information")}finally{this.loading=!1}}};g.styles=re;k([u()],g.prototype,"token",void 0);k([u()],g.prototype,"sendTokenAmount",void 0);k([u()],g.prototype,"receiverAddress",void 0);k([u()],g.prototype,"receiverProfileName",void 0);k([u()],g.prototype,"loading",void 0);k([u()],g.prototype,"params",void 0);k([u()],g.prototype,"caipAddress",void 0);k([u()],g.prototype,"disconnecting",void 0);k([u()],g.prototype,"gasFee",void 0);g=k([f("w3m-wallet-send-view")],g);var oe=m`
+    </wui-flex>`}async handleSendParameters(){if(this.loading=!0,!this.params){this.loading=!1;return}let t=Number(this.params.amount);if(isNaN(t)){b.showError("Invalid amount"),this.loading=!1;return}let{namespace:i,chainId:n,assetAddress:o}=this.params;if(!Q.SEND_PARAMS_SUPPORTED_CHAINS.includes(i)){b.showError(`Chain "${i}" is not supported for send parameters`),this.loading=!1;return}let r=w.getCaipNetworkById(n,i);if(!r){b.showError(`Network with id "${n}" not found`),this.loading=!1;return}try{let{balance:s,name:c,symbol:H,decimals:J}=await Z.fetchERC20Balance({caipAddress:this.caipAddress,assetAddress:o,caipNetwork:r});if(!c||!H||!J||!s){b.showError("Token not found");return}a.setToken({name:c,symbol:H,chainId:r.id.toString(),address:`${r.chainNamespace}:${r.id}:${o}`,value:0,price:0,quantity:{decimals:J.toString(),numeric:s.toString()},iconUrl:U.getTokenImage(H)??""}),a.setTokenAmount(String(t)),a.setReceiverAddress(this.params.to)}catch(s){console.error("Failed to load token information:",s),b.showError("Failed to load token information")}finally{this.loading=!1}}};g.styles=re;k([u()],g.prototype,"token",void 0);k([u()],g.prototype,"sendTokenAmount",void 0);k([u()],g.prototype,"receiverAddress",void 0);k([u()],g.prototype,"receiverProfileName",void 0);k([u()],g.prototype,"loading",void 0);k([u()],g.prototype,"params",void 0);k([u()],g.prototype,"caipAddress",void 0);k([u()],g.prototype,"disconnecting",void 0);k([u()],g.prototype,"gasFee",void 0);g=k([h("w3m-wallet-send-view")],g);var oe=m`
   .contentContainer {
     height: 440px;
     overflow: scroll;
@@ -335,7 +340,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
               </wui-flex>`}
         </wui-flex>
       </wui-flex>
-    `}onBuyClick(){h.push("OnRampProviders")}onInputChange(t){this.onDebouncedSearch(t.detail)}handleTokenClick(t){a.setToken(t),a.setTokenAmount(void 0),h.goBack()}};R.styles=oe;B([u()],R.prototype,"tokenBalances",void 0);B([u()],R.prototype,"tokens",void 0);B([u()],R.prototype,"filteredTokens",void 0);B([u()],R.prototype,"search",void 0);R=B([f("w3m-wallet-send-select-token-view")],R);var ne=m`
+    `}onBuyClick(){f.push("OnRampProviders")}onInputChange(t){this.onDebouncedSearch(t.detail)}handleTokenClick(t){a.setToken(t),a.setTokenAmount(void 0),f.goBack()}};R.styles=oe;B([u()],R.prototype,"tokenBalances",void 0);B([u()],R.prototype,"tokens",void 0);B([u()],R.prototype,"filteredTokens",void 0);B([u()],R.prototype,"search",void 0);R=B([h("w3m-wallet-send-select-token-view")],R);var ne=m`
   :host {
     height: 32px;
     display: flex;
@@ -358,7 +363,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
     border-radius: ${({borderRadius:e})=>e[16]};
   }
 `;var F=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},P=class extends p{constructor(){super(...arguments),this.text=""}render(){return l`<wui-text variant="lg-regular" color="primary">${this.text}</wui-text>
-      ${this.imageTemplate()}`}imageTemplate(){return this.address?l`<wui-avatar address=${this.address} .imageSrc=${this.imageSrc}></wui-avatar>`:this.imageSrc?l`<wui-image src=${this.imageSrc}></wui-image>`:l`<wui-icon size="lg" color="inverse" name="networkPlaceholder"></wui-icon>`}};P.styles=[j,V,ne];F([d({type:String})],P.prototype,"text",void 0);F([d({type:String})],P.prototype,"address",void 0);F([d({type:String})],P.prototype,"imageSrc",void 0);P=F([f("wui-preview-item")],P);var se=m`
+      ${this.imageTemplate()}`}imageTemplate(){return this.address?l`<wui-avatar address=${this.address} .imageSrc=${this.imageSrc}></wui-avatar>`:this.imageSrc?l`<wui-image src=${this.imageSrc}></wui-image>`:l`<wui-icon size="lg" color="inverse" name="networkPlaceholder"></wui-icon>`}};P.styles=[j,V,ne];F([d({type:String})],P.prototype,"text",void 0);F([d({type:String})],P.prototype,"address",void 0);F([d({type:String})],P.prototype,"imageSrc",void 0);P=F([h("wui-preview-item")],P);var se=m`
   :host {
     display: flex;
     padding: ${({spacing:e})=>e[4]} ${({spacing:e})=>e[3]};
@@ -377,12 +382,12 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
     width: 20px;
     height: 20px;
   }
-`;var L=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},I=class extends p{constructor(){super(...arguments),this.imageSrc=void 0,this.textTitle="",this.textValue=void 0}render(){return l`
+`;var z=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},I=class extends p{constructor(){super(...arguments),this.imageSrc=void 0,this.textTitle="",this.textValue=void 0}render(){return l`
       <wui-flex justifyContent="space-between" alignItems="center">
         <wui-text variant="lg-regular" color="primary"> ${this.textTitle} </wui-text>
         ${this.templateContent()}
       </wui-flex>
-    `}templateContent(){return this.imageSrc?l`<wui-image src=${this.imageSrc} alt=${this.textTitle}></wui-image>`:this.textValue?l` <wui-text variant="md-regular" color="secondary"> ${this.textValue} </wui-text>`:l`<wui-icon size="inherit" color="default" name="networkPlaceholder"></wui-icon>`}};I.styles=[j,V,se];L([d()],I.prototype,"imageSrc",void 0);L([d()],I.prototype,"textTitle",void 0);L([d()],I.prototype,"textValue",void 0);I=L([f("wui-list-content")],I);var ae=m`
+    `}templateContent(){return this.imageSrc?l`<wui-image src=${this.imageSrc} alt=${this.textTitle}></wui-image>`:this.textValue?l` <wui-text variant="md-regular" color="secondary"> ${this.textValue} </wui-text>`:l`<wui-icon size="inherit" color="default" name="networkPlaceholder"></wui-icon>`}};I.styles=[j,V,se];z([d()],I.prototype,"imageSrc",void 0);z([d()],I.prototype,"textTitle",void 0);z([d()],I.prototype,"textValue",void 0);I=z([h("wui-list-content")],I);var ae=m`
   :host {
     display: flex;
     width: auto;
@@ -428,7 +433,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
   .network:active {
     background-color: ${({tokens:e})=>e.core.glass010};
   }
-`;var z=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},D=class extends p{constructor(){super(...arguments),this.params=h.state.data?.send}render(){return l` <wui-text variant="sm-regular" color="secondary">Details</wui-text>
+`;var L=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},D=class extends p{constructor(){super(...arguments),this.params=f.state.data?.send}render(){return l` <wui-text variant="sm-regular" color="secondary">Details</wui-text>
       <wui-flex flexDirection="column" gap="1">
         <wui-list-content
           textTitle="Address"
@@ -441,7 +446,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
         class="network"
         textTitle="Network"
         imageSrc=${ee(U.getNetworkImage(this.caipNetwork))}
-      ></wui-list-content>`:null}onNetworkClick(t){t&&!this.params&&h.push("Networks",{network:t})}};D.styles=ae;z([d()],D.prototype,"receiverAddress",void 0);z([d({type:Object})],D.prototype,"caipNetwork",void 0);z([u()],D.prototype,"params",void 0);D=z([f("w3m-wallet-send-details")],D);var le=m`
+      ></wui-list-content>`:null}onNetworkClick(t){t&&!this.params&&f.push("Networks",{network:t})}};D.styles=ae;L([d()],D.prototype,"receiverAddress",void 0);L([d({type:Object})],D.prototype,"caipNetwork",void 0);L([u()],D.prototype,"params",void 0);D=L([h("w3m-wallet-send-details")],D);var le=m`
   wui-avatar,
   wui-image {
     display: ruby;
@@ -461,7 +466,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
     --local-width: 100% !important;
     --local-border-radius: ${({borderRadius:e})=>e[4]} !important;
   }
-`;var y=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},x=class extends p{constructor(){super(),this.unsubscribe=[],this.token=a.state.token,this.sendTokenAmount=a.state.sendTokenAmount,this.receiverAddress=a.state.receiverAddress,this.receiverProfileName=a.state.receiverProfileName,this.receiverProfileImageUrl=a.state.receiverProfileImageUrl,this.caipNetwork=w.state.activeCaipNetwork,this.loading=a.state.loading,this.params=h.state.data?.send,this.unsubscribe.push(a.subscribe(t=>{this.token=t.token,this.sendTokenAmount=t.sendTokenAmount,this.receiverAddress=t.receiverAddress,this.receiverProfileName=t.receiverProfileName,this.receiverProfileImageUrl=t.receiverProfileImageUrl,this.loading=t.loading}),w.subscribeKey("activeCaipNetwork",t=>this.caipNetwork=t))}disconnectedCallback(){this.unsubscribe.forEach(t=>t())}render(){return l` <wui-flex flexDirection="column" .padding=${["0","4","4","4"]}>
+`;var y=function(e,t,i,n){var o=arguments.length,r=o<3?t:n===null?n=Object.getOwnPropertyDescriptor(t,i):n,s;if(typeof Reflect=="object"&&typeof Reflect.decorate=="function")r=Reflect.decorate(e,t,i,n);else for(var c=e.length-1;c>=0;c--)(s=e[c])&&(r=(o<3?s(r):o>3?s(t,i,r):s(t,i))||r);return o>3&&r&&Object.defineProperty(t,i,r),r},x=class extends p{constructor(){super(),this.unsubscribe=[],this.token=a.state.token,this.sendTokenAmount=a.state.sendTokenAmount,this.receiverAddress=a.state.receiverAddress,this.receiverProfileName=a.state.receiverProfileName,this.receiverProfileImageUrl=a.state.receiverProfileImageUrl,this.caipNetwork=w.state.activeCaipNetwork,this.loading=a.state.loading,this.params=f.state.data?.send,this.unsubscribe.push(a.subscribe(t=>{this.token=t.token,this.sendTokenAmount=t.sendTokenAmount,this.receiverAddress=t.receiverAddress,this.receiverProfileName=t.receiverProfileName,this.receiverProfileImageUrl=t.receiverProfileImageUrl,this.loading=t.loading}),w.subscribeKey("activeCaipNetwork",t=>this.caipNetwork=t))}disconnectedCallback(){this.unsubscribe.forEach(t=>t())}render(){return l` <wui-flex flexDirection="column" .padding=${["0","4","4","4"]}>
       <wui-flex gap="2" flexDirection="column" .padding=${["0","2","0","2"]}>
         <wui-flex alignItems="center" justifyContent="space-between">
           <wui-flex flexDirection="column" gap="01">
@@ -517,7 +522,7 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
       </wui-flex></wui-flex
     >`}sendValueTemplate(){if(!this.params&&this.token&&this.sendTokenAmount){let i=this.token.price*Number(this.sendTokenAmount);return l`<wui-text variant="md-regular" color="primary"
         >$${i.toFixed(2)}</wui-text
-      >`}return null}async onSendClick(){if(!this.sendTokenAmount||!this.receiverAddress){b.showError("Please enter a valid amount and receiver address");return}try{await a.sendToken(),this.params?h.reset("WalletSendConfirmed"):(b.showSuccess("Transaction started"),h.replace("Account"))}catch(t){let i="Failed to send transaction",n=t instanceof q&&t.originalName===M.PROVIDER_RPC_ERROR_NAME.USER_REJECTED_REQUEST,o=t instanceof q&&t.originalName===M.PROVIDER_RPC_ERROR_NAME.SEND_TRANSACTION_ERROR;(n||o)&&(i=t.message),X.sendEvent({type:"track",event:n?"SEND_REJECTED":"SEND_ERROR",properties:a.getSdkEventProperties(t)}),b.showError(i)}}onCancelClick(){h.goBack()}};x.styles=le;y([u()],x.prototype,"token",void 0);y([u()],x.prototype,"sendTokenAmount",void 0);y([u()],x.prototype,"receiverAddress",void 0);y([u()],x.prototype,"receiverProfileName",void 0);y([u()],x.prototype,"receiverProfileImageUrl",void 0);y([u()],x.prototype,"caipNetwork",void 0);y([u()],x.prototype,"loading",void 0);y([u()],x.prototype,"params",void 0);x=y([f("w3m-wallet-send-preview-view")],x);var ce=m`
+      >`}return null}async onSendClick(){if(!this.sendTokenAmount||!this.receiverAddress){b.showError("Please enter a valid amount and receiver address");return}try{await a.sendToken(),this.params?f.reset("WalletSendConfirmed"):(b.showSuccess("Transaction started"),f.replace("Account"))}catch(t){let i="Failed to send transaction",n=t instanceof q&&t.originalName===M.PROVIDER_RPC_ERROR_NAME.USER_REJECTED_REQUEST,o=t instanceof q&&t.originalName===M.PROVIDER_RPC_ERROR_NAME.SEND_TRANSACTION_ERROR;(n||o)&&(i=t.message),X.sendEvent({type:"track",event:n?"SEND_REJECTED":"SEND_ERROR",properties:a.getSdkEventProperties(t)}),b.showError(i)}}onCancelClick(){f.goBack()}};x.styles=le;y([u()],x.prototype,"token",void 0);y([u()],x.prototype,"sendTokenAmount",void 0);y([u()],x.prototype,"receiverAddress",void 0);y([u()],x.prototype,"receiverProfileName",void 0);y([u()],x.prototype,"receiverProfileImageUrl",void 0);y([u()],x.prototype,"caipNetwork",void 0);y([u()],x.prototype,"loading",void 0);y([u()],x.prototype,"params",void 0);x=y([h("w3m-wallet-send-preview-view")],x);var ce=m`
   .icon-box {
     width: 64px;
     height: 64px;
@@ -548,4 +553,4 @@ import"./chunk-DU2RO5V7.js";import"./chunk-R5QHN5OA.js";import"./chunk-2E2HXGZG.
           Close
         </wui-button>
       </wui-flex>
-    `}onCloseClick(){W.close()}};Y.styles=ce;Y=ue([f("w3m-send-confirmed-view")],Y);export{Y as W3mSendConfirmedView,R as W3mSendSelectTokenView,x as W3mWalletSendPreviewView,g as W3mWalletSendView};
+    `}onCloseClick(){W.close()}};Y.styles=ce;Y=ue([h("w3m-send-confirmed-view")],Y);export{Y as W3mSendConfirmedView,R as W3mSendSelectTokenView,x as W3mWalletSendPreviewView,g as W3mWalletSendView};
