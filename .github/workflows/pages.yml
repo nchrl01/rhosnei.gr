@@ -1,12 +1,8 @@
 name: Publish instrument
 on:
   push:
-    branches: [main]
+    branches: [main, staging/testnet-readiness]
   workflow_dispatch:
-  workflow_run:
-    workflows: [Staging]
-    branches: [staging/testnet-readiness]
-    types: [completed]
 permissions:
   contents: read
   pages: write
