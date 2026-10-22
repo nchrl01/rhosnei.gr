@@ -108,3 +108,6 @@ w3m-modal {
 }
 
 .upic-wallet-dialog>header{justify-content:flex-end}
+
+.upic-wallet-dialog.is-wallet-action>.upic-wallet-logo{display:none}
+.upic-wallet-dialog w3m-modal{--apkt-tokens-theme-borderPrimary:transparent;--apkt-tokens-theme-borderPrimaryDark:transparent}

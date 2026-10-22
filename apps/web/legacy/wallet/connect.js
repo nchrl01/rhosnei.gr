@@ -1,4 +1,4 @@
-import {ApiController,PublicStateController} from '@reown/appkit-controllers';
+import {ApiController,PublicStateController,ChainController,ConnectorController} from '@reown/appkit-controllers';
 import {createAppKit} from '@reown/appkit';
 import {EthersAdapter} from '@reown/appkit-adapter-ethers';
 import {SolanaAdapter} from '@reown/appkit-adapter-solana';
@@ -6,7 +6,7 @@ import {mainnet,base,arbitrum,polygon,optimism,avalanche,bsc,solana} from '@reow
 let modal,opening,shell,closing;
 const accountListeners=new Set();
 function publishAccount(account){for(const listener of accountListeners)listener(account);}
-export async function connect(projectId,onAccount,target=null){
+export async function connect(projectId,onAccount,options={}){
  if(!projectId)throw Error('Wallet connections are being configured.');
  if(onAccount)accountListeners.add(onAccount);
  if(!modal){
@@ -26,14 +26,32 @@ export async function connect(projectId,onAccount,target=null){
   modal.subscribeState(state=>{if(!state.open&&shell.open)shell.close();});
  }
  onAccount?.(modal.getAccount());
- if(!opening)opening=modal.open().finally(()=>{opening=null;});
- await opening;await ApiController.prefetch();
- let picker=document.querySelector('w3m-modal.appkit-modal');
- if(!picker){picker=document.createElement('w3m-modal');picker.className='appkit-modal';}
+ if(!options?.silent)await openPicker(options?.view);
+ return {
+  close:closePicker,getAccount:()=>modal.getAccount(),getState:()=>modal.getState(),
+  subscribeAccount:listener=>modal.subscribeAccount(listener),subscribeState:listener=>modal.subscribeState(listener),
+  getDetails:walletDetails,
+  subscribeDetails(listener){
+   const update=()=>listener(walletDetails());
+   const offs=[ChainController.subscribeChainProp('accountState',update),ChainController.subscribeKey('activeChain',update),ChainController.subscribeKey('activeCaipNetwork',update),ConnectorController.subscribeKey('activeConnectorIds',update)];
+   update();return()=>offs.forEach(off=>off());
+  },
+  openAction:openPicker,disconnect:()=>modal.disconnect()
+ };
+}
+function walletDetails(){
+ const namespace=ChainController.state.activeChain,account=ChainController.getAccountData(namespace),network=ChainController.state.activeCaipNetwork;
+ const id=namespace&&ConnectorController.getConnectorId(namespace),connector=id&&ConnectorController.getConnectorById(id);
+ return {connected:Boolean(account?.caipAddress),address:account?.caipAddress?.split(':').slice(2).join(':'),namespace,balance:account?.balance??null,symbol:account?.balanceSymbol||network?.nativeCurrency?.symbol||'',network:network?.name||'',wallet:connector?.name||'',walletIcon:connector?modal.getConnectorImage(connector)||null:null};
+}
+async function openPicker(view){
  if(closing)await closing;
- if(target){if(shell.open)shell.close();target.append(picker);}
- else{shell.append(picker);if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}}
- return {close:closePicker,getAccount:()=>modal.getAccount(),getState:()=>modal.getState(),subscribeAccount:listener=>modal.subscribeAccount(listener),subscribeState:listener=>modal.subscribeState(listener)};
+ if(!opening)opening=modal.open(view?{view}:{view:modal.getAccount()?.isConnected?'Account':'Connect'}).finally(()=>{opening=null;});
+ await opening;await ApiController.prefetch();
+ let picker=shell.querySelector('w3m-modal');
+ if(!picker){picker=document.createElement('w3m-modal');picker.className='appkit-modal';shell.append(picker);}
+ shell.classList.toggle('is-wallet-action',Boolean(view));
+ if(!shell.open){shell.classList.remove('is-closing');shell.showModal();}
 }
 
 async function closePicker(){

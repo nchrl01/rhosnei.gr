@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 418;
+const version = 419;
 const pages = [
   { file: 'profile.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'profile.css'] },
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
