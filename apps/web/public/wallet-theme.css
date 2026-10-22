@@ -86,7 +86,7 @@ w3m-modal {
 .upic-wallet-dialog>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
 .upic-wallet-dialog h2{margin:0;font:inherit;text-transform:uppercase}
 .upic-wallet-dialog>header button{width:44px;height:44px;border:0;background:transparent;color:inherit;font:inherit;font-size:28px}
-.upic-wallet-logo{display:block;width:58px;height:80px;object-fit:contain;margin:16px auto 24px;image-rendering:pixelated}
+.upic-wallet-logo{display:block;width:58px;height:80px;object-fit:contain;margin:20px auto;image-rendering:pixelated}
 .upic-wallet-dialog w3m-modal.appkit-modal{--apkt-modal-width:100%;position:relative;inset:auto;display:block;background:transparent;opacity:1;pointer-events:auto}
 @media(max-width:760px){.upic-wallet-dialog{inset:0;margin:auto;width:min(420px,calc(100% - 24px));height:fit-content;max-height:calc(100dvh - 32px);border:1px solid #333;padding:12px}}
 
@@ -104,7 +104,7 @@ w3m-modal {
  .upic-wallet-dialog>header{position:sticky;top:-12px;z-index:2;background:#000;gap:8px;padding:4px 0}
  .upic-wallet-dialog h2{font-size:16px;line-height:1.3}
  .upic-wallet-dialog>header button{flex:0 0 44px;min-width:44px;min-height:44px;padding:0}
- .upic-wallet-logo{width:36px;height:50px;margin:4px auto 12px}
+ .upic-wallet-logo{width:36px;height:50px;margin:16px auto}
 }
 
 .upic-wallet-dialog>header{justify-content:flex-end}

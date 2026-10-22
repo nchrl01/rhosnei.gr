@@ -90,7 +90,7 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
   busy=false;button.focus({preventScroll:true});
  }
  function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
- function tapToClose(event){if(expanded&&matchMedia('(max-width:760px)').matches&&!event.target.closest('button,a,input,select,textarea'))void toggle();}
+ function tapToClose(event){if((expanded||matchMedia('(min-width:761px)').matches)&&!event.target.closest('button,a,input,select,textarea'))void toggle();}
  host.addEventListener('click',tapToClose);
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);

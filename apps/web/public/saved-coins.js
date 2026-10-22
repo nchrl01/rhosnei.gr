@@ -47,7 +47,9 @@ function normalized(coin){
 const accountKey=account=>account?.address&&account?.namespace?account.namespace+':'+(account.namespace==='eip155'?account.address.toLowerCase():account.address):'';
 function changed(){globalThis.window?.dispatchEvent(new CustomEvent('upic:saved-coins-changed',{detail:{coins:savedCoins(),state:savedCoinsState()}}));}
 function update(status,error=''){state={status,error,account:session?.account||null};changed();}
-function reset(){epoch++;session=null;cache=[];loading=null;update('signed-out');}
+const sessionKey='upic-profile-session';
+function rememberSession(){try{if(session)sessionStorage.setItem(sessionKey,JSON.stringify(session));else sessionStorage.removeItem(sessionKey);}catch{}}
+function reset(){epoch++;session=null;rememberSession();cache=[];loading=null;update('signed-out');}
 async function request(path,{token,body}={}){
  const response=await fetch(ENDPOINT+path,{method:body===undefined?'GET':'POST',credentials:'omit',cache:'no-store',signal:AbortSignal.timeout(15000),headers:{Accept:'application/json',...(body===undefined?{}:{'Content-Type':'application/json'}),...(token?{Authorization:'Bearer '+token}:{})},...(body===undefined?{}:{body:JSON.stringify(body)})});
  let data;try{data=await response.json();}catch{throw Error('Profile is unavailable. Please try again.');}
@@ -93,7 +95,7 @@ export async function signInSavedCoins(){
    const result=await request('/login',{body:{challengeId:challenge.challengeId,signature:proof.signature}});
    if(revision!==epoch||accountKey(getWalletAccount())!==key)throw Error('Wallet changed. Please sign in again.');
    if(typeof result.token!=='string'||!Number.isFinite(result.expiresAt)||result.expiresAt<=Date.now()||accountKey(result.account)!==key)throw Error('Profile sign-in could not be verified.');
-   session={token:result.token,expiresAt:result.expiresAt,account:result.account};cache=[];
+   session={token:result.token,expiresAt:result.expiresAt,account:result.account};rememberSession();cache=[];
    return await loadSavedCoins();
   }catch(error){if(!session)update('signed-out',error.message);throw error;}
  });signingIn=task;
@@ -143,6 +145,9 @@ export function savedCoinForMarket(pair,image=''){
   image:image||pair.info?.imageUrl||pair.baseToken.imageUrl,
  });
 }
+try{const stored=JSON.parse(sessionStorage.getItem(sessionKey)||'null');if(stored&&typeof stored.token==='string'&&stored.expiresAt>Date.now()&&accountKey(stored.account)){session=stored;state={status:'loading',error:'',account:stored.account};void loadSavedCoins().catch(()=>{});}}catch{}
+let walletObserved=false;
 subscribeWalletAccount(account=>{
+ if(!walletObserved&&!account)return;walletObserved=true;
  if(session&&accountKey(account)!==accountKey(session.account))reset();
 });

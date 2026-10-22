@@ -1,4 +1,4 @@
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=411';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=414';
 import {openWalletConnection} from './wallet-session.js?v=411';
 
 const make=(tag,text,cls)=>{const node=document.createElement(tag);if(text!=null)node.textContent=text;if(cls)node.className=cls;return node;};
@@ -9,19 +9,20 @@ const plainError=error=>error?.message||'Could not load your saved coins. Please
 export function bindProfile(button){
  if(!button||button.dataset.profileReady==='true')return;
  const originalIcon=button.innerHTML;
- button.dataset.profileReady='true';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','profile-dialog');button.setAttribute('aria-expanded','false');
+ const page=document.getElementById('profile-page-content'),onPage=Boolean(page),profileURL=new URL('./profile.html',import.meta.url);
+ button.dataset.profileReady='true';
  if(!document.querySelector('link[data-profile-style]')){
-  const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=410',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);
+  const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=414',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);
  }
- const dialog=make('dialog',null,'profile-dialog');dialog.id='profile-dialog';dialog.setAttribute('aria-labelledby','profile-title');
- const heading=make('div',null,'profile-heading'),title=make('h1','Profile'),close=make('button','×','profile-close');title.id='profile-title';close.type='button';close.setAttribute('aria-label','Close profile');heading.append(title,close);
+ const dialog=make('section',null,'profile-dialog profile-page-content');dialog.id='profile-dialog';dialog.setAttribute('aria-labelledby','profile-title');
+ const heading=make('div',null,'profile-heading'),title=make('h1','Profile'),close=make('button','×','profile-close');title.id='profile-title';close.type='button';close.setAttribute('aria-label','Close profile');heading.append(title);
  const account=make('div',null,'profile-account'),identity=make('div',null,'profile-identity'),accountActions=make('div',null,'profile-account-actions'),wallet=make('button','Account','profile-account-action'),signOut=make('button','Sign out','profile-sign-out');wallet.type=signOut.type='button';accountActions.append(wallet,signOut);account.append(identity,accountActions);
  const section=make('section',null,'profile-saved'),sectionHeading=make('div',null,'profile-section-heading'),savedTitle=make('h2','Saved'),refresh=make('button','Refresh','profile-refresh');
  savedTitle.id='profile-saved-title';section.setAttribute('aria-labelledby',savedTitle.id);refresh.type='button';sectionHeading.append(savedTitle,refresh);
  const status=make('p',null,'profile-status');status.setAttribute('role','status');status.setAttribute('aria-live','polite');
  const signIn=make('button','Sign in','profile-sign-in');signIn.type='button';
  const list=make('div',null,'profile-saved-list'),retry=make('button','Try again','profile-retry');retry.type='button';
- section.append(sectionHeading,status,signIn,list,retry);dialog.append(heading,account,section);document.body.append(dialog);
+ section.append(sectionHeading,status,signIn,list,retry);dialog.append(heading,account,section);if(onPage)page.append(dialog);
  const svgNS='http://www.w3.org/2000/svg',tint=document.createElementNS(svgNS,'svg'),filter=document.createElementNS(svgNS,'filter'),matrix=document.createElementNS(svgNS,'feColorMatrix');tint.setAttribute('width','0');tint.setAttribute('height','0');tint.setAttribute('aria-hidden','true');tint.style.position='absolute';filter.id='upic-profile-tint';filter.setAttribute('color-interpolation-filters','sRGB');matrix.setAttribute('type','matrix');filter.append(matrix);tint.append(filter);document.body.append(tint);
  const logo=make('img',null,'profile-logo');logo.src=new URL('./upic-logo-transparent.svg',import.meta.url).href;logo.alt='UPIC';
  const intro=make('p','Your audiovisual collection. Your saved coins.','profile-intro');
@@ -31,11 +32,8 @@ export function bindProfile(button){
  savedTab.addEventListener('click',()=>{activeTab='saved';paint();});collectionTab.addEventListener('click',()=>{activeTab='collection';paint();});
  const pending=new Set();let busy=false,busyLabel='',errorMessage='',oldOverflow='';
 
- function show(){
-  if(!dialog.open){oldOverflow=document.documentElement.style.overflow;document.documentElement.style.overflow='hidden';dialog.showModal();}
-  button.setAttribute('aria-expanded','true');paint();
- }
- function hide(){if(dialog.open){document.documentElement.style.overflow=oldOverflow;button.setAttribute('aria-expanded','false');dialog.close();}}
+ function show(){if(!onPage){location.assign(profileURL.href);return;}paint();}
+ function hide(){}
  function renderRows(rows){
   const previous=[...list.children],focused=document.activeElement,oldIndex=previous.findIndex(row=>row.contains(focused)),oldKey=previous[oldIndex]?.dataset.key,wasRemove=focused?.classList.contains('profile-saved-remove');
   list.replaceChildren();
@@ -60,7 +58,7 @@ export function bindProfile(button){
    });
    row.append(link,remove);list.append(row);
   }
-  if(oldIndex>=0&&dialog.open){
+  if(oldIndex>=0&&onPage){
    const next=[...list.children],row=next.find(row=>row.dataset.key===oldKey)||next[Math.min(oldIndex,next.length-1)];
    (row?.querySelector(wasRemove?'.profile-saved-remove':'.profile-saved-pick')||close).focus({preventScroll:true});
   }
@@ -77,7 +75,7 @@ export function bindProfile(button){
   savedTitle.hidden=!authenticated;intro.hidden=authenticated;logo.hidden=authenticated;
   dialog.style.setProperty('--profile-hue',String(Number.isFinite(state.account?.avatarHue)?state.account.avatarHue:180));
   account.hidden=!authenticated;identity.replaceChildren();
-  if(authenticated){const avatar=logo.cloneNode();avatar.hidden=false;avatar.className='profile-avatar';identity.append(avatar);identity.append(make('span',shortAddress(state.account.address),'profile-account-address'),make('small',state.account.namespace==='solana'?'Solana account':'Ethereum account'));identity.title=state.account.address||'';}
+  if(authenticated){const avatar=logo.cloneNode();avatar.hidden=false;avatar.className='profile-avatar';identity.append(avatar);const address=make('button',shortAddress(state.account.address),'profile-account-address');address.type='button';address.title=state.account.address;address.setAttribute('aria-label','Copy wallet address '+state.account.address);address.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(state.account.address);address.textContent='Copied';setTimeout(()=>{if(address.isConnected)address.textContent=shortAddress(state.account.address);},1600);}catch{errorMessage='Could not copy wallet address.';paint();}});identity.append(address,make('small',state.account.namespace==='solana'?'Solana account':'Ethereum account'));identity.title=state.account.address||'';}
   wallet.disabled=signOut.disabled=busy;refresh.hidden=!authenticated;refresh.disabled=busy||loading;refresh.setAttribute('aria-busy',String(loading));
   signIn.hidden=authenticated||loading;signIn.disabled=busy;signIn.textContent='Continue with wallet';
   retry.hidden=!(state.status==='error'&&authenticated)&&!errorMessage;retry.disabled=busy||loading;
@@ -108,8 +106,6 @@ export function bindProfile(button){
  });
  signOut.addEventListener('click',async()=>{if(busy)return;busy=true;busyLabel='Signing out…';errorMessage='';paint();try{await signOutSavedCoins();}catch(error){errorMessage=plainError(error);}finally{busy=false;paint();}});
  refresh.addEventListener('click',refreshSaved);retry.addEventListener('click',refreshSaved);
- button.addEventListener('click',()=>{if(!savedCoinsState().account){void beginSignIn();return;}show();void refreshSaved();});close.addEventListener('click',hide);
- dialog.addEventListener('click',event=>{if(event.target===dialog){const rect=dialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)hide();}});
- dialog.addEventListener('close',()=>{if(dialog.open)return;document.documentElement.style.overflow=oldOverflow;button.setAttribute('aria-expanded','false');button.focus({preventScroll:true});});
- window.addEventListener('upic:saved-coins-changed',paint);paint();
+ button.addEventListener('click',()=>{if(onPage){if(!savedCoinsState().account)void beginSignIn();return;}location.assign(profileURL.href);});
+ window.addEventListener('upic:saved-coins-changed',paint);paint();if(onPage)void refreshSaved();
 }
