@@ -2,6 +2,22 @@
 
 Everything here runs on test networks with valueless assets. Nothing is a public offering.
 
+## Public staging interface on GitHub Pages
+
+The interface is published at https://upic-art.github.io/rhosnei.gr/staging/.
+The Pages workflow builds production from `main` and the staging interface from
+`staging/testnet-readiness`, then publishes them in one artifact. A completed
+Staging workflow refreshes this Pages build without deploying from an unapproved
+branch into the production Pages environment.
+
+This path is public, with `noindex,nofollow`; it is not protected by Cloudflare
+Access. No secrets are included. Until a public staging API is configured through
+the repository variable `STAGING_PUBLIC_API_URL`, the interface displays an
+unconnected status and disables wallet connection. Publishing this interface does
+not deploy contracts, the platform API, or the private Cloudflare environment.
+A future API endpoint must explicitly allow the Pages origin and handle cross-origin
+sessions; the existing private service binding cannot be used as that endpoint.
+
 ## What deploys where
 
 | Piece | Source | Staging Worker | Public URL |
