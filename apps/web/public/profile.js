@@ -1,5 +1,6 @@
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=422';
-import {profileWalletController} from './wallet-session.js?v=422';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,signOutSavedCoins,removeSavedCoin} from './saved-coins.js?v=424';
+import {profileWalletController} from './wallet-session.js?v=424';
+import {pendingProfileSignIn,endProfileSignIn} from './profile-sign-in-intent.js?v=424';
 
 const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;};
 const shortAddress=value=>value?value.slice(0,6)+'…'+value.slice(-4):'';
@@ -30,7 +31,7 @@ const icons={
 export function bindProfile(button){
  if(!button||button.dataset.profileReady)return;button.dataset.profileReady='true';
  const originalIcon=button.innerHTML,page=document.getElementById('profile-page-content');
- if(!document.querySelector('link[data-profile-style]')){const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=422',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);}
+ if(!document.querySelector('link[data-profile-style]')){const link=make('link');link.rel='stylesheet';link.href=new URL('./profile.css?v=424',import.meta.url).href;link.dataset.profileStyle='true';document.head.append(link);}
  const matrix=tintFilter();let signingIn=false;
  const notice=make('p',null,'profile-notice');notice.hidden=true;notice.setAttribute('role','status');document.body.append(notice);
  function paintHeader(){
@@ -41,15 +42,31 @@ export function bindProfile(button){
   button.innerHTML=account?'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="var(--profile-color)" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="9" r="3" fill="#fff"/><path d="M5.7 17.8C6.8 12.6 17.2 12.6 18.3 17.8A8.3 8.3 0 0 1 5.7 17.8Z" fill="#fff"/></svg>':originalIcon;
   matrix.setAttribute('values',color.map(c=>[.2126*c/255,.7152*c/255,.0722*c/255,0,0].join(' ')).join(' ')+' 0 0 0 1 0');
  }
- button.addEventListener('click',async()=>{
+ async function startSignIn(){
   if(savedCoinsState().account){if(!page)location.assign(profileURL.href);return;}
   if(signingIn)return;signingIn=true;notice.hidden=true;button.setAttribute('aria-busy','true');
   try{await signInSavedCoins();if(savedCoinsState().account)location.assign(profileURL.href);}
   catch(error){if(!/cancelled/i.test(message(error))){notice.textContent=message(error);notice.hidden=false;}}
   finally{signingIn=false;button.removeAttribute('aria-busy');paintHeader();}
- });
+ }
+ button.addEventListener('click',startSignIn);
  window.addEventListener('upic:saved-coins-changed',paintHeader);paintHeader();
- if(!page)return;
+ if(!page){
+  let resume;
+  const offerResume=()=>{
+   if(savedCoinsState().account){endProfileSignIn();return;}
+   if(signingIn||savedCoinsState().status==='loading'||resume?.open||!pendingProfileSignIn())return;
+   resume=make('dialog',null,'upic-wallet-dialog upic-login-resume');resume.setAttribute('aria-label','Finish signing in');
+   const heading=make('header'),title=make('h2','Finish signing in'),close=make('button','×');close.type='button';close.setAttribute('aria-label','Cancel sign-in');heading.append(title,close);
+   const copy=make('p','Continue with your wallet to finish signing in.'),proceed=make('button','Continue','upic-login-continue');proceed.type='button';
+   const dismiss=()=>{resume.close();resume.remove();};
+   close.addEventListener('click',()=>{endProfileSignIn();dismiss();});
+   resume.addEventListener('cancel',event=>{event.preventDefault();endProfileSignIn();dismiss();});
+   proceed.addEventListener('click',()=>{dismiss();void startSignIn();});
+   resume.append(heading,copy,proceed);document.body.append(resume);resume.showModal();
+  };
+  window.addEventListener('pageshow',offerResume);offerResume();return;
+ }
  if(!savedCoinsState().account){location.replace(homeURL.href);return;}
  mountProfile(page);
 }

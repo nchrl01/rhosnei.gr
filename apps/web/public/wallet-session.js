@@ -17,7 +17,7 @@ async function configuration(){
 }
 export async function openWalletConnection(){
  if(opening)return opening;
- opening=(async()=>{const config=await configuration();const {connect}=await import('./vendor/wallet/connect.js?v=422');return connect(config.projectId,accountChanged);})();
+ opening=(async()=>{const config=await configuration();const {connect}=await import('./vendor/wallet/connect.js?v=424');return connect(config.projectId,accountChanged);})();
  try{return await opening;}finally{opening=null;}
 }
 export async function ensureWalletAccount(){
@@ -26,23 +26,43 @@ export async function ensureWalletAccount(){
  connecting=(async()=>{
   const modal=await openWalletConnection();
   accountChanged(modal.getAccount());
-  if(getWalletAccount()){await modal.close();return getWalletAccount();}
+  if(getWalletAccount()){const connected=getWalletAccount();await modal.close();return connected;}
   return new Promise((resolve,reject)=>{
-   let settled=false,offAccount=()=>{},offState=()=>{},closedTimer;
+   let settled=false,cancelRequested=false,timedOut=false,timeout,finishTimer;
+   const disposers=[],page=globalThis.document;
+   const hidden=()=>page?.hidden===true;
    const finish=(error,value)=>{
-    if(settled)return;settled=true;clearTimeout(timeout);clearTimeout(closedTimer);offAccount();offState();
-    if(error)reject(error);else{void modal.close();resolve(value);}
+    if(settled)return;settled=true;clearTimeout(timeout);clearTimeout(finishTimer);
+    for(const off of disposers.splice(0)){try{off();}catch{}}
+    if(error)reject(error);else{void Promise.resolve().then(()=>modal.close()).catch(()=>{});resolve(value);}
    };
-   const check=value=>{accountChanged(value);if(getWalletAccount())finish(null,getWalletAccount());};
-   const timeout=setTimeout(()=>finish(Error('Sign-in timed out. Please try again.')),180000);
-   offAccount=modal.subscribeAccount(check);
-   offState=modal.subscribeState(state=>{
-    if(state.open){clearTimeout(closedTimer);return;}
-    // Account notification can arrive just after the picker closes.
-    closedTimer=setTimeout(()=>{check(modal.getAccount());if(!settled)finish(Error('Sign-in cancelled.'));},250);
-   });
-   check(modal.getAccount());
-   if(!modal.getState().open&&!settled)closedTimer=setTimeout(()=>finish(Error('Sign-in cancelled.')),250);
+   const check=value=>{if(settled)return;accountChanged(value);if(getWalletAccount())finish(null,getWalletAccount());};
+   const finishAfterAccountDelivery=delay=>{
+    clearTimeout(finishTimer);
+    if(settled||hidden()||!cancelRequested&&!timedOut)return;
+    finishTimer=setTimeout(()=>{
+     if(hidden()||settled)return;
+     check(modal.getAccount());if(settled)return;
+     if(cancelRequested&&modal.getState().open)cancelRequested=false;
+     if(timedOut)finish(Error('Sign-in timed out. Please try again.'));
+     else if(cancelRequested)finish(Error('Sign-in cancelled.'));
+    },delay);
+   };
+   // Mobile wallet handoffs can close the SDK panel before its account arrives.
+   // Only our wrapper's explicit user-dismiss event is a cancellation.
+   const onClose=()=>{if(settled)return;cancelRequested=true;check(modal.getAccount());finishAfterAccountDelivery(500);};
+   const onState=state=>{if(state.open){cancelRequested=false;if(!timedOut)clearTimeout(finishTimer);}};
+   const onVisible=()=>{if(hidden()||settled)return;check(modal.getAccount());finishAfterAccountDelivery(1000);};
+   if(page?.addEventListener){page.addEventListener('visibilitychange',onVisible);disposers.push(()=>page.removeEventListener('visibilitychange',onVisible));}
+   timeout=setTimeout(()=>{timedOut=true;check(modal.getAccount());finishAfterAccountDelivery(0);},180000);
+   // A subscription may deliver a restored account before returning its disposer.
+   const listen=(subscribe,listener)=>{if(settled)return;const off=subscribe(listener);if(typeof off==='function'){if(settled)off();else disposers.push(off);}};
+   try{
+    listen(listener=>modal.subscribeAccount(listener),check);
+    listen(listener=>modal.subscribeState(listener),onState);
+    listen(listener=>modal.subscribeClose(listener),onClose);
+    check(modal.getAccount());
+   }catch(error){finish(error);}
   });
  })();
  try{return await connecting;}finally{connecting=null;}
@@ -50,12 +70,12 @@ export async function ensureWalletAccount(){
 export async function signWalletMessage(message,expectedAccount=getWalletAccount()){
  if(!expectedAccount?.address)throw Error('Connect a wallet to sign in.');
  const namespace=expectedAccount.namespace||String(expectedAccount.caipAddress||'').split(':')[0];
- const {signProfileMessage}=await import('./vendor/wallet/connect.js?v=422');
+ const {signProfileMessage}=await import('./vendor/wallet/connect.js?v=424');
  const signature=await signProfileMessage(message,{...expectedAccount,namespace});
  return {account:{...expectedAccount,namespace},signature,namespace};
 }
 
 export async function profileWalletController(){
- const config=await configuration();const {connect}=await import('./vendor/wallet/connect.js?v=422');
+ const config=await configuration();const {connect}=await import('./vendor/wallet/connect.js?v=424');
  return connect(config.projectId,accountChanged,{silent:true});
 }

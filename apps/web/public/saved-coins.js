@@ -1,4 +1,5 @@
-import {getWalletAccount,subscribeWalletAccount,ensureWalletAccount,signWalletMessage} from './wallet-session.js?v=422';
+import {getWalletAccount,subscribeWalletAccount,ensureWalletAccount,signWalletMessage} from './wallet-session.js?v=424';
+import {beginProfileSignIn,endProfileSignIn} from './profile-sign-in-intent.js?v=424';
 const ENDPOINT='https://upic-insightx.nchrl01.workers.dev/profile',LIMIT=100;
 const venues=new Set(['kraken','coinbaseexchange','binance']);
 let cache=[],session=null,epoch=0,loading=null,signingIn=null,mutation=Promise.resolve();
@@ -83,6 +84,7 @@ export async function signInSavedCoins(){
  if(requireSession()){if(state.status!=='ready')await loadSavedCoins();return savedCoins();}
  if(signingIn)return signingIn;
  const task=Promise.resolve().then(async()=>{
+  beginProfileSignIn();
   update('loading');
   try{
    const wallet=await ensureWalletAccount(),key=accountKey(wallet),revision=epoch;
@@ -98,6 +100,7 @@ export async function signInSavedCoins(){
    session={token:result.token,expiresAt:result.expiresAt,account:result.account};rememberSession();cache=[];
    return await loadSavedCoins();
   }catch(error){if(!session)update('signed-out',error.message);throw error;}
+  finally{endProfileSignIn();}
  });signingIn=task;
  try{return await task;}finally{if(signingIn===task)signingIn=null;}
 }

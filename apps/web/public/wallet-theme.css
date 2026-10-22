@@ -104,3 +104,17 @@ w3m-modal {
 
 .upic-wallet-dialog.is-wallet-action>.upic-wallet-logo{display:none}
 .upic-wallet-dialog w3m-modal{--apkt-tokens-theme-borderPrimary:transparent;--apkt-tokens-theme-borderPrimaryDark:transparent}
+
+.upic-signature-dialog{padding:20px;font-size:var(--font-size-body,16px);line-height:1.5}
+.upic-signature-header{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:12px;align-items:center}
+.upic-signature-header h2{margin:0;font:inherit;font-size:var(--font-size-title,24px);line-height:1.2;color:#fff}
+.upic-signature-dialog button{box-sizing:border-box;min-height:48px;border:1px solid #555;background:#000;color:#fff;font:inherit;cursor:pointer;touch-action:manipulation}
+.upic-signature-dialog .upic-signature-close{width:44px;min-height:44px;padding:0;border:0;font-size:28px;line-height:1}
+.upic-signature-explanation{margin:20px 0 24px;color:#aaa;overflow-wrap:anywhere}
+.upic-signature-status{margin:0 0 20px;color:#ddd;overflow-wrap:anywhere}
+.upic-signature-continue,.upic-signature-reopen{display:block;width:100%;padding:12px 16px}
+.upic-signature-dialog .upic-signature-reopen{margin-top:12px;border-color:#333}
+.upic-signature-dialog button:disabled{cursor:default;color:#aaa;border-color:#333}
+.upic-signature-dialog button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.upic-signature-dialog [hidden]{display:none}
+@media(max-width:760px){.upic-signature-dialog{padding:16px}.upic-signature-header h2{font-size:20px}}

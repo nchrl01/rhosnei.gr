@@ -1,9 +1,9 @@
 import {beforeEach,afterEach,describe,expect,it,vi} from 'vitest';
 
 const wallet=vi.hoisted(()=>({account:null,listener:null,get:vi.fn(),ensure:vi.fn(),sign:vi.fn()}));
-vi.mock('../public/wallet-session.js?v=395',()=>({
+vi.mock('../public/wallet-session.js?v=424',()=>({
  getWalletAccount:wallet.get,ensureWalletAccount:wallet.ensure,signWalletMessage:wallet.sign,
- subscribeWalletAccount:callback=>{wallet.listener=callback;return ()=>{};},
+ subscribeWalletAccount:callback=>{wallet.listener=callback;callback(wallet.account);return ()=>{};},
 }));
 const account={namespace:'eip155',address:'0x1234567890123456789012345678901234567890',chainId:'eip155:1'};
 const pair={chainId:'ethereum',baseToken:{address:'0xAbCd',symbol:'TEST',name:'Test coin'},info:{imageUrl:'https://example.com/coin.png'}};

@@ -65,3 +65,8 @@
 @media(min-width:761px){.profile-identity{padding-inline:8px}}
 
 .profile-content .profile-reconnect{border:1px solid var(--line,#333);background:transparent;padding:8px 16px;font-size:var(--profile-small);text-transform:uppercase;margin:8px}
+.upic-login-resume>header{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.upic-login-resume h2{margin:0;font:inherit;text-transform:uppercase}
+.upic-login-resume>header button{flex:none;width:44px;height:44px;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:28px}
+.upic-login-resume>p{margin:16px 0 24px;font:inherit;line-height:1.5;color:#aaa}
+.upic-login-resume .upic-login-continue{width:100%;min-height:48px;border:1px solid #666;background:transparent;color:inherit;font:inherit;text-transform:uppercase}
