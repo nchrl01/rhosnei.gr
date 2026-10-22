@@ -1,5 +1,5 @@
-import {getWalletAccount,subscribeWalletAccount,ensureWalletAccount,signWalletMessage} from './wallet-session.js?v=431';
-import {beginProfileSignIn,endProfileSignIn} from './profile-sign-in-intent.js?v=431';
+import {getWalletAccount,subscribeWalletAccount,ensureWalletAccount,signWalletMessage} from './wallet-session.js?v=432';
+import {beginProfileSignIn,endProfileSignIn} from './profile-sign-in-intent.js?v=432';
 const ENDPOINT='https://upic-insightx.nchrl01.workers.dev/profile',LIMIT=100;
 const venues=new Set(['kraken','coinbaseexchange','binance']);
 let cache=[],session=null,epoch=0,loading=null,signingIn=null,mutation=Promise.resolve();

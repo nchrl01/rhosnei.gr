@@ -1,0 +1,804 @@
+{
+  "checkedAt": "2026-10-23",
+  "note": "Point-in-time source observations, not an exhaustive popularity ranking. Missing pools or rate limiting are not proof of no activity. The older 0xce58 Filecoin candidate was rejected in favour of the GLIF documented mainnet wrapper.",
+  "observations": [
+    {
+      "id": "ethereum",
+      "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "chain": "ethereum",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 322318179.9899999,
+      "listedVolume24h": 150213537.75
+    },
+    {
+      "id": "bitcoin",
+      "address": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      "chain": "ethereum",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 349807597.25,
+      "listedVolume24h": 59181923.75999998
+    },
+    {
+      "id": "avalanche-2",
+      "address": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+      "chain": "avalanche",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 14259288.77,
+      "listedVolume24h": 48453683.39999999
+    },
+    {
+      "id": "ronin",
+      "address": "0xe514d9deb7966c8be0ca922de8a064264ea6bcd4",
+      "chain": "ronin",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 200,
+      "geckoPools": [
+        {
+          "name": "WRON / WETH",
+          "reserve": 2053307.8708,
+          "volume24h": 41842.6951803649
+        },
+        {
+          "name": "AXS / WRON 0.3%",
+          "reserve": 439895.9468,
+          "volume24h": 21190.1517789248
+        },
+        {
+          "name": "USDC / WRON",
+          "reserve": 384239.8973,
+          "volume24h": 23826.3396029271
+        },
+        {
+          "name": "USDC / WRON 0.3%",
+          "reserve": 286768.1636,
+          "volume24h": 22254.636801424
+        },
+        {
+          "name": "AXS / WRON",
+          "reserve": 280538.6469,
+          "volume24h": 5505.4922179254
+        },
+        {
+          "name": "WETH / WRON 0.3%",
+          "reserve": 281457.5877,
+          "volume24h": 3411.5969569765
+        },
+        {
+          "name": "POWER / WRON 0.3%",
+          "reserve": 94390.5618,
+          "volume24h": 4880.4363293057
+        },
+        {
+          "name": "PIXEL / WRON 0.3%",
+          "reserve": 44312.0607,
+          "volume24h": 7385.2334708609
+        },
+        {
+          "name": "SLP / WRON",
+          "reserve": 157476.827,
+          "volume24h": 1647.1604047544
+        },
+        {
+          "name": "FLOWER / WRON 0.3%",
+          "reserve": 26317.1817,
+          "volume24h": 6760.3739743085
+        },
+        {
+          "name": "Ronke / WRON",
+          "reserve": 34937.7173,
+          "volume24h": 3953.1486968037
+        },
+        {
+          "name": "PIXEL / WRON",
+          "reserve": 44654.2329,
+          "volume24h": 1224.1068097445
+        },
+        {
+          "name": "WBTC / WRON",
+          "reserve": 35319.4818,
+          "volume24h": 807.6793410812
+        },
+        {
+          "name": "WF / WRON",
+          "reserve": 9021.0277,
+          "volume24h": 1314.9169513346
+        },
+        {
+          "name": "SLP / WRON 0.3%",
+          "reserve": 44879.9877,
+          "volume24h": 178.9538038908
+        },
+        {
+          "name": "COIN / WRON 1%",
+          "reserve": 5753.2465,
+          "volume24h": 580.0799636101
+        },
+        {
+          "name": "YGG / WRON 0.3%",
+          "reserve": 12588.4547,
+          "volume24h": 237.5015540149
+        },
+        {
+          "name": "COGS / WRON",
+          "reserve": 4476.1418,
+          "volume24h": 98.5787951166
+        },
+        {
+          "name": "CAG / WRON",
+          "reserve": 9748.7721,
+          "volume24h": 43.2576247933
+        },
+        {
+          "name": "KDR / WRON",
+          "reserve": 5466.6345,
+          "volume24h": 43.8026779822
+        }
+      ]
+    },
+    {
+      "id": "flow",
+      "address": "0xd3bF53DAC106A0290B0483EcBC89d40FcC961f3e",
+      "chain": "flow",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 200,
+      "geckoPools": [
+        {
+          "name": "PYUSD0 / WFLOW 0.3%",
+          "reserve": 772784.373,
+          "volume24h": 127731.170871068
+        },
+        {
+          "name": "ankrFLOWEVM / WFLOW 0.01%",
+          "reserve": 1354952.5677,
+          "volume24h": 4446.7462784727
+        },
+        {
+          "name": "USDF / WFLOW",
+          "reserve": 311770.3132,
+          "volume24h": 12319.6783347988
+        },
+        {
+          "name": "USDF / WFLOW 0.3%",
+          "reserve": 89981.3105,
+          "volume24h": 17002.0215927081
+        },
+        {
+          "name": "WETH / WFLOW 0.3%",
+          "reserve": 113950.1479,
+          "volume24h": 2056.1533533973
+        },
+        {
+          "name": "syWFLOWv / WFLOW 0.01%",
+          "reserve": 84287.307,
+          "volume24h": 355.8921938755
+        },
+        {
+          "name": "stgUSDC / WFLOW 0.3%",
+          "reserve": 44519.4567,
+          "volume24h": 224.5313192468
+        },
+        {
+          "name": "FROTH / WFLOW",
+          "reserve": 48182.4487,
+          "volume24h": 119.558753767
+        },
+        {
+          "name": "BETA / WFLOW",
+          "reserve": 6218.4886,
+          "volume24h": 179.9559733255
+        },
+        {
+          "name": "WBTC / WFLOW",
+          "reserve": 6546.0618,
+          "volume24h": 102.6193700291
+        },
+        {
+          "name": "TSHOT / WFLOW",
+          "reserve": 13354.3057,
+          "volume24h": 39.9074181423
+        },
+        {
+          "name": "WETH / WFLOW",
+          "reserve": 5087.4408,
+          "volume24h": 55.212552968
+        },
+        {
+          "name": "USDC.e / WFLOW",
+          "reserve": 576.1466,
+          "volume24h": 198.4306706515
+        },
+        {
+          "name": "PYUSD0 / WFLOW 0.3%",
+          "reserve": 878.8638,
+          "volume24h": 120.1934851676
+        },
+        {
+          "name": "FROTH / WFLOW 0.3%",
+          "reserve": 1156.7117,
+          "volume24h": 37.5775989675
+        },
+        {
+          "name": "AVO / WFLOW",
+          "reserve": 2897.3949,
+          "volume24h": 1.3662829541
+        },
+        {
+          "name": "syWFLOWv / WFLOW 0.01%",
+          "reserve": 9234.3957,
+          "volume24h": 0.418445782
+        },
+        {
+          "name": "USDC.e / WFLOW 0.3%",
+          "reserve": 15523.8802,
+          "volume24h": 0.07332921666
+        },
+        {
+          "name": "DPIN / WFLOW",
+          "reserve": 158.4974,
+          "volume24h": 2.0356215175
+        },
+        {
+          "name": "PYUSD0 / WFLOW",
+          "reserve": 122.3043,
+          "volume24h": 2.373695913
+        }
+      ]
+    },
+    {
+      "id": "filecoin",
+      "address": "0xce5805cf6c84f71d2897f632e0aa60d2430ccd2a",
+      "chain": "filecoin",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 200,
+      "geckoPools": [
+        {
+          "name": "WFIL / USDT",
+          "reserve": 1309.9910825448,
+          "volume24h": 0
+        },
+        {
+          "name": "FZilla / WFIL",
+          "reserve": 341.5806692664,
+          "volume24h": 0
+        },
+        {
+          "name": "Cwif / WFIL",
+          "reserve": 194.1848212211,
+          "volume24h": 0
+        },
+        {
+          "name": "FVM / WFIL",
+          "reserve": 125.4125,
+          "volume24h": 0
+        },
+        {
+          "name": "FCC / WFIL",
+          "reserve": 71.4247039836,
+          "volume24h": 0
+        },
+        {
+          "name": "THS / WFIL",
+          "reserve": 26.8312843426,
+          "volume24h": 0
+        },
+        {
+          "name": "VFNS / WFIL",
+          "reserve": 5.3875,
+          "volume24h": 0
+        },
+        {
+          "name": "OV / WFIL",
+          "reserve": 5.693720558,
+          "volume24h": 0
+        },
+        {
+          "name": "tUSDT / WFIL",
+          "reserve": 0.8129884789,
+          "volume24h": 0
+        },
+        {
+          "name": "FPEPE / WFIL",
+          "reserve": 3.7122,
+          "volume24h": 0
+        },
+        {
+          "name": "CORGI / WFIL",
+          "reserve": 0.3033274207,
+          "volume24h": 0
+        },
+        {
+          "name": "SMP / WFIL",
+          "reserve": 0.2388923376,
+          "volume24h": 0
+        },
+        {
+          "name": "TT / WFIL",
+          "reserve": 0.2397253144,
+          "volume24h": 0
+        },
+        {
+          "name": "$FGRELF / WFIL",
+          "reserve": 0.5895,
+          "volume24h": 0
+        },
+        {
+          "name": "FINU / WFIL",
+          "reserve": 0.5869,
+          "volume24h": 0
+        },
+        {
+          "name": "Floki / WFIL",
+          "reserve": 0.3453,
+          "volume24h": 0
+        },
+        {
+          "name": "FLD / WFIL",
+          "reserve": 0.01306621317,
+          "volume24h": 0
+        },
+        {
+          "name": "COGNI / WFIL",
+          "reserve": 0.0571,
+          "volume24h": 0
+        },
+        {
+          "name": "stFIL / WFIL",
+          "reserve": 0.0002035112468,
+          "volume24h": 0
+        },
+        {
+          "name": "ETF / WFIL",
+          "reserve": 0.0001156665238,
+          "volume24h": 0
+        }
+      ]
+    },
+    {
+      "id": "flare-networks",
+      "address": "0x1d80c49bbbcd1c0911346656b529df9e5c2f783d",
+      "chain": "flare",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 200,
+      "geckoPools": [
+        {
+          "name": "USD₮0 / WFLR 0.05%",
+          "reserve": 1334531.5597,
+          "volume24h": 494088.827891243
+        },
+        {
+          "name": "FXRP / WFLR 0.05%",
+          "reserve": 1094260.8967,
+          "volume24h": 362615.411128739
+        },
+        {
+          "name": "FXRP / WFLR 0.3%",
+          "reserve": 958722.1157,
+          "volume24h": 97603.7275768291
+        },
+        {
+          "name": "USD₮0 / WFLR 0.3%",
+          "reserve": 524635.9986,
+          "volume24h": 166477.40862839
+        },
+        {
+          "name": "sFLR / WFLR 0.05%",
+          "reserve": 1044695.6507,
+          "volume24h": 12861.6158215113
+        },
+        {
+          "name": "stFLR / WFLR 0.05%",
+          "reserve": 1269904.6135,
+          "volume24h": 4270.8575400935
+        },
+        {
+          "name": "WETH / WFLR 0.05%",
+          "reserve": 96785.6053,
+          "volume24h": 51049.8827038115
+        },
+        {
+          "name": "CDP / WFLR 0.3%",
+          "reserve": 61096.1535,
+          "volume24h": 44496.1648011376
+        },
+        {
+          "name": "sFLR / WFLR 0.05%",
+          "reserve": 204744.0099,
+          "volume24h": 9629.1157812372
+        },
+        {
+          "name": "sFLR / WFLR 0.01%",
+          "reserve": 142499.069,
+          "volume24h": 5355.3315937164
+        },
+        {
+          "name": "FXRP / WFLR 0.05%",
+          "reserve": 61464.1403,
+          "volume24h": 11165.229163249
+        },
+        {
+          "name": "USDC.e / WFLR",
+          "reserve": 204691.814,
+          "volume24h": 2409.1114413221
+        },
+        {
+          "name": "USDC.e / WFLR 0.05%",
+          "reserve": 27241.3634,
+          "volume24h": 15145.7695580598
+        },
+        {
+          "name": "USDT / WFLR",
+          "reserve": 160562.9302,
+          "volume24h": 1641.4043495969
+        },
+        {
+          "name": "SPRK / WFLR 1%",
+          "reserve": 341064.6465,
+          "volume24h": 639.8651053141
+        },
+        {
+          "name": "HLN / WFLR 0.3%",
+          "reserve": 24047.2544,
+          "volume24h": 6993.5973396913
+        },
+        {
+          "name": "USD₮0 / WFLR",
+          "reserve": 82976.2162,
+          "volume24h": 1252.6024859729
+        },
+        {
+          "name": "APS / WFLR 0.3%",
+          "reserve": 16670.9399,
+          "volume24h": 4194.7630072405
+        },
+        {
+          "name": "FXRP / WFLR",
+          "reserve": 15159.5461,
+          "volume24h": 970.4878521744
+        },
+        {
+          "name": "stXRP / WFLR 0.05%",
+          "reserve": 27957.4517,
+          "volume24h": 417.2681048661
+        }
+      ]
+    },
+    {
+      "id": "kucoin-shares",
+      "address": "0x4446fc4eb47f2f6586f9faab68b3498f86c07521",
+      "chain": "kcc",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 200,
+      "geckoPools": [
+        {
+          "name": "WKCS / USDC",
+          "reserve": 107888.2494,
+          "volume24h": 4769.1296711007
+        },
+        {
+          "name": "MJT / WKCS",
+          "reserve": 192133.9041,
+          "volume24h": 309.0428606859
+        },
+        {
+          "name": "USDT / WKCS",
+          "reserve": 22278.3665,
+          "volume24h": 1413.1997401933
+        },
+        {
+          "name": "ETH / WKCS",
+          "reserve": 19123.4801,
+          "volume24h": 303.8685850658
+        },
+        {
+          "name": "USDT / WKCS",
+          "reserve": 13242.6546,
+          "volume24h": 413.1096428386
+        },
+        {
+          "name": "BTCK / WKCS",
+          "reserve": 16137.5553,
+          "volume24h": 149.5815927735
+        },
+        {
+          "name": "WKCS / USDC",
+          "reserve": 11163.8419,
+          "volume24h": 207.297645287
+        },
+        {
+          "name": "KuPAS / WKCS",
+          "reserve": 27070.9008,
+          "volume24h": 67.0291852823
+        },
+        {
+          "name": "ETH / WKCS",
+          "reserve": 12792.0957,
+          "volume24h": 138.476555574
+        },
+        {
+          "name": "WKCS / KUS",
+          "reserve": 16018.7721,
+          "volume24h": 23.7680654259
+        },
+        {
+          "name": "sKCS / WKCS",
+          "reserve": 4535.645,
+          "volume24h": 58.4147355424
+        },
+        {
+          "name": "BTCK / WKCS",
+          "reserve": 7340.9124,
+          "volume24h": 32.2702786708
+        },
+        {
+          "name": "WBTC / WKCS",
+          "reserve": 7138.6001,
+          "volume24h": 15.394491764
+        },
+        {
+          "name": "BUSD / WKCS",
+          "reserve": 2973.1968,
+          "volume24h": 26.6831222466
+        },
+        {
+          "name": "WKCS / USDC",
+          "reserve": 840.6529,
+          "volume24h": 3.6585769147
+        },
+        {
+          "name": "BNB / WKCS",
+          "reserve": 1937.7566,
+          "volume24h": 0.7146706537
+        },
+        {
+          "name": "KuDo / WKCS",
+          "reserve": 19751.3052877518,
+          "volume24h": 0
+        },
+        {
+          "name": "KuPAS / WKCS",
+          "reserve": 13621.4601,
+          "volume24h": 0
+        },
+        {
+          "name": "KUSDOGE / WKCS",
+          "reserve": 17640.4085679452,
+          "volume24h": 0
+        },
+        {
+          "name": "KuKennel / WKCS",
+          "reserve": 16700.1593,
+          "volume24h": 0
+        }
+      ]
+    },
+    {
+      "id": "kaia",
+      "address": "0x57d1a61e4fd09fbf16e35b04959e94dcf2032974",
+      "chain": "kaia",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 404
+    },
+    {
+      "id": "kaia",
+      "address": "0x19aac5f612f524b754ca7e7c41cbfa2e981a4432",
+      "chain": "kaia",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "kaia",
+      "address": "0xe4f05a66ec68b54a58b17c22107b02e0232cc817",
+      "chain": "kaia",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "plasma",
+      "address": "0x6100e367285b01f48d07953803a2d8dca5d19873",
+      "chain": "plasma",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 3330562.6499999994,
+      "listedVolume24h": 2325411.18
+    },
+    {
+      "id": "sonic-3",
+      "address": "0x039e2fb66102314ce7b64ce5ce3e5183bc94ad38",
+      "chain": "sonic",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 341737.5399999999,
+      "listedVolume24h": 420686.92000000004
+    },
+    {
+      "id": "berachain-bera",
+      "address": "0x6969696969696969696969696969696969696969",
+      "chain": "berachain",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 964737.3900000001,
+      "listedVolume24h": 97858.30999999998
+    },
+    {
+      "id": "sei-network",
+      "address": "0xE30feDd158A2e3b13e9badaeABaFc5516e95e8C7",
+      "chain": "sei",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "conflux-token",
+      "address": "0x14b2d3bc65e74dae1030eafd8ac30c533c976a9b",
+      "chain": "conflux",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 1381817.0500000003,
+      "listedVolume24h": 21958.25
+    },
+    {
+      "id": "monad",
+      "address": "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A",
+      "chain": "monad",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 1354158.48,
+      "listedVolume24h": 854929.58
+    },
+    {
+      "id": "somnia",
+      "address": "0x046ede9564a72571df6f5e44d0405360c0f4dcab",
+      "chain": "somnia",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "hedera-hashgraph",
+      "address": "0x0000000000000000000000000000000000163b5a",
+      "chain": "hedera",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 21150424.84,
+      "listedVolume24h": 1164503.62
+    },
+    {
+      "id": "hedera-hashgraph",
+      "address": "0x00000000000000000000000000000000000F7e89",
+      "chain": "hedera",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "hedera-hashgraph",
+      "address": "0x00000000000000000000000000000000002cc823",
+      "chain": "hedera",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "wemix-token",
+      "address": "0x7d72b22a74a216af4a002a1095c8c707d6ec1c5f",
+      "chain": "wemix",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "xdce-crowd-sale",
+      "address": "0x951857744785e80e2de051c32ee7b25f9c458c42",
+      "chain": "xdc",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "stratis",
+      "address": "0xeA705D2DbD8DE7Dc70Db7B531D0F620d9CeE9d18",
+      "chain": "stratis",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "theta-fuel",
+      "address": "0x4dc08b15ea0e10b96c41aec22fab934ba15c983e",
+      "chain": "theta",
+      "dexscreenerPools": 0,
+      "listedLiquidity": 0,
+      "listedVolume24h": 0,
+      "geckoStatus": 429
+    },
+    {
+      "id": "solana",
+      "address": "So11111111111111111111111111111111111111112",
+      "chain": "solana",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 87287106.87999998,
+      "listedVolume24h": 171773236.18999994
+    },
+    {
+      "id": "dogecoin",
+      "address": "0xba2ae424d960c26247dd6c32edc70b295c744c43",
+      "chain": "bsc",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 5501020.250000001,
+      "listedVolume24h": 401638.6
+    },
+    {
+      "id": "cardano",
+      "address": "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+      "chain": "bsc",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 1702492.1,
+      "listedVolume24h": 242176.49
+    },
+    {
+      "id": "ripple",
+      "address": "0x1d2f0da169ceb9fc7b3144628db156f3f6c60dbe",
+      "chain": "bsc",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 4715350.499999998,
+      "listedVolume24h": 847464.3200000002
+    },
+    {
+      "id": "litecoin",
+      "address": "0x4338665cbb7b2485a8855a139b75d5e34ab0db94",
+      "chain": "bsc",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 1139960.5800000005,
+      "listedVolume24h": 490617.6500000001
+    },
+    {
+      "id": "polkadot",
+      "address": "0x7083609fce4d1d8dc0c979aab8c869ea2c873402",
+      "chain": "bsc",
+      "dexscreenerPools": 30,
+      "listedLiquidity": 676860.2200000001,
+      "listedVolume24h": 197409
+    },
+    {
+      "id": "bitcoin-cash",
+      "address": "0x8ff795a6f4d97e7887c79bea79aba5cc76444adf",
+      "chain": "bsc",
+      "dexscreenerPools": 26,
+      "listedLiquidity": 142559.60999999996,
+      "listedVolume24h": 10856.619999999999
+    },
+    {
+      "id": "cosmos",
+      "address": "0x0eb3a705fc54725037cc9e008bdede697f62f335",
+      "chain": "bsc",
+      "dexscreenerPools": 15,
+      "listedLiquidity": 93915.81,
+      "listedVolume24h": 18872.32
+    },
+    {
+      "id": "ethereum-classic",
+      "address": "0x3d6545b08693dae087e957cb1180ee38b9e3c25e",
+      "chain": "bsc",
+      "dexscreenerPools": 22,
+      "listedLiquidity": 230173.82,
+      "listedVolume24h": 2949.5400000000004
+    }
+  ]
+}

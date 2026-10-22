@@ -13,6 +13,7 @@ function fixture({playing=false}={}){
   if(!elements.has(id))elements.set(id,{
    value:'',hidden:false,dataset:{searchNetwork:'all'},attributes:{},events:new Map(),
    setAttribute(name,value){this.attributes[name]=value;},
+   removeAttribute(name){delete this.attributes[name];},
    addEventListener(type,fn){this.events.set(type,fn);},
    querySelector(){return null;},
   });
@@ -171,7 +172,7 @@ describe('search playback intent',()=>{
  });
  it('places the compact address after the coin name, outside the search form',()=>{
   const html=readFileSync(new URL('../public/instrument.html',import.meta.url),'utf8');
-  expect(html).toMatch(/<h2 id="coin-name"><\/h2><button[^>]+id="coin-address"/);
+  expect(html).toMatch(/<h2 id="coin-name"><\/h2><div[^>]+id="coin-address-row"[^>]*><button[^>]+id="coin-address"/);
   const form=html.slice(html.indexOf('<form id="coin-form"'),html.indexOf('</form>',html.indexOf('<form id="coin-form"')));
   expect(form).not.toContain('id="coin-address"');
  });

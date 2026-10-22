@@ -1,5 +1,5 @@
 // Production adapter for the approved October 7 pattern-count lab.
-import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=431';
+import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=432';
 import {pixelBlastParameters} from './oct07-live/pixel-blast-parameters.js';
 import {labVisualMappings} from './oct07-live/lab-visual-mappings.js';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));

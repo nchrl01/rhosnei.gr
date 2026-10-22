@@ -805,3 +805,16 @@ button.coin-address:not(:disabled):hover,button.coin-address{background:transpar
 @media(max-width:760px){.audio-visualizer.is-expanded .visual-fullscreen{display:none}}
 
 @media(min-width:761px){.visual-fullscreen{display:none!important}}
+
+/* Keep the copy control and its reference link together at every breakpoint. */
+.coin-address-row{display:flex;align-items:center;gap:8px;min-width:0;max-width:100%}
+.coin-address-row[hidden],.coin-contract-link[hidden]{display:none}
+.coin-address-row .coin-address{flex:0 1 auto;min-width:0}
+.coin-contract-link{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:32px;min-height:32px;color:var(--muted,#aaa);font-size:var(--font-size-small);text-decoration:none}
+.coin-contract-link:hover{color:var(--ink,#eee)}
+.coin-contract-link:focus-visible{outline:1px solid currentColor;outline-offset:2px}
+@media(max-width:760px){
+ .mobile-player-heading .coin-address-row{flex:0 0 100%;justify-content:center}
+ .mobile-player-heading .coin-address-row .coin-address{flex:0 1 auto;max-width:calc(100% - 44px);text-align:center}
+ .mobile-player-heading .coin-contract-link{min-width:44px;min-height:44px}
+}

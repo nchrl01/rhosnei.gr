@@ -1,9 +1,9 @@
-import {nativeWrappedContract} from './native-contracts.js?v=431';
+import {nativeContractReference} from './native-contracts.js?v=432';
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=359';
-import {archivePlayerFrames} from './coin-snapshot-store.js?v=431';
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=432';
 import {bindSearchField} from './search-field.js?v=394';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
@@ -17,7 +17,7 @@ import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=395';
 import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=395';
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
-import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=431';
+import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=432';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
@@ -25,9 +25,9 @@ import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=431';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=432';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=361';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=431';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=432';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=214';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
@@ -836,17 +836,23 @@ async function searchForCoin(query,{network:wantedNetwork=null,autoPlay=true}={}
  finally{if(revision===searchRevision)searchBusy(false);}
 }
 function showCoinAddress(address,network='',nativeAsset=null){
- const button=$('coin-address'),wrapped=nativeAsset?nativeWrappedContract(nativeAsset):null;
- if(wrapped){address=wrapped.address;network=wrapped.chain;}
- const valid=Boolean(wrapped)||typeof address==='string'&&isTokenIdentifier(address);
- button.hidden=!valid;button.dataset.address=valid?address:'';
+ const button=$('coin-address'),row=$('coin-address-row'),link=$('coin-contract-link'),reference=nativeAsset?nativeContractReference(nativeAsset):null;
+ if(reference){address=reference.address;network=reference.chain;}
+ const valid=Boolean(reference)||typeof address==='string'&&isTokenIdentifier(address);
+ button.hidden=!valid;button.dataset.address=valid?address:'';if(row)row.hidden=!valid;
+ if(link){
+  link.hidden=!valid||!reference?.explorerURL;
+  if(!link.hidden){link.href=reference.explorerURL;link.title='View '+reference.symbol+' reference on '+network.toUpperCase();link.setAttribute('aria-label',link.title+' (opens in a new tab)');}
+  else link.removeAttribute('href');
+ }
  if(!valid)return;
  const short=address.length>24?address.slice(0,8)+'…'+address.slice(-6):address;
  const chainLabel=network.toLowerCase()==='solana'?'SOL':network.toUpperCase();
- const chain=document.createElement('span');chain.className='coin-address-network';chain.textContent=(chainLabel?chainLabel+' · ':'')+(wrapped?wrapped.symbol+' (WRAPPED) · ':'');
+ const kind=reference?.kind==='bridged'?'BINANCE-PEG':reference?.kind==='native'?'NATIVE':reference?.kind==='type'?'TYPE':'WRAPPED';
+ const chain=document.createElement('span');chain.className='coin-address-network';chain.textContent=(chainLabel?chainLabel+' · ':'')+(reference?reference.symbol+' ('+kind+') · ':'');
  const ca=document.createElement('span');ca.className='coin-address-value';ca.textContent=short;button.replaceChildren(chain,ca);
- button.title=wrapped?wrapped.symbol+' wrapped contract on '+chainLabel+' · '+address+' · Click to copy':address+' · Copy address';
- button.setAttribute('aria-label',wrapped?'Copy '+wrapped.symbol+' wrapped contract address on '+chainLabel+': '+address:'Copy coin address '+address);
+ button.title=reference?reference.symbol+' '+kind.toLowerCase()+' reference on '+chainLabel+' · '+address+' · Click to copy':address+' · Copy address';
+ button.setAttribute('aria-label',reference?'Copy '+reference.symbol+' '+kind.toLowerCase()+' identifier on '+chainLabel+': '+address:'Copy coin address '+address);
 }
 $('coin-address').addEventListener('click',async()=>{
  const address=$('coin-address').dataset.address;if(!address)return;
