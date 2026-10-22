@@ -465,7 +465,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  #mobile-coin-search :is(#address-label,#coin-gallery-label) span{animation:none!important}
  #mobile-coin-search .address-row>button[type=submit]{display:inline-flex;order:-1;align-items:center;justify-content:center;flex:0 0 32px;width:32px;min-width:32px;height:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:0!important;background:transparent;color:var(--control-ink);font-size:0}
  #mobile-coin-search .address-row>button[type=submit]::before{content:"";width:18px;height:18px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center/contain no-repeat}
- #mobile-coin-search :is(input,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:inset 0 -2px var(--control-ink)}
+ #mobile-coin-search :is(input,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:none}
  #mobile-coin-search .address-row>button[type=submit]:not(:disabled):hover{background:var(--control-hover);border-color:var(--control-ink)}
  .mobile-coin-search form>p:not(#lookup){display:none}
  .mobile-search-feedback:empty{display:none}
@@ -575,7 +575,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row>button[type=submit]{display:inline-flex;order:-1;flex:0 0 32px;align-items:center;justify-content:center;width:32px;min-width:32px;max-width:none;height:29px;min-height:29px;aspect-ratio:auto;margin:0;padding:0;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:0;line-height:1}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row>button[type=submit]::before{content:'';display:block;width:18px;height:18px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center/contain no-repeat}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row>button[type=submit]:not(:disabled):hover{background:var(--control-hover)}
- .header-desktop-search :is(#address,#coin-gallery-search,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:inset 0 -2px var(--control-ink)}
+ .header-desktop-search :is(#address,#coin-gallery-search,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:none}
  .header-desktop-search :is(#address-help,#marketplace-coin-help){position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
  .header-desktop-search .mobile-search-paste{display:none}
  .header-search-panel{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:110;width:min(560px,calc(100vw - 32px));max-height:min(560px,calc(100dvh - var(--navigation-row-height) - 24px));overflow:auto;overscroll-behavior:contain;padding:12px;border:0;background:#000;box-shadow:0 12px 24px #0008}
@@ -720,3 +720,5 @@ body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;ma
 @media(max-width:760px){
  body.about-page>main>.site-footer{position:static;inset:auto;margin-top:28px;z-index:auto}
 }
+
+@media(min-width:761px){.header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row:focus-within{border-bottom-color:var(--control-ink)}}
