@@ -44,7 +44,7 @@ networkButton('all','All networks');
 
 async function loadFrames(){
  const [catalogue,previews]=await Promise.allSettled([loadCoinCatalogue(),loadCloudCaptures()]);
- records=catalogue.status==='fulfilled'?catalogue.value.coins.filter(row=>row.top1000).slice(0,1000).map(row=>({...row})):[];
+ records=catalogue.status==='fulfilled'?catalogue.value.coins.filter(row=>row.top1000).sort((a,b)=>(b.marketCap||0)-(a.marketCap||0)||(a.catalogueRank||Infinity)-(b.catalogueRank||Infinity)).slice(0,100).map(row=>({...row})):[];
  const byKey=new Map();for(const row of records){byKey.set(row.key,row);const native=catalogueNative(row);if(native)byKey.set(previewKey(native.chain,native.address),row);for(const p of row.platforms||[])byKey.set(previewKey(p.chain,p.address),row);}
  function applyFrames(frames){for(const row of records)row.captures={};for(const frame of frames){const row=byKey.get(previewKey(frame.chain,frame.address));if(row)storeCapture(row,frame);}}
  if(previews.status==='fulfilled')applyFrames(previews.value);
