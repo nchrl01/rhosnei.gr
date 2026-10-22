@@ -1,4 +1,4 @@
-import {musicContext} from './music-context.js?v=208';
+import {musicContext} from '../../apps/web/public/music-context.js?v=208';
 
 // Matches the absolute USD milestones currently defined in @upic/domain.
 export const TEST_MILESTONES = [100_000, 500_000, 1_000_000, 2_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000];

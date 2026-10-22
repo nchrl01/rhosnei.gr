@@ -3,7 +3,6 @@ import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=359';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=351';
-import {testEvolutionMetrics,testActivityEvent} from './test-evolution.js?v=1';
 import {bindSearchField} from './search-field.js?v=394';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
@@ -63,7 +62,6 @@ if(captureMode){
 const ui=createUIControls();
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 let envionLoading=null;
-let testExportSession=null;
 let sharedHarmony=null;
 let pd,ctx,gain,listeningGain,outputTap,outputMeters,instrumentTap,audioScopes=[],playing=false,starting=false,poll,market=null,mode='loading',generation=0,loading=false;
 let snapshotController,searchController;
@@ -109,7 +107,7 @@ $('advanced-view').addEventListener('click',()=>{
 const replay=createMarketReplay();
 createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
-const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>{if(!testExportSession)piano?.setArpeggioPattern(pattern);}});
+const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>{piano?.setArpeggioPattern(pattern);}});
 const displaySettings={dither:false};
 const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
 const replayVisualHistory=createReplayVisualHistory($('audio-dots').closest('.audio-visualizer'));
@@ -133,47 +131,6 @@ let coinImageURL='',coinImageKey='',imageController,imageToken='';const tokenIma
 function rejectedCoinImage(key,url){return Date.now()-(failedCoinImages.get(key+'|'+url)||0)<300000;}
 function rejectCoinImage(key,url){failedCoinImages.set(key+'|'+url,Date.now());while(failedCoinImages.size>128)failedCoinImages.delete(failedCoinImages.keys().next().value);}
 const imageKey=pair=>pair.nativeAsset?pair.nativeAsset.chain+':'+pair.nativeAsset.address:pair.chainId+':'+(/^0x[\da-f]{40}$/i.test(pair.baseToken.address)?pair.baseToken.address.toLowerCase():pair.baseToken.address);
-let lastTestActivityId='';
-// Public playback uses observed market data; the retired test controls never mount or restore stored simulations.
-const testMint={simulation:()=>null,setMarket(){},setPlaying(){}};
-function engineMetrics(observed){
- if(testExportSession){const frozen=testExportSession.metrics;return {...frozen,testMint:{...frozen.testMint,original:observed}};}
- return testEvolutionMetrics(observed,testMint.simulation());
-}
-async function prepareTestNftExport(signal){
- const simulation=testMint.simulation();
- if(!simulation?.sampleActivity)throw Error('Choose a test cap and enable sample trades first.');
- const wasPlaying=playing,coinGeneration=generation,id=Symbol('test-export');let visual;
- const check=()=>{if(signal.aborted)throw signal.reason||Error('Export cancelled.');if(generation!==coinGeneration)throw Error('Coin changed during export.');};
- const restore=async()=>{
-  if(testExportSession?.id===id)testExportSession=null;
-  if(generation===coinGeneration){
-   if(!wasPlaying&&playing)await $('play').onclick();
-   if(market)syncLevels(metrics());
-  }
- };
- try{
-  check();
-  if(!playing)await $('play').onclick();
-  check();await prepareReplayAudio();check();
-  if(!playing||ctx?.state!=='running'||!piano)throw Error('The main instrument could not start. Press Listen and try exporting again.');
-  // Allow the existing vinyl attack to settle before taking the frozen frame.
-  await new Promise(resolve=>setTimeout(resolve,300));check();
-  const frozen=structuredClone(metrics());
-  if(!frozen.testMint)throw Error('Test simulation was reset. Choose a milestone and try again.');
-  delete frozen.testMint.original;
-  testExportSession={id,metrics:frozen};
-  syncLevels(engineMetrics(liveMetrics()));
-  visual=dataVisual.createCapture();
-  const snapshot={engine:'upic-main-instrument-v294',seed,symbol:market.baseToken.symbol||market.baseToken.name||'coin',
-   token:market.baseToken.address,chain:market.chainId,createdAt:new Date().toISOString(),
-   simulation:structuredClone(simulation),stage:frozen.testMint.stage,
-   inputs:frozen,tonic:marketRoot(frozen),arpeggio:arpeggioAI.snapshot(),instrument:piano.snapshot(),
-   audioContextStart:ctx.currentTime,audioWarnings:{...audioErrors},visual:visual.manifest};
-  return {context:ctx,tap:vinyl?.node||instrumentTap,visual,snapshot,restore};
- }catch(error){visual?.close();await restore();throw error;}
-}
-
 function safeCoinImage(value){
  try{const url=new URL(value);return url.protocol==='https:'&&url.href.length<=2048&&!url.username&&!url.password?url.href:'';}catch{return '';}
 }
@@ -247,16 +204,14 @@ function audioStatus(){
  status(parts.join(' · '));
 }
 function flushPianoTrade(){
- if(testMint.simulation()?.sampleActivity)return;
  if(!piano||!playing||ctx?.state!=='running')return;
  const trade=pendingPianoTrade;pendingPianoTrade=null;
  // Keep only a fresh observation across loading, preserving its source type.
- if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000){const m=engineMetrics(liveMetrics());piano[trade.kind==='price-observation'?'observePrice':'trade'](trade,m.context?.latestCap,{...trade.music,tonic:marketRoot(m)});}
+ if(trade&&playing&&!replay.state.active&&Date.now()-trade.receivedAt<3000){const m=liveMetrics();piano[trade.kind==='price-observation'?'observePrice':'trade'](trade,m.context?.latestCap,{...trade.music,tonic:marketRoot(m)});}
 }
 function observePianoPrice(priceUsd,referencePrice,receivedAt=Date.now(),id='price:'+receivedAt){
- if(testMint.simulation()?.sampleActivity)return;
  if((!playing&&!starting)||replay.state.active||!(priceUsd>0)||!Number.isFinite(priceUsd))return;
- const m=engineMetrics(liveMetrics()),event={id,kind:'price-observation',priceUsd,referencePrice,receivedAt,music:pianoMusic(m)};
+ const m=liveMetrics(),event={id,kind:'price-observation',priceUsd,referencePrice,receivedAt,music:pianoMusic(m)};
  dataSonification.observePrice(priceUsd,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});
  if(playing&&piano?.observePrice(event,m.context?.latestCap,event.music)){pendingPianoTrade=null;audioStatus();}
  else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=event;
@@ -321,8 +276,8 @@ function metrics(){
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
  const scored=historical&&replay.state.score?.frames.get(replay.state.bar?.time);
  if(scored?.music&&historical.replay?.source==='candles')historical.music={...historical.music,...scored.music};
- if(ended&&playing&&!testMint.simulation()){$('play').onclick();status('History replay finished');}
- return engineMetrics(historical||live);
+ if(ended&&playing){$('play').onclick();status('History replay finished');}
+ return historical||live;
 }
 function updateReplayUI(m){
  const active=replay.state.active,source=m.replay?.source;
@@ -357,12 +312,12 @@ function syncLevels(m){
 
  m={...m,music:{...m.music,tonic:marketRoot(m),harmony:sharedHarmony}};
  // The final candle gets its existing one-second hold to sound before pause.
- const audibleTransport=vinylStopping||(playing&&(m.testMint||!replay.state.dragging&&!replay.state.ended));
+ const audibleTransport=vinylStopping||(playing&&(!replay.state.dragging&&!replay.state.ended));
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1.5:0,ctx.currentTime,.025);}
- updateCoinReadout(m.testMint?.original||m);
- m.dataSignals=dataSonification.frame(m,{playing:playing&&ctx?.state==='running',seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),clock:ctx?.currentTime??0});
+ updateCoinReadout(m);
+ m.dataSignals=dataSonification.frame(m,{playing:playing&&ctx?.state==='running',seeking:replay.state.dragging,ended:(replay.state.ended||replay.state.endHold!==null),clock:ctx?.currentTime??0});
  replayVisualHistory.frame(m,replay.state.active?replay.state.cursor:null);
- dataVisual.frame(m,{playing:playing||captureMode,seed,clock:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:!m.testMint&&replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&(replay.state.ended||replay.state.endHold!==null),position:!m.testMint&&replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
+ dataVisual.frame(m,{playing:playing||captureMode,seed,clock:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:replay.state.dragging,ended:(replay.state.ended||replay.state.endHold!==null),position:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
  piano?.resonance(m.context?.latestCap);
  piano?.setTempo(m.music?.tempo);
  orchestraState=conductor.update(m,streamConnected);
@@ -382,7 +337,7 @@ function syncLevels(m){
  $('market-context-note').textContent=m.replay?$('replay-info').textContent:!market?'Loading the highest-ranked trending market':c.historyAvailable?'Fixed 5-minute market history + latest received price. Typical cap is inferred from price using snapshot supply, not observed historical market cap. Recent moves cool over time; chart zoom and pan do not affect sound.':'Loading fixed historical context · latest observations and available provider changes drive the orchestra.';
  updateSignalMap(m);
  document.querySelectorAll('.footer-networks [data-network]').forEach(node=>{const selected=node.dataset.network===market?.chainId;node.dataset.state=selected?(streamConnected?'active':'connecting'):'available';node.querySelector('small').textContent=selected?(streamConnected?'Active':'Connecting'):'Available';});
- updateReplayUI(m.testMint?.original||m);
+ updateReplayUI(m);
 }
 function setupStream(){
  const key=market?.chainId+':'+market?.pairAddress;if(key===streamPool)return;
@@ -412,10 +367,10 @@ function setupStream(){
    const quoteUsd=Number(market.priceUsd)/Number(market.priceNative);
    if(source==='rpc'){e.priceUsd=quoteUsd>0&&Number.isFinite(quoteUsd)?(e.spotQuote||e.priceQuote)*quoteUsd:null;e.usdVolume=e.priceUsd?e.quoteAmount*quoteUsd:0;}
    tradeEvents.push(e);lastTrade=e;receivedTradeCount++;const live=liveMetrics();e.music=pianoMusic(live);
-   const performed=engineMetrics(live),soundEvent={...e,music:pianoMusic(performed)},sampleActivity=performed.testMint?.sampleActivity;
-   if(!replay.state.active&&!sampleActivity){dataSonification.frame(performed,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});dataSonification.event(soundEvent,{playing:playing&&ctx?.state==='running',replay:false,clock:ctx?.currentTime??0});dataVisual.event(soundEvent);}
+   const performed=live,soundEvent={...e,music:pianoMusic(performed)};
+   if(!replay.state.active){dataSonification.frame(performed,{playing:playing&&ctx?.state==='running',clock:ctx?.currentTime??0});dataSonification.event(soundEvent,{playing:playing&&ctx?.state==='running',replay:false,clock:ctx?.currentTime??0});dataVisual.event(soundEvent);}
    pianoHistory.push({...e,at:e.receivedAt});if(pianoHistory.length>20000)pianoHistory.shift();
-   if((playing||starting)&&!replay.state.active&&!sampleActivity){
+   if((playing||starting)&&!replay.state.active){
     if(playing&&piano?.trade(soundEvent,performed.context?.latestCap,{...soundEvent.music,tonic:marketRoot(performed)})){pendingPianoTrade=null;audioStatus();}
     else if(pianoEnabled&&(!piano||starting||ctx?.state!=='running'))pendingPianoTrade=soundEvent;
    }
@@ -457,18 +412,9 @@ function tick(){
  if(!replay.state.active)arpeggioAI.setContext(m.music);
  syncLevels(m);envion.market(music,orchestraTempo(m));
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
- if(m.testMint?.sampleActivity&&playing&&ctx?.state==='running'){
-  const sampleClock=Math.floor(ctx.currentTime),id=imageKey(market)+':'+sampleClock;
-  if(id!==lastTestActivityId){
-   lastTestActivityId=id;
-   const e=testActivityEvent(imageKey(market),m.testMint.cap,sampleClock,Date.now(),m.music.group);e.music=pianoMusic(m);
-   piano?.trade(e,m.context.latestCap,e.music);
-   dataSonification.event(e,{playing:true,replay:false,clock:ctx.currentTime});dataVisual.event(e);
-  }
- }
- if(replay.state.active&&!m.testMint)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
- const historical=replay.state.active&&!m.testMint,bar=replay.state.bar;
- piano?.frame({...m,music:pianoMusic(m)},{playing,seeking:!m.testMint&&replay.state.dragging,ended:!m.testMint&&replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:(m.decoded&&streamKind!=='trade-poll'&&m.fresh>0)||(tradePollingAt>0&&Date.now()-tradePollingAt<25000),quiet:historical?bar?.volume===0:true});
+ if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
+ const historical=replay.state.active,bar=replay.state.bar;
+ piano?.frame({...m,music:pianoMusic(m)},{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:(m.decoded&&streamKind!=='trade-poll'&&m.fresh>0)||(tradePollingAt>0&&Date.now()-tradePollingAt<25000),quiet:historical?bar?.volume===0:true});
  send('tempo',bpm);send('activity',music.activity);send('motion',music.motion);send('energy',energy);
  send('balance',m.balance);send('texture',m.texture);send('heartbeat',1);send('tonic',marketRoot(m));send('cutoff',900+m.texture*3100+energy*1800);
 }
@@ -500,7 +446,7 @@ async function initialize(){
   audioErrors.piano='';
   pianoLoading=createTradePiano(context,audioScopes[0]?.input||destination,{initialSeed:seed,onVoice:event=>{if(epoch===audioEpoch){sharedHarmony=event.harmony;if(event.audible!==false)pianoChordCount++;if(event.audible!==false&&event.time!=null)dataVisual.piano(event.time,1);}},onArpeggio:event=>{if(epoch===audioEpoch&&event.time!=null)dataVisual.piano(event.time,.65);}}).then(instrument=>{
    if(epoch!==audioEpoch){instrument.close();throw Error('Audio loading cancelled');}
-   piano=instrument;piano.setArpeggioPattern(arpeggioAI.snapshot());piano.setEnabled(pianoEnabled);piano.setMaster(1);piano.reset(seed);piano.resonance(engineMetrics(liveMetrics()).context?.latestCap);piano.setRunning(playing);
+   piano=instrument;piano.setArpeggioPattern(arpeggioAI.snapshot());piano.setEnabled(pianoEnabled);piano.setMaster(1);piano.reset(seed);piano.resonance(liveMetrics().context?.latestCap);piano.setRunning(playing);
    if(playing){flushPianoTrade();if(replay.state.active)tick();}audioStatus();return piano;
   }).catch(error=>{if(epoch===audioEpoch){audioErrors.piano=error.message;engineView.log('Piano: '+error.message);audioStatus();}throw error;}).finally(()=>{if(epoch===audioEpoch)pianoLoading=null;});
  }
@@ -546,7 +492,6 @@ function updatePlayAvailability(active=playing){
 }
 const playbackShortcuts=bindPlaybackShortcuts({button:$('play'),getState:()=>({ready:!!market,starting,playing:playing&&ctx?.state==='running'}),getMetadata:()=>market?{title:market.baseToken.symbol+(market.baseToken.name&&market.baseToken.name!==market.baseToken.symbol?' · '+market.baseToken.name:''),artist:'$AV',album:'Live market artwork'}:null});
 function setPlayState(active){
- testMint.setPlaying(active&&ctx?.state==='running');
  const button=$('play'),interrupted=active&&ctx?.state!=='running';
  button.dataset.playing=String(active&&!interrupted);
  button.innerHTML='<svg class="transport-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">'+(active&&!interrupted?'<path d="M7 5h4v14H7zM14 5h4v14h-4z" fill="currentColor"/>':'<path d="M8 4l12 8-12 8z" fill="currentColor"/>')+'</svg>';
@@ -771,7 +716,7 @@ function chooseMarket(pair,{shared=false}={}){
  replay.setMarket(pair.chainId+':'+pair.pairAddress+':'+pair.baseToken.address);
  lastMarketActivityAt=0;generation++;snapshotController?.abort();clearTimeout(poll);clearTimeout(musicHistoryTimer);stopMusicHistory?.();stopMusicHistory=null;imageController?.abort();imageToken='';stopStream?.();stopHistory?.();stopChartHistory?.();stopStream=null;streamPool='';streamConnected=false;streamKind='snapshot';poolEvents=[];tradeEvents=[];lastTrade=null;lastChainPrice=null;receivedTradeCount=0;historyContext=null;originDate=null;chart.reset();
  contextHistoryState=null;contextHistoryOperation=null;contextHistoryKey='';contextCandles=[];
- resetEnsemble();mode='live';market=pair;void replayVisualHistory.setMarket(pair);nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);testMint.setMarket({key:imageKey(pair),name:pair.baseToken.symbol||pair.baseToken.name||pair.baseToken.address});seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)&&!pair.nativeAsset?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);
+ resetEnsemble();mode='live';market=pair;void replayVisualHistory.setMarket(pair);nftOwnerPreview.setMarket(pair);if(!captureMode)void coinSummary.setMarket(pair);seed=hash(pair.chainId+':'+pair.baseToken.address);dataSonification.reset(seed);holderMetadata.setMarket(isExchangeMarket(pair)&&!pair.nativeAsset?null:pair);state=seed;step=0;send('seed',seed%16777216);envion.setSeed(seed);piano?.reset(seed);arpeggioAI.setSeed(seed);applySnapshot(pair);if(!shared){startHistory(pair);setupStream();}void loadCoinImage(pair);
  if(!isExchangeMarket(pair)){const version=generation;void loadPoolLiquidity(pair).then(()=>{if(version===generation)display();});}
  $('last-event').textContent=isExchangeMarket(pair)?'Waiting for exchange trades':'Waiting for pool events';
  session?.controls.push({at:Date.now(),name:'market',chain:pair.chainId,pool:pair.pairAddress});
@@ -967,7 +912,7 @@ if(!restoredScore&&requestedCoin.get('coin')?.length<=250&&requestedCoin.get('co
  void searchForCoin(requestedCoin.get('coin'),{network:requestedCoin.get('network')||null,autoPlay:false});
 }
 if(captureMode)window.__upicCaptureStatus=()=>({market:market?{chain:market.chainId,address:market.baseToken.address,symbol:market.baseToken.symbol}:null,visual:dataVisual.snapshot(),holders:holderMetadata.snapshot().holdings?.state,lookup:$('lookup').textContent});
-if(captureMode)archivePlayerFrames({captureMode,getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active&&!testMint.simulation()});
+if(captureMode)archivePlayerFrames({captureMode,getMarket:()=>market,getVisual:()=>dataVisual,eligible:()=>!replay.state.active});
 if(!captureMode)startTrending((item,options={})=>{
  if(options.initial&&(loading||searchRevision>0||market))return;
  searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');

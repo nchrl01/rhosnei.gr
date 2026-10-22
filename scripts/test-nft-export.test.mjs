@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {preferredVideoFormat, testNftMetadata} from '../apps/web/public/test-nft-export.js';
+import {preferredVideoFormat, testNftMetadata} from '../archive/retired-player-simulation/test-nft-export.js';
 
 test('recorder prefers MP4 and labels a WebM fallback honestly', () => {
   assert.equal(preferredVideoFormat({isTypeSupported: () => true}).extension, 'mp4');

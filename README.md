@@ -4,7 +4,7 @@ UPIC is a live audiovisual instrument for cryptocurrency markets. Market activit
 drives musical timing and visual motion; price direction, liquidity, market cap
 and holder data shape the sound and image.
 
-Live site: https://nchrl01.github.io/rhosnei.gr/
+Live site: https://upic-art.github.io/rhosnei.gr/
 
 ## Technology
 
@@ -26,8 +26,15 @@ Requires Node.js and npm.
 npm start
 ```
 
-Open http://localhost:4173 and press **Listen**. Audio playback starts after
+This starts the live static instrument at http://localhost:4173. Press **Listen**. Audio playback starts after
 that user action so the browser can enable sound.
+
+The separate collection platform remains available with `npm run start:platform`
+(or its existing `npm run dev:web` command). Its API starts with `npm run dev:api`.
+Those platform commands and workspace build scripts are preserved.
+
+See [main and collection integration](docs/main-platform-integration.md) for the
+current boundary, preserved platform work and cleanup inventory.
 
 ## Build assets
 
@@ -39,17 +46,17 @@ python3 build-envion.py
 python3 build-orchestra.py
 ```
 
-The website is a static application in `public/`. GitHub Pages publishes that
+The website is a static application in `apps/web/public/`. GitHub Pages publishes that
 folder from the `main` branch. Browser code and assets are public because the
 browser must download them to run the site.
 
 ## Main folders
 
-- `public/` — website, audio engines, visuals and browser assets
-- `public/patches/` — Pure Data patches and ENVION
+- `apps/web/public/` — website, audio engines, visuals and browser assets
+- `apps/web/public/patches/` — Pure Data patches and ENVION
 - `native/` — standalone ENVION and browser MusicRNN build sources
 - `scripts/` — static shell and asset build helpers
-- `src/site/` — shared header and footer templates
+- `apps/web/legacy/site/` — shared header and footer templates
 - `cloudflare/` — optional InsightX worker and the market backend foundation
 - `supabase/` — market observation database migration
 
