@@ -799,3 +799,5 @@ button.coin-address:not(:disabled):hover,button.coin-address{background:transpar
 .coin-address-network{text-decoration:none}
 
 @media(max-width:760px){.audio-visualizer.is-expanded .visual-fullscreen{display:none}}
+
+@media(min-width:761px){.visual-fullscreen{display:none!important}}
