@@ -24,7 +24,7 @@ export class HolderBalanceRelay{
   const address=input.toLowerCase(),key=identity.key,now=Date.now();
   const saved=this.sql.exec('SELECT data,next_at FROM shared_holder_samples WHERE key=?',key).toArray()[0];
   const cached=saved?JSON.parse(saved.data):null;
-  if(saved?.next_at>now){return cached?.fetchedAt&&now-cached.fetchedAt>=MAX_AGE?{state:'expired',records:[],totalHolders:null,nextAt:saved.next_at}:cached;}
+  if(saved?.next_at>now&&!(network==='xdc'&&cached?.adapterVersion!==2)){return cached?.fetchedAt&&now-cached.fetchedAt>=MAX_AGE?{state:'expired',records:[],totalHolders:null,nextAt:saved.next_at}:cached;}
   if(this.pending.has(key))return this.pending.get(key);
   const task=this.load({network,address,key,cached,now}).finally(()=>this.pending.delete(key));this.pending.set(key,task);return task;
  }
@@ -36,13 +36,13 @@ export class HolderBalanceRelay{
   this.sql.exec('INSERT INTO shared_holder_sample_budget(day,calls) VALUES(?,1) ON CONFLICT(day) DO UPDATE SET calls=calls+1',day);return true;
  }
  async load({network,address,key,cached,now}){
-  const base={network,address,source:'Blockscout shared index',records:[],totalHolders:null,complete:false,truncated:false,coverage:'top-holder-sample'};
+  const base={network,address,adapterVersion:2,source:network==='xdc'?'XDC public RPC · observed token balances':'Blockscout shared index',records:[],totalHolders:null,complete:false,truncated:false,coverage:network==='xdc'?'recent-transfer-participants':'top-holder-sample'};
   const save=data=>{this.sql.exec('INSERT OR REPLACE INTO shared_holder_samples(key,data,next_at) VALUES(?,?,?)',key,JSON.stringify(data),data.nextAt);return data;};
   let checks={};
   const failed=(state,nextAt,reason)=>save(cached?.records?.length&&Date.now()-cached.fetchedAt<MAX_AGE?{...cached,state:'delayed',nextAt,reason,checks}:{...base,state,nextAt,reason,checks});
   if(network==='xdc'){
-   try{return save({...await xdcTokenSample(address,{reserve:()=>this.reserveCalls(Date.now())}),nextAt:Date.now()+TTL});}
-   catch(error){return failed('unavailable',Date.now()+2*60000,/^(rpc-[a-z0-9-]+|daily-budget-exhausted)$/.test(error.reason||'')?error.reason:'rpc-provider-unavailable');}
+   try{return save({...await xdcTokenSample(address,{reserve:()=>this.reserveCalls(Date.now())}),adapterVersion:2,nextAt:Date.now()+TTL});}
+   catch(error){checks.rpcError=String(error?.message||'').replace(/[\r\n]/g,' ').slice(0,120);return failed('unavailable',Date.now()+2*60000,/^(rpc-[a-z0-9-]+|daily-budget-exhausted)$/.test(error.reason||'')?error.reason:'rpc-provider-unavailable');}
   }
   if(!this.env.BLOCKSCOUT_API_KEY)return failed('unavailable',now+5*60000,'missing-configuration');
   try{

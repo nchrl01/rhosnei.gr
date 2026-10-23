@@ -10,9 +10,9 @@ export async function xdcTokenSample(address,{reserve=()=>true}={}){
   if(calls.length>8){const values=[];for(let i=0;i<calls.length;i+=8)values.push(...await batch(calls.slice(i,i+8)));return values;}
   if(!reserve())fail('daily-budget-exhausted');
   const body=calls.map(([method,params])=>({jsonrpc:'2.0',id:++serial,method,params}));
-  const response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'error',signal:AbortSignal.timeout(12000)});
+  let response;try{response=await fetch(URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),redirect:'manual',signal:AbortSignal.timeout(12000)});}catch(error){fail('rpc-fetch-'+(['TimeoutError','AbortError','TypeError'].includes(error.name)?error.name.toLowerCase():'failed'));}
   if(!response.ok)fail('rpc-http-'+response.status);
-  const data=await response.json();if(!Array.isArray(data)||data.length!==body.length)fail('rpc-invalid-response');
+  let data;try{data=await response.json();}catch{fail('rpc-invalid-json');}if(!Array.isArray(data)||data.length!==body.length)fail('rpc-invalid-response');
   const byID=new Map(data.map(row=>[row.id,row]));
   return body.map(call=>{const row=byID.get(call.id);if(!row||row.error||!Object.hasOwn(row,'result'))fail('rpc-read-failed');return row.result;});
  }
