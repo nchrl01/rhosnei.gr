@@ -151,8 +151,8 @@ async function pianoFixture(){
  await installOriginalityIndex(index);
  vi.stubGlobal('fetch',vi.fn(()=>{throw Error('The installed index and register-driven host require no sample fetches');}));
  const {createTradePiano}=await import('../public/trade-piano.js');
- const {marketChipSignal}=await import('../public/market-chip-score.js?v=470');
- const {chipEnsembleArrangement}=await import('../public/chip-ensemble-arrangement.js?v=470');
+ const {marketChipSignal}=await import('../public/market-chip-score.js?v=471');
+ const {chipEnsembleArrangement}=await import('../public/chip-ensemble-arrangement.js?v=471');
  const fixture=audioContextFixture();
  fixture.arrangementAt=beat=>chipEnsembleArrangement(seed,beat,marketChipSignal(context));
  fixture.piano=await createTradePiano(fixture.ctx,fixture.ctx.createGain(),{initialSeed:seed});return fixture;

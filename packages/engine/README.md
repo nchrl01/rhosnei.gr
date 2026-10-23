@@ -1,10 +1,11 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v4`.
+Current engine version: `upic-nft-gb-v5`.
 
-Version 470 adds shared market interpretation and intermittent harmony to the
-two-chip ensemble introduced in version 469. The raw single-chip version 468
-was deployed at commit `a84fac4`; each four-channel core itself is unchanged.
+Version 471 corrects arp/chord presence, their pulse envelopes and replay note
+continuity. Version 470 introduced shared market interpretation and intermittent
+harmony to the two-chip ensemble from version 469. The raw single-chip version
+468 was deployed at commit `a84fac4`; each four-channel core itself is unchanged.
 
 The browser collectible player and headless renderer import this package. Its
 score uses the same learned phrasing and market transmission rules as the live
@@ -20,9 +21,15 @@ per chip. There is no sampled GeneralUser, external texture generator,
 sine-oscillator fallback or separate percussion synthesizer in this path.
 
 Foreground lead, arpeggios and bass can answer occasional short harmony tones
-and an independent wave drone on the second chip. Each coin has a seeded chord
-entrance window every two or four bars; current activity decides whether it
-sounds. The drone's harmonic emphasis is encoded in its
+and an independent wave drone on the second chip. Eligible activity admits one
+seeded chord entrance every four bars; energy of at least 0.55 can add an entrance
+two bars opposite. Recency releases the whole chord, leaving intervening bars
+chord-free. Each two-bar answer window contains a stable four-position arp plan:
+two notes at low eligible energy, three from 0.22 and four from 0.55. These use
+actual normalized magnitudes, not a fabricated maximum for active candles.
+An arp note can finish across the pair's middle bar line, still bounded by common
+rests and channel ownership.
+The drone's harmonic emphasis is encoded in its
 four-bit waveform, not a modeled resonant filter. Echo repeats consume the arp
 lane. Envion-inspired grain duration/overlap becomes short noise-channel events,
 not granular sample playback. Role windows and common cadence rests coordinate
@@ -30,6 +37,11 @@ the ensemble; the underlying harmonic field changes every two bars without
 requiring a chord attack. Pace, movement, volume and recency control admission,
 articulation and strength. Available market cap and liquidity colour eligible
 waveforms and grains without generating activity by themselves.
+
+Chord pulse envelopes request initial `11 + round(3 × volume)` and pace 0, holding
+the compiler's gain-scaled four-bit level until the scored release or replacement.
+Arps request initial `11 + round(2 × intensity)` and pace 3 for slower decay. The
+compiler still quantizes gain normally; no global minimum-volume floor is added.
 
 ## Captured data and replay
 
@@ -41,6 +53,13 @@ than invented trades. Freshness decays with observation age. Silent or expired
 observations do not receive a fabricated minimum activity or fixed drum beat.
 The seed selects the circuit; observed activity excites it. Collection stage
 controls which score roles are available.
+
+The browser replay transport lets held notes cross consecutive eligible candles
+to their scored release. `timeline.activeUntil()` caps release at the first known
+inactive interval or gap, including a 10 ms candle shorter than a scheduler tick.
+Only availability is consulted ahead; future prices and dynamics cannot rewrite
+the current note. Observed inactivity clears held channel ownership, and seeking
+clears ownership and queued events before reconstruction.
 
 This is a deterministic reconstruction from the supplied observations. It
 cannot reproduce an unrecorded live trade stream, recover missing market data,
@@ -71,12 +90,22 @@ audio checks.
 Historical version 469 evidence: a 32-second ETH preview using the shared path contains
 231 scored events across all eight channels and peaks near 0.198 with fixed rack
 headroom and master gain; the guard reports two revoicings and zero blocked candidates. Scored events
-are not an unchanged-audible-event count. No subjective audition or browser
-verification is claimed for this refinement.
+are not an unchanged-audible-event count. Version 470 separately passed 304
+automated tests, production build and workspace type checks, with two
+environment-dependent tests skipped.
+
+Version 471 passed 340 automated tests, production build and workspace type
+checks, with two environment-dependent tests skipped. Thirty-two support tests
+exercise the actual APU: sampled pulse levels are at least 2/15, chords remain
+held at 250 ms and arps remain active at 60 ms. Four replay regressions cover
+continuity and inactive boundaries. The new 32-second ETH historical reconstruction
+contains 228 scored events across all eight channels, peak approximately 0.198
+and RMS approximately 0.02185, with two lead revoicings and zero blocked candidates.
+No subjective audition or browser verification is claimed.
 
 ## Identity and visual scope
 
-The SDK and deployment metadata identify the new audio with `upic-nft-gb-v4`.
+The SDK and deployment metadata identify the new audio with `upic-nft-gb-v5`.
 The paired SDK/contract seed namespace remains `upic-nft-v1` so the existing
 seed derivation does not change merely because the audio engine advances.
 

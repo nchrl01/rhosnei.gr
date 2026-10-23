@@ -9,7 +9,7 @@ describe.skipIf(!url)('browser flows',()=>{
   try{
    const page=await browser.newPage();
    const address='0x'+'11'.repeat(20);
-   const deployment={chainId:31337,mode:'local',factory:address,upic:address,vault:address,marketplace:address,buyback:address,router:address,startBlock:0,engineVersion:'upic-nft-gb-v4'};
+   const deployment={chainId:31337,mode:'local',factory:address,upic:address,vault:address,marketplace:address,buyback:address,router:address,startBlock:0,engineVersion:'upic-nft-gb-v5'};
    let streamRequests=0;
    page.on('websocket',()=>streamRequests++);
    await page.route('**/v1/**',async route=>{

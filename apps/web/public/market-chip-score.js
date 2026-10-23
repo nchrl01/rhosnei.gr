@@ -4,7 +4,7 @@ import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=470';
 import {learnedMarketMelody} from './learned-market-phrase.js?v=469';
 import {MIDI_PHRASE_MODEL} from './midi-phrase-model.js?v=469';
 import {phraseDevelopment,developPhraseEvents} from './phrase-development.js?v=464';
-import {chipEnsembleArrangement,chipMarketExpression} from './chip-ensemble-arrangement.js?v=470';
+import {chipEnsembleArrangement,chipMarketExpression} from './chip-ensemble-arrangement.js?v=471';
 import {phraseArrangement} from './phrase-arrangement.js?v=449';
 
 // Original market-to-register composition. No imported songs, drum loops,
@@ -70,7 +70,7 @@ export function composeChipBar(seed,bar,context={}){
   // A coin keeps its voice while activity changes its articulation. Only a
   // strong move bends a selected note; normal phrases retain definite pitch.
   duty:chipHash(identity,['chord_low','chord_high'].includes(kind)?29:23)%3,
-  envelope:['bass','drone'].includes(kind)?0:{initial:kind.startsWith('chord')?5+Math.round(3*volume):8+Math.round(4*intensity),direction:-1,pace:kind.startsWith('chord')?2:2+Math.floor((1-pace)*3)},
+  envelope:['bass','drone'].includes(kind)?0:{initial:kind.startsWith('chord')?11+Math.round(3*volume):8+Math.round(4*intensity),direction:-1,pace:kind.startsWith('chord')?0:2+Math.floor((1-pace)*3)},
   wave:chipHash(identity,31)%2,pan:kind==='bass'?0:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
   slide:kind==='arp'&&tension>.55&&roll(identity,id+83)<.18?direction*fracture*Math.min(2,tension*2):0,
   noiseWidth:motion>.65?7:15,noiseShift:clamp(Math.round(9-6*energy-2*motion),0,13),
@@ -78,7 +78,7 @@ export function composeChipBar(seed,bar,context={}){
  const add=(beat,midi,duration,gain,kind,id,extra={})=>{
   gain*=kind.startsWith('chord')||kind==='drone'?(context.chordGain??1):['arp','echo','lead'].includes(kind)?(context.arpGain??1):(context.noteGain??1);
   if(beat<0||beat>=4||gain<=0)return;
-  const event={beat,midi,duration:Math.min(duration,4-beat),gain:gain*signal.fresh,kind,expression:{...expression(kind,id),...extra},seed:chipHash(identity,id)};
+  const event={beat,midi,duration:kind==='arp'?duration:Math.min(duration,4-beat),gain:gain*signal.fresh,kind,expression:{...expression(kind,id),...extra},seed:chipHash(identity,id)};
   events.push(event);return event;
  };
  // Stable, newly generated two-bar material. Price ticks change expression,
@@ -105,14 +105,14 @@ export function composeChipBar(seed,bar,context={}){
   const tonic=[root+24,root+36].filter(n=>n>=55&&n<=90);
   add(ending,nearest(last,tonic),.5,.056*(.55+.45*energy)*pulseGain,'lead',919,{allowedPitches:tonic});
  }
- // Harmony is an internal field, not a compulsory sound on every bar. A
- // coin has a possible entrance every two or four bars; observed activity
- // can admit that entrance, while the intervening bars remain chord-free.
- const chordPeriod=chipHash(identity,201)%3===0?2:4;
- const chordCycle=Math.floor(bar/chordPeriod),chordPhase=chipHash(identity,203)%chordPeriod;
- // Even a maximally active observation admits at most 90% of these sparse
- // opportunities: at most one short chord in each two- or four-bar group.
- const chordEntrance=bar%chordPeriod===chordPhase&&roll(identity,chordCycle+21001)<tradingActivity*unit(.12+.45*energy+.2*volume+.13*intensity);
+ // Sparse harmony is a phrase decision, not another low-probability gate on
+ // each note. An eligible observation gets one seeded entrance every four
+ // bars; stronger actual data can add the opposite entrance, two bars away.
+ // Recency can release the whole chord, but quiet valid candles do not lose
+ // their harmonic role merely because their volume rate is below a coin flip.
+ const chordCycle=Math.floor(bar/4),chordPhase=chipHash(identity,203)%4;
+ const chordSlot=bar%4===chordPhase||(energy>=.55&&bar%4===(chordPhase+2)%4);
+ const chordEntrance=chordSlot&&roll(identity,bar+21001)<Math.sqrt(tradingActivity);
  const chordBeat=(chipHash(identity,chordCycle+21101)%4)*.25;
  const chordDuration=.45+1*(1-motion)+.25*volume;
  // Match the visual's smooth market-cap identity range. This changes only
@@ -131,27 +131,39 @@ export function composeChipBar(seed,bar,context={}){
  });
  if(chordEntrance){
   [notes[1],notes[2]].forEach((midi,i)=>add(chordBeat+i*.025,midi,chordDuration-i*.025,
-   .022*(.7+.3*energy),'chord_'+(i?'high':'low'),211+i));
+   .032*(.7+.3*energy),'chord_'+(i?'high':'low'),211+i));
   const ground=add(chordBeat,tone(degree)+12,chordDuration,.03*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0});
   if(ground)ground.ensembleRole='chord'; // Root plus two pulses form a true chord.
  }else if((bar+chipHash(identity,217))%2===0&&roll(identity,bar+21801)<tradingActivity*(.12+.35*volume+.25*(1-pace))){
   const beat=1.65+.25*(chipHash(identity,bar+21803)%3);
   add(beat,tone(degree)+12,.65+1.25*volume+.45*(1-pace),.034*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0});
  }
- // Arps use a compact repeated chord circuit. Echo repeats consume the same
- // pulse lane and decay through real 4-bit envelopes, with gaps reserved here.
- const arpSeed=chipHash(identity,development.sourceBar+301),arpPalette=[...notes,notes[0]+12];
- const arpGap=statistic('lead.inter_onset_beats',arpSeed,5,.75,n=>n>=.5&&n<=1.5);
+ // One coherent answer gesture occupies the actual response window. Its
+ // four candidate times depend only on the coin and score pair; observed
+ // energy admits a two-, three- or four-note prefix. Independent note coin
+ // flips used to erase the same sourceBar's arps indefinitely in quiet data.
+ const pair=Math.floor(bar/2),pairStart=pair*8;
+ const arpSeed=chipHash(identity,pair+301),arpPalette=[...notes,notes[0]+12];
+ const response=chipEnsembleArrangement(seed,pairStart,signal).responseWindow;
+ const first=response.start+.45;
+ const answer=chipEnsembleArrangement(seed,first,signal);
+ const answerEnd=Math.min(response.end-.2,answer.restStartBeat);
+ const sampledGap=statistic('lead.inter_onset_beats',arpSeed,5,.5,n=>n>=.25&&n<=.75);
+ const arpGap=Math.min(sampledGap,Math.max(0,answerEnd-first-.32)/3);
+ const room=Math.max(0,answerEnd-first-.32-3*arpGap);
+ const arpStart=first+Math.min(.125,room)*roll(identity,pair+30501);
+ const arpCount=2+Number(energy>=.22)+Number(energy>=.55);
+ const arpEntrance=arpGap>=.08&&roll(identity,pair+30101)<Math.sqrt(tradingActivity);
  const arpNotes=[];
- if(context.arpeggios!==false)for(let i=0,beat=.5;i<5&&beat<3.85;i++,beat+=arpGap){
-  if(roll(identity,development.sourceBar*13+i+30101)>=tradingActivity*unit(.16+.62*pace+.22*intensity))continue;
+ if(context.arpeggios!==false&&arpEntrance)for(let i=0;i<arpCount;i++){
+  const beat=arpStart+i*arpGap-start;
   const index=(i+(direction<0?arpPalette.length-1:0))%arpPalette.length;
   const midi=arpPalette[direction<0?arpPalette.length-1-index:index]+12;
-  const duration=Math.min(.32,arpGap*.48),gain=.025*(.5+.5*energy)*pulseGain;
-  if(add(beat,midi,duration,gain,'arp',301+i,{envelope:{initial:6+Math.round(3*intensity),direction:-1,pace:2}}))arpNotes.push({beat,midi,duration,gain});
+  const duration=Math.min(.32,arpGap*.68),gain=.038*(.5+.5*energy)*pulseGain;
+  if(add(beat,midi,duration,gain,'arp',301+i,{envelope:{initial:11+Math.round(2*intensity),direction:-1,pace:3}}))arpNotes.push({beat,midi,duration,gain,index:i});
  }
  const echo=arpNotes.at(-1);
- if(echo&&echo.beat<3.1){
+ if(echo&&echo.index===arpCount-1&&echo.beat<3.1){
   for(let i=1;i<=2;i++)add(echo.beat+i*.28,echo.midi,.16,echo.gain*(i===1?.5:.22),'echo',351+i,
    {slide:0,pan:i%2?-1:1,envelope:{initial:i===1?7:5,direction:-1,pace:1}});
  }
@@ -193,7 +205,10 @@ export function composeChipBar(seed,bar,context={}){
  for(const event of events){
   const arrangement=chipEnsembleArrangement(seed,start+event.beat,signal);
   if(arrangement.rest||arrangement.restInBeats<.04||event.gain<=0)continue;
-  event.duration=Math.min(event.duration,4-event.beat,arrangement.restInBeats);
+  // A response run may cross its middle bar line. Its last pre-line note
+  // still gets a complete gate; shared rests and the next channel owner
+  // remain the actual release limits.
+  event.duration=Math.min(event.duration,event.kind==='arp'?Infinity:4-event.beat,arrangement.restInBeats);
   const role=event.ensembleRole??(event.kind.startsWith('chord')?'chord':event.kind==='echo'?'arp':event.kind);
   event.gain*=arrangement.roleGains[role]??arrangement.phraseGain;
   if(event.gain<=0)continue;

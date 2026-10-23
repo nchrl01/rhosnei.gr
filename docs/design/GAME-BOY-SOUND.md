@@ -2,13 +2,17 @@
 
 Implementation record · 24 October 2026.
 
-The version 470 audio path uses two MAME-derived Game Boy APUs, four channels each. Lead, arpeggios, chords, bass, drone, texture and percussion become register writes to those eight slots. The browser and offline artwork renderer share the rack, register compiler and sound core. Version 470 aligns the audio and visual interpretation of market observations and makes harmony entrances sparse.
+The version 471 audio path uses two MAME-derived Game Boy APUs, four channels each. Lead, arpeggios, chords, bass, drone, texture and percussion become register writes to those eight slots. The browser and offline artwork renderer share the rack, register compiler and sound core. Version 470 aligned audio and visual market interpretation; version 471 corrects arp/chord presence, their pulse envelopes and replay note continuity while retaining sparse harmony.
 
 The host is a JavaScript adaptation of MAME's Game Boy sound device with explicit corrections informed by current Pan Docs. It is sound-only: it does not execute a Game Boy CPU or ROM. The score and market-to-register mapping remain UPIC's own implementation. MAME provenance does not establish exact MAME output or physical-hardware conformance.
 
-The raw single-chip version 468 was deployed at commit `a84fac4`. Version 469 added a second instance of that unchanged four-channel core and restored pooled MIDI phrasing. Version 470 changes input interpretation and composition; the core and two-chip rack are unchanged. Deployment status is recorded in the repository's Pages workflow.
+The raw single-chip version 468 was deployed at commit `a84fac4`. Version 469 added a second instance of that unchanged four-channel core and restored pooled MIDI phrasing. Versions 470 and 471 change input interpretation, composition and transport; the core and two-chip rack are unchanged. Deployment status is recorded in the repository's Pages workflow.
 
-**Historical version 469 evidence:** build checks succeeded, and a 32-second stereo ETH preview reconstructed the window 2026-10-23 20:26:43.401–20:27:15.401 UTC from public Coinbase trade observations. That preview has 231 scored events across all eight channels, peak output approximately 0.198 with the rack's fixed headroom and preview master gain, and finite samples. The final lead guard reported two revoicings and zero blocked candidates; the score count does not mean all candidates sounded unchanged. It is a historical reconstruction, not a recorded live session. Those results do not validate version 470. Version 470 passed 304 automated tests, the production build and all workspace type checks; two environment-dependent tests were skipped. This includes shared audio/visual inputs, replay cache isolation, sparse chord entrances and transport release. No new audio render, subjective audition, browser check, phone measurement or hardware comparison is claimed.
+**Historical version 469 evidence:** build checks succeeded, and a 32-second stereo ETH preview reconstructed the window 2026-10-23 20:26:43.401–20:27:15.401 UTC from public Coinbase trade observations. That preview has 231 scored events across all eight channels, peak output approximately 0.198 with the rack's fixed headroom and preview master gain, and finite samples. The final lead guard reported two revoicings and zero blocked candidates; the score count does not mean all candidates sounded unchanged. It is a historical reconstruction, not a recorded live session.
+
+**Historical version 470 validation:** 304 automated tests, the production build and all workspace type checks passed; two environment-dependent tests were skipped. These covered shared audio/visual inputs, replay cache isolation, sparse chord entrances and transport release.
+
+**Version 471 evidence:** 340 automated tests passed, with two environment-dependent tests skipped; production build and workspace type checks passed. The 32 support-presence tests exercise the actual APU, checking pulse levels of at least 2/15 in the sampled cases, chords still held at 250 ms and arps still active at 60 ms. Four replay regressions cover continuity and release boundaries. A new 32-second ETH reconstruction from the same historical trade window contains 228 scored events across all eight channels, peak approximately 0.198 and RMS approximately 0.02185; the lead guard reports two revoicings and zero blocked candidates. Scored events are not a count of unchanged audible notes. No subjective audition, browser check, phone measurement or hardware comparison is claimed.
 
 ## Two chips, eight channels
 
@@ -40,6 +44,7 @@ The channel capabilities and register layout are specified by [Pan Docs: Audio](
 | `apps/web/public/mame-gb-apu.js` | MAME-derived four-channel sound core with documented Pan Docs corrections and host output reconstruction |
 | `apps/web/public/gb-apu-silence.js` | Shared rests that keep channel DACs connected instead of switching them off after each event |
 | `apps/web/public/trade-piano.js` | Compatibility transport API, finite live activity gate, replay context, lookahead scheduling and accepted visual-event callbacks |
+| `apps/web/public/chip-timeline.js` | Replay beat mapping and the first inactive boundary limiting held-note release |
 | `apps/web/public/upic-earthbound-visual.js` | Consume the shared observation/decay policy and accepted onsets while retaining holder and market geometry |
 | `apps/web/public/engine-view.js` | Inspect actual chip/channel snapshots and their market inputs |
 | `packages/engine/src/index.ts` | Build a reconstruction from frozen observations and call the shared APU renderer for artwork audio |
@@ -52,7 +57,11 @@ Ordinary playback gain controls remain available; they scale the final chip outp
 
 The model introduced in version 469 retains 301 pooled MIDI distributions: 104 lead, 124 bass and 73 drum tables. Generated two-bar motifs recur through introduce, answer, vary and return stages. Bass timing and drum articulation consult the same corpus; harmony and phrase form are authored rules. Stable tonal fields, restrained bends and shared rests let the chip's noise and irregular packets remain audible without continually replacing the foreground melody.
 
-The internal harmonic degree advances once per two bars, but does not require an audible chord. A coin has one potential chord entrance in each two- or four-bar group, at a stable phase. Observed activity, volume and intensity determine admission; even at maximum input the admission threshold is at most 90%. A chord lasts 0.45–1.70 score beats before channel and phrase limits, with the two pulse attacks staggered by 0.025 beat and their wave root entering together. A separate, probabilistic drone entrance can occupy selected non-chord bars.
+The internal harmonic degree advances once per two bars, but does not require an audible chord on each change. With eligible activity, a coin has one seeded chord entrance every four bars. Composition energy of at least 0.55 permits an additional entrance at the opposite position, two bars away. Activity recency gates the whole chord and reduces its level; there is no additional low-probability volume veto that can erase harmony indefinitely from quiet valid candles. Intervening bars remain chord-free. A chord lasts 0.45–1.70 score beats before channel and phrase limits, with the two pulse attacks staggered by 0.025 beat and their wave root entering together. A separate, probabilistic drone entrance can occupy selected non-chord bars.
+
+Arpeggios are short answer gestures in the actual two-bar response window. A stable four-position candidate lattice is fitted inside that window and before its next common rest. Eligible activity admits a two-note prefix; composition energy of at least 0.22 or 0.55 extends it to three or four notes. Recency can release the whole run. Its score-pair address changes with the phrase, avoiding the former repeated `sourceBar` gates that could reject the same arp forever. An arp note crossing the pair's middle bar line retains its scored duration, subject to the common rest and channel ownership limits. These thresholds use the measured normalized magnitudes; a positive-volume candle's eligibility does not set its volume or pace to one.
+
+The score requests chord pulse initial levels of `11 + round(3 × volume)` with envelope pace 0, so the compiler's gain-scaled, four-bit level holds until the scored release or channel replacement. Arps request `11 + round(2 × intensity)` and pace 3 for a slower downward envelope. The compiler still quantizes the final level; there is no global minimum-volume override. These settings correct short envelope dropouts without changing the APU core or introducing reverb.
 
 Lead and arpeggio response windows follow the phrase stage. The later part of each bar favors the drone/texture field, without forcing either to sound. Role gains are chosen at scored onsets rather than continuously ducking already sounding notes. Activity recency reduces note admission and scales role presence by its square root; source freshness is applied once to score-event gain. Cadence breaths cover beats 14.5–16 and 30–32 of each 32-beat cycle, with event durations capped at their common boundary.
 
@@ -80,6 +89,8 @@ The shared activity decay stays at 1 for the first two seconds, then follows `ex
 | Candle with unknown volume | May be eligible when its open/close price actually moves; volume stays unavailable |
 
 Replay audio and visuals resolve the same recorded-or-candle controls. Candle motion is `abs(percent open-to-close change) / 8`, clamped to 0–1; activity and volume use the same logarithmic volume-per-second control. Resolved controls are cached lazily against the frozen replay, so they do not require eager rescoring of every historical prefix. Future observations and unfinished candle endpoints do not enter the current controls.
+
+An accepted replay note can continue across consecutive eligible candles to its scored release instead of ending at every candle boundary. `timeline.activeUntil()` caps that release at the first known inactive interval or gap, including a 10 ms silent candle shorter than a scheduler tick. This lookahead checks only availability; future prices and expression do not rewrite the accepted note. When inactivity is observed, the transport clears held channel ownership as well as future events, so reopening the output cannot revive an old note. Seeking clears chip ownership and queued notes before reconstruction.
 
 ## Hardware behavior represented in the core
 
@@ -144,7 +155,7 @@ The extra polyphony comes from the second four-channel APU. There is no independ
 - DMG active-RAM access and corruption behavior are not hardware-verified. The normal driver avoids active-RAM writes by disabling CH3 for updates.
 - Event-area averaging reduces aliasing compared with point sampling; it is not a brick-wall reconstruction filter.
 - The analog speaker/headphone amplifier and real transducer response are not simulated.
-- The historical version 469 public-trade-driven offline preview rendered successfully. It is not version 470 validation. No physical-phone performance measurement, hardware comparison or emulator conformance suite is claimed.
+- The version 469 and 471 public-trade-driven offline previews and separate automated checks are listed above. They do not establish subjective listening quality or hardware conformance. No physical-phone performance measurement, hardware comparison or emulator conformance suite is claimed.
 
 Pan Docs describes these distinctions and model-dependent behavior in [Audio details](https://gbdev.io/pandocs/Audio_details.html). Never describe this implementation as an exact replacement for every console revision.
 
@@ -154,7 +165,7 @@ The browser and offline renderer use the same `gb-chip-rack.js`, `compileGameBoy
 
 Sharing these components does not recover an unrecorded live session. Frozen observations produce a deterministic historical reconstruction under their declared input, score, model and renderer settings. Reproduction of a particular live performance additionally requires its actual accepted events and timing/state records.
 
-The collectible renderer identifies the current refinement as `upic-nft-gb-v4` (the version 469 renderer was `upic-nft-gb-v3`). Equivalence between uninterrupted playback and arbitrary live/replay seeks, including the guard's preceding-note history, remains unverified.
+The collectible renderer identifies version 471 as `upic-nft-gb-v5` (version 470 used `upic-nft-gb-v4`, and version 469 used `upic-nft-gb-v3`). Equivalence between uninterrupted playback and arbitrary live/replay seeks, including the guard's preceding-note history, remains unverified.
 
 Missing volume, trades or holder observations must remain missing. Candle aggregates must not be labeled as captured individual trades.
 

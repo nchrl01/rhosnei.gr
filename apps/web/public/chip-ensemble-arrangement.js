@@ -98,6 +98,8 @@ export function chipEnsembleArrangement(seed,scoreBeat,signal={}){
  // below; they cannot exchange lead and accompaniment in the middle of a tick.
  const displacement=((hash(seed,71)%5)-2)*.0625;
  const [responseStart,responseEnd]=responseWindows[development.stage];
+ const pairStart=Math.floor(beat/8)*8;
+ const responseWindow={start:pairStart+responseStart+displacement,end:pairStart+responseEnd+displacement};
  const response=windowAt(pairBeat,responseStart+displacement,responseEnd+displacement,.45);
  const leadFocus=1-response,arpFocus=response;
  // CH3's slower ground and short chip grains answer the chord's opening.
@@ -142,7 +144,7 @@ export function chipEnsembleArrangement(seed,scoreBeat,signal={}){
   active,rest,phraseGain,restStartBeat:next.start,restEndBeat:next.end,
   restInBeats:rest?0:Math.max(0,next.start-beat),
   roleGains,textureWeight,grainDensity,grainDurationBeats,grainSpacingBeats,grainOverlap,
-  interference,
+  interference,responseWindow,
   windows:{lead:leadFocus,arp:arpFocus,chord:chordFocus,drone:droneFocus,texture:textureWindow},
  };
 }

@@ -1,7 +1,7 @@
-import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=470';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=470';
+import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=471';
 import {createGameBoyRack} from './gb-chip-rack.js?v=469';
-import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=470';
+import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
 import {marketActivityDecay} from './market-performance.js?v=470';
 
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
@@ -46,6 +46,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   for(const voice of voices)if(voice.start>=at){voice.fading=true;voice.cancelled=true;voices.delete(voice);}
  }
  function clear(){chip.clear();for(const voice of voices){voice.fading=true;voice.cancelled=true;}voices.clear();scheduled.clear();plans.clear();resume=true;lastVoiceKey=null;}
+ function silenceMarket(){
+  // End held chip ownership when evidence becomes inactive. Merely muting
+  // the bus would let an old sustain reappear when a later candle opens it.
+  if(marketAudible)clear();
+  audible(false);resume=false;
+ }
  function invalidate(){cancelAfter(ctx.currentTime+.015);plans.clear();revision++;resume=false;}
  function updateContext(context,{observation=false}={}){
   inputUpdatedAt=ctx.currentTime;
@@ -54,7 +60,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const active=chipSignalActive(signal)&&context.active!==false;
   if(active&&(observation||initial))liveUntil=ctx.currentTime+30;
   pending={...context,signal,active:active&&ctx.currentTime<liveUntil};
-  audible(pending.active);
+  if(pending.active)audible(true);else silenceMarket();
   if(changed){captureBeat();tempo=scoreTempo(context.music);invalidate();}
   // Stale/missing data cannot renew the excitation window just by rendering.
   if(!active){cancelAfter(ctx.currentTime+.005);pending.active=false;}
@@ -73,7 +79,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const now=ctx.currentTime,at=scoreNow(),replaying=!!(timeline&&at!==null),beat=replaying?timeline.beatAt(at):position();
   const context=replaying?timeline.contextAtBeat(beat):pending;
   const signal=currentSignal(context,replaying),validRange=replaying?context&&at>=context.start&&at<context.end:now<liveUntil;
-  if(!validRange||context?.active===false||!chipSignalActive(signal)){audible(false);cancelAfter(now+.005);resume=false;return;}
+  if(!validRange||context?.active===false||!chipSignalActive(signal)){silenceMarket();cancelAfter(now+.005);return;}
   audible(true);
   const currentBar=Math.floor(beat/4),rate=anchor?.rate||1;
   const atBeat=b=>replaying?now+(timeline.atBeat(b)-at)/1000/rate:now+(b-beat)*60/tempo;
@@ -97,7 +103,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     if(elapsed>.025&&(!resume||event.kind==='drum'||event.kind==='texture'))continue;
     const eventContext=replaying?timeline.contextAtBeat(bar*4+event.beat):raw;
     if(replaying){const eventAt=timeline.atBeat(bar*4+event.beat);if(!eventContext||eventAt<eventContext.start||eventAt>=eventContext.end||eventContext.active===false)continue;}
-    const start=Math.max(now+.006,begin),end=Math.min(intendedEnd,replaying?now+(eventContext.end-at)/1000/rate:liveUntil);
+    // A candle boundary updates the controls; it is not a note-off. At fast
+    // replay rates a one-second candle is only 10 ms long. Let its accepted
+    // gesture finish across subsequent active candles, stopping at the first
+    // known silent segment even when it is shorter than our scheduling tick.
+    const releaseAt=replaying?timeline.activeUntil(timeline.atBeat(bar*4+event.beat),timeline.atBeat(bar*4+event.beat+event.duration),row=>row.active!==false&&chipSignalActive(marketChipSignal(row))):null;
+    const start=Math.max(now+.006,begin),end=Math.min(intendedEnd,replaying?now+(releaseAt-at)/1000/rate:liveUntil);
     if(end-start<.006)continue;
     const amplitude=event.gain;
     const spec={...event,time:start,duration:end-start,gain:amplitude};
