@@ -1,10 +1,10 @@
-import {collectiblePreview} from './collectible-selection.js?v=441';
-import {supportedCoinNetwork} from './coin-network-choice.js?v=441';
+import {collectiblePreview,genesisCollectibles} from './collectible-selection.js?v=442';
+import {supportedCoinNetwork} from './coin-network-choice.js?v=442';
 import {catalogueNative} from './native-coins.js?v=359';
-import {storeCapture,previewKey,loadCloudCaptures} from './coin-previews.js?v=441';
-import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=441';
-import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=441';
-import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=441';
+import {storeCapture,previewKey,loadCloudCaptures} from './coin-previews.js?v=442';
+import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=442';
+import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=442';
+import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=442';
 const $=id=>document.getElementById(id),gallery=$('coin-gallery'),grid=$('coin-gallery-grid');
 const search=$('coin-gallery-search'),network=$('coin-gallery-network'),count=$('coin-gallery-count');
 let records=[],visible=40,refreshSaved=()=>{};
@@ -53,7 +53,7 @@ networkButton('all','All networks');
 
 async function loadFrames(){
  const [catalogue,previews]=await Promise.allSettled([loadCoinCatalogue(),loadCloudCaptures()]);
- records=catalogue.status==='fulfilled'?catalogue.value.coins.filter(row=>row.top1000).sort((a,b)=>(b.marketCap||0)-(a.marketCap||0)||(a.catalogueRank||Infinity)-(b.catalogueRank||Infinity)).slice(0,100).map(row=>({...row})):[];
+ records=catalogue.status==='fulfilled'?genesisCollectibles(catalogue.value.coins).map(row=>({...row})):[];
  const byKey=new Map();for(const row of records){byKey.set(row.key,row);const native=catalogueNative(row),contract=collectiblePreview(row).selection;if(contract)byKey.set(previewKey(contract.chain,contract.address),row);if(native)byKey.set(previewKey(native.chain,native.address),row);for(const p of row.platforms||[])byKey.set(previewKey(p.chain,p.address),row);}
  function applyFrames(frames){for(const row of records)row.captures={};for(const frame of frames){const row=byKey.get(previewKey(frame.chain,frame.address));if(row)storeCapture(row,frame);}}
  if(previews.status==='fulfilled')applyFrames(previews.value);

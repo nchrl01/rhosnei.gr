@@ -1,4 +1,4 @@
-import {collectiblePreview} from '../apps/web/public/collectible-selection.js';
+import {collectiblePreview,genesisCollectibles} from '../apps/web/public/collectible-selection.js';
 import {NATIVE_CONTRACT_REFERENCES} from '../apps/web/public/native-contracts.js';
 import {captureFetch} from './capture-network.mjs';
 import {catalogueNative,NATIVE_COINS} from '../apps/web/public/native-coins.js';
@@ -51,7 +51,7 @@ if(options.contractsOnly)candidates=candidates.filter(coin=>{
  return coin.address&&coin.address!=='native'&&!coin.address.startsWith('native:')&&coin.contractStatus!=='off-chain';
 });
 if(options.collectibles){
- const targets=new Set(catalogue.coins.filter(c=>c.top1000).sort((a,b)=>(b.marketCap||0)-(a.marketCap||0)).slice(0,100).map(c=>collectiblePreview(c).selection?.key).filter(Boolean));
+ const targets=new Set(genesisCollectibles(catalogue.coins).map(c=>collectiblePreview(c).selection?.key).filter(Boolean));
  candidates=candidates.filter(c=>targets.has(c.key));
 }
 if(options.ids){
