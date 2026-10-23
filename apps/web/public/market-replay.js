@@ -27,7 +27,7 @@ export function createMarketReplay(){
   setMarket(value){key=value;this.live();if(!recordings.has(key)){recordings.set(key,[]);if(recordings.size>8){const oldest=recordings.keys().next().value;recordings.delete(oldest);archives.delete(oldest);};}},
   record(metrics,price,at=Date.now()){
    const rows=frames();if(rows.length&&at-rows.at(-1).at<1000&&rows.at(-1).price===price)return;
-   rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,path:[]}})});
+   rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,latestPrice:price,path:(metrics.context?.path||[]).slice(-1)}})});
    if(rows.length>3600)rows.shift();recordings.set(key,rows);
   },
   seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.ended=false;state.controls=null;},

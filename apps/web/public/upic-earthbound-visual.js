@@ -65,7 +65,7 @@ export function earthboundMarketState(m={},coinKey='unselected'){
   holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
   tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
   // Snapshot totals are historical aggregates, not evidence of a new trade.
-  tradingActivity:m.replay?unit(Number(m.replay.volume)>0||m.replay.volume==null&&m.raw?.motion>0?1:0):unit(m.tradingActivity),
+  tradingActivity:m.replay?.source==='candles'?unit(Number(m.replay.volume)>0||m.replay.volume==null&&m.raw?.motion>0?1:0):unit(m.tradingActivity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
 export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
