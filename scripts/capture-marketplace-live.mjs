@@ -171,7 +171,7 @@ try{
  const origin='http://127.0.0.1:'+options.port;
  // HTTPS requests are fulfilled below; localhost and live socket connections
  // retain their normal browser transport.
- browser=await chromium.launch({headless:true,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+ browser=await chromium.launch({headless:true,executablePath:process.env.UPIC_CAPTURE_EXECUTABLE||undefined,args:['--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  console.log('Capturing '+queue.length+' exact identities with '+options.concurrency+' isolated players; '+unsupported.length+' unsupported identities reported.');
  async function capture(coin){
   const expectedKey=keyFor(coin.chain,coin.address),started=Date.now(),errors=[];

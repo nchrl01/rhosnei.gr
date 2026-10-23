@@ -51,7 +51,11 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/upic-browsers
         run: |
           npm install --prefix "$RUNNER_TEMP/upic-capture-tools" --no-package-lock --no-audit --no-fund playwright@1.56.1
-          node "$RUNNER_TEMP/upic-capture-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "UPIC_CAPTURE_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            timeout 180 node "$RUNNER_TEMP/upic-capture-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          fi
       - name: Render actual market inputs and publish original frames
         env:
           CI: 'true'
