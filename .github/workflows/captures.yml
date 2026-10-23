@@ -63,7 +63,7 @@ jobs:
           CAPTURE_TOP1000: ${{ inputs.top1000 || 'false' }}
           CAPTURE_PART: ${{ matrix.part }}
         run: |
-          args=(--publish --limit "$CAPTURE_LIMIT" --timeout 90 --concurrency 2)
+          args=(--publish --contracts-only --limit "$CAPTURE_LIMIT" --timeout 90 --concurrency 2)
           if [[ "$CAPTURE_TOP1000" == "true" ]]; then args+=(--top1000 --part "$CAPTURE_PART"); fi
           if [[ -n "$CAPTURE_IDS" ]]; then args+=(--ids "$CAPTURE_IDS"); fi
           node scripts/capture-marketplace-live.mjs "${args[@]}"

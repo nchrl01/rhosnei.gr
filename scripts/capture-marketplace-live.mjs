@@ -1,3 +1,4 @@
+import {NATIVE_CONTRACT_REFERENCES} from '../apps/web/public/native-contracts.js';
 import {captureFetch} from './capture-network.mjs';
 import {catalogueNative,NATIVE_COINS} from '../apps/web/public/native-coins.js';
 import {compareCoinNetworks,supportedCoinNetwork} from '../apps/web/public/coin-network-choice.js';
@@ -13,15 +14,16 @@ import {createHash,randomUUID} from 'node:crypto';
 
 const project=resolve(dirname(fileURLToPath(import.meta.url)),'..'),root=resolve(project,'apps/web/public');
 const endpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures',kind='live-player-frame-v1';
-const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,top1000:false,part:0,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false};
+const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,top1000:false,part:0,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false,contractsOnly:false};
 for(let i=2;i<process.argv.length;i++){
  const arg=process.argv[i];
+ if(arg==='--contracts-only'){options.contractsOnly=true;continue;}
  if(arg==='--all'){options.all=true;continue;}
  if(arg==='--top1000'||arg==='--all1000'){options.top1000=true;options.all=true;continue;}
  if(arg==='--publish'){options.publish=true;continue;}
  if(arg==='--check-publisher'){options.checkPublisher=true;options.publish=true;continue;}
  if(arg==='--dry-run'){options.dryRun=true;continue;}
- if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher] [--top1000 --part 1..4]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
+ if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--contracts-only] [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher] [--top1000 --part 1..4]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
  const name=arg.slice(2);if(!arg.startsWith('--')||!['limit','ids','timeout','concurrency','port','part'].includes(name)||process.argv[i+1]===undefined)throw Error('Unknown or incomplete option: '+arg);
  const value=process.argv[++i];options[name]=name==='ids'?value.split(',').map(v=>v.trim()).filter(Boolean):Number(value);
 }
@@ -41,10 +43,15 @@ for(const coin of catalogue.coins)for(const item of [catalogueNative(coin)||{},{
  if(!identities.has(key))identities.set(key,{...coin,...item,key});
 }
 let candidates=[...identities.values()].filter(c=>(!options.top1000||c.top1000)&&(!options.part||Math.ceil(c.catalogueRank/250)===options.part));
+if(options.contractsOnly)candidates=candidates.filter(coin=>{
+ const ref=Object.hasOwn(NATIVE_CONTRACT_REFERENCES,coin.id)?NATIVE_CONTRACT_REFERENCES[coin.id]:null;
+ if(ref)return keyFor(coin.chain,coin.address)===keyFor(ref.chain,ref.address);
+ return coin.address&&coin.address!=='native'&&!coin.address.startsWith('native:')&&coin.contractStatus!=='off-chain';
+});
 if(options.ids){
  const selected=new Map();
  for(const query of options.ids){
-  const exactIdentity=identities.get(query);if(exactIdentity){selected.set(query,exactIdentity);continue;}
+  const exactIdentity=identities.get(query);if(exactIdentity){if(options.contractsOnly&&!candidates.some(c=>c.key===query))throw Error('A contract identity is required in contracts-only mode: '+query);selected.set(query,exactIdentity);continue;}
   const exact=catalogue.coins.filter(c=>c.id===query||c.key===query),matches=exact.length?exact:catalogue.coins.filter(c=>c.symbol?.toUpperCase()===query.toUpperCase());
   if(matches.length!==1)throw Error((matches.length?'Ambiguous':'Unknown')+' catalogue identity: '+query+'; use the CoinGecko id or chain/address key.');
   for(const coin of candidates)if(coin.id===matches[0].id)selected.set(coin.key,coin);
@@ -136,7 +143,7 @@ async function publish(metadata,bytes){
 if(options.checkPublisher){await checkPublisher();process.exit(0);}
 const output=process.env.UPIC_CAPTURE_OUTPUT_DIR?resolve(process.env.UPIC_CAPTURE_OUTPUT_DIR):await mkdtemp(join(tmpdir(),'upic-live-captures-'));
 await mkdir(output,{recursive:true});
-const report={startedAt:new Date().toISOString(),publishing:options.publish,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,requested:queue.length,unsupported,unsupportedCoins,results:[]};
+const report={startedAt:new Date().toISOString(),publishing:options.publish,contractsOnly:options.contractsOnly,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,requested:queue.length,unsupported,unsupportedCoins,results:[]};
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.woff':'font/woff','.woff2':'font/woff2','.wasm':'application/wasm','.mp3':'audio/mpeg','.wav':'audio/wav'};
 const server=createServer(async(req,res)=>{
  try{
