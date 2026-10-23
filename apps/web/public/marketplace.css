@@ -96,3 +96,8 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 
 .coin-collectible-wrapper{min-width:0}
 @media(min-width:761px){.marketplace-page.desktop-header-search .coin-gallery-toolbar{display:none}}
+
+.coin-collectible.is-contract-unavailable{cursor:default;border-color:#252525}
+.coin-collectible.is-contract-unavailable:hover{background:#0b0b0b;border-color:#252525}
+.coin-collectible.is-contract-unavailable:hover h2{text-decoration:none}
+.coin-collectible.is-contract-unavailable .coin-open{font-size:var(--font-size-small);color:var(--muted)}

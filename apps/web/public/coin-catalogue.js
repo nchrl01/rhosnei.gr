@@ -1,12 +1,10 @@
+import {contractPlayerURL} from './collectible-selection.js?v=433';
 // One static, timestamped catalogue. Opening the browser does not poll 1,000 coins.
 let pending;
-export function loadCoinCatalogue(){return pending??=fetch('marketplace-coin-catalogue.json?v=335',{credentials:'same-origin'}).then(async response=>{if(!response.ok)throw Error('Coin catalogue unavailable');const data=await response.json();if(!Array.isArray(data.coins))throw Error('Invalid coin catalogue');return data;}).catch(error=>{pending=null;throw error;});}
+export function loadCoinCatalogue(){return pending??=fetch('marketplace-coin-catalogue.json?v=433',{credentials:'same-origin'}).then(async response=>{if(!response.ok)throw Error('Coin catalogue unavailable');const data=await response.json();if(!Array.isArray(data.coins))throw Error('Invalid coin catalogue');return data;}).catch(error=>{pending=null;throw error;});}
 const nativeOnNetwork=(item,network)=>Boolean(network&&(item.nativeChain===network||item.nativeChains?.includes(network)||(item.contractStatus==='native'&&!item.nativeChain&&!item.nativeChains?.length&&item.chain===network)));
-export function coinPlayerURL(item){
- const address=item.contractStatus==='off-chain'||nativeOnNetwork(item,item.chain)?null:item.address;
- const params=new URLSearchParams({coin:address||item.query||item.symbol+'/USD'});if(address&&item.chain)params.set('network',item.chain);if(!address&&nativeOnNetwork(item,item.chain)&&item.id)params.set('native',item.id);
- return './?'+params;
-}
+export const coinPlayerURL=contractPlayerURL;
+
 export function rememberRecentCoin(coin){
  if(!coin?.symbol||!(coin.address||coin.query))return;
  try{const rows=JSON.parse(localStorage.getItem('upic-recent-coins-v1')||'[]');const key=coin.key||coin.chain+':'+coin.address;localStorage.setItem('upic-recent-coins-v1',JSON.stringify([{key,id:coin.id,chain:coin.chain,address:coin.address,symbol:coin.symbol,name:coin.name,query:coin.query,image:coin.image,contractStatus:coin.contractStatus,nativeChain:coin.nativeChain,nativeChains:coin.nativeChains},...rows.filter(r=>r.key!==key)].slice(0,12)));}catch{}

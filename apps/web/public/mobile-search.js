@@ -1,8 +1,9 @@
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=390';
-import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=359';
+import {collectiblePreview} from './collectible-selection.js?v=433';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=433';
+import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=433';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {loadTrendingCoins} from './trending.js?v=391';
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=432';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=433';
 // Use the same network artwork as the marketplace, with native coin logos where available.
 const networkMarks=Object.fromEntries(['ethereum','base','solana','arbitrum','polygon','optimism','avalanche','robinhood','abstract','animechain','ape_chain','arc','bera_chain','blast','flow','gunzilla','hyperevm','hyperliquid','ink','megaeth','monad','ronin','sei','shape','somnia','soneium','stablechain','unichain','zora'].map(icon=>[({ape_chain:'apechain',bera_chain:'berachain',sei:'sei-network',stablechain:'stable',zora:'zora-network'})[icon]||icon,'images/networks/'+icon+'.svg']));
 networkMarks.bsc='images/networks/bsc.png';
@@ -18,6 +19,7 @@ const icons={back:'<path d="m15 5-7 7 7 7"/>',paste:'<path d="M8 5H5v16h14V5h-3M
 function iconButton(label,icon,cls){const b=node('button',null,cls);b.type='button';b.setAttribute('aria-label',label);b.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">'+icons[icon]+'</svg>';return b;}
 export function bindMobileCoinSearch(){
  const trigger=document.querySelector('button.header-search'),form=document.querySelector('#coin-form,#marketplace-coin-form'),results=document.querySelector('#coin-search-results');if(!trigger||!form)return;
+ const cataloguePreview=form.id==='marketplace-coin-form'?collectiblePreview:coinPreview;
  const input=form.querySelector('input'),mobile=matchMedia('(max-width:760px)'),nodes=[form,results].filter(Boolean),anchors=nodes.map(n=>{const a=document.createComment('search position');n.before(a);return a;});
  const desktop=document.querySelector('.header-desktop-search'),header=desktop?.closest('.header-main'),desktopPanel=node('div',null,'header-search-panel');
  desktopPanel.id='header-search-panel';
@@ -142,11 +144,11 @@ export function bindMobileCoinSearch(){
   rows.sort((a,b)=>form.id==='marketplace-coin-form'&&category==='coins'?(b.marketCap||0)-(a.marketCap||0):q?Number(b.symbol.toLowerCase()===q)-Number(a.symbol.toLowerCase()===q)||(b.marketCap||0)-(a.marketCap||0):Number(Boolean(b.featured))-Number(Boolean(a.featured))||(a.trendingRank||999)-(b.trendingRank||999)||(b.marketCap||0)-(a.marketCap||0));
   status.textContent=rows.length?(q?'Matching coins':category==='trending'?'Trending · 24H':form.id==='marketplace-coin-form'?'Genesis Collection':'Coins'):(pending?category==='trending'?'Loading trending coins…':'Loading coins…':q?'No local matches. Press Search to search live markets.':category==='trending'?trendingError||'No trending coins above $1M on this network.':'No coins available.');
   more.hidden=rows.length<=visible;
-  const rowsKey=JSON.stringify([category,network.value,q,visible,rows.slice(0,visible).map(row=>{const view=coinPreview(row,network.value);return [row.key,view.selection.key,view.capture?.capturedAt,row.image,row.marketCap];})]);
+  const rowsKey=JSON.stringify([category,network.value,q,visible,rows.slice(0,visible).map(row=>{const view=cataloguePreview(row,network.value);return [row.key,view.selection?.key,view.capture?.capturedAt,row.image,row.marketCap];})]);
   if(rowsKey===paintedRows)return;paintedRows=rowsKey;
   const focusedKey=suggestions.contains(document.activeElement)?document.activeElement.dataset.key:null;
   suggestions.replaceChildren();
-  for(const row of rows.slice(0,visible)){const {selection:coin,capture}=coinPreview(row,network.value);const button=node('button',null,'mobile-search-coin');button.type='button';button.dataset.key=row.key;const artwork=node('span',null,'mobile-search-artwork'),img=node('img');img.alt='';if(capture?.snapshot||coin.image)img.src=capture?.snapshot||coin.image;else artwork.dataset.unavailable='true';img.draggable=false;img.loading='lazy';artwork.append(img);const identity=node('span',null,'mobile-search-identity');identity.append(node('span',coin.symbol,'mobile-search-symbol'),node('small',coin.name||coin.symbol),node('small',(coin.chain==='unknown'?'MARKET SEARCH':(coin.chain||'').toUpperCase())+(coin.address?' · '+coin.address.slice(0,5)+'…'+coin.address.slice(-4):'')));let fallback=false;img.addEventListener('error',()=>{if(capture?.snapshot&&coin.image&&!fallback){fallback=true;img.src=coin.image;attachArtworkDither(img);}else artwork.dataset.unavailable='true';});const metrics=node('span',null,'mobile-search-metrics');metrics.append(node('span',money(coin.marketCap)),node('small','Market cap'));button.append(artwork,identity,metrics);button.addEventListener('click',()=>select(coin));suggestions.append(button);if(!capture?.snapshot&&coin.image)attachArtworkDither(img);}
+  for(const row of rows.slice(0,visible)){const {selection:selected,capture}=cataloguePreview(row,network.value),coin=selected||row;const button=node('button',null,'mobile-search-coin');button.type='button';button.dataset.key=row.key;button.disabled=!selected;const artwork=node('span',null,'mobile-search-artwork'),img=node('img');img.alt='';if(capture?.snapshot||coin.image)img.src=capture?.snapshot||coin.image;else artwork.dataset.unavailable='true';img.draggable=false;img.loading='lazy';artwork.append(img);const identity=node('span',null,'mobile-search-identity');identity.append(node('span',coin.symbol,'mobile-search-symbol'),node('small',coin.name||coin.symbol),node('small',(coin.chain==='unknown'?'MARKET SEARCH':(coin.chain||'').toUpperCase())+(coin.address?' · '+coin.address.slice(0,5)+'…'+coin.address.slice(-4):'')));let fallback=false;img.addEventListener('error',()=>{if(capture?.snapshot&&coin.image&&!fallback){fallback=true;img.src=coin.image;attachArtworkDither(img);}else artwork.dataset.unavailable='true';});const metrics=node('span',null,'mobile-search-metrics');metrics.append(node('span',money(coin.marketCap)),node('small','Market cap'));button.append(artwork,identity,metrics);button.addEventListener('click',()=>select(coin));suggestions.append(button);if(!capture?.snapshot&&coin.image)attachArtworkDither(img);}
   if(focusedKey)[...suggestions.children].find(row=>row.dataset.key===focusedKey)?.focus({preventScroll:true});
  }
  function setCategory(key){

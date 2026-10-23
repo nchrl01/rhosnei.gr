@@ -94,3 +94,11 @@ publication retry temporary network errors and HTTP 408/425/429/5xx up to three
 times with bounded delays. Authorization/validation errors remain visible failures;
 previous captures are retained. Capture reports include the player's rejection
 reason rather than only a timeout. External data availability is still required.
+
+## Collectible contract links
+
+Every enabled collectible opens an exact contract/token identifier plus network.
+Native coins use verified wrapped/bridged counterparts where available, with the
+actual counterpart name and network displayed. Unverified targets remain pending;
+there is no native-pair fallback. Previews match the selected contract exactly.
+See [routing and capture integration](docs/collectible-contract-routing.md).

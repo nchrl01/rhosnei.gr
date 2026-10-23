@@ -1,8 +1,9 @@
+import {isTokenIdentifier} from './coin-identifiers.js?v=433';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 
 const normalized=value=>String(value||'').normalize('NFKC').trim().toLowerCase().replace(/^\$/,'');
-export const isTokenIdentifier=query=>/^[EU]Q[A-Za-z0-9_-]{46}$/.test(query)||/^0x[0-9a-f]{40,64}$/i.test(query)||/^0x[0-9a-fA-F]{1,64}::[A-Za-z_][A-Za-z0-9_]*::[A-Za-z_][A-Za-z0-9_]*$/.test(query)||/^[1-9A-HJ-NP-Za-km-z]{32,64}$/.test(query);
+export {isTokenIdentifier};
 export function rankCoinMatches(pairs,query,{orientPair,network}={}){
  const address=isTokenIdentifier(query),q=normalized(query);
  const rank=token=>normalized(token.symbol)===q?4:normalized(token.name)===q?3:normalized(token.symbol).startsWith(q)||normalized(token.name).startsWith(q)?2:normalized(token.symbol).includes(q)||normalized(token.name).includes(q)?1:0;

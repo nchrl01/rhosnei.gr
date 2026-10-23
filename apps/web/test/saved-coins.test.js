@@ -1,7 +1,7 @@
 import {beforeEach,afterEach,describe,expect,it,vi} from 'vitest';
 
 const wallet=vi.hoisted(()=>({account:null,listener:null,get:vi.fn(),ensure:vi.fn(),sign:vi.fn()}));
-vi.mock('../public/wallet-session.js?v=432',()=>({
+vi.mock('../public/wallet-session.js?v=433',()=>({
  getWalletAccount:wallet.get,ensureWalletAccount:wallet.ensure,signWalletMessage:wallet.sign,
  subscribeWalletAccount:callback=>{wallet.listener=callback;callback(wallet.account);return ()=>{};},
 }));
