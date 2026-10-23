@@ -1,15 +1,16 @@
 import {bindSearchField} from './search-field.js?v=394';
-import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=439';
-import {findOnchainMarkets} from './market-search.js?v=439';
+import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=440';
+import {findOnchainMarkets} from './market-search.js?v=440';
 import {isExchangeQuery,searchExchangeMarkets} from './ccxt-market.js?v=359';
-import {rememberRecentCoin} from './coin-catalogue.js?v=439';
-import {savedCoins} from './saved-coins.js?v=439';
+import {rememberRecentCoin} from './coin-catalogue.js?v=440';
+import {savedCoins} from './saved-coins.js?v=440';
 
 // Search live markets using the same discovery, ranking and result UI as home.
-export function bindMarketplaceCoinSearch(){
- const form=document.getElementById('marketplace-coin-form'),input=document.getElementById('coin-gallery-search');
+export function bindMarketplaceCoinSearch({formId='marketplace-coin-form',inputId='coin-gallery-search',labelId='coin-gallery-label'}={}){
+ const form=document.getElementById(formId),input=document.getElementById(inputId);
+ if(!form||!input)return;
  const results=document.getElementById('coin-search-results'),feedback=document.getElementById('lookup'),submit=form.querySelector('button[type=submit]');
- const sync=bindSearchField(input,document.getElementById('coin-gallery-label'));
+ const sync=bindSearchField(input,document.getElementById(labelId));
  let revision=0,controller,requestedNetwork=null;
  function busy(value){form.setAttribute('aria-busy',String(value));submit.disabled=value;submit.setAttribute('aria-busy',String(value));submit.textContent=value?'Searching…':'Search';}
  function message(text,state='ready'){feedback.textContent=text;feedback.hidden=!text;feedback.dataset.state=state;}

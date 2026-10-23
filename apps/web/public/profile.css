@@ -1,3 +1,4 @@
+@font-face{font-family:UnifontText;src:url("fonts/Unifont/Unifont.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
 .profile-page>main{display:flex;flex-direction:column;min-height:100dvh;min-width:0;padding-bottom:0}
 #profile-page-content{flex:1;width:100%;min-width:0;box-sizing:border-box}
 .profile-content{--profile-body:18px;--profile-small:14px;max-width:1200px;margin:0 auto;padding:40px 24px 64px;text-transform:uppercase;font-size:var(--profile-body);line-height:1.5}
@@ -24,7 +25,7 @@
 .profile-action-arrow{margin-left:auto;font-size:26px}
 .profile-wallet-status{color:var(--muted,#aaa);font-size:var(--profile-small);line-height:1.5;padding:12px 8px;margin:0;overflow-wrap:anywhere}
 .profile-tabs{display:flex;align-items:center;gap:28px;border-bottom:1px solid var(--line,#333);margin:0 0 16px}
-.profile-content .profile-tabs button{position:relative;border:0;background:transparent;padding:12px 0;font-size:var(--profile-body);text-transform:uppercase;color:var(--muted,#aaa)}
+.profile-content .profile-tabs button{position:relative;border:0;background:transparent;padding:12px 0;font-family:UnifontText,var(--font-family);font-size:var(--profile-body);text-transform:none;color:var(--muted,#aaa)}
 .profile-tabs button[aria-selected=true]{color:var(--ink,#ddd)}
 .profile-tabs button[aria-selected=true]::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:currentColor}
 .profile-content .profile-tabs button:focus-visible{outline:none;color:#fff;box-shadow:0 2px #fff}

@@ -1,4 +1,4 @@
-import {isTokenIdentifier} from './coin-identifiers.js?v=439';
+import {isTokenIdentifier} from './coin-identifiers.js?v=440';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 

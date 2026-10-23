@@ -1,9 +1,9 @@
-import {collectiblePreview} from './collectible-selection.js?v=439';
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=439';
-import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=439';
+import {collectiblePreview} from './collectible-selection.js?v=440';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=440';
+import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=440';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {loadTrendingCoins} from './trending.js?v=391';
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=439';
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=440';
 // Use the same network artwork as the marketplace, with native coin logos where available.
 const networkMarks=Object.fromEntries(['ethereum','base','solana','arbitrum','polygon','optimism','avalanche','robinhood','abstract','animechain','ape_chain','arc','bera_chain','blast','flow','gunzilla','hyperevm','hyperliquid','ink','megaeth','monad','ronin','sei','shape','somnia','soneium','stablechain','unichain','zora'].map(icon=>[({ape_chain:'apechain',bera_chain:'berachain',sei:'sei-network',stablechain:'stable',zora:'zora-network'})[icon]||icon,'images/networks/'+icon+'.svg']));
 networkMarks.bsc='images/networks/bsc.png';

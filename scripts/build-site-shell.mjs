@@ -8,7 +8,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 439;
+const version = 440;
 const pages = [
   { file: 'profile.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'profile.css'] },
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
@@ -47,7 +47,7 @@ function header(page) {
       : '<img src="upic-logo-transparent.svg?v=116" alt="" width="125" height="173" decoding="async" draggable="false">',
     marketplaceCurrent: page.active === 'marketplace' ? ' aria-current="page"' : '',
     aboutCurrent: page.active === 'about' ? ' aria-current="page"' : '',
-    search: (page.type === 'instrument' || page.file === 'upic/marketplace/index.html') ? '<button type="button" class="header-search" aria-label="Search coins" aria-controls="mobile-coin-search" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>' : '<a class="header-search" href="./#search" aria-label="Search coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a>',
+    search: (page.type === 'instrument' || page.file === 'upic/marketplace/index.html' || page.file === 'profile.html') ? '<button type="button" class="header-search" aria-label="Search coins" aria-controls="mobile-coin-search" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>' : '<a class="header-search" href="./#search" aria-label="Search coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a>',
     volume: page.volume ? partials.volume : '',
     trending: page.type === 'instrument' ? partials['home-trending'] : '',
   };
@@ -72,7 +72,13 @@ for (const page of pages) {
   }
   // Render the desktop search in its final position before the first paint.
   // Extract it before replacing a previously built header, keeping rebuilds idempotent.
-  const searchForm = html.match(/<form\b(?=[^>]*\bid=["'](?:coin-form|marketplace-coin-form)["'])[^>]*>[\s\S]*?<\/form>/)?.[0];
+  let searchForm = html.match(/<form\b(?=[^>]*\bid=["'](?:coin-form|marketplace-coin-form)["'])[^>]*>[\s\S]*?<\/form>/)?.[0];
+  if(page.file === 'profile.html' && !searchForm){
+    searchForm = '<form id="coin-form"><div class="address-row"><div class="address-field"><input id="address" placeholder=" " autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="search" required maxlength="250" aria-describedby="address-help" aria-controls="coin-search-results"><label id="address-label" for="address">Coin name / contract address</label></div><button type="submit">Search</button></div><p id="address-help">Search a coin or address, or a pair like BTC/USD.</p><p id="lookup" role="status" aria-live="polite" aria-atomic="true" hidden></p></form>';
+  }
+  if(page.file === 'profile.html' && !html.includes('id="coin-search-results"')){
+    html = html.replace('</main>', '<section id="coin-search-results" hidden aria-label="Matching coins"></section></main>');
+  }
   let pageHeader = header(page);
   if (searchForm) {
     html = html.replace(searchForm, '');
