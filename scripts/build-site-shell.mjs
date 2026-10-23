@@ -10,9 +10,10 @@ const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
 const version = 448;
 // Audio and navigation updates have independent cache revisions.
-const audioVersion = 472;
+const audioVersion = 473;
 const searchVersion = 456;
-const visualVersion = 472;
+const marketplaceVersion = 473;
+const visualVersion = 474;
 const navigationVersion = 457;
 const foundationVersion = 454;
 const pages = [
@@ -21,7 +22,7 @@ const pages = [
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
   { file: 'about.html', type: 'public', active: 'about', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
   { file: 'help.html', type: 'public', active: 'help', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
-  { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'marketplace.css'] },
+  { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', `marketplace.css?v=${marketplaceVersion}`] },
   { file: 'credits.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css'] },
   { file: 'research.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'research.css'] },
   { file: 'visual-lab.html', type: 'lab', styles: ['visual-lab.css'] },
@@ -131,7 +132,7 @@ for (const page of pages) {
   }
   if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${Math.max(audioVersion,searchVersion,visualVersion)}"`);
   html = html.replaceAll('href="fonts/Unifont/Unifont-ui.woff2"', 'href="fonts/Unifont/Unifont.woff2"');
-  if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${Math.max(version,searchVersion)}"`);
+  if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${marketplaceVersion}"`);
   await writeFile(file, html);
 }
 console.log(`Rendered shared shell for ${pages.length} static pages.`);

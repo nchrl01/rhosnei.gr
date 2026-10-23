@@ -1,6 +1,6 @@
 import {marketPerformance} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
-import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=472';
+import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=473';
 
 import {learnedMarketMelody} from './learned-market-phrase.js?v=469';
 import {MIDI_PHRASE_MODEL} from './midi-phrase-model.js?v=469';
@@ -71,13 +71,13 @@ export function composeChipBar(seed,bar,context={}){
  const expression=(kind,id)=>({
   // A coin keeps its voice while activity changes its articulation. Only a
   // strong move bends a selected note; normal phrases retain definite pitch.
-  duty:clamp(chipHash(identity,['chord_low','chord_high'].includes(kind)?29:23)%3+(mapping.change.magnitude>.35?direction:0),0,3),
-  envelope:['bass','drone'].includes(kind)?0:{initial:kind.startsWith('chord')?11+Math.round(3*volume):8+Math.round(4*intensity),direction:-1,pace:kind.startsWith('chord')?0:2+Math.floor((1-pace)*3)},
+  duty:1+chipHash(identity,['chord_low','chord_high'].includes(kind)?29:23)%2,
+  envelope:['bass','drone'].includes(kind)?0:{initial:kind.startsWith('chord')?9+Math.round(2*volume):7+Math.round(3*intensity),direction:-1,pace:kind.startsWith('chord')?0:2+Math.floor((1-pace)*3)},
   // Register routing creates space inside the chips. Root/bass stay central;
   // the two chord tones occupy opposite sides, independently of trade bias.
   wave:chipHash(identity,31)%2,pan:kind==='bass'||kind==='drone'?0:kind==='chord_low'?-1:kind==='chord_high'?1:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
   slide:['lead','arp'].includes(kind)&&mapping.change.magnitude>.2&&roll(identity,id+83)<.22?direction*fracture*mapping.change.magnitude*(1.4-.8*stability):0,
-  noiseWidth:motion>.65?7:15,noiseShift:clamp(Math.round(9-6*energy-2*motion-2*mapping.change.signed),0,13),
+  noiseWidth:15,noiseShift:clamp(Math.round(8-3*energy-motion-mapping.change.signed),3,11),
  });
  const add=(beat,midi,duration,gain,kind,id,extra={})=>{
   gain*=kind.startsWith('chord')||kind==='drone'?(context.chordGain??1):['arp','echo','lead'].includes(kind)?(context.arpGain??1):(context.noteGain??1);
@@ -94,11 +94,16 @@ export function composeChipBar(seed,bar,context={}){
  const groove={events:[0,.75,1.5,2.5,3.25].map(beat=>({beat,duration:.5,accent:1}))};
  const phrase=learnedMarketMelody(seed,development.sourceBar,{harmony,groove,music:motifMusic,
   phraseLearning:1,phraseVariation:context.phraseVariation??0,phraseLength:context.phraseLength??8,
-  phraseDepth:.4,pitchLow:60+identity%5,pitchHigh:79+identity%5,phraseGate:gate});
+  phraseDepth:.4,pitchLow:56+identity%5,pitchHigh:73+identity%5,phraseGate:gate});
  if(context.arpeggios!==false){
-  for(const [i,event] of developPhraseEvents(phrase,development).slice(0,7).entries()){
+  const developed=developPhraseEvents(phrase,development);
+  // A recognizable question and a shorter answer. Keep the learned timing
+  // and pitch sets, but leave punctuation instead of filling every opening.
+  const leadLimit=development.stage==='answer'?3:development.stage==='vary'?5:4;
+  let lastLeadEnd=-Infinity;
+  for(const [i,event] of developed.slice(0,leadLimit).entries()){
    const id=development.sourceBar*101+i;
-   if(roll(identity,id+10007)>=tradingActivity*unit(.32+.5*energy+.18*intensity))continue;
+   if(roll(identity,id+10007)>=tradingActivity*unit(.32+.5*energy+.18*intensity)||event.beat<lastLeadEnd+.12)continue;
    const articulation=(.72+.5*(1-pace)+.15*volume)*(.7+.4*liquidityGate);
    // Greater observed liquidity gives stronger harmonic settlement, using
    // only this newly generated phrase's allowed pitches. The learned rhythm,
@@ -106,8 +111,10 @@ export function composeChipBar(seed,bar,context={}){
    const settle=event.beat%1<.15&&roll(identity,id+10009)<stability*.4;
    const target=nearest(event.midi,notes.flatMap(note=>[note,note+12,note+24]));
    const midi=settle&&event.allowedPitches?.length?nearest(target,event.allowedPitches):event.midi;
-   add(event.beat,midi,Math.max(.12,Math.min(1.5,event.duration*articulation)),.062*(.45+.35*energy+.2*intensity)*event.accent*pulseGain,'lead',id,
-    {allowedPitches:event.allowedPitches,...(event.duration>.4?{sustain:{hold:.48+.24*musicality,steps:2}}:{})});
+   const duration=Math.max(.16,Math.min(1.5,event.duration*articulation));
+   add(event.beat,midi,duration,.06*(.45+.35*energy+.2*intensity)*event.accent*pulseGain,'lead',id,
+    {allowedPitches:event.allowedPitches,...(event.duration>.65?{sustain:{hold:.62+.16*musicality,steps:1}}:{})});
+   lastLeadEnd=event.beat+duration;
   }
  }
  if(context.arpeggios!==false&&development.cadenceBeat!==null&&events.some(event=>event.kind==='lead')){
@@ -142,7 +149,7 @@ export function composeChipBar(seed,bar,context={}){
  if(chordEntrance){
   [notes[1],notes[2]].forEach((midi,i)=>add(chordBeat+i*.025,midi,chordDuration-i*.025,
    .032*(.7+.3*energy),'chord_'+(i?'high':'low'),211+i,
-   {sustain:{hold:.55+.2*musicality,steps:3},dutyShift:mapping.change.magnitude>.25?{at:.36,duty:i?2:1}:undefined}));
+   {sustain:{hold:.65+.15*musicality,steps:1}}));
   const ground=add(chordBeat,tone(degree)+12,chordDuration,.03*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0,sustain:{hold:.65,steps:2}});
   if(ground)ground.ensembleRole='chord'; // Root plus two pulses form a true chord.
  }else if((bar+chipHash(identity,217))%2===0&&roll(identity,bar+21801)<tradingActivity*(.12+.35*volume+.25*(1-pace))){
@@ -155,7 +162,10 @@ export function composeChipBar(seed,bar,context={}){
  // their spacing. Independent note coin flips used to erase quiet responses.
  const pair=Math.floor(bar/2),pairStart=pair*8;
  const arpSeed=chipHash(identity,pair+301),arpCount=mapping.arpeggio.notes;
- const arpRoot=Math.min(72,notes[0]+12),arpSpan=mapping.arpeggio.span;
+ // Fold the whole answer into a warmer octave without changing its chord
+ // intervals, signed contour, or the holder-controlled register span.
+ let arpRoot=notes[0];while(arpRoot>59)arpRoot-=12;
+ const arpSpan=mapping.arpeggio.span;
  const arpPalette=[0,12,24].flatMap(octave=>notes.map(note=>arpRoot+note-notes[0]+octave)).filter(note=>note<=arpRoot+arpSpan);
  const arpPitches=Array.from({length:arpCount},(_,i)=>nearest(arpRoot+arpSpan*i/(arpCount-1),arpPalette));
  if(direction<0)arpPitches.reverse();
@@ -174,7 +184,7 @@ export function composeChipBar(seed,bar,context={}){
   const midi=arpPitches[i],pooledGate=statistic('lead.gate',arpSeed,i+41,.72,n=>n>=.5&&n<=1);
   const accent=statistic('lead.accent',arpSeed,i+51,.95,n=>n>=.8&&n<=1.15);
   const duration=Math.min(.45,Math.max(.2,arpGap*pooledGate*(.75+.35*liquidityGate))),gain=.038*(.5+.5*energy)*accent*pulseGain;
-  const envelope={initial:11+Math.round(2*intensity),direction:-1,pace:3};
+  const envelope={initial:9+Math.round(2*intensity),direction:-1,pace:3};
   add(beat,midi,duration,gain,'arp',301+i,{envelope});
   if(i===arpCount-1)echoSource={beat:arpStart+i*arpGap,midi,duration,gain,envelope};
  }
@@ -207,15 +217,17 @@ export function composeChipBar(seed,bar,context={}){
  // Envion's density/overlap logic becomes short legal noise grains on
  // the second chip. Candidate times are local, stable bar addresses. Market
  // data alters eligibility, duration and overlap, never the whole clock grid.
- const spacing=.23+.13*roll(identity,71),phase=roll(identity,bar+706)*spacing;
+ const spacing=.38+.18*roll(identity,71),phase=roll(identity,bar+706)*spacing;
  if(textureGain>0)for(let step=0;step*spacing+phase<4;step++){
   const beat=step*spacing+phase,address=bar*32+step;
   const cloud=chipEnsembleArrangement(seed,start+beat,signal);
-  if(roll(identity,address+601)>=cloud.grainDensity)continue;
+  // Noise answers the tonal phrase; it does not sit on every lead attack.
+  const spoken=events.some(event=>['lead','arp'].includes(event.kind)&&beat>event.beat-.12&&beat<event.beat+event.duration+.15);
+  if(spoken||roll(identity,address+601)>=cloud.grainDensity*.65)continue;
   const duration=Math.min(cloud.grainDurationBeats*(.7+.3*cloud.grainOverlap),spacing*2);
   events.push({kind:'texture',drum:'texture',beat,duration,
    gain:.018*textureGain*(.35+.65*cloud.textureWeight)*signal.fresh,seed:chipHash(identity,address+601),
-   expression:{...expression('texture',address+601),noiseWidth:cloud.interference>.3?7:motion>.65?7:15,noiseDivider:chipHash(identity,address+607)%8,envelope:{initial:3+Math.round(3*cloud.textureWeight),direction:-1,pace:1}}});
+   expression:{...expression('texture',address+601),noiseWidth:development.stage==='vary'&&motion>.75&&roll(identity,address+609)<.1?7:15,noiseDivider:3+chipHash(identity,address+607)%5,envelope:{initial:3+Math.round(2*cloud.textureWeight),direction:-1,pace:1}}});
  }
  const drums=composeGameBoyDrumBar(seed,bar,{...context,signal},development);
  const melody=events.filter(event=>event.kind==='lead'&&chipEnsembleArrangement(seed,start+event.beat,signal).roleGains.lead>0);

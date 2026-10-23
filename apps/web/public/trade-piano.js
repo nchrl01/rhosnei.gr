@@ -1,5 +1,5 @@
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=472';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=473';
 import {createGameBoyRack} from './gb-chip-rack.js?v=472';
 import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
 import {marketActivityDecay} from './market-performance.js?v=472';

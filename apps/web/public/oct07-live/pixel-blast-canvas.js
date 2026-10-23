@@ -9,6 +9,7 @@ import {capitalFeed} from './capital-field.js?v=167';
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
 import {ditherPixels} from './coin-dither.js?v=217';
 import {artworkForeground} from './artwork-foreground.js?v=391';
+import {artworkBackgroundTone} from './artwork-background-tone.js?v=473';
 const fract=x=>x-Math.floor(x);
 const hash=n=>fract(Math.sin(n)*43758.5453);
 const fade=x=>x*x*x*(x*(x*6-15)+10);
@@ -62,7 +63,8 @@ export function preparePixelIdentity(source){
   const peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
   for(let c=0;c<3;c++)colors[n*3+c]=peak>.001?primary[c]/peak*level:.4;
  }
- return {width:w,height:h,data,sizeData,rgba,palette,colors,...foreground};
+ const backgroundTone=artworkBackgroundTone(rgba,w,h);
+ return {width:w,height:h,data,sizeData,rgba,palette,colors,backgroundTone,...foreground};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),x=fx/side,y=fy/side;
@@ -80,7 +82,7 @@ export function createPixelBlastCanvas(host){
  return {
   canvas,
   coverage(){return lastCoverage;},
-  setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown'});},
+  setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown',backgroundTone:mask?.backgroundTone?.kind||'none',backgroundToneConfidence:(mask?.backgroundTone?.confidence||0).toFixed(3)});},
   render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
    time=loopTime(time);
@@ -254,16 +256,21 @@ export function createPixelBlastCanvas(host){
    // the existing baseline/milestone palette.
    const accentR=(accentDirection>0?81:255)/255,accentG=(accentDirection>0?215:102)/255,accentB=(accentDirection>0?123:114)/255;
    for(let pixel=0;pixel<occupied;pixel++){
-    const n=occupiedPixels[pixel],i=n*4;let r=1,g=1,b=1;
-    if(color&&mask?.colors){
+    const n=occupiedPixels[pixel],i=n*4;let r=1,g=1,b=1,quiet=0;
+    if(mask&&(color||identity>0&&mask.backgroundTone?.empty)){
      const u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
      if(u>=0&&u<1&&v>=0&&v<1){
       const m=Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width),amount=color*mask.rgba[m*4+3]/255,c=m*3;
-      r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);
+      if(color&&mask.colors){r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);}
+      quiet=(mask.backgroundTone?.empty?.[m]||0)/255*(mask.backgroundTone?.confidence||0)*clamp(identity);
      }
     }
     if(accents[n]){const amount=Math.min(1,accents[n]/counts[n]);r=mix(r,accentR,amount);g=mix(g,accentG,amount);b=mix(b,accentB,amount);}
-    output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=255;
+    // Subtle tone only: retain every holder mark and its liquidity-driven size.
+    // Outside-image ripple grain and uncertain photos keep their original ink.
+    // Preserve full directional accents so rising/falling market cues stay clear.
+    const tone=1-.42*quiet*(1-(accents[n]?Math.min(1,accents[n]/counts[n]):0));
+    output.data[i]=ink*r*tone;output.data[i+1]=ink*g*tone;output.data[i+2]=ink*b*tone;output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;
    layerContext.putImageData(output,0,0);ctx.drawImage(layerCanvas,0,0);

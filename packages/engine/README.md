@@ -1,6 +1,13 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v5`.
+Current engine version: `upic-nft-gb-v7`.
+
+Version 473 gives learned phrases shorter answers and clearer rests, lowers the
+lead/arp register, roots tonal percussion in the same harmony, and spaces noise
+attacks around the melody. Holder-controlled arp span and the five market
+mappings remain intact. The APU core and seed namespace are unchanged.
+Historical media retains its original engine identity; current playback is
+explicitly a recomposition when that identity differs.
 
 Version 471 corrects arp/chord presence, their pulse envelopes and replay note
 continuity. Version 470 introduced shared market interpretation and intermittent
@@ -38,9 +45,9 @@ requiring a chord attack. Pace, movement, volume and recency control admission,
 articulation and strength. Available market cap and liquidity colour eligible
 waveforms and grains without generating activity by themselves.
 
-Chord pulse envelopes request initial `11 + round(3 × volume)` and pace 0, holding
+Chord pulse envelopes request initial `9 + round(2 × volume)` and pace 0, holding
 the compiler's gain-scaled four-bit level until the scored release or replacement.
-Arps request initial `11 + round(2 × intensity)` and pace 3 for slower decay. The
+Arps request initial `9 + round(2 × intensity)` and pace 3 for slower decay. The
 compiler still quantizes gain normally; no global minimum-volume floor is added.
 
 ## Captured data and replay
@@ -105,7 +112,8 @@ No subjective audition or browser verification is claimed.
 
 ## Identity and visual scope
 
-The SDK and deployment metadata identify the new audio with `upic-nft-gb-v5`.
+The SDK identifies the current audio with `upic-nft-gb-v7`. Existing deployment
+metadata and archived media retain their original engine version.
 The paired SDK/contract seed namespace remains `upic-nft-v1` so the existing
 seed derivation does not change merely because the audio engine advances.
 

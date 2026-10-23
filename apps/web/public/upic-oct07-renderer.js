@@ -1,5 +1,5 @@
 // Production adapter for the approved October 7 pattern-count lab.
-import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=472';
+import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=473';
 import {pixelBlastParameters} from './oct07-live/pixel-blast-parameters.js';
 import {labVisualMappings} from './oct07-live/lab-visual-mappings.js';
 import {earthboundPresentation} from './oct07-live/earthbound-presentation.js?v=472';
@@ -53,7 +53,7 @@ export function createEarthboundRenderer(host,{maxDimension=1024}={}){
    if(lastFrameAt)frameInterval=frameInterval?frameInterval*.9+(frameStarted-lastFrameAt)*.1:frameStarted-lastFrameAt;
    lastFrameAt=frameStarted;frameCount++;
    if(frameCount%15===0)Object.assign(canvas.dataset,{renderMs:frameMs.toFixed(1),renderFps:frameInterval?(1000/frameInterval).toFixed(1):'0'});
-   stats={...stats,shapeWeights:shapeWeights.slice(),markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),renderer:'october7-pattern-count',reconstructed:Boolean(history?.length),patternContrast:presentation.patternContrast,patternWarp:presentation.patternWarp,artworkBlend:presentation.identity};
+   stats={...stats,shapeWeights:shapeWeights.slice(),markCount:Number(canvas.dataset.markCount)||0,reportedHolders:reported,representedPopulation:population,populationCapped:population>10000,imageAvailable:Boolean(image),imageBackground:image?.backgroundTone?.kind||'none',imageBackgroundConfidence:image?.backgroundTone?.confidence||0,renderer:'october7-pattern-count',reconstructed:Boolean(history?.length),patternContrast:presentation.patternContrast,patternWarp:presentation.patternWarp,artworkBlend:presentation.identity};
   },
   snapshot(){return {...stats}},clear(){renderer.clear();lastRenderKey=null;stats={...stats,markCount:0}},close(){renderer.close()}
  };

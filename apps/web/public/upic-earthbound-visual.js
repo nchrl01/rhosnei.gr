@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=472';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=473';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';
@@ -108,6 +108,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
  const mobile=matchMedia('(max-width:760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
  let latest=null,settings={},key='',seed=0,clock=0,presence=0,transportPresence=0,identity=0,identityInput=0,color=0,colorTarget=0;
  let colorStart=0,colorDuration=2.4,motionActivity=0,marketFrameAt=0;
+ let movementCap=null,movementDirection=0,movementUntil=0;
  let staleElapsed=0,colorElapsed=0,last=0,lastRender=0,raf=0,closed=false,visible=true,width=0,height=0,sourceCursor=null;
  let sourceValue=null,sourceAt=0,imageCoinKey='',identitySource=null,imageSettled=false,imageReveal=0;
  let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
@@ -143,7 +144,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   const label=revealing?'Visual ready':unavailable?'Holder data unavailable · retrying':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
   host.dataset.visualLoading=String(pending&&!unavailable);host.setAttribute('aria-busy',String(pending&&!unavailable));
  }
- function reset(){clearScoreEvents();clock=0;motionActivity=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
+ function reset(){clearScoreEvents();clock=0;motionActivity=0;movementCap=null;movementDirection=movementUntil=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
  function referenceSide(box){
   // CSS owns a stable viewport-sized desktop host. Use its content box so
   // sticky scrolling cannot change the artwork scale, and retain its soft edges.
@@ -183,9 +184,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   // A selection can update app state before its first market frame arrives.
   // Never attribute the old coin's pixels to the newly selected coin.
   if(identityKey(state.coinKey)!==key)return;
-  // Sound and pixels use the same observed signed return, including replay.
-  // A short-lived readout flash must not erase the phrase's direction.
-  latest.change=latest.direction;
+  // A plus/cross marks a recent market-cap movement, not a persistent return sign.
+  // Presentation time expires it even when the last market frame is held.
+  // The longer musical direction still shapes phrases and the battle pattern.
+  latest.change=playing&&now<movementUntil?movementDirection:0;
   const fresh=latest.fresh>0;
   // Ease into activity, then settle gently. A stopped input loop must also
   // decay; the animation loop itself is never evidence of a live market.
@@ -259,13 +261,21 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   frame(m={},options={}){
    const nextKey=identityKey(getState().coinKey),changed=nextKey!==key,wasFresh=latest?.fresh;
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
+   const sourceChanged=(options.clock!=null)!==(settings.clock!=null);
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
    if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;}
-   key=nextKey;seed=seedFor(key);settings=options;marketFrameAt=performance.now();latest=earthboundMarketState(m,key);latest.change=latest.direction;
+   key=nextKey;seed=seedFor(key);settings=options;marketFrameAt=performance.now();latest=earthboundMarketState(m,key);
    if(!scoreActive())clearScoreEvents();
    syncHolderLoading();
    if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);color=colorTarget=latest.marketCap>=5e7?1:0;}
+   if(sourceChanged){movementCap=null;movementDirection=movementUntil=0;}
+   const cap=latest.marketCap;
+   if(cap>0){
+    // Re-reading the same snapshot or delta never extends this envelope.
+    if(movementCap>0&&latest.fresh>0&&Math.abs(cap/movementCap-1)>1e-9){movementDirection=Math.sign(cap-movementCap);movementUntil=performance.now()+600;}
+    movementCap=cap;
+   }else{movementCap=null;movementDirection=movementUntil=0;}
    if((wasFresh>0)!==(latest.fresh>0))staleElapsed=0;
    const target=latest.marketCap>=5e7?1:0;if(target!==colorTarget){colorStart=color;colorTarget=target;colorElapsed=0;colorDuration=Math.max(1.5,2.4*(1.5-.75*latest.activity));}
    if(!latest.hasMarket){renderer.clear();renderedAt=0;renderedPlaying=false;renderedHolderReady=false;}
@@ -310,6 +320,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
    const output=document.createElement('canvas'),context=output.getContext('2d');
    if(!context){capture.close();throw Error('Canvas export is unavailable in this browser.');}
    const frozen=structuredClone(latest),phase=clock,coinSeed=seed;
+   const movementRemaining=Math.max(0,(movementUntil-performance.now())/1000),captureDirection=movementDirection;
    // Offscreen player canvases intentionally stop their animation. A media
    // export must instead start in the selected milestone's playing state.
    const targetIdentity=marketCapIdentity(frozen.marketCap),targetColour=frozen.marketCap>=5e7?1:0;
@@ -328,7 +339,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
      colourElapsed+=dt;const steps=Math.floor(colourElapsed);
      if(steps){colourElapsed-=steps;colour+=(colourTarget-colour)*(1-Math.exp(-steps/1.4));}
      transport+=(1-transport)*(1-Math.exp(-dt/.08));
-     capture.render({width:size,height:size,transitionTime:seconds,time:phase+seconds*1.35*frozen.tempo/100,seed:coinSeed,inputs:frozen,
+     capture.render({width:size,height:size,transitionTime:seconds,time:phase+seconds*1.35*frozen.tempo/100,seed:coinSeed,inputs:{...frozen,change:seconds<movementRemaining?captureDirection:0},
       identity:imageAmount,artworkColor:colour,presence:1,pixelPresence:Math.max(.32,transport),inkColor:.18+.82*transport,reducedMotion:false});
      if(output.width!==size)output.width=size;if(output.height!==size)output.height=size;
      context.fillStyle='#000';context.fillRect(0,0,size,size);context.imageSmoothingEnabled=false;

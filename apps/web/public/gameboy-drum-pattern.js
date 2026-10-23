@@ -94,7 +94,7 @@ function packets(seed,start,end,context,performance){
    // Strong volume plus activity or motion may double one packet. Quieter
    // observations retain isolated attacks instead of a continuous rattle.
    const burstEnergy=unit((controls.volume-.6)/.4)*unit((Math.max(controls.activity,controls.tradeRate,controls.motion)-.45)/.55);
-   const count=1+Number(roll(playbackSeed,address+8623)<burstEnergy*.7*controls.tradingActivity);
+   const count=1+Number(lane(drum)==='tonal'&&roll(playbackSeed,address+8623)<burstEnergy*.22*controls.tradingActivity);
    const spacing=Math.min(period*.65/(count+1),.035+.05*controls.motion+.04*controls.volume);
    for(let burst=0;burst<count;burst++){
     const absolute=at+burst*spacing;
@@ -139,19 +139,21 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
   const duration=Math.min((tonal?.06:.025)+(.04+.12*volume)*(1-.55*motion),packet.period*.58,cutoff-beat);
   const gain=(tonal?.026+.089*energy:.03+.052*energy)*(packet.burst===0?1:.72)*support*fresh;
   if(duration<.012||gain<=0)continue;
-  const duty=(hash(plan.circuit,packet.voice+43)+Math.floor(balance*4)+(direction>0?1:0))&3;
+  const duty=1+hash(plan.circuit,packet.voice+43)%2;
   const pan=balance<.4?-1:balance>.6?1:0;
   // Noise sits beneath the pulse melody. Its register envelope decays fast
   // enough to reveal each hit while retaining the raw LFSR texture.
   const initial=clamp(Math.round((tonal?4+3*volume+2*intensity:3+2*volume+motion)*(packet.burst===0?1:.72)),1,tonal?9:6);
   const expression={
    duty,
-   envelope:{initial,direction:tonal&&motion>.78&&fraction>.5?1:-1,pace:tonal?clamp(Math.round(1+(1-motion)*4+fraction*2),1,7):1+Number(motion<.45)},
-   noiseShift:clamp(Math.round(9-7*motion-2*activity+2*roll(plan.circuit,packet.voice+59)),0,13),
-   noiseWidth:motion>.25+.5*roll(plan.circuit,packet.voice+61)?7:15,
-   noiseDivider:hash(packet.seed,67)&7,
+   envelope:{initial,direction:-1,pace:tonal?clamp(Math.round(1+(1-motion)*2+fraction),1,4):1},
+   noiseShift:clamp(Math.round(6-2*motion-activity-direction*change+2*roll(plan.circuit,packet.voice+59)),2,9),
+   noiseWidth:development.stage==='vary'&&motion>.75&&roll(packet.seed,61)<.08?7:15,
+   noiseDivider:2+hash(packet.seed,67)%6,
    pan:packet.burst%2?-pan:pan,
-   slide:direction*(1.5+change*16+motion*4),
+   // Percussion has a decaying body; signed market contour remains in the
+   // lead/arp and noise colour instead of making every hit an upward siren.
+   slide:tonal?-(packet.drum==='kick'?12+4*motion:5+3*motion):0,
   };
   const event={
    kind:'drum',drum:packet.drum,beat,duration,gain,seed:packet.seed,expression,
@@ -160,7 +162,7 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
    drumPatternId:patternId,packetCycle:packet.cycle,packetPeriod:packet.period,
    signalFingerprint:plan.fingerprint,
   };
-  if(tonal)event.midi=clamp((packet.drum==='kick'?34:48)+hash(plan.circuit,packet.voice+71)%29+Math.round(direction*change*9),28,96);
+  if(tonal){const root=36+hash(Number(seed)>>>0,113)%12;event.midi=root+12+(packet.drum==='tom'&&hash(plan.circuit,packet.voice+71)%2?7:0);}
   candidates.push(event);
  }
  // These are hardware resource limits, not musical beat accents. Resolve
@@ -168,15 +170,16 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
  candidates.sort((a,b)=>a.beat-b.beat||priority[b.drum]-priority[a.drum]);
  const distinct=[];
  for(const event of candidates){
-  const collision=distinct.findIndex(previous=>previous.drumLane===event.drumLane&&Math.abs(previous.beat-event.beat)<.012);
+  const collision=distinct.findIndex(previous=>previous.drumLane===event.drumLane&&Math.abs(previous.beat-event.beat)<(event.drumLane==='noise'?.24:.12));
   if(collision<0)distinct.push(event);
   else if(event.gain>distinct[collision].gain)distinct[collision]=event;
  }
- if(distinct.length>12){
+ const maximum=energy>.7?9:7;
+ if(distinct.length>maximum){
   // Prefer primary packets, then a stable spread across the circuit. Do not
   // fill the start of the bar and discard every later response.
   distinct.sort((a,b)=>Number(a.drumEmbellishment)-Number(b.drumEmbellishment)||hash(a.seed,9539)-hash(b.seed,9539)||a.beat-b.beat);
-  distinct.length=12;
+  distinct.length=maximum;
  }
  distinct.sort((a,b)=>a.beat-b.beat||priority[b.drum]-priority[a.drum]);
  const previousByLane={};
