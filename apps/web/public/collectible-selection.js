@@ -1,6 +1,6 @@
-import {isTokenIdentifier} from './coin-identifiers.js?v=445';
-import {NATIVE_CONTRACT_REFERENCES} from './native-contracts.js?v=445';
-import {compareCoinNetworks,supportedCoinNetwork} from './coin-network-choice.js?v=445';
+import {isTokenIdentifier} from './coin-identifiers.js?v=446';
+import {NATIVE_CONTRACT_REFERENCES} from './native-contracts.js?v=446';
+import {compareCoinNetworks,supportedCoinNetwork} from './coin-network-choice.js?v=446';
 const key=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
 export const collectibleKey=key;
 const contractIdentifier=address=>isTokenIdentifier(address)&&!/^0x(?:0{40}|e{40})$/i.test(address)&&address!=='EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
