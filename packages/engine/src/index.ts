@@ -1,18 +1,41 @@
-import {type ArtworkInput,ENGINE_VERSION,assertArtwork} from '@upic/domain';
-import {composeMarketBar} from './legacy/market-composition.js';
+import {type ArtworkInput,type MarketFrame,ENGINE_VERSION,assertArtwork} from '@upic/domain';
+import {composeChipBar} from '../../../apps/web/public/market-chip-score.js';
 import {battlePattern,battlePatternFeed} from './legacy/earthbound-pattern.js';
 export {ENGINE_VERSION};
-export interface Note {at:number;midi:number;duration:number;gain:number;kind:string}
+export interface Note {at:number;midi?:number;duration:number;gain:number;kind:string;drum?:string;channel?:number;seed?:number;expression?:Record<string,unknown>;parameters?:Record<string,unknown>}
 export function componentSeed(seed:string,label:string){let value=2166136261;for(const c of seed+':'+label)value=Math.imul(value^c.charCodeAt(0),16777619);return value>>>0;}
-export function frameAt(input:ArtworkInput,t:number){const at=input.frames[0]!.at+t*1000;return input.frames.filter(f=>f.at<=at).at(-1)||input.frames[0]!;}
+export function frameAt(input:ArtworkInput,t:number){const first=input.frames.reduce((a,b)=>a.at<=b.at?a:b),at=first.at+t*1000;return input.frames.reduce((prior,frame)=>frame.at<=at&&frame.at>=prior.at?frame:prior,first);}
+const unit=(value:number)=>Math.max(0,Math.min(1,value));
+const numeric=(value:unknown):number|null=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))?Number(value):null;
+// Frozen observations drive a deterministic reconstruction. This does not
+// claim to recover an unrecorded live performance or invent missing trades.
+function frameSignal(input:ArtworkInput,frame:MarketFrame,seconds:number){
+ const origin=Math.min(...input.frames.map(row=>row.at)),at=origin+seconds*1000;
+ const previous=input.frames.filter(row=>row.at<frame.at).sort((a,b)=>b.at-a.at)[0];
+ const trades=(frame.trades||[]).filter(trade=>trade.at<=at&&trade.at>at-30000).sort((a,b)=>a.at-b.at);
+ const price=numeric(frame.priceUsd),referencePrice=numeric(previous?.priceUsd)??numeric(trades.length>1?trades[0]?.priceUsd:null);
+ const delta=price!==null&&referencePrice!==null&&referencePrice>0?100*(price/referencePrice-1):0;
+ const observedVolume=frame.trades?trades.reduce((sum,trade)=>sum+Math.max(0,numeric(trade.volumeUsd)??0),0):numeric(frame.volumeUsd);
+ const volume=observedVolume===null?0:unit(Math.log1p(Math.max(0,observedVolume))/14);
+ const activity=frame.trades?unit(Math.log1p(trades.length)/Math.log(41)):volume;
+ const motion=unit(Math.abs(delta)/4),age=Math.max(0,(at-frame.at)/1000),fresh=frame.stale||age>=30?0:1-age/30;
+ const buyVolume=trades.filter(trade=>trade.side==='buy').reduce((sum,trade)=>sum+Math.max(0,numeric(trade.volumeUsd)??0),0);
+ const tradeRate=trades.length/30,balance=trades.length&&observedVolume&&observedVolume>0?buyVolume/observedVolume:.5;
+ return {price,referencePrice,delta,observedVolume,activity,motion,volume,fresh,balance,tradeRate,source:frame.source,observed:price!==null||observedVolume!==null||trades.length>0,availability:{balance:trades.length>0,tradeRate:!!frame.trades,volume:observedVolume!==null}};
+}
 export function score(input:ArtworkInput):Note[]{
- assertArtwork(input);const notes:Note[]=[],seed=componentSeed(input.seed,'music'),tempo=100,beat=60/tempo;
- for(let bar=0;bar*4*beat<input.seconds;bar++){
-  const frame=frameAt(input,bar*4*beat),cap=Number(frame.marketCapUsd||0),tradeVolume=frame.trades?.reduce((v,t)=>v+Number(t.volumeUsd),0),activity=Math.min(1,Math.log1p(tradeVolume??Number(frame.volumeUsd||0))/14)||0.15;
-  const direction=frame.trades?.at(-1)?.side==='sell'?'down':'up';
-  const plan=composeMarketBar(seed,bar,{cap,active:true,arpeggios:input.stage>=4,music:{tempo,intensity:.3,activity,group:direction,character:'serene'}});
-  for(const note of plan.events){if(note.kind==='bass'&&input.stage<2)continue;const at=(bar*4+note.beat)*beat;if(at<input.seconds)notes.push({at,midi:note.midi,duration:note.duration*beat,gain:note.gain,kind:note.kind});}
-  if(input.stage>=3)for(let i=0;i<4;i++)notes.push({at:(bar*4+i)*beat,midi:36,duration:.1,gain:.03,kind:'percussion'});
+ assertArtwork(input);const notes:Note[]=[],seed=componentSeed(input.seed,'music');
+ let seconds=0;
+ for(let bar=0;seconds<input.seconds;bar++){
+  const frame=frameAt(input,seconds),metrics=frameSignal(input,frame,seconds);
+  const intensity=Math.max(metrics.activity,metrics.motion,metrics.volume*.7),tempo=40+120*intensity,beat=60/tempo;
+  const plan=composeChipBar(seed,bar,{cap:numeric(frame.marketCapUsd),metrics,active:metrics.fresh>0,arpeggios:input.stage>=4,drums:input.stage>=3,textureGain:input.stage>=1?.55:0,music:{tempo,intensity,activity:metrics.activity,volatility:metrics.motion,group:metrics.delta<0?'down':'up'}});
+  for(const note of plan.events){
+   if(note.kind==='bass'&&input.stage<2)continue;
+   const at=seconds+note.beat*beat,duration=Math.min(note.duration*beat,input.seconds-at);
+   if(at<input.seconds&&duration>0)notes.push({...note,at,duration});
+  }
+  seconds+=4*beat;
  }return notes.sort((a,b)=>a.at-b.at);
 }
 export function draw(canvas:HTMLCanvasElement,input:ArtworkInput,t:number){
@@ -32,26 +55,40 @@ export function draw(canvas:HTMLCanvasElement,input:ArtworkInput,t:number){
  // Market motion stays separate from stage-dependent layer unlocks.
  if(frame.stale){ctx.font=Math.max(10,w/80)+'px monospace';ctx.fillText('cached market observation',step,h-step);}
 }
-const buffers=new Map<string,Promise<AudioBuffer>>();
-async function sample(ctx:BaseAudioContext,url:string){
- if(!buffers.has(url))buffers.set(url,fetch(url).then(r=>{if(!r.ok)throw Error('sample-unavailable');return r.arrayBuffer();}).then(bytes=>ctx.decodeAudioData(bytes)).catch(e=>{buffers.delete(url);throw e;}));
- return buffers.get(url)!;
+type ChipRenderer={renderGameBoyScore(events:Note[],options:{sampleRate:number;seconds:number;settings?:Record<string,number>}):{left:Float32Array;right:Float32Array}};
+const chipModules=new Map<string,Promise<ChipRenderer>>();
+const chipRenders=new WeakMap<ArtworkInput,Map<string,Promise<{left:Float32Array;right:Float32Array}>>>();
+function chipModule(assetBase:string){
+ const url=assetBase.replace(/\/$/,'')+'/gb-apu-instrument.js?v=468';
+ let pending=chipModules.get(url);
+ if(!pending){pending=import(/* @vite-ignore */ url).catch(error=>{chipModules.delete(url);throw error;});chipModules.set(url,pending!);}
+ return pending!;
 }
-export async function schedule(ctx:BaseAudioContext,input:ArtworkInput,assetBase:string,start=0,destination:AudioNode=ctx.destination,windowSeconds=20,offset=0){
- const bank=componentSeed(input.seed,'voice')%2?80:48;
- const lead=await sample(ctx,assetBase+'/samples/generaluser/b0-p'+bank+'-n60-v104.wav');
- const bus=ctx.createGain();bus.gain.value=.7;bus.connect(destination);const sources:AudioScheduledSourceNode[]=[];
- for(const note of score(input)){
-  if(note.at>=Math.min(input.seconds,offset+windowSeconds)||note.at<offset)continue;
-  const gain=ctx.createGain(),at=start+note.at-offset,end=Math.min(start+windowSeconds,at+note.duration+.1);gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(note.gain,at+.008);gain.gain.exponentialRampToValueAtTime(.00001,end);gain.connect(bus);
-  let source:AudioScheduledSourceNode;
-  if(note.kind==='bass'||note.kind==='percussion'){const o=ctx.createOscillator();o.type='sine';o.frequency.setValueAtTime(note.kind==='bass'?440*2**((note.midi-69)/12):90,at);if(note.kind==='percussion')o.frequency.exponentialRampToValueAtTime(30,end);o.connect(gain);source=o;}
-  else {const s=ctx.createBufferSource();s.buffer=lead;s.playbackRate.value=2**((note.midi-60)/12);s.connect(gain);source=s;}
-  source.start(at);source.stop(end);sources.push(source);
+export async function schedule(ctx:BaseAudioContext,input:ArtworkInput,assetBase:string,start=0,destination:AudioNode=ctx.destination,windowSeconds:number=input.seconds,offset=0){
+ assertArtwork(input);
+ const captured=JSON.stringify(input),cache=chipRenders.get(input)||new Map(),key=assetBase+':'+ctx.sampleRate+':'+captured;
+ chipRenders.set(input,cache);
+ let pending=cache.get(key);
+ if(!pending){
+  // The platform player updates its input object in place. Cache the captured
+  // data, not just that object's identity, and bound retained generations.
+  const frozen=JSON.parse(captured) as ArtworkInput;
+  pending=chipModule(assetBase).then(renderer=>renderer.renderGameBoyScore(score(frozen),{sampleRate:ctx.sampleRate,seconds:frozen.seconds})).catch(error=>{cache.delete(key);throw error;});
+  if(cache.size>=2)cache.clear();cache.set(key,pending);
  }
- return ()=>{for(const source of sources)try{source.stop();}catch{}bus.disconnect();};
+ const rendered=await pending;
+ const from=Math.max(0,Math.min(input.seconds,offset)),duration=Math.min(Math.max(0,windowSeconds),input.seconds-from);
+ if(duration<=0)return ()=>{};
+ // Render from the original chip reset even for a later playback window, so
+ // envelopes, wave RAM, noise registers and channel steals retain their state.
+ const buffer=ctx.createBuffer(2,Math.ceil(input.seconds*ctx.sampleRate),ctx.sampleRate);
+ buffer.getChannelData(0).set(rendered.left);buffer.getChannelData(1).set(rendered.right);
+ const source=ctx.createBufferSource(),gain=ctx.createGain();gain.gain.value=.55;
+ source.buffer=buffer;source.connect(gain);gain.connect(destination);
+ source.onended=()=>{source.disconnect();gain.disconnect();};source.start(Math.max(ctx.currentTime,start),from,duration);
+ return ()=>{try{source.stop();}catch{}source.disconnect();gain.disconnect();};
 }
-export async function offline(input:ArtworkInput,assetBase:string){const ctx=new OfflineAudioContext(2,input.seconds*48000,48000);await schedule(ctx,input,assetBase);return ctx.startRendering();}
+export async function offline(input:ArtworkInput,assetBase:string){const ctx=new OfflineAudioContext(2,Math.ceil(input.seconds*48000),48000);await schedule(ctx,input,assetBase,0,ctx.destination,input.seconds,0);return ctx.startRendering();}
 export function wav(buffer:AudioBuffer):Uint8Array {
  const channels=buffer.numberOfChannels,frames=buffer.length,bytes=new Uint8Array(44+frames*channels*2),view=new DataView(bytes.buffer);
  const text=(offset:number,value:string)=>{for(let i=0;i<value.length;i++)bytes[offset+i]=value.charCodeAt(i);};

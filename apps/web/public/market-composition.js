@@ -4,7 +4,7 @@ import {pianoHarmony} from './music-context.js?v=208';
 import {phraseArrangement,noteExpression} from './phrase-arrangement.js?v=449';
 import {learnedMarketMelody} from './learned-market-phrase.js?v=455';
 import {phraseDevelopment,developPhraseEvents} from './phrase-development.js?v=464';
-import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=465';
+import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=468';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 export const scoreTempo=music=>Math.max(20,Math.min(200,Number(music?.tempo)||100));
 const hash=(seed,n)=>{let x=(seed^Math.imul(n+1,2654435761))>>>0;x=Math.imul(x^(x>>>16),2246822507);return (x^(x>>>13))>>>0;};
@@ -99,7 +99,7 @@ export function composeMarketBar(seed,bar,context,motif=[]){
  const melody=[...lead.values()];
  melody.forEach((event,i)=>{event.duration=Math.min(event.duration,(melody[i+1]?.beat??4)-event.beat);});
  const drums=composeGameBoyDrumBar(seed,bar,context,development);
- return {events:[...events.filter(e=>e.kind!=='arp'),...melody.filter(e=>e.duration>=.025),...drums.events].sort((a,b)=>a.beat-b.beat),harmony,development,drums:{patternId:drums.patternId,density:drums.density,deviation:drums.deviation},groove:learnedAmount>0?'Learned MIDI phrasing':groove.name};
+ return {events:[...events.filter(e=>e.kind!=='arp'),...melody.filter(e=>e.duration>=.025),...drums.events].sort((a,b)=>a.beat-b.beat),harmony,development,drums:{patternId:drums.patternId,density:drums.density,deviation:drums.deviation,performance:drums.performance},groove:learnedAmount>0?'Learned MIDI phrasing':groove.name};
 }
 import {chartHarmony} from './harmonic-characters.js?v=208';
 function chordFifth(music,index){const chord=chartHarmony(music.character||'serene',music).chords[index];return ((chord[2]??chord[0]+7)-chord[0]+12)%12;}

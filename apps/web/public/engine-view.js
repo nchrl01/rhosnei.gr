@@ -1,116 +1,159 @@
-import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-// Read-only inspection of the same Pd sources and messages used for playback.
-const NS='http://www.w3.org/2000/svg';
-const pretty=value=>Number.isFinite(value)?Number(value.toFixed(4)).toString():String(value);
-function parsePatch(source){
- const nodes=[],wires=[];let depth=0;
- for(const line of source.split('\n')){
-  if(line.startsWith('#N canvas')){depth++;continue;}
-  if(line.startsWith('#X restore')){depth--;if(depth!==1)continue;}
-  else if(depth!==1)continue;
-  const wire=line.match(/^#X connect (\d+) (\d+) (\d+) (\d+);/);
-  if(wire){wires.push(wire.slice(1).map(Number));continue;}
-  const node=line.match(/^#X (obj|msg|text|floatatom|symbolatom|listbox|restore) ([\d.-]+) ([\d.-]+) (.*);$/);
-  if(node){const [,kind,x,y,body]=node;const label=body.replace(/\\([$,;])/g,'$1').replace(/, f \d+$/,'');nodes.push({kind,x:Number(x),y:Number(y),label,width:Math.max(54,Math.min(300,label.length*6.3+16))});}
- }
- return {nodes,wires};
-}
+// Inspector for the same four-channel APU that produces the application's sound.
+// It consumes existing snapshots; it does not load patches, start an engine,
+// or synthesize a separate preview.
+const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
+const pretty=value=>finite(value)?Number(Number(value).toFixed(4)).toString():'Unavailable';
+const percent=value=>finite(value)?Math.round(Number(value)*100)+'%':'Unavailable';
+const hex=value=>finite(value)?'0x'+Number(value).toString(16).toUpperCase().padStart(2,'0'):'—';
+const display=value=>{
+ if(value===null||value===undefined)return 'Unavailable';
+ if(typeof value==='number')return pretty(value);
+ if(typeof value==='boolean')return value?'On':'Off';
+ if(typeof value==='object'){try{return JSON.stringify(value).slice(0,220);}catch{return 'Unavailable';}}
+ return String(value).slice(0,220);
+};
+const channelNames=['CH1 · Pulse + sweep','CH2 · Pulse','CH3 · Wave RAM','CH4 · Noise'];
+const roles=['Signal and tonal packets','Interlocking harmony','4-bit bass and wave shapes','Texture and noise packets'];
+const duties=['12.5%','25%','50%','75%'];
+
 export function createEngineView(container,{onBundle=()=>{}}={}){
- container.innerHTML=`<details class="engine-panel" open><summary>LIVE ENGINE / PURE DATA</summary><p class="engine-note">GB style instruments + Kraken bass use sampled Web Audio. The diagram below shows the optional Pure Data sources; instrument identity and live parameters are listed separately. Click a subpatch to look inside.</p><div class="engine-status"><span data-state>Paused</span><span data-feedback>No engine feedback yet</span><span data-source>Loading patch sources…</span></div><section class="engine-bundles" aria-label="Pure Data instrument bundles"><small>INSTRUMENT BUNDLES</small><p>GB style instruments + Kraken bass, Envion, and data microtones start enabled. Envion sample choices are stored in this browser for this site and can be changed in Audio Lab.</p><div data-bundles></div></section><div class="engine-overview"><dl data-market></dl><div><small>CONTROLS SENT TO PD</small><dl data-controls></dl></div><div><small>FEEDBACK FROM PD</small><dl data-events></dl></div><div><small>VISUALS FROM MARKET</small><dl data-visuals></dl></div></div><div class="engine-toolbar"><label>Inspect patch <select data-patch aria-label="Inspect a Pure Data patch"></select></label><button type="button" data-home>Top-level patch</button><a data-download download>Download this patch ↗︎</a></div><p class="engine-note" data-caption></p><div class="engine-graph" role="region" tabindex="0" aria-label="Scrollable read-only Pure Data patch"><svg data-graph role="img" aria-label="Pure Data objects and connections"></svg></div><details class="engine-source"><summary>Patch source</summary><pre data-code></pre></details><details class="engine-console"><summary>Pd console</summary><pre data-log>No console messages yet.</pre></details></details>`;
- const get=selector=>container.querySelector(selector),select=get('[data-patch]'),svg=get('[data-graph]');
- let files={},manifest=null,selected='market.pd',loaded=false,lastFeedback=0,lastPaint=0,view={},transport=null,disposed=false;
+ container.innerHTML=`<details class="engine-panel" open>
+  <summary>Live engine · Game Boy APU</summary>
+  <p class="engine-note">Signal, texture and packets share four sound channels. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
+  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for a chip snapshot</span><span data-source>Four-channel reconstruction</span></div>
+  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers share the same chip. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
+  <div class="engine-overview">
+   <section><small>Market observations</small><dl data-market></dl></section>
+   <section><small>Chip and transport</small><dl data-chip></dl></section>
+   <section><small>Visual field</small><dl data-visuals></dl></section>
+  </div>
+  <div class="engine-overview" data-channels aria-label="Four hardware channels"></div>
+  <p class="engine-note">Activity controls occupancy, volume controls packet bursts, price changes bend pitch, and motion changes the noise clock. Missing or stale observations stop new sound. These are artistic mappings of the available data.</p>
+  <details class="engine-source"><summary>Controls and accepted events</summary><div class="engine-overview"><section><small>App controls</small><dl data-controls></dl></section><section><small>Event feedback</small><dl data-events></dl></section></div></details>
+  <details class="engine-console"><summary>Engine messages</summary><pre data-log>No engine messages.</pre></details>
+ </details>`;
+ const get=selector=>container.querySelector(selector);
+ let view={},transport=null,lastPaint=0,lastFeedback=0,lastChipAt=0,lastChipSample=null,disposed=false;
  const controls=new Map(),events=new Map(),messages=[],bundleState={piano:true,envion:true,data:true};
- const bundleLabels={piano:'Market phrase + GB style sounds',envion:'Envion',data:'Five data microtones / Pure Data'};
- const bundleHost=get('[data-bundles]');
- for(const [name,label] of Object.entries(bundleLabels)){const button=document.createElement('button');button.type='button';button.dataset.bundle=name;button.onclick=()=>{bundleState[name]=!bundleState[name];button.setAttribute('aria-pressed',String(bundleState[name]));button.textContent=(bundleState[name]?'Remove ':'Restore ')+label;onBundle(name,bundleState[name]);};button.setAttribute('aria-pressed',String(bundleState[name]));button.textContent=(bundleState[name]?'Remove ':'Restore ')+label;bundleHost.append(button);}
- const row=(name,value)=>{const fragment=document.createDocumentFragment(),term=document.createElement('dt'),definition=document.createElement('dd');term.textContent=name;definition.textContent=value;fragment.append(term,definition);return fragment;};
- const table=(selector,items)=>{const node=get(selector);node.replaceChildren(...items.map(([name,value])=>row(name,value)));};
- function draw(name){
-  if(!files[name])return;selected=name;select.value=name;
-  const source=files[name],{nodes,wires}=parsePatch(source);
-  const width=Math.max(650,...nodes.map(n=>n.x+n.width+30)),height=Math.max(240,...nodes.map(n=>n.y+55));
-  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${width} ${height}`);svg.setAttribute('width',width);svg.setAttribute('height',height);
-  const title=document.createElementNS(NS,'title');title.textContent=`${name}: ${nodes.length} objects and comments, ${wires.length} stored connections`;svg.append(title);
-  const ins=new Map(),outs=new Map();for(const [a,o,b,i] of wires){outs.set(a,Math.max(outs.get(a)||1,o+1));ins.set(b,Math.max(ins.get(b)||1,i+1));}
-  for(const [a,o,b,i] of wires){const from=nodes[a],to=nodes[b];if(!from||!to)continue;const wire=document.createElementNS(NS,'line');wire.setAttribute('x1',from.x+5+o*(from.width-10)/Math.max(1,(outs.get(a)||1)-1));wire.setAttribute('y1',from.y+22);wire.setAttribute('x2',to.x+5+i*(to.width-10)/Math.max(1,(ins.get(b)||1)-1));wire.setAttribute('y2',to.y);wire.setAttribute('class','pd-wire');svg.append(wire);}
-  for(const node of nodes){
-   const group=document.createElementNS(NS,'g');group.setAttribute('transform',`translate(${node.x},${node.y})`);
-   const tokens=node.label.split(/\s+/),target=node.kind==='obj'?(tokens[0]==='clone'?tokens[1]:tokens[0])+'.pd':null;
-   if(target&&files[target]){group.setAttribute('role','button');group.setAttribute('tabindex','0');group.setAttribute('aria-label','Open '+target);group.classList.add('pd-abstraction');group.onclick=()=>draw(target);group.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();draw(target);}};}
-   if(node.kind!=='text'){const rect=document.createElementNS(NS,'rect');rect.setAttribute('width',node.width);rect.setAttribute('height',22);rect.setAttribute('class',node.kind==='msg'?'pd-message':'pd-object');group.append(rect);}
-   const label=document.createElementNS(NS,'text');label.setAttribute('x',node.kind==='text'?0:6);label.setAttribute('y',15);label.setAttribute('class',node.kind==='text'?'pd-comment':'pd-label');label.textContent=node.kind==='text'?node.label:node.label.length>44?node.label.slice(0,41)+'…':node.label;group.append(label);
-   const hint=document.createElementNS(NS,'title');hint.textContent=node.label+(target&&files[target]?' — click to inspect':'');group.append(hint);svg.append(group);
+ const bundleLabels={piano:'Signal',envion:'Texture',data:'Packets'};
+ const buttons=[],channelTables=[];
+ const row=(name,value)=>{
+  const fragment=document.createDocumentFragment(),term=document.createElement('dt'),definition=document.createElement('dd');
+  term.textContent=name;definition.textContent=display(value);fragment.append(term,definition);return fragment;
+ };
+ const table=(target,items)=>{
+  const node=typeof target==='string'?get(target):target;
+  node.replaceChildren(...items.map(([name,value])=>row(name,value)));
+ };
+ const remember=(map,name,value)=>{
+  const key=String(name);map.set(key,value);
+  if(map.size>32)map.delete(map.keys().next().value);
+ };
+ for(const [name,label] of Object.entries(bundleLabels)){
+  const button=document.createElement('button');button.type='button';button.dataset.bundle=name;
+  const labelButton=()=>{button.setAttribute('aria-pressed',String(bundleState[name]));button.textContent=label+' '+(bundleState[name]?'on':'off');};
+  button.onclick=()=>{if(disposed)return;bundleState[name]=!bundleState[name];labelButton();onBundle(name,bundleState[name]);};
+  labelButton();buttons.push(button);get('[data-bundles]').append(button);
+ }
+ const channelHost=get('[data-channels]');
+ channelHost.style.gridTemplateColumns='repeat(auto-fit, minmax(min(100%, 210px), 1fr))';
+ for(let index=0;index<4;index++){
+  const section=document.createElement('section'),title=document.createElement('small'),description=document.createElement('p'),list=document.createElement('dl');
+  title.textContent=channelNames[index];description.className='engine-note';description.textContent=roles[index];
+  section.append(title,description,list);channelHost.append(section);channelTables.push(list);
+ }
+ function channelRows(channel,index,apu){
+  if(!channel)return [['State','Waiting for snapshot']];
+  const route=Number(apu.routing)||0,left=!!(route&(16<<index)),right=!!(route&(1<<index));
+  const items=[
+   ['Generator',channel.enabled?'Active':'Stopped'],
+   ['DAC',channel.dac?'Enabled':'Off'],
+   ['Digital level',finite(channel.digital)?channel.digital+' / 15':'Unavailable'],
+   ['Stereo',left&&right?'Both':left?'Left':right?'Right':'Disconnected'],
+  ];
+  if(index<3){
+   const frequency=Number(channel.frequency);
+   items.push(['Pitch',finite(channel.frequency)&&frequency>=0&&frequency<2048?pretty((index===2?65536:131072)/(2048-frequency))+' Hz':'Unavailable']);
   }
-  get('[data-code]').textContent=source;get('[data-download]').href=(name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=209';
-  get('[data-caption]').textContent=`${name} · ${wires.length} connections · ${loaded&&!view.native?'sources used by this browser engine':view.native?'published preview; native patch contents cannot be read from the desktop':'published source preview'} · scroll to explore`;
+  if(index<2)items.push(['Duty',duties[channel.duty]??'Unavailable'],['Envelope volume',finite(channel.volume)?channel.volume+' / 15':'Unavailable']);
+  if(index===2)items.push(['Wave level',['Muted','Full','Half','Quarter'][channel.outputLevel]??'Unavailable'],['Sample position',finite(channel.position)?channel.position+' / 31':'Unavailable']);
+  if(index===3){
+   const noise=Number(channel.noise)||0;
+   items.push(['Noise mode',noise&8?'7-bit':'15-bit'],['Clock shift',noise>>>4],['Clock divider',noise&7],['Envelope volume',finite(channel.volume)?channel.volume+' / 15':'Unavailable']);
+  }
+  items.push(['Length',channel.lengthEnabled?pretty(channel.length)+' ticks':'Disabled']);
+  return items;
  }
- function setFiles(incoming,info,isLoaded=false){
-  files=Object.fromEntries(Object.entries(incoming).filter(([name,source])=>name.endsWith('.pd')&&typeof source==='string').map(([name,source])=>[name.replace(/^orchestra\//,''),source]));manifest=info;loaded=isLoaded;
-  select.replaceChildren(...Object.keys(files).sort().map(name=>{const option=document.createElement('option');option.value=name;option.textContent=name;return option;}));
-  get('[data-source]').textContent=`${isLoaded?'Loaded browser sources':'Published source preview'} · orchestra v${info.version} · ${info.files.length} files`;
-  draw(files[selected]?selected:info.entry);
- }
- select.onchange=()=>draw(select.value);get('[data-home]').onclick=()=>draw(manifest?.entry||'market.pd');
- async function preview(){try{
-  const response=await fetch('patches/orchestra/manifest.json?v=209');if(!response.ok)throw Error('Patch manifest unavailable');const info=await response.json();
-  const entries=await Promise.all(info.files.map(async name=>{const r=await fetch((name.startsWith('envion/')?'patches/':'patches/orchestra/')+name.split('/').map(encodeURIComponent).join('/')+'?v=209');if(!r.ok)throw Error('Patch unavailable: '+name);return [name,await r.text()];}));
-  if(!disposed&&!loaded)setFiles(Object.fromEntries(entries),info);
- }catch(error){if(!disposed&&!loaded)get('[data-source]').textContent=error.message;}}
  function paint(force=false){
-  if(container.hidden)return;
+  if(disposed||container.hidden)return;
   const now=performance.now();if(!force&&now-lastPaint<250)return;lastPaint=now;
-  const active=view.playing;
-  get('[data-state]').textContent=(view.native?'NATIVE PD':'BROWSER PD')+' · '+(active?'RUNNING':'PAUSED');
-  get('[data-feedback]').textContent=!active?'Feedback paused':transport?.connected===false?'Native connection lost':lastFeedback?`${now-lastFeedback>3000?'STALE':'LIVE'} feedback · ${((now-lastFeedback)/1000).toFixed(1)}s ago`:'Awaiting engine feedback';
-  const m=view.m||{},c=m.context||{},instrument=view.instrument;
-  const holder=m.audience,holderAge=holder?.age;
-  const holderLabel=holder?.holders!=null?Math.round(holder.holders).toLocaleString('en')+' wallets · '+(holder.countAt?(holderAge<3600000?Math.floor(holderAge/60000)+'m old':(holderAge/3600000).toFixed(1)+'h old'):'age unknown')+' · '+holder.state:m.replay?'Unavailable in candle history':'Unavailable';
-  table('[data-market]',[['Market',view.coin||'Loading'],['Feed',view.feed||'Loading'],['Market cap',c.latestCap?'$'+Math.round(c.latestCap).toLocaleString('en')+(c.capEstimated?' (estimate)':''):'Unavailable'],['Liquidity',Number.isFinite(view.liquidity)?'$'+Math.round(view.liquidity).toLocaleString('en'):'Unavailable'],['Ensemble tempo',`${view.bpm||0} BPM · contextual percentage movement`],['Market phrase instrument',instrument?instrument.name+' · '+instrument.family+(instrument.fallback?' · fallback sample':' · coin seed'):'Loading'],['Melody trigger','Active market context · continuous bar clock'],['Harmony change','≥'+PIANO_MOVE_PCT+'% from harmonic price anchor'],['Idle behavior','No new data pulses without observations; natural reverb tails remain'],['Melodic voices',instrument?instrument.voices+' / 18':'—'],['Pattern',instrument?.phrase?(instrument.tempo||view.bpm)+' BPM · playing':'Rest'],['Instrument reverb send',instrument?Math.round(instrument.roomSend*100)+'% · inverse market cap':'—'],['Room return',instrument?instrument.wetReturn.toFixed(2)+'× · decreases as market cap grows':'—'],['Data pulse density',Math.round((m.dataSignals?.density||0)*100)+'% · observed activity / contextual movement'],['Holder snapshot',holderLabel],['Visual balances',m.replay?'Historical balances unavailable':holder?.holdings?.weight>0?holder.holdings.records.length.toLocaleString('en')+' actual balances · '+holder.holdings.source+' · '+(holder.holdings.complete?'complete indexed list':holder.holdings.truncated?'largest 10,000':holder.holdings.state==='loading'?'loading more':'partial'):holder?.holdings?.state||'Unavailable'],['Wallet clusters',m.replay?'Unavailable in candle history':holder?.relationships?.weight>0?holder.relationships.clusters.length+' groups · InsightX snapshot · '+Math.round(holder.relationships.age/60000)+'m since fetched':holder?.relationships?.state||'Unavailable'],['Current viewers','Unavailable · no presence source'],['Selected notes',String(view.pianoChordCount||0)],['Historical intensity',pretty(m.music?.intensity??0)],['Snapshot age',Number.isFinite(m.snapshotAge)?(m.snapshotAge/1000).toFixed(1)+'s':'—']]);
+  const instrument=view.instrument||{},chip=instrument.chip||{},apu=chip.apu;
+  const signal=instrument.signal||{},m=view.m||{},context=m.context||{};
+  if(apu&&apu.samples!==lastChipSample){lastChipSample=apu.samples;lastChipAt=now;}
+  const error=instrument.error||chip.error;
+  get('[data-state]').textContent=error?'Engine unavailable':view.playing?'Running':'Paused';
+  get('[data-feedback]').textContent=error?String(error):!apu?'Waiting for a chip snapshot':!view.playing?'Chip paused':now-lastChipAt>3000?'Chip snapshot is stale':'Chip snapshot received';
+  get('[data-source]').textContent='Game Boy APU · '+String(chip.model||apu?.model||'DMG').toUpperCase();
+  const observed=signal.observed===true;
+  const metric=value=>observed?percent(value):'Unavailable';
+  const balanceKnown=signal.balanceKnown===true&&observed;
+  const cap=context.latestCap;
+  table('[data-market]',[
+   ['Coin',view.coin||'Waiting'],['Source',signal.source||view.feed||'Waiting'],
+   ['Observations',observed?'Available':'Unavailable'],
+   ['Freshness',metric(signal.fresh)],
+   ['Activity',metric(signal.activity)],['Volume intensity',signal.volumeKnown===true?metric(signal.volume):'Unavailable'],
+   ['Motion',metric(signal.motion)],
+   ['Price change',observed&&finite(signal.delta)?pretty(signal.delta)+'%':'Unavailable'],
+   ['Buy share',balanceKnown?percent(signal.balance):'Unavailable'],
+   ['Trade rate',observed&&signal.tradeRateKnown===true&&finite(signal.tradeRate)?pretty(signal.tradeRate)+'/sec':'Unavailable'],
+   ['Market cap',finite(cap)&&Number(cap)>0?'$'+Math.round(Number(cap)).toLocaleString('en')+(context.capEstimated?' (estimate)':''):'Unavailable'],
+  ]);
+  const channels=Array.isArray(apu?.channels)?apu.channels:[];
+  const sounding=channels.length?channels.filter(channel=>channel.enabled).length:null;
+  const drums=instrument.drums||{};
+  table('[data-chip]',[
+   ['Instrument',instrument.name||'Waiting'],
+   ['Active generators',sounding===null?'Awaiting snapshot':sounding+' / 4'],
+   ['Chip clock',apu?pretty(apu.clock)+' Hz':'4,194,304 Hz'],
+   ['Transport tempo',finite(instrument.tempo??view.bpm)?pretty(instrument.tempo??view.bpm)+' BPM':'Unavailable'],
+   ['Queued events',finite(chip.pending)?chip.pending:'Unavailable'],
+   ['Rejected events',finite(chip.rejected)?chip.rejected:'Unavailable'],
+   ['Packet identity',drums.patternId||'Waiting'],
+   ['Packet density',percent(drums.density)],['Packet deviation',percent(drums.deviation)],
+   ['Stereo routing',hex(apu?.routing)],['Master register',hex(apu?.master)],
+   ['Output','Chip mixer and DC removal'],
+  ]);
   const v=view.visual;
-  table('[data-visuals]',v?.renderer==='earthbound'?[
-   ['Engine','Earthbound · two layers · '+(v.backend||'preparing')],
-   ['Base mark size',pretty(v.baseMarkSize)+' px · liquidity'],
-   ['Minimum empty gap',pretty(v.gapPx)+' px · market cap'],
-   ['Available marks',String(v.markCount??0)+' · pattern controls visibility'],
-   ['Holder balances',v.holderSource==='observed-wallet-sample'?String(v.holderSamples)+' observed wallet samples':'Unavailable · equal nominal sizes'],
-   ['Size variation','Relative balances · no random variation'],
-   ['Audio reaction','Off · gain and audio level do not affect visuals'],
-   ['Coin image','$10M → $50M · native contour guide'],
-   ['Colour / stale fade','One update per second'],
-   ['Price marks','Rising + · falling × · unchanged circles'],
-  ]:v?[
-   ['Square size',pretty(v.pixelSize)+' px · market cap + sound'],
-   ['Pattern scale',pretty(v.patternScale)+' · market structure + notes'],
-   ['Grid spacing',pretty(v.cellSize)+' px · liquidity'],
-   ['Density',pretty(v.patternDensity)+' · activity + melody'],
-   ['Speed',pretty(v.speed)+' · tempo / 100 × 1.35'],
-   ['Size variation',pretty(v.pixelSizeJitter)+' · observed wallet-size inequality'],
-   ['Edge taper',pretty(v.edgeFade)+' · market cap / fixed reference'],
-   ['Local populations',pretty(v.ecosystem)+' · distributed across the field'],
-   ['Audio waveform',v.waveformEnabled?'Active · actual output samples':'Rest'],
-   ['Ripple intensity',pretty(v.rippleIntensityScale)+' · surge + notes'],
-   ['Ripple speed',pretty(v.rippleSpeed)+' · movement + tempo'],
-   ['Ripple width',pretty(v.rippleThickness)+' · flow + sound'],
-   ['Liquid',v.liquid?'Active · local event disturbances':'Rest'],
-   ['Liquid strength',pretty(v.liquidStrength)+' · movement + sound'],
-   ['Liquid radius',pretty(v.liquidRadius)+' · liquidity + cap + flow'],
-   ['Liquid wobble',pretty(v.liquidWobbleSpeed)+' · tempo + attacks'],
-   ['Grain',pretty(v.noiseAmount)+' · flow + sound'],
-   ['Shape / colour','Square · monochrome'],
+  table('[data-visuals]',v?[
+   ['Renderer',v.renderer==='earthbound'?'Earthbound · '+(v.backend||'preparing'):v.renderer||'Available'],
+   ['Mark size',finite(v.baseMarkSize)?pretty(v.baseMarkSize)+' px':'Unavailable'],
+   ['Empty gap',finite(v.gapPx)?pretty(v.gapPx)+' px':'Unavailable'],
+   ['Marks',finite(v.markCount)?v.markCount:'Unavailable'],
+   ['Holder data',v.holderSource==='observed-wallet-sample'?'Observed wallet snapshot':'Unavailable'],
+   ['Coverage',v.holderCoverage||'Unavailable'],
+   ['Market motion',percent(v.marketActivity)],
+   ['Score accents',v.scoreReactive?'Accepted sound events':'Unavailable'],
+   ['Queued accents',finite(v.scheduledScoreEvents)?v.scheduledScoreEvents:'Unavailable'],
+   ['Accent level',finite(v.scoreAccent)?pretty(v.scoreAccent):'Unavailable'],
   ]:[['Visual','Waiting for a rendered frame']]);
-  table('[data-controls]',controls.size?[...controls].map(([name,value])=>[name,pretty(value)]):[['Engine','No controls sent yet']]);
-  table('[data-events]',events.size?[...events].map(([name,value])=>[name,pretty(value)]):[['Engine','No feedback received yet']]);
+  for(let i=0;i<4;i++)table(channelTables[i],channelRows(channels[i],i,apu));
+  table('[data-controls]',controls.size?[...controls]:[['Controls','No changes received']]);
+  table('[data-events]',events.size?[...events]:[['Feedback','No events received']]);
+  if(transport?.connected===false&&!error)get('[data-feedback]').textContent='Audio transport disconnected';
+  else if(!error&&!apu&&lastFeedback)get('[data-feedback]').textContent='Event feedback received; chip snapshot pending';
  }
- let previewStarted=false;
- const timer=setInterval(()=>{if(document.hidden||container.hidden)return;if(!previewStarted&&!loaded){previewStarted=true;void preview();}paint();},500);
+ const timer=setInterval(()=>{if(!document.hidden)paint();},500);
+ paint(true);
  return {
-  update(next){const changed=view.native!==next.native;view=next;if(changed&&manifest){get('[data-source]').textContent=`${next.native?'Published source preview (native)':loaded?'Loaded browser sources':'Published source preview'} · orchestra v${manifest.version} · ${manifest.files.length} files`;draw(selected);}paint();},
-  sent(name,value){controls.set(name,value);},
-  receive(name,value){events.set(name,value);lastFeedback=performance.now();},
-  log(text){messages.push(String(text).trim());if(messages.length>24)messages.shift();get('[data-log]').textContent=messages.join('\n');},
-  setFiles,
-  setTransport(state){transport=state;},
-  reset(){events.clear();controls.clear();lastFeedback=0;transport=null;paint(true);},
-  destroy(){disposed=true;clearInterval(timer);},
+  update(next){if(disposed)return;view=next||{};paint();},
+  sent(name,value){if(!disposed)remember(controls,name,value);},
+  receive(name,value){if(disposed)return;remember(events,name,value);lastFeedback=performance.now();},
+  log(text){if(disposed)return;messages.push(String(text).trim().slice(0,500));if(messages.length>24)messages.shift();get('[data-log]').textContent=messages.join('\n');},
+  // Compatibility for callers from older builds; no obsolete patches load.
+  setFiles(){},
+  setTransport(state){if(disposed)return;transport=state;paint(true);},
+  reset(){if(disposed)return;view={};events.clear();controls.clear();lastFeedback=0;lastChipAt=0;lastChipSample=null;transport=null;paint(true);},
+  destroy(){disposed=true;clearInterval(timer);for(const button of buttons)button.onclick=null;},
  };
 }

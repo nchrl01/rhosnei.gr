@@ -1,4 +1,4 @@
-import {createCablePanel} from './lab-cables.js?v=194';
+import {createCablePanel} from './lab-cables.js?v=468';
 // Bounded, one-update-delayed routing. No evaluation of code from presets.
 export function createLabConnections({audio,visualSpecs,onChange=()=>{},canPrewire=()=>true}){
  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -9,7 +9,7 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{},canPrewi
  const button=document.createElement('button');button.id='connections-button';button.textContent='Connections · 0';document.querySelector('header').insertBefore(button,document.getElementById('play'));
  const embeddedHost=document.getElementById('patch-workspace'),embedded=Boolean(embeddedHost);
  const dialog=document.createElement(embedded?'section':'dialog');dialog.className='connections-menu';dialog.setAttribute('aria-label','Market parameters and signal connections');
- dialog.innerHTML='<div class="connections-head"><h2>MARKET → SOUND + IMAGE</h2><button data-close aria-label="Close connections">Close</button></div><p class="connections-intro">The starter cables match the live engine mappings. Market values are simulated here. Drag an output to an input to make a custom route; the Envion node is the real sampled engine.</p><div class="connections-actions"><button data-tab="cables">Cables</button><button data-tab="routes">Edit a cable</button><button data-tab="market">Market inputs</button><button data-toggle>Connections on</button><button data-add>+ Cable</button><button data-starter>Reset cables</button><button data-export>Export note</button></div><div data-market hidden><p class="group-note">Adjust a small set of shared market signals. Cables send these values to the same audio and visual engines shown above.</p><div class="grid"></div></div><div data-cables></div><div data-routes hidden></div><p class="connection-message" role="status"></p>';
+ dialog.innerHTML='<div class="connections-head"><h2>MARKET → SOUND + IMAGE</h2><button data-close aria-label="Close connections">Close</button></div><p class="connections-intro">Market values are simulated here. The GB chip creates every sound through four shared channels. Starter cables expose its texture, noise and packet controls; drag an output to an input to make a custom route.</p><div class="connections-actions"><button data-tab="cables">Cables</button><button data-tab="routes">Edit a cable</button><button data-tab="market">Market inputs</button><button data-toggle>Connections on</button><button data-add>+ Cable</button><button data-starter>Reset cables</button><button data-export>Export note</button></div><div data-market hidden><p class="group-note">Adjust a small set of shared market signals. Cables send these values to the same audio and visual engines shown above.</p><div class="grid"></div></div><div data-cables></div><div data-routes hidden></div><p class="connection-message" role="status"></p>';
  (embeddedHost||document.body).append(dialog);const container=dialog.querySelector('[data-routes]'),message=dialog.querySelector('.connection-message');
  dialog.querySelector('[data-close]').hidden=embedded;dialog.querySelector('[data-close]').onclick=()=>dialog.close();button.onclick=()=>{if(embedded)dialog.scrollIntoView({block:'start',behavior:'smooth'});else dialog.showModal();paint();cablePanel.refresh();};
  dialog.querySelector('[data-export]').onclick=()=>document.getElementById('note').click();
@@ -17,7 +17,7 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{},canPrewi
  function showTab(name){dialog.querySelector('[data-market]').hidden=name!=='market';container.hidden=name!=='routes';dialog.querySelector('[data-cables]').hidden=name!=='cables';for(const b of dialog.querySelectorAll('[data-tab]'))b.setAttribute('aria-pressed',b.dataset.tab===name);if(name==='cables')cablePanel.refresh();}
  for(const tab of dialog.querySelectorAll('[data-tab]'))tab.onclick=()=>showTab(tab.dataset.tab);
  const cablePanel=createCablePanel({host:dialog.querySelector('[data-cables]'),sources:sourceList,targets:descriptors,getRoutes:()=>routes.map(r=>({...r,enabled:enabled&&r.enabled})),getValue:id=>latest[id],onConnect:(source,target)=>add(source,target),onSelect:id=>{showTab('routes');const card=container.querySelector('[data-route="'+id+'"]');card?.scrollIntoView({block:'nearest'});card?.querySelector('select')?.focus({preventScroll:true});}});
- function select(list,value,label){const el=document.createElement('select');el.setAttribute('aria-label',label);for(const category of ['Market','Audio','ENVION','Visual']){const group=document.createElement('optgroup');group.label=category;for(const d of list.filter(d=>d.category===category)){const option=document.createElement('option');option.value=d.id;option.textContent=(d.category==='Audio'&&!d.id.startsWith('signal.')?d.id.split('.')[0]+' · ':'')+d.label;group.append(option);}el.append(group);}el.value=value;return el;}
+ function select(list,value,label){const el=document.createElement('select');el.setAttribute('aria-label',label);for(const category of ['Market','Audio','Visual']){const group=document.createElement('optgroup');group.label=category;for(const d of list.filter(d=>d.category===category)){const option=document.createElement('option');option.value=d.id;option.textContent=(d.category==='Audio'&&!d.id.startsWith('signal.')?d.id.split('.')[0]+' · ':'')+d.label;group.append(option);}el.append(group);}el.value=value;return el;}
  function number(parent,label,value,min,max,step,change){const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement('input');input.type='number';input.min=min;input.max=max;input.step=step;input.value=value;input.onchange=()=>{const v=input.valueAsNumber;if(!Number.isFinite(v)){input.value=value;return;}value=clamp(v,min,max);input.value=value;change(value);smoothed.clear();onChange();};wrap.append(input);parent.append(wrap);return input;}
  function exclusive(route){if(!route.enabled)return;for(const other of routes)if(other!==route&&other.enabled&&other.target===route.target){other.enabled=false;message.textContent='Previous connection to this destination was bypassed.';}}
  function add(source='market.tempo',target='visual.speed'){
@@ -53,10 +53,10 @@ export function createLabConnections({audio,visualSpecs,onChange=()=>{},canPrewi
    ['market.cap','visual.survivalRelease',10000,1e9,.25,4,1,true,true],
    ['signal.level','visual.pixelPresence',0,.02,0,1,1,false,false],
    ['market.holderConcentration','visual.jitter',0,1,0,1,1,false,false],
-   ['market.liquidity','pd.av-envion-ui-c0-379',0,1,0,.25,1,false,false],
-   ['market.motion','pd.av-envion-ui-c0-350',0,1,100,5000,1,false,false],
-   ['market.volume','pd.av-envion-ui-c0-454',0,1,0,.65,1,false,false],
-   ['market.activity','pd.av-envion-ui-c0-540',0,1,1000,50,1,false,false],
+   ['market.liquidity','piano.textureGain',0,1,.15,.8,1,false,false],
+   ['market.motion','piano.chipNoiseShift',0,1,11,1,1,false,false],
+   ['market.volume','piano.dataGain',0,1,.1,1,1,false,false],
+   ['market.activity','piano.phraseDepth',0,1,.25,1,1,false,false],
   ];
   return {version:2,enabled:true,routes:specs.map(([source,target,inMin,inMax,outMin,outMax,curve,log,logOutput])=>({source,target,inMin,inMax,outMin,outMax,curve,log,logOutput,smoothing:.05,enabled:true})).filter(route=>!respectOverrides||canPrewire(route.target))};
  }

@@ -1,6 +1,6 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=3';
-import {createLabConnections} from './lab-connections.js?v=198';
-import {audioLab} from './audio-lab.js?v=465';
+import {createLabConnections} from './lab-connections.js?v=468';
+import {audioLab} from './audio-lab.js?v=468';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=276';
 import {advancePixelSurvival} from './pixel-blast-parameters.js?v=220';
@@ -31,7 +31,7 @@ function configureRoute(key,patch){const spec=specs.find(s=>s[0]===key);settings
 function section(title,note){const d=document.createElement('details');d.open=true;const h=document.createElement('summary');h.textContent=title;const p=document.createElement('p');p.className='group-note';p.textContent=note;const grid=document.createElement('div');grid.className='grid';d.append(h,p,grid);$('visual-controls').append(d);return grid;}
 function build(){
  $('visual-controls').replaceChildren();paints=[];
- const global=section('Shared context','The current defaults are already wired: market activity drives tempo and flow; cap controls grid spacing, edge shrink and how long marks survive; wallet concentration changes mark size; price direction chooses + or ×. Envion: activity drives grains; intensity and buy/sell imbalance merge into expression; direction drives pitch and pan; volume drives overlap and echo; liquidity drives reverb; tempo drives timing; coin seed chooses material.');
+ const global=section('Shared context','The starter patch connects activity to visual flow and score fracture; cap to spacing, edge shrink and survival; holder concentration to mark variation; audio level to pixel presence; liquidity to chip texture level; motion to noise clock; and volume to packet level. Every sound uses the same four chip channels.');
  knob(global,['reference','Reference cap · USD',1000,1e9,1000,100000,true],()=>settings.referenceCap,v=>settings.referenceCap=v,{paints,onChange:persist});
  knob(global,['wallet','Wallet size variation',0,1,.01],()=>settings.wallet,v=>settings.wallet=v,{paints,onChange:persist});
  const cycle=document.createElement('button');cycle.className='action';cycle.onclick=()=>{settings.cycles=!settings.cycles;rebuild();persist();};global.append(cycle);paints.push(()=>{cycle.textContent='White / black cycles · '+(settings.cycles?'on':'off');cycle.setAttribute('aria-pressed',settings.cycles);});
@@ -46,7 +46,7 @@ function build(){
 }
 function saveFile(name,text,type){const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 $('save').onclick=()=>saveFile('upic-av-preset.json',JSON.stringify(draft(),null,2),'application/json');
-$('note').onclick=()=>{const d=draft();saveFile('upic-av-change-note.md','# UPIC audiovisual change note\n\n'+(d.notes||'No written notes.')+'\n\n## Patch cables\n\n'+connections.describe()+'\n\n## Visual panel mappings\n\n'+specs.map(([key,label])=>'- '+label+': '+JSON.stringify(routeFor(key))).join('\n')+'\n\n## Current visual output values\n\n```json\n'+JSON.stringify(effective,null,2)+'\n```\n\n## Complete preset\n\n```json\n'+JSON.stringify(d,null,2)+'\n```\n\nThe audio and visual outputs share one clock and simulated market. Envion’s automatic market mappings are described in the patch.\n','text/markdown');$('status').textContent='Combined change note exported. Attach it in our chat.';};
+$('note').onclick=()=>{const d=draft();saveFile('upic-av-change-note.md','# UPIC audiovisual change note\n\n'+(d.notes||'No written notes.')+'\n\n## Patch cables\n\n'+connections.describe()+'\n\n## Visual panel mappings\n\n'+specs.map(([key,label])=>'- '+label+': '+JSON.stringify(routeFor(key))).join('\n')+'\n\n## Current visual output values\n\n```json\n'+JSON.stringify(effective,null,2)+'\n```\n\n## Complete preset\n\n```json\n'+JSON.stringify(d,null,2)+'\n```\n\nThe audio and visual outputs share one clock and simulated market. The chip’s market connections are described in the patch.\n','text/markdown');$('status').textContent='Combined change note exported. Attach it in our chat.';};
 $('load').onchange=async e=>{try{const file=e.target.files?.[0];if(!file)return;if(file.size>300000)throw Error('Preset is too large');const d=JSON.parse(await file.text());if(d.schema!=='upic-av-lab'||![1,2].includes(d.version))throw Error('Choose a combined audiovisual preset');const next=readVisual(d.visual);connections.load(null);audioLab.load(d.audio);settings=next;connections.load(migrateConnections(d.connections,d.visual));build();rebuild();persist();$('status').textContent='Both engines loaded. Press Start audio.';}catch(error){$('status').textContent=error.message;}finally{e.target.value='';}};
 const resetAudio=$('reset').onclick;$('reset').onclick=()=>{resetAudio();settings=initial();connections.load(null);build();rebuild();persist();};
 // Save both halves whenever a knob/input changes, including pointer-driven audio controls.
@@ -59,7 +59,7 @@ new ResizeObserver(entries=>{width=Math.max(1,entries[0].contentRect.width);heig
 rebuild();build();
 connections=createLabConnections({audio:audioLab,visualSpecs:specs,onChange:persist,canPrewire:id=>{if(id.startsWith('visual.'))return routeFor(id.slice(7)).source==='auto';const [group,key]=id.split('.');return !Object.hasOwn(audioLab.preset()[group]||{},key);}});
 connections.load(pendingConnections);
-const primaryMarketInputs=new Set(['market.seed','market.tempo','market.cap','market.activity','market.volume','market.motion','market.liquidity','market.change','market.intensity','market.balance','market.pressure','market.shock','market.fresh','market.tonic','market.holderConcentration']);
+const primaryMarketInputs=new Set(['market.seed','market.tempo','market.cap','market.activity','market.volume','market.motion','market.liquidity','market.change','market.intensity','market.balance','market.pressure','market.shock','market.fresh','market.holderConcentration']);
 for(const d of audioLab.descriptors().filter(d=>primaryMarketInputs.has(d.id))){
  knob(connections.marketGrid,[d.id,d.label,d.min,d.max,d.step],()=>audioLab.controls()[d.id],v=>audioLab.setControl(d.id,v),{paints:connections.marketPaints,onChange:persist});
 }
