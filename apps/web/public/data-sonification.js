@@ -16,7 +16,10 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
   const motion=unit(raw.motion),balance=m.availability?.balance===false?.5:unit(m.balance??.5);
   const liquidity=m.availability?.liquidity===false?0:unit(m.texture);
   // Historic candle volume is a labelled activity proxy, never a trade count.
-  const excitation=fresh*Math.max(intensity*unit(activity*10),.5*Math.sqrt(activity*volume));
+  // Old 5-minute volume/activity totals must not sustain sound in a quiet
+  // live market. Preserve labelled candle activity during historical replay.
+  const tradingActivity=unit(m.tradingActivity??(m.replay?(Number(m.replay.volume)>0?1:m.replay.volume==null&&raw.motion>0?1:0):0));
+  const excitation=fresh*tradingActivity*Math.max(intensity*unit(activity*10),.5*Math.sqrt(activity*volume));
   const density=active?unit(excitation*(.15+.85*Math.sqrt(activity||volume))):0;
   // Hold enough gain for the short voice to speak; only actual observations
   // refresh this envelope. The reverb receives the complete pulse.
