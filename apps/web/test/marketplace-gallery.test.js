@@ -1,6 +1,7 @@
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {describe,it,expect} from 'vitest';
+import {supportedCoinNetwork} from '../public/coin-network-choice.js';
 import {collectiblePreview,contractPlayerURL} from '../public/collectible-selection.js';
 const source=readFileSync(new URL('../public/marketplace.js',import.meta.url),'utf8');
 const render=source.slice(source.indexOf('function render('),source.indexOf('const networkIcons='));
@@ -19,7 +20,7 @@ class Node{
 describe('marketplace gallery',()=>{
  it('renders the first 40 cards and appends all 100 without a missing-name crash',()=>{
   const grid=new Node(),count=new Node(),more=new Node(),empty=new Node();
-  const context=vm.createContext({records:catalogue.coins.filter(c=>c.top1000).sort((a,b)=>b.marketCap-a.marketCap).slice(0,100),network:{value:'all'},visible:40,grid,count,more,cardUpdates:new Map(),collectiblePreview,coinPlayerURL:contractPlayerURL,rememberRecentCoin(){},element:(...args)=>new Node(...args),money:()=> '—',$:()=>empty});
+  const context=vm.createContext({records:catalogue.coins.filter(c=>c.top1000).sort((a,b)=>b.marketCap-a.marketCap).slice(0,100),network:{value:'all'},visible:40,grid,count,more,cardUpdates:new Map(),supportedCoinNetwork,collectiblePreview,coinPlayerURL:contractPlayerURL,rememberRecentCoin(){},element:(...args)=>new Node(...args),money:()=> '—',$:()=>empty});
   vm.runInContext(render+';render();',context);
   expect(grid.children).toHaveLength(40);expect(count.textContent).toBe('100 coins');
   expect(grid.children[0].children[0].querySelector('.coin-full-name').textContent).toBeTruthy();
