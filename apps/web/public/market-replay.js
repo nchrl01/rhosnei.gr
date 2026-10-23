@@ -11,7 +11,7 @@ export function replaySpeed(value){
 export function createMarketReplay(){
  const recordings=new Map(),archives=new Map();let key='demo';
  function archive(){if(!archives.has(key))archives.set(key,{controls:new Map(),scores:new Map()});return archives.get(key);}
- const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null};
+ const state={active:false,cursor:null,dragging:false,clock:null,speed:'1',source:null,price:null,bar:null,controls:null,endHold:null,ended:false,handoffRequested:false,frozen:null};
  function frames(){return recordings.get(key)||[];}
  return {
   state,
@@ -30,9 +30,9 @@ export function createMarketReplay(){
    rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,latestPrice:price,path:(metrics.context?.path||[]).slice(-1)}})});
    if(rows.length>3600)rows.shift();recordings.set(key,rows);
   },
-  seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.ended=false;state.controls=null;},
+  seek(bar,interval,dragging=false){state.active=true;state.cursor=candleEnd(bar,interval);state.dragging=dragging;state.clock=performance.now();state.bar=bar;state.endHold=null;state.ended=false;state.handoffRequested=false;state.controls=null;},
   release(){state.dragging=false;state.clock=performance.now();},
-  live(){Object.assign(state,{active:false,cursor:null,dragging:false,clock:null,source:null,price:null,bar:null,controls:null,endHold:null,ended:false,frozen:null});},
+  live(){Object.assign(state,{active:false,cursor:null,dragging:false,clock:null,source:null,price:null,bar:null,controls:null,endHold:null,ended:false,handoffRequested:false,frozen:null});},
   advance(bars,interval,running,now=performance.now()){
    if(state.frozen){bars=state.frozen.bars;interval=state.frozen.interval;}
    if(!state.active||!bars.length)return false;

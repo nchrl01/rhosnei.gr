@@ -34,7 +34,7 @@ import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=455';
 import {prepareLearnedPhrases} from './learned-market-phrase.js?v=455';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle,replaySpeed} from './market-replay.js?v=461';
+import {createMarketReplay,candleEnd,scoreCandle,replaySpeed} from './market-replay.js?v=462';
 import {signalFreshness} from './market-controls.js?v=18';
 import {createOrchestraConductor,ORCHESTRA_LAYERS,orchestraTempo} from './orchestra.js?v=449';
 import {createPd} from './vendor/libpd-wasm.js?v=220';
@@ -44,7 +44,7 @@ import {subscribeOrca} from './orca.js?v=39';
 import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=391';
-import {MarketChart} from './chart.js?v=461';
+import {MarketChart} from './chart.js?v=462';
 import {loadHistory} from './history.js?v=448';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
@@ -280,7 +280,16 @@ function metrics(){
  const historical=replay.metrics(chart.renderedBars||[],market,chart.interval);
  const scored=historical&&replay.state.score?.frames.get(replay.state.bar?.time);
  if(scored?.music&&historical.replay?.source==='candles')historical.music={...historical.music,...scored.music};
- if(ended&&playing){$('play').onclick();status('Replay finished at '+new Date(replay.state.cursor).toLocaleString()+' · Back to live for the current market');}
+ if(ended&&playing&&!replay.state.handoffRequested){
+  replay.state.handoffRequested=true;
+  // Use the same connection and reset path as the Live control. Schedule after
+  // this frame so its audio/visual updates cannot overwrite the live handoff.
+  const frozen=replay.state.frozen;
+  queueMicrotask(()=>{
+   if(!playing||!replay.state.active||replay.state.frozen!==frozen||!replay.state.ended){replay.state.handoffRequested=false;return;}
+   void $('replay-live').onclick();
+  });
+ }
  return historical||live;
 }
 function updateReplayUI(m){
@@ -306,7 +315,7 @@ function updateReplayUI(m){
  const rate=Number(replay.state.speed)||1;
  $('replay-state').textContent=active?'· '+rate+'×':'';
 
- $('replay-info').textContent=active?'Replay is a frozen snapshot ending '+new Date(candleEnd(replay.state.frozen.bars.at(-1),replay.state.frozen.interval)).toLocaleString()+'. Back to live shows the current market.':'Choose a point to replay. Market changes shape the sound.';
+ $('replay-info').textContent=active?'Replay is a frozen snapshot ending '+new Date(candleEnd(replay.state.frozen.bars.at(-1),replay.state.frozen.interval)).toLocaleString()+'. Playback continues live when replay reaches the end.':'Choose a point to replay. Market changes shape the sound.';
  if(isExchangeMarket(market))$('replay-info').textContent+=' Historical market cap is unavailable.';
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
@@ -998,7 +1007,7 @@ chart.onReplayPanStart=()=>{
 };
 chart.onReplayPan=at=>{
  if(!replay.state.active)return;
- Object.assign(replay.state,{cursor:at,clock:performance.now(),controls:null,endHold:null,ended:false});
+ Object.assign(replay.state,{cursor:at,clock:performance.now(),controls:null,endHold:null,ended:false,handoffRequested:false});
  pianoReplayCursor=at;
  if(!playing)syncLevels(metrics());
 };

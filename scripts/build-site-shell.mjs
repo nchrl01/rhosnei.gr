@@ -12,7 +12,7 @@ const version = 448;
 // Audio and navigation updates have independent cache revisions.
 const audioVersion = 455;
 const searchVersion = 456;
-const visualVersion = 461;
+const visualVersion = 462;
 const navigationVersion = 457;
 const foundationVersion = 454;
 const pages = [
