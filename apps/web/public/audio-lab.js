@@ -1,9 +1,9 @@
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic,keyName} from './seed-key.js?v=1';
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=455';
+import {marketSpecs,mixSpecs,pianoSpecs,dataSpecs,phraseSpecs,envionSpecs} from './audio-lab-specs.js?v=463';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {createTradePiano} from './trade-piano.js?v=455';
+import {createTradePiano} from './trade-piano.js?v=463';
 import {EARTHBOUND_PRESETS,EARTHBOUND_INSTRUMENTS,earthboundPreset,instrumentProfile} from './earthbound-instruments.js?v=451';
 import {createEnvion} from './envion.js?v=449';
 import {createEnvionSampleEditor} from './envion-sample-editor.js?v=449';
@@ -157,7 +157,7 @@ function action(parent,label,run){const b=document.createElement('button');b.tex
 function switchButton(parent,label,get,set){const b=document.createElement('button');b.onclick=()=>{set(!get());changed();};paints.push(()=>{b.textContent=label+' · '+(get()?'on':'off');b.setAttribute('aria-pressed',get());});parent.append(b);return b;}
 function pianoAuto(key){
  const snapshot=piano?.snapshot(),profile=instrumentProfile(snapshot?.preset??earthboundPreset(state.market.seed)),a=clamp((Math.log10(Math.max(1000,state.market.cap))-4)/3,0,1);
- return ({roomSend:.7-.46*a,cutoff:profile.cutoff*(.7+.3*a),dry:.3+.55*a,wet:1.1-.45*a,q:.55,noteGain:1,chordGain:1,arpGain:1,...profile})[key]??[...pianoSpecs,...phraseSpecs].find(s=>s[0]===key)?.[5]??0;
+ return ({roomSend:.25,cutoff:profile.cutoff*(.7+.3*a),dry:.7,wet:.6,q:.55,noteGain:1,chordGain:1,arpGain:1,...profile})[key]??[...pianoSpecs,...phraseSpecs].find(s=>s[0]===key)?.[5]??0;
 }
 function pdKnobs(parent,specs){for(const spec of specs){const key=spec[0];addKnob(parent,spec,()=>state.pd[key]??pdValues[key]??spec[5],v=>state.pd[key]=v,()=>{delete state.pd[key];if(Number.isFinite(pdValues[key]))send(key,pdValues[key]);},()=>Object.hasOwn(state.pd,key));}}
 function refreshInstruments(){const el=$('instrument-select');if(!el)return;el.replaceChildren();for(const [v,name] of [[-1,'AUTO · instrument from coin seed'],...(piano?.instruments()||EARTHBOUND_INSTRUMENTS).filter(x=>![145,146].includes(x.preset)).map(x=>[x.preset,x.name])]){const option=document.createElement('option');option.value=v;option.textContent=name;el.append(option);}if(![...el.options].some(o=>Number(o.value)===state.instrument)){state.instrument=-1;piano?.configure({...state.piano,preset:-1,arpeggios:state.arpeggios});}el.value=String(state.instrument);}

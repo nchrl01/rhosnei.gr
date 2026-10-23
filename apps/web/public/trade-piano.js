@@ -52,32 +52,20 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  let samples=decoded.filter(result=>result.status==='fulfilled').map(result=>result.value);
  if(!samples.some(s=>s.preset===earthboundPreset(initialSeed)))throw Error('This browser could not decode the instrument samples');
  const instrumentFilter=ctx.createBiquadFilter(),instrumentSend=ctx.createGain(),roomInput=ctx.createBiquadFilter(),dry=ctx.createGain(),wet=ctx.createGain(),room=ctx.createConvolver(),tailGate=ctx.createGain(),master=ctx.createGain();
- // Harmony notes and arpeggios share one instrument and its dry/room balance.
- // One fixed convolution is shared by all notes; seeking/pause clears its tail.
+ // Dry GB-style voices carry their own sustain. Two quiet, discrete repeats
+ // suggest distance without a diffuse reverb tail. This is GB-inspired DSP,
+ // not a claim of four-channel hardware emulation.
  instrumentFilter.type='lowpass';instrumentFilter.frequency.value=7000;instrumentFilter.Q.value=.55;
  instrumentSend.gain.value=.25;
- // Remove sub-bass only from the room; the direct instrument stays intact.
  roomInput.type='highpass';roomInput.frequency.value=75;roomInput.Q.value=.707;
- dry.gain.value=.34;wet.gain.value=1.45;master.gain.value=0;
- // Eight seconds at ordinary phone sample rates; cap unusually high
- // device rates at 3.84 MB for the two floating-point impulse channels.
- const impulse=ctx.createBuffer(2,Math.min(480000,Math.ceil(ctx.sampleRate*8)),ctx.sampleRate);
- let noise=1917;
- for(let channel=0;channel<2;channel++){
-  const data=impulse.getChannelData(channel);let smooth=0,diffuse=0;
-  for(let i=0;i<data.length;i++){
-   noise=(Math.imul(noise,1664525)+1013904223)>>>0;
-   smooth=.84*smooth+.16*(noise/2147483648-1);diffuse=.96*diffuse+.04*smooth;
-   const t=i/ctx.sampleRate,bloom=Math.min(1,t/.18),fade=Math.min(1,(data.length-1-i)/(ctx.sampleRate*1.2));
-   // A flatter late decay holds the note's harmonic body like a pad. The
-   // complete response still ends within this one fixed eight-second buffer.
-   // This bloom affects the room only, never the sampled hammer's attack.
-   data[i]=(.65*smooth+.35*diffuse)*bloom*Math.exp(-t*.38)*fade;
-  }
- }
+ dry.gain.value=.7;wet.gain.value=.6;master.gain.value=0;
+ const impulse=ctx.createBuffer(2,Math.ceil(ctx.sampleRate*.31),ctx.sampleRate);
+ impulse.getChannelData(0)[Math.round(ctx.sampleRate*.15)]=.65;
+ impulse.getChannelData(1)[Math.round(ctx.sampleRate*.3)]=.3;
+ room.normalize=false;
  room.buffer=impulse;instrumentFilter.connect(dry);instrumentFilter.connect(instrumentSend);instrumentSend.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
  const bassFilter=ctx.createBiquadFilter(),bassGain=ctx.createGain();bassFilter.type='lowpass';bassFilter.frequency.value=900;bassGain.gain.value=.7;bassFilter.connect(bassGain);bassGain.connect(tailGate);
- const reflections=[];for(const [delaySeconds,pan] of [[.019,-.6],[.031,.6]]){const delay=ctx.createDelay(.1),gain=ctx.createGain(),panner=ctx.createStereoPanner();delay.delayTime.value=delaySeconds;gain.gain.value=.1;panner.pan.value=pan;instrumentFilter.connect(delay);delay.connect(gain);gain.connect(panner);panner.connect(dry);reflections.push(delay,gain,panner);}
+ const reflections=[];
  let lastMarketCue=null;
  let enabled=true,running=false,volume=.5,seed=initialSeed>>>0,closed=false,pattern=[],roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
  const policy=createPianoPolicy(seed);
@@ -288,8 +276,8 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   reset(value=seed){clear();melodyGuard.reset();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;timelineSegments=[];replayAnchor=null;lastObservedPrice=null;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){pendingContext.music={...pendingContext.music,tempo:scoreTempo({tempo:value})};},
-  resonance(cap){currentCap=cap;const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;const clarity=unit((Math.log10(Math.max(1000,Number(cap)||1000))-4)/3);instrumentFilter.frequency.setTargetAtTime(profile.cutoff*(.7+.3*clarity),ctx.currentTime,.2);instrumentSend.gain.setTargetAtTime(.7-.46*clarity,ctx.currentTime,.4);dry.gain.setTargetAtTime(.3+.55*clarity,ctx.currentTime,.4);wet.gain.setTargetAtTime(1.1-.45*clarity,ctx.currentTime,.4);}labRoom();return r;},
-  snapshot(){return {name:bankLoading?'Loading GB instruments…':bankError?'Instrument unavailable':instrument.name,error:bankError,loading:bankLoading,family:profile.family,marketPhrase:marketPhraseIdentity(seed,lab.phraseShape).name,phraseSource:(lab.phraseLearning??1)>0?'Learned MIDI phrasing':'Function contour',originality:melodyGuard.snapshot(),preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:running,tempo:liveTempo,bass:'Kraken Sine '+(1+seed%2),roomSend:instrumentSend.gain.value,wetReturn:wet.gain.value};},
+  resonance(cap){currentCap=cap;const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;const clarity=unit((Math.log10(Math.max(1000,Number(cap)||1000))-4)/3);instrumentFilter.frequency.setTargetAtTime(profile.cutoff*(.7+.3*clarity),ctx.currentTime,.2);instrumentSend.gain.setTargetAtTime(.25,ctx.currentTime,.4);dry.gain.setTargetAtTime(.7,ctx.currentTime,.4);wet.gain.setTargetAtTime(.6,ctx.currentTime,.4);}labRoom();return r;},
+  snapshot(){return {name:bankLoading?'Loading GB instruments…':bankError?'Instrument unavailable':instrument.name,error:bankError,loading:bankLoading,family:profile.family,marketPhrase:marketPhraseIdentity(seed,lab.phraseShape).name,phraseSource:(lab.phraseLearning??1)>0?'Learned MIDI phrasing':'Function contour',originality:melodyGuard.snapshot(),preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:running,tempo:liveTempo,bass:'Kraken Sine '+(1+seed%2),roomSend:instrumentSend.gain.value,wetReturn:wet.gain.value,spaceEffect:'short-chip-echo'};},
   setTimeline(segments){timelineSegments=segments;timeline=createCompositionTimeline(segments,replayAnchor?.rate||1);barCache.clear();scheduled.clear();lastHarmonyBar=null;},
   seekTimeline(at,rate=1){transportHeld=false;clear();barCache.clear();lastHarmonyBar=null;rate=Math.max(.1,Number(rate)||1);if(!replayAnchor||replayAnchor.rate!==rate)timeline=createCompositionTimeline(timelineSegments,rate);replayAnchor={at,clock:ctx.currentTime,rate};},
   syncTimeline(at,rate=1){if(!replayAnchor||rate!==replayAnchor.rate||Math.abs(scoreNow()-at)>250*Math.max(1,rate))this.seekTimeline(at,rate);},
