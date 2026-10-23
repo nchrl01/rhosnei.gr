@@ -1,4 +1,4 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=434';
+import {bindMobileCoinSearch} from './mobile-search.js?v=435';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -59,7 +59,7 @@ removeRetiredSampleStorage();
 // Optional footer features cannot prevent navigation or volume from starting.
 if(document.querySelector('.site-footer')&&new URLSearchParams(location.search).get('capture')!=='live'){
  void import('./footer-prices.js?v=240').catch(()=>{});
- if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=434').catch(()=>{
+ if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=435').catch(()=>{
   const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
   if(button)button.disabled=true;
   if(status)status.textContent='Wallet unavailable. Reload to try again.';
@@ -71,7 +71,7 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 const headerWallet=new URLSearchParams(location.search).get('capture')==='live'?null:document.querySelector('.header-wallet');
 if(headerWallet){
  headerWallet.setAttribute('aria-label','Profile');headerWallet.title='Profile';
- void import('./profile.js?v=434').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
+ void import('./profile.js?v=435').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
   headerWallet.title='Profile is unavailable. Reload to try again.';
  });
 }

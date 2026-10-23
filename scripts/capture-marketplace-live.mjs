@@ -1,3 +1,4 @@
+import {collectiblePreview} from '../apps/web/public/collectible-selection.js';
 import {NATIVE_CONTRACT_REFERENCES} from '../apps/web/public/native-contracts.js';
 import {captureFetch} from './capture-network.mjs';
 import {catalogueNative,NATIVE_COINS} from '../apps/web/public/native-coins.js';
@@ -14,16 +15,17 @@ import {createHash,randomUUID} from 'node:crypto';
 
 const project=resolve(dirname(fileURLToPath(import.meta.url)),'..'),root=resolve(project,'apps/web/public');
 const endpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures',kind='live-player-frame-v1';
-const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,top1000:false,part:0,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false,contractsOnly:false};
+const options={limit:20,ids:null,timeout:120,concurrency:2,port:4173,all:false,top1000:false,part:0,publish:['true','1'].includes(process.env.CI),dryRun:false,checkPublisher:false,contractsOnly:false,collectibles:false};
 for(let i=2;i<process.argv.length;i++){
  const arg=process.argv[i];
+ if(arg==='--collectibles'){options.collectibles=true;options.contractsOnly=true;continue;}
  if(arg==='--contracts-only'){options.contractsOnly=true;continue;}
  if(arg==='--all'){options.all=true;continue;}
  if(arg==='--top1000'||arg==='--all1000'){options.top1000=true;options.all=true;continue;}
  if(arg==='--publish'){options.publish=true;continue;}
  if(arg==='--check-publisher'){options.checkPublisher=true;options.publish=true;continue;}
  if(arg==='--dry-run'){options.dryRun=true;continue;}
- if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--contracts-only] [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher] [--top1000 --part 1..4]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
+ if(arg==='--help'){console.log('Usage: capture-marketplace-live.mjs [--collectibles | --contracts-only] [--limit 20 | --all] [--ids id,chain:address,...] [--timeout seconds] [--concurrency 1|2] [--port 4173] [--publish] [--dry-run] [--check-publisher] [--top1000 --part 1..4]\nUses UPIC_PLAYWRIGHT_MODULE when supplied. Publishing requires GitHub Actions OIDC; local artifacts stay in a temporary directory.');process.exit(0);}
  const name=arg.slice(2);if(!arg.startsWith('--')||!['limit','ids','timeout','concurrency','port','part'].includes(name)||process.argv[i+1]===undefined)throw Error('Unknown or incomplete option: '+arg);
  const value=process.argv[++i];options[name]=name==='ids'?value.split(',').map(v=>v.trim()).filter(Boolean):Number(value);
 }
@@ -48,6 +50,10 @@ if(options.contractsOnly)candidates=candidates.filter(coin=>{
  if(ref)return keyFor(coin.chain,coin.address)===keyFor(ref.chain,ref.address);
  return coin.address&&coin.address!=='native'&&!coin.address.startsWith('native:')&&coin.contractStatus!=='off-chain';
 });
+if(options.collectibles){
+ const targets=new Set(catalogue.coins.filter(c=>c.top1000).sort((a,b)=>(b.marketCap||0)-(a.marketCap||0)).slice(0,100).map(c=>collectiblePreview(c).selection?.key).filter(Boolean));
+ candidates=candidates.filter(c=>targets.has(c.key));
+}
 if(options.ids){
  const selected=new Map();
  for(const query of options.ids){
@@ -82,7 +88,7 @@ const uncovered=missing.filter(c=>!coveredCoins.has(c.id)&&preferred.get(c.id)?.
 const rotate=rows=>{const offset=rows.length&&!options.ids&&process.env.GITHUB_EVENT_NAME==='schedule'?Math.floor(Date.now()/3600000)*options.limit%rows.length:0;return [...rows.slice(offset),...rows.slice(0,offset)];};
 const missingQueue=[...rotate(uncovered),...rotate(alternate)],existing=supportedCoins.filter(c=>manifest.has(c.key)).sort((a,b)=>manifest.get(a.key).capturedAt-manifest.get(b.key).capturedAt||a.key.localeCompare(b.key));
 let pending=[...missingQueue,...existing];
-if(!options.ids&&!options.all){
+if(!options.ids&&!options.all&&!options.collectibles){
  // Reserve half of scheduled and manual batches for refreshes; failed first captures must never
  // prevent existing shared frames from receiving newer observed inputs.
  const stale=existing.filter(c=>manifest.get(c.key).capturedAt<Date.now()-3600000),refresh=stale.slice(0,Math.ceil(options.limit/2));
@@ -143,7 +149,7 @@ async function publish(metadata,bytes){
 if(options.checkPublisher){await checkPublisher();process.exit(0);}
 const output=process.env.UPIC_CAPTURE_OUTPUT_DIR?resolve(process.env.UPIC_CAPTURE_OUTPUT_DIR):await mkdtemp(join(tmpdir(),'upic-live-captures-'));
 await mkdir(output,{recursive:true});
-const report={startedAt:new Date().toISOString(),publishing:options.publish,contractsOnly:options.contractsOnly,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,requested:queue.length,unsupported,unsupportedCoins,results:[]};
+const report={startedAt:new Date().toISOString(),publishing:options.publish,contractsOnly:options.contractsOnly,collectibles:options.collectibles,allowedIdentities:identities.size,supportedIdentities:supportedCoins.length,supportedCoins:preferred.size,requested:queue.length,unsupported,unsupportedCoins,results:[]};
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.woff':'font/woff','.woff2':'font/woff2','.wasm':'application/wasm','.mp3':'audio/mpeg','.wav':'audio/wav'};
 const server=createServer(async(req,res)=>{
  try{
@@ -187,7 +193,7 @@ try{
    page=await context.newPage();page.on('pageerror',error=>{if(errors.length<3)errors.push(error.message.slice(0,300));});
    const url=new URL('/',origin);url.search=new URLSearchParams({capture:'live',coin:coin.address==='native'||coin.address?.startsWith('native:')?coin.symbol+'/USD':coin.address,...((coin.address==='native'||coin.address?.startsWith('native:'))?{native:coin.id}:{network:coin.chain}),request:randomUUID()});
    await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:Math.min(45000,options.timeout*1000)});
-   await page.waitForFunction(({expectedKey,kind,started,needsImage})=>{const value=window.__upicLiveCapture,frame=value?.frame||value;return frame?.key===expectedKey&&frame.captureKind===kind&&frame.capturedAt>=started&&(!needsImage||frame.imageAvailable===true)&&frame.blob instanceof Blob;},{expectedKey,kind,started,needsImage:Boolean(coin.image)},{timeout:Math.max(1,options.timeout*1000-(Date.now()-started)),polling:500});
+   await page.waitForFunction(({expectedKey,kind,started})=>{const value=window.__upicLiveCapture,frame=value?.frame||value;return frame?.key===expectedKey&&frame.captureKind===kind&&frame.capturedAt>=started&&frame.blob instanceof Blob;},{expectedKey,kind,started},{timeout:Math.max(1,options.timeout*1000-(Date.now()-started)),polling:500});
    const captured=await page.evaluate(async()=>{
     const value=window.__upicLiveCapture,frame=value?.frame||value;
     const dataURL=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(frame.blob);});

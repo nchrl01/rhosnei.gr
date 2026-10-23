@@ -1,9 +1,10 @@
-import {collectiblePreview} from './collectible-selection.js?v=434';
+import {collectiblePreview} from './collectible-selection.js?v=435';
+import {supportedCoinNetwork} from './coin-network-choice.js?v=435';
 import {catalogueNative} from './native-coins.js?v=359';
-import {storeCapture,previewKey,loadCloudCaptures} from './coin-previews.js?v=434';
-import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=434';
-import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=434';
-import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=434';
+import {storeCapture,previewKey,loadCloudCaptures} from './coin-previews.js?v=435';
+import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=435';
+import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=435';
+import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=435';
 const $=id=>document.getElementById(id),gallery=$('coin-gallery'),grid=$('coin-gallery-grid');
 const search=$('coin-gallery-search'),network=$('coin-gallery-network'),count=$('coin-gallery-count');
 let records=[],visible=40,refreshSaved=()=>{};
@@ -21,7 +22,7 @@ function render(append=false){
  if(!append){cardUpdates.clear();grid.replaceChildren();}count.textContent=items.length.toLocaleString()+' coin'+(items.length===1?'':'s');
  for(const item of items.slice(append?grid.children.length:0,visible)){
   const card=element('a',null,'coin-collectible');card.draggable=false;card.addEventListener('click',event=>{const chosen=collectiblePreview(item,network.value).selection;if(!chosen){event.preventDefault();return;}rememberRecentCoin(chosen);});
-  const art=element('div',null,'coin-collectible-art'),image=element('img');image.alt=item.symbol+' artwork';image.width=512;image.height=512;image.loading='lazy';image.decoding='async';image.draggable=false;image.hidden=true;art.append(image);
+  const art=element('div',null,'coin-collectible-art'),image=element('img');image.alt=item.symbol+' artwork';image.width=512;image.height=512;image.loading='lazy';image.decoding='async';image.draggable=false;image.hidden=true;const previewStatus=element('span','Awaiting live preview','snapshot-unavailable');previewStatus.setAttribute('role','status');art.append(image,previewStatus);
   const info=element('div',null,'coin-collectible-info'),heading=element('div',null,'coin-collectible-heading');heading.append(element('h2',item.symbol),element('span','↗','coin-open'));
   const chain=element('p','','coin-chain'),capValue=element('span',money(item.marketCap)),capRow=element('div',null,'coin-collectible-cap');capRow.append(element('span','Market cap'),capValue);
   info.append(heading,element('p',item.name,'coin-full-name'),chain,capRow);
@@ -35,9 +36,10 @@ function render(append=false){
    chain.textContent=chosen?[(chosen.chain==='solana'?'SOL':chosen.chain.toUpperCase()),chosen.contractReference?.kind==='bridged'?'BINANCE-PEG':chosen.contractReference?.kind==='wrapped'?'WRAPPED':'',item.catalogueRank?'#'+item.catalogueRank:''].filter(Boolean).join(' · '):'CONTRACT UNAVAILABLE';
    chain.title=chosen?.address||'No verified contract is available for this collectible.';
    const source=frame?.snapshot;
+   previewStatus.hidden=Boolean(source&&image.getAttribute('src')===source&&!image.hidden);previewStatus.textContent=source?'Loading preview…':chosen?supportedCoinNetwork(chosen,chosen)?'Awaiting live preview':'Live preview unavailable on this network':'No verified contract preview';
    if(source){if(image.getAttribute('src')!==source){image.style.opacity='0';image.hidden=false;image.src=source;}}else{image.hidden=true;image.removeAttribute('src');}
    capValue.textContent=money(frame?.marketCap??chosen?.marketCap);
-  };image.addEventListener('load',()=>{if(image.hasAttribute('src')){image.hidden=false;image.style.opacity='1';}});image.addEventListener('error',()=>{image.hidden=true;});update();cardUpdates.set(card,update);
+  };image.addEventListener('load',()=>{if(image.hasAttribute('src')){image.hidden=false;image.style.opacity='1';previewStatus.hidden=true;}});image.addEventListener('error',()=>{image.hidden=true;image.removeAttribute('src');previewStatus.hidden=false;previewStatus.textContent='Preview temporarily unavailable';});update();cardUpdates.set(card,update);
   card.append(art,info);const wrapper=element('div',null,'coin-collectible-wrapper');wrapper.append(card);grid.append(wrapper);
  }
  $('coin-gallery-empty').hidden=items.length>0;more.hidden=items.length<=visible;more.textContent='Load more · '+Math.min(visible,items.length)+' / '+items.length.toLocaleString();
