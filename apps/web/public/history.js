@@ -1,22 +1,22 @@
-import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=325';
+import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=439';
 import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=359';
 import {fetchGecko} from './gecko.js?v=277';
-const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro'};
+const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro',flow:'flow-evm',sei:'sei-evm','sei-network':'sei-evm',elrond:'multiversx'};
 export function loadHistory(market,onUpdate,options={}){
  if(isExchangeMarket(market))return loadExchangeHistory(market,onUpdate,options);
  let closed=false,timer,controller,directProvider=false;const rows=new Map();
  const created=Number(market.pairCreatedAt)||null,age=created?Date.now()-created:Infinity;
  const timeframe=options.timeframe||(age<86400000?'minute':age<30*86400000?'hour':'day');
- const aggregate=options.aggregate||1,maxPages=options.maxPages||20;
+ const aggregate=options.aggregate||1,maxPages=options.maxPages||3;
  const interval={minute:60000,hour:3600000,day:86400000}[timeframe]*aggregate;
  const key='av-history-v2:'+market.chainId+':'+market.pairAddress+':'+market.baseToken.address+':'+timeframe+':'+aggregate;
- const network=aliases[market.chainId]||market.chainId;
+ const network=market.geckoNetwork||aliases[market.chainId]||market.chainId;
  const base='https://upic-insightx.nchrl01.workers.dev/history';
  let before=Math.floor(Date.now()/1000)+1,pages=0,failures=0,cachedComplete=false,cachedLatest=null,cacheGap=false,pendingGap=null,latestSaved=0,freshCache=false;
  function report(state,message,detail={}){if(!closed)onUpdate({candles:[...rows.values()].sort((a,b)=>a.time-b.time),interval,timeframe,state,message,created,error:null,retrying:false,...detail});}
  function save(state,complete=false){void writeSavedHistory(key,{saved:Date.now(),latestSaved,candles:[...rows.values()].slice(-20000),state,timeframe,complete,gap:pendingGap});}
  async function page(){
-  if(closed)return;if(options.shouldFetch?.()===false){timer=setTimeout(page,1000);return;}controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),45000);let delay=0;
+  if(closed)return;if(options.shouldFetch?.()===false){timer=setTimeout(page,1000);return;}controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),25000);let delay=0;
   if(failures)report('loading','Retrying market history…',{retrying:true});
   try{
    const query=new URLSearchParams({network,pool:market.pairAddress,timeframe,aggregate:String(aggregate),limit:String(pages===0&&cachedLatest!==null?Math.min(1000,Math.max(10,Math.ceil((Date.now()-cachedLatest)/interval)+3)):1000),currency:'usd',token:market.baseToken.address,include_empty_intervals:'false'});
@@ -30,12 +30,14 @@ export function loadHistory(market,onUpdate,options={}){
    let r;
    if(directProvider)r=await direct();
    else{
-    try{r=await fetch(base+'?'+query,{signal:controller.signal,credentials:'omit'});}catch(error){if(controller.signal.aborted)throw error;r=new Response(null,{status:503});}
-    // The application's shared quota is separate from the provider's per-client
-    // quota. Only that shared-budget refusal permits the paced direct route.
+    const sharedTimeout=AbortSignal.timeout(6000);
+    try{r=await fetch(base+'?'+query,{signal:AbortSignal.any([controller.signal,sharedTimeout]),credentials:'omit'});}catch(error){if(controller.signal.aborted)throw error;r=new Response(null,{status:503});}
+    // The shared server and this browser have separate provider budgets. A
+    // shared cooldown must not block the browser's paced fallback; its own
+    // Retry-After is still honored by fetchGecko.
     let sharedQuota=false;
     if(r.status===429){const detail=await r.clone().json().catch(()=>null);sharedQuota=detail?.code==='SHARED_HISTORY_QUOTA'||detail?.error?.startsWith('Shared history quota is cooling down');}
-    if(sharedQuota||[404,502,503,504].includes(r.status)){
+    if(sharedQuota||[429,404,502,503,504].includes(r.status)){
      directProvider=true;report('loading','Loading market history from fallback provider…');r=await direct();
     }
    }
@@ -74,7 +76,7 @@ export function loadHistory(market,onUpdate,options={}){
    // Once new data overlaps the saved range, continue from its oldest edge.
    // If a gap remains, walk toward the saved range first.
    before=Math.floor((!cacheGap&&cachedLatest!=null?oldest:pageOldest)/1000);timer=setTimeout(page,delay);
-  }catch(error){if(closed)return;failures++;const retrying=failures<3;report(rows.size?'partial':'unavailable',error.message+' · launch history not confirmed',{error:error.message||'History refresh failed',retrying});if(retrying)timer=setTimeout(page,Math.max(delay,10000*2**failures));}
+  }catch(error){if(closed)return;failures++;const retrying=failures<3;report(rows.size?'partial':'unavailable',error.message+' · launch history not confirmed',{error:error.message||'History refresh failed',retrying});if(retrying)timer=setTimeout(page,Math.max(delay,1000*2**failures));}
   finally{clearTimeout(timeout);}
  }
  async function start(){

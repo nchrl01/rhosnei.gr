@@ -1,7 +1,7 @@
-import {contractPlayerURL} from './collectible-selection.js?v=438';
+import {contractPlayerURL} from './collectible-selection.js?v=439';
 // One static, timestamped catalogue. Opening the browser does not poll 1,000 coins.
 let pending;
-export function loadCoinCatalogue(){return pending??=fetch('marketplace-coin-catalogue.json?v=438',{credentials:'same-origin'}).then(async response=>{if(!response.ok)throw Error('Coin catalogue unavailable');const data=await response.json();if(!Array.isArray(data.coins))throw Error('Invalid coin catalogue');return data;}).catch(error=>{pending=null;throw error;});}
+export function loadCoinCatalogue(){return pending??=fetch('marketplace-coin-catalogue.json?v=439',{credentials:'same-origin'}).then(async response=>{if(!response.ok)throw Error('Coin catalogue unavailable');const data=await response.json();if(!Array.isArray(data.coins))throw Error('Invalid coin catalogue');return data;}).catch(error=>{pending=null;throw error;});}
 const nativeOnNetwork=(item,network)=>Boolean(network&&(item.nativeChain===network||item.nativeChains?.includes(network)||(item.contractStatus==='native'&&!item.nativeChain&&!item.nativeChains?.length&&item.chain===network)));
 export const coinPlayerURL=contractPlayerURL;
 

@@ -1,9 +1,9 @@
-import {nativeContractReference} from './native-contracts.js?v=438';
+import {nativeContractReference} from './native-contracts.js?v=439';
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
-import {rememberRecentCoin} from './coin-catalogue.js?v=438';
-import {archivePlayerFrames} from './coin-snapshot-store.js?v=438';
+import {rememberRecentCoin} from './coin-catalogue.js?v=439';
+import {archivePlayerFrames} from './coin-snapshot-store.js?v=439';
 import {bindSearchField} from './search-field.js?v=394';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
@@ -13,11 +13,11 @@ import {createUIControls} from './ui-controls.js?v=405';
 import {isExchangeMarket,isExchangeQuery,searchExchangeMarkets,prepareExchangeMarket,subscribeExchangeMarket} from './ccxt-market.js?v=359';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
 import {bindPlaybackShortcuts} from './playback-shortcuts.js?v=397';
-import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=438';
-import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=438';
+import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=439';
+import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search.js?v=439';
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
-import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=438';
+import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=439';
 import {pianoHarmony} from './music-context.js?v=208';
 import {createEnvion} from './envion.js?v=258';
 import {createEngineView} from './engine-view.js?v=306';
@@ -25,11 +25,11 @@ import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=438';
-import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=438';
-import {createNftOwnerPreview} from './nft-owner-preview.js?v=438';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=439';
+import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=439';
+import {createNftOwnerPreview} from './nft-owner-preview.js?v=439';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
-import {createDataSonification} from './data-sonification.js?v=438';
+import {createDataSonification} from './data-sonification.js?v=439';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
 import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=220';
 import {contextualizeMarket} from './market-state.js?v=208';
@@ -44,7 +44,7 @@ import {subscribeRobinhoodV4} from './v4.js?v=135';
 import {fetchGecko} from './gecko.js?v=277';
 import {startTrending,geckoPoolMarket} from './trending.js?v=391';
 import {MarketChart} from './chart.js?v=403';
-import {loadHistory} from './history.js?v=356';
+import {loadHistory} from './history.js?v=439';
 import {pollPoolTrades} from './trades.js?v=277';
 const $=id=>document.getElementById(id);
 // The trusted publisher captures this player silently. Normal visits do not
@@ -619,8 +619,8 @@ function setHistoryLoading(data={}){
  const message=$('player-history-message');message.hidden=true;message.inert=true;message.querySelector('span').textContent='';
  $('player-history-retry').hidden=true;
 
- if(pendingHistoryReplay&&failed&&!data.retrying&&!historyReplayReady()){
-  pendingHistoryReplay=false;status('History unavailable · retry history to replay');updateReplayUI({});
+ if(pendingHistoryReplay&&(failed||!busy&&!waiting)&&(data.candles?.length||0)<2&&!data.retrying&&!historyReplayReady()){
+  pendingHistoryReplay=false;status(failed?'History unavailable · retry history to replay':has?'Not enough historical candles to replay · retry history':'No historical candles returned · retry history');updateReplayUI({});
  }
  host.hidden=has&&!busy&&!failed&&!waiting;host.dataset.partial=String(has);host.classList.toggle('is-loading',busy);$('market-chart').setAttribute('aria-busy',String(busy));
  $('history-loading-label').textContent=waiting?data.message:failed?(has?'History refresh delayed · showing loaded candles':'History delayed')+(data.retrying?' · retrying automatically':' · retry available'):has?'Updating earlier prices…':busy?'Loading earlier prices…':'No earlier prices available';
@@ -987,7 +987,7 @@ chart.onReplayPanEnd=()=>{replay.release();};
 function restartHistory(){
  if(!historyReplayReady()){
   pendingHistoryReplay=true;primeAudio();status('Loading history for replay');
-  if(!contextHistoryState||contextHistoryState.error)startHistory(market);
+  if(!contextHistoryState||contextHistoryState.error||!['loading','cached','waiting'].includes(contextHistoryState.state))startHistory(market);
   updateReplayUI({});return;
  }
  chart.draw();seekHistory((replay.state.frozen?.bars||chart.history)[0]);

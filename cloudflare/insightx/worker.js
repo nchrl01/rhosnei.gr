@@ -167,7 +167,7 @@ export default {
 // each spend a separate allowance. API credentials never leave this Worker.
 export class HolderCache extends DurableObject {
  constructor(ctx,env){
-  super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env);this.summaries=new CoinSummary(this.sql,env);
+  super(ctx,env);this.sql=ctx.storage.sql;this.inflight=new Map();this.history=new SharedHistoryCache(this.sql,env,{waitUntil:task=>ctx.waitUntil(task)});this.summaries=new CoinSummary(this.sql,env);
   this.visualHistory=new VisualHistory(this.sql);this.captures=new CoinCaptures(ctx,this.visualHistory);this.balanceRelay=new HolderBalanceRelay(this.sql,env);this.nativeHolders=new NativeHolderRelay(this.sql,env);
   this.sql.exec('CREATE TABLE IF NOT EXISTS snapshots (key TEXT PRIMARY KEY, payload TEXT, fetched INTEGER, retry INTEGER)');
   this.sql.exec('CREATE TABLE IF NOT EXISTS budget (day INTEGER PRIMARY KEY, used INTEGER)');
