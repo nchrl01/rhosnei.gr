@@ -1,4 +1,4 @@
-import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=443';
+import {readSavedHistory,writeSavedHistory,HISTORY_RETENTION_MS} from './history-cache.js?v=444';
 import {isExchangeMarket,loadExchangeHistory} from './ccxt-market.js?v=359';
 import {fetchGecko} from './gecko.js?v=277';
 const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',arbitrum:'arbitrum',cronos:'cro',flow:'flow-evm',sei:'sei-evm','sei-network':'sei-evm',elrond:'multiversx'};

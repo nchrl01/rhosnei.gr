@@ -1,4 +1,4 @@
-import {getWalletAccount,subscribeWalletAccount,openWalletConnection} from './wallet-session.js?v=443';
+import {getWalletAccount,subscribeWalletAccount,openWalletConnection} from './wallet-session.js?v=444';
 let opening,statusIndex=0;
 
 // Keep wallet initialization independent of the page's market and audio engines.

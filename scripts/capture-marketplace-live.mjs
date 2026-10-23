@@ -50,10 +50,6 @@ if(options.contractsOnly)candidates=candidates.filter(coin=>{
  if(ref)return keyFor(coin.chain,coin.address)===keyFor(ref.chain,ref.address);
  return coin.address&&coin.address!=='native'&&!coin.address.startsWith('native:')&&coin.contractStatus!=='off-chain';
 });
-if(options.collectibles){
- const targets=new Set(genesisCollectibles(catalogue.coins).map(c=>collectiblePreview(c).selection?.key).filter(Boolean));
- candidates=candidates.filter(c=>targets.has(c.key));
-}
 if(options.ids){
  const selected=new Map();
  for(const query of options.ids){
@@ -76,6 +72,14 @@ async function loadManifest(){
  }while(cursor);
 }
 try{await loadManifest();}catch(error){if(options.publish&&!options.dryRun)throw error;console.log(String(error.message)+'; local run will not assume existing captures.');}
+if(options.collectibles&&!options.ids){
+ const ranked=genesisCollectibles(catalogue.coins,Infinity);
+ const targets=new Set(ranked.slice(0,100).map(c=>collectiblePreview(c).selection.key));
+ // Refresh the displayed, captured replacements too; keep retrying higher
+ // ranked missing coins without starving the working collection.
+ for(const coin of ranked.filter(c=>manifest.has(collectiblePreview(c).selection.key)).slice(0,100))targets.add(collectiblePreview(coin).selection.key);
+ candidates=candidates.filter(c=>targets.has(c.key));
+}
 const unsupported=candidates.filter(c=>!supported(c)).map(c=>({id:c.id,key:c.key,symbol:c.symbol,reason:'No observed-holder provider for this network/identifier'}));
 const supportedCoins=candidates.filter(supported),priority=['HI','COVENANT','JEANPHIL','PEPE','SHIB'];
 const priorityFor=c=>{const index=priority.indexOf(c.symbol);return index<0?priority.length:index;};
