@@ -71,3 +71,7 @@
 .upic-login-resume>header button{flex:none;width:44px;height:44px;padding:0;border:0;background:transparent;color:inherit;font:inherit;font-size:28px}
 .upic-login-resume>p{margin:16px 0 24px;font:inherit;line-height:1.5;color:#aaa}
 .upic-login-resume .upic-login-continue{width:100%;min-height:48px;border:1px solid #666;background:transparent;color:inherit;font:inherit;text-transform:uppercase}
+
+/* Preserve sentence case and lowercase glyphs throughout the profile library. */
+.profile-library{font-family:UnifontText,var(--font-family);text-transform:none}
+.profile-content .profile-library :is(.profile-refresh,.profile-retry){font-family:inherit;text-transform:none}
