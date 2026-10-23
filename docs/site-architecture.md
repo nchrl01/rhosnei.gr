@@ -3,7 +3,7 @@
 ## Shared page shell
 
 The public website is a static application. Every page receives its header from
-`src/site/` through `scripts/build-site-shell.mjs`. Public pages also receive the
+`apps/web/legacy/site/` through `scripts/build-site-shell.mjs`. Public pages also receive the
 same footer. Labs retain their own working toolbars and listening controls.
 
 Run `npm run build:site` after editing a shell template. `npm start` and the
@@ -33,7 +33,7 @@ wallet SDK's scoped theme tokens; provider UI stays inside the SDK.
 
 ## Behavior ownership
 
-- `src/site/page-entry.js` and `intro.html`: the shared horizontal split/fade
+- `apps/web/legacy/site/page-entry.js` and `intro.html`: the shared horizontal split/fade
   reveal. The build inlines the arrival decision before page paint, with no
   runtime request. Direct visits, external links and reloads reveal; internal
   navigation and back/forward skip. A one-use same-tab link marker supplements
@@ -49,7 +49,7 @@ wallet SDK's scoped theme tokens; provider UI stays inside the SDK.
 - `ui-controls.js`: optional React clock and loaders for the main player. The
   presentation bundle does not block market or audio initialization.
 - `wallet-connect.js`: lazy configuration and wallet SDK loading after a click.
-  `src/wallet/connect.js` owns SDK setup and account updates.
+  `apps/web/legacy/wallet/connect.js` owns SDK setup and account updates.
 - `footer-prices.js`: cached spot quotes, with polling suspended in hidden tabs.
 
 Page modules own their market requests, playback and lab state. They do not
@@ -58,7 +58,7 @@ their existing data mappings; shell changes do not alter those mappings.
 
 ## Publishing
 
-GitHub Pages builds the shared static shell and publishes `public/`. Wallet SDK
+GitHub Pages builds the shared static shell and publishes `apps/web/public/`. Wallet SDK
 assets are compiled separately with `node scripts/build-wallet.mjs` when its
 source changes. Font, image, audio and vendor licensing remains with the assets.
 No API credentials belong in the public build.

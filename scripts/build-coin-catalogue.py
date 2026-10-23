@@ -112,3 +112,6 @@ print('Identity coverage:',json.dumps(statuses),'identifiers:',audit['platformId
 # Keep the cloud write allowlist in step with the gallery's exact identities.
 capture_rows=[{k:c.get(k) for k in ('id','key','chain','address','symbol','name','platforms')} for c in coins]
 (ROOT/'cloudflare/insightx/coin-capture-catalogue.json').write_text(json.dumps({'asOf':now,'coins':capture_rows},separators=(',',':'),ensure_ascii=False)+'\n')
+
+# Preserve verified collectible counterparts after each catalogue rebuild.
+subprocess.run(['node',str(ROOT/'scripts/attach-collectible-contracts.mjs')],check=True)

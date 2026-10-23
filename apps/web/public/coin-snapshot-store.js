@@ -13,37 +13,44 @@ function publishCapture(frame){
  document.dispatchEvent(new CustomEvent('upic:snapshot-saved',{detail:{key:frame.key,capturedAt:frame.capturedAt,frame}}));return true;
 }
 // Inspect the copied pixels without changing their brightness or geometry.
-export function meaningfulCapture(canvas){
+export function meaningfulCapture(canvas,{verifiedMarks=0}={}){
  const width=canvas.width,height=canvas.height;if(!(width>0&&height>0))return false;
  const pixels=canvas.getContext('2d')?.getImageData(0,0,width,height).data;if(!pixels)return false;
  let lit=0,peak=0,energy=0;
  for(let i=0;i<pixels.length;i+=4){const brightness=Math.max(pixels[i],pixels[i+1],pixels[i+2])*pixels[i+3]/255;peak=Math.max(peak,brightness);energy+=brightness;if(brightness>=32)lit++;}
- return peak>=64&&lit>=Math.max(64,Math.ceil(width*height*.0005))&&energy>=width*height*.08;
+ // Observed low-population fields can legitimately contain only a few pixels.
+ // Their provenance/readiness is checked by archivePlayerFrames before this call.
+ // Never reject those frames just because they are less dense than a large coin.
+ const observed=Number.isSafeInteger(verifiedMarks)&&verifiedMarks>0;
+ return observed?peak>=64&&lit>=1&&energy>=64:peak>=64&&lit>=Math.max(64,Math.ceil(width*height*.0005))&&energy>=width*height*.08;
 }
-export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligible}){
+export function archivePlayerFrames({captureMode=false,getMarket,getVisual,eligible,onStatus=()=>{}}){
  if(!captureMode)return()=>{};
- let busy=false,closed=false,readyKey='',readySince=0;const lastAt=new Map();
+ let busy=false,closed=false,readyKey='',readySince=0,attempts=0;const lastAt=new Map();
+ const status=(state,reason,extra={})=>onStatus({state,reason,attempts,at:Date.now(),...extra});
  const resetReady=()=>{readyKey='';readySince=0;};
  async function capture(){
   if(closed||busy)return;
-  if(document.hidden||!eligible()){resetReady();return;}
+  if(document.hidden||!eligible()){resetReady();status('waiting',document.hidden?'document-hidden':'player-ineligible');return;}
   const market=getMarket(),visual=getVisual(),state=visual?.snapshot(),address=market?.nativeAsset?.address||market?.baseToken?.address,chain=market?.nativeAsset?.chain||market?.chainId;
-  if(!market||!address||!state){resetReady();return;}const key=keyFor(chain,address),now=Date.now();
-  if(state.sourceCoinKey!==key||state.renderedPlaying!==true||state.holderSnapshotReady!==true||state.holderSource!=='observed-wallet-sample'||state.holderLoading||!(state.markCount>0)||!(state.transportPresence>=.99)){resetReady();return;}
-  if(!Number.isFinite(state.renderedAt)||now-state.renderedAt<0||now-state.renderedAt>2000){resetReady();return;}
+  if(!market||!address||!state){resetReady();status('waiting','market-unavailable');return;}const key=keyFor(chain,address),now=Date.now();
+  if(state.sourceCoinKey!==key||state.renderedPlaying!==true||state.holderSnapshotReady!==true||state.holderSource!=='observed-wallet-sample'||state.holderLoading||!(state.markCount>0)||!(state.transportPresence>=.99)){resetReady();status('waiting','live-holder-frame-not-ready');return;}
+  if(!Number.isFinite(state.renderedAt)||now-state.renderedAt<0||now-state.renderedAt>2000){resetReady();status('waiting','render-timestamp-stale');return;}
   // Let the actual playing field settle before its first capture. New market
   // ticks keep this clock running; losing holder or transport readiness resets it.
   if(readyKey!==key||state.renderedAt<readySince){readyKey=key;readySince=state.renderedAt;}
-  if(state.renderedAt-readySince<5000||now-(lastAt.get(key)||0)<60000)return;
-  busy=true;let frame;
+  if(state.renderedAt-readySince<5000||now-(lastAt.get(key)||0)<60000){status('waiting','settling-live-frame');return;}
+  busy=true;attempts++;let frame;
   try{
-   frame=visual.captureStill(512);if(!meaningfulCapture(frame))return;
+   frame=visual.captureStill(512);if(!meaningfulCapture(frame,{verifiedMarks:state.markCount})){status('rejected','empty-or-insufficient-live-pixels',{markCount:state.markCount});return;}
    const blob=await new Promise(resolve=>frame.toBlob(resolve,'image/webp',.86));
-   if(closed||!blob||getMarket()!==market||document.hidden||!eligible())return;
-   const current=visual.snapshot();if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderLoading)return;
+   if(closed||!blob||getMarket()!==market||document.hidden||!eligible()){status('rejected','capture-context-changed-during-encoding');return;}
+   const current=visual.snapshot(),completedAt=Date.now();
+   if(current.sourceCoinKey!==key||current.renderedPlaying!==true||current.holderSnapshotReady!==true||current.holderSource!=='observed-wallet-sample'||current.holderLoading||!(current.markCount>0)||!(current.transportPresence>=.99)||!Number.isFinite(current.renderedAt)||completedAt-current.renderedAt<0||completedAt-current.renderedAt>2000){status('rejected','live-frame-changed-during-encoding');return;}
    const saved=publishCapture({key,chain,address,symbol:market.baseToken.symbol,name:market.baseToken.name||market.baseToken.symbol,marketCap:state.marketCap,liquidity:state.liquidity,holders:state.totalHolders,capturedAt:state.renderedAt,holderFetchedAt:state.holderFetchedAt??null,marketObservedAt:state.marketObservedAt??null,source:'Live UPIC player frame',imageAvailable:state.imageAvailable===true,coverage:state.holderCoverage,captureKind:KIND,blob});
+   status(saved?'captured':'rejected',saved?'live-frame-ready':'invalid-capture-payload',{markCount:state.markCount});
    if(saved){lastAt.set(key,state.renderedAt);if(lastAt.size>LIMIT)lastAt.delete(lastAt.keys().next().value);}
-  }catch{}finally{if(frame)frame.width=frame.height=1;busy=false;}
+  }catch(error){status('rejected',String(error?.message||error).slice(0,300));}finally{if(frame)frame.width=frame.height=1;busy=false;}
  }
  const timer=setInterval(capture,1000);void capture();return()=>{closed=true;clearInterval(timer);};
 }

@@ -8,7 +8,7 @@ const establishedNetworks=['ethereum','solana','bsc','base','arbitrum','polygon'
 const nativeIdentity=(coin,candidate)=>(!candidate.address||candidate.address==='native'||candidate.address.startsWith('native:'))&&(coin.nativeChain===candidate.chain||coin.nativeChains?.includes(candidate.chain)||coin.contractStatus==='native'&&coin.chain===candidate.chain);
 export function supportedCoinNetwork(coin,candidate){
  if(nativeIdentity(coin,candidate))return true;
- return Boolean(candidate.chain&&candidate.address&&validHolderToken(candidate.chain,candidate.address)&&(explorers.has(candidate.chain)||candidate.chain==='solana'||HOLDER_NETWORKS[aliases[candidate.chain]||candidate.chain]));
+ return Boolean(candidate.chain&&candidate.address&&validHolderToken(candidate.chain,candidate.address)&&(explorers.has(candidate.chain)||candidate.chain==='xdc'||candidate.chain==='solana'||HOLDER_NETWORKS[aliases[candidate.chain]||candidate.chain]));
 }
 export function networkPreference(coin,candidate){
  if(nativeIdentity(coin,candidate))return 2;

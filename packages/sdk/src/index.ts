@@ -1,4 +1,5 @@
 import {encodeAbiParameters,keccak256,stringToHex,parseAbi,type Address,type Hex} from 'viem';
+import {ENGINE_VERSION} from '@upic/domain';
 export * from '@upic/domain';
 export const factoryAbi=parseAbi([
  'function collections(bytes32) view returns (address)',
@@ -45,4 +46,4 @@ export const orderTypes={Order:[{name:'seller',type:'address'},{name:'collection
 export function assetKey(sourceChain:number,token:Address){return keccak256(encodeAbiParameters([{type:'uint256'},{type:'address'}],[BigInt(sourceChain),token]));}
 export function seedFor(chainId:number,factory:Address,key:Hex,edition:number){return keccak256(encodeAbiParameters([{type:'string'},{type:'uint256'},{type:'address'},{type:'bytes32'},{type:'uint256'}],['upic-nft-v1',BigInt(chainId),factory,key,BigInt(edition)]));}
 export const domain=(name:string,chainId:number,verifyingContract:Address)=>({name,version:'1',chainId,verifyingContract});
-export const engineHash=keccak256(stringToHex('upic-nft-v1'));
+export const engineHash=keccak256(stringToHex(ENGINE_VERSION));

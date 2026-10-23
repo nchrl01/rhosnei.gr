@@ -49,6 +49,12 @@ export default {
   const url=new URL(request.url);
   if(url.pathname==='/robots.txt')return new Response('User-agent: *\nDisallow: /\n',{headers:{'Content-Type':'text/plain',...NOINDEX}});
   if(!await verifyAccess(request,env))return new Response('Forbidden',{status:403,headers:NOINDEX});
+  // The staging home remains the testnet desk. Public instrument links carry a coin query;
+  // keep those deep links working without sending them into the platform gallery.
+  if(['GET','HEAD'].includes(request.method)&&['/','/index.html'].includes(url.pathname)&&url.searchParams.get('coin')){
+   url.pathname='/instrument';
+   return withHeaders(new Response(null,{status:307,headers:{Location:url.href,'Cache-Control':'no-store'}}));
+  }
   if(url.pathname==='/config/deployment.json'){
    if(!env.DEPLOYMENT_JSON)return Response.json({error:'not-deployed'},{status:404,headers:NOINDEX});
    return new Response(env.DEPLOYMENT_JSON,{headers:{'Content-Type':'application/json','Cache-Control':'no-store',...NOINDEX}});
@@ -65,6 +71,7 @@ export default {
     const upstream=await fetch(env.CAPTURE_SOURCE.replace(/\/$/,'')+inner+url.search,{headers:{Accept:request.headers.get('Accept')||'*/*'}});
     return withHeaders(upstream,{...NOINDEX,'Access-Control-Allow-Origin':url.origin});
    }
+   if(!env.DATA)return Response.json({error:'data-service-not-deployed'},{status:503,headers:NOINDEX});
    return withHeaders(await forward(env.DATA,request,'/x'));
   }
   return withHeaders(await env.ASSETS.fetch(request));

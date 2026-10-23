@@ -4,18 +4,21 @@ export function orchestraTempo(m){return m.music?.tempo??40;}
 export const ORCHESTRA_LAYERS=['melody'];
 export const ORCHESTRA_BUNDLES={envion:['melody']};
 export function createOrchestraConductor(){
- let ticks=0,lastTime=null,level=0,enabled=true;
+ let ticks=0,lastTime=null,level=0,enabled=true,phraseGain=1;
  return {
   observe(name,value){if(name==='generation'&&Number.isFinite(value))ticks=Math.max(0,value);},
   setBundle(name,value){if(name==='envion')enabled=Boolean(value);},
   update(m,connected,now=performance.now()){
-   const activity=unit(m.activity)*(connected?1:unit(m.fresh));
+   const arrangement=m.arrangement,rest=Boolean(arrangement?.active&&arrangement.rest);
+   // Phrase dynamics shape the texture, while a rest stops source attacks in
+   // Envion. Hold this output gain through the breath to preserve its tails.
+   if(!rest)phraseGain=arrangement?.active?unit(arrangement.layers?.envion??arrangement.phraseGain??1):1;
    const tradingActivity=unit(m.tradingActivity??m.raw?.activity??m.activity);
-   const target=enabled ? .38*unit(m.music?.intensity)*unit(m.fresh)*tradingActivity:0;
+   const target=enabled ? .38*unit(m.music?.intensity)*unit(m.fresh)*tradingActivity*phraseGain:0;
    const elapsed=lastTime===null?150:Math.max(0,Math.min(1000,now-lastTime));lastTime=now;
    level+=(target-level)*(1-Math.exp(-elapsed/650));
    return {levels:{melody:level},parameters:{},phrase:Math.floor(ticks/32)%4,state:unit(m.fresh)<.1?'SIGNAL FADING':unit(m.music?.intensity)>.65?'INTENSE':unit(m.music?.intensity)>.35?'ACTIVE':'SPARSE'};
   },
-  reset(){ticks=0;lastTime=null;level=0;},
+  reset(){ticks=0;lastTime=null;level=0;phraseGain=1;},
  };
 }

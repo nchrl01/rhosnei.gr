@@ -1,11 +1,11 @@
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {describe,expect,it,vi} from 'vitest';
+import {searchNetworks} from '../public/network-marks.js';
 
 // Run the production saved-list handlers without starting feeds or the player.
 const source=readFileSync(new URL('../public/mobile-search.js',import.meta.url),'utf8');
 const helpers=source.slice(source.indexOf(' function selectSaved('),source.indexOf(' function paintRecent('));
-const networkHelpers=source.slice(source.indexOf('const networkMarks='),source.indexOf('const money='));
 const networkHandler=source.slice(source.indexOf(' function paintNetworks(){'),source.indexOf(' function paint(){'));
 const paintHandler=source.slice(source.indexOf(' function paint(){'),source.indexOf(' function setCategory('));
 const categoryHandler=source.slice(source.indexOf(' function setCategory('),source.indexOf(' for(const [key,label]'));
@@ -30,7 +30,7 @@ function fixture(initial=[dex,native]){
   focus(){document.activeElement=this;}
  }
  const context=vm.createContext({
-  document,Event,CustomEvent,rows:[...initial],input:new Element('input'),
+  document,Event,CustomEvent,searchNetworks,rows:[...initial],input:new Element('input'),
   desktop:true,desktopOpen:true,desktopPanel:new Element('section'),desktopSaved:new Element('section'),dialog:{open:true,dataset:{}},mobile:{matches:true},open:vi.fn(),
   tabs:new Element('div'),category:'coins',visible:30,network:new Element('select'),filters:new Element('button'),results:new Element('div'),catalogue:[],trending:[],
   filterPanel:new Element('div'),filterNodes:[],recent:new Element('section'),chips:new Element('div'),suggestions:new Element('div'),status:new Element('p'),more:new Element('button'),
@@ -44,11 +44,16 @@ function fixture(initial=[dex,native]){
  context.network.value='all';context.filters.open=false;
  const all=new Element('option','All networks');all.value='all';context.network.append(all);
  for(const key of ['coins','trending','saved']){const button=new Element('button');button.dataset.category=key;context.tabs.append(button);}
- vm.runInContext(networkHelpers+networkHandler+helpers+categoryHandler,context);
+ vm.runInContext(networkHandler+helpers+categoryHandler,context);
  return {context,document,container:new Element('section')};
 }
 
 describe('saved search lists',()=>{
+ it('shares real local Sui, XDC and KCC logos without requiring native metadata',()=>{
+  const networks=searchNetworks([{chain:'sui'},{chain:'xdc'},{chain:'kcc'}]);
+  expect(Object.fromEntries(networks.map(row=>[row.chain,row.image]))).toEqual({sui:'images/networks/sui.png',xdc:'images/networks/xdc.png',kcc:'images/networks/kcc.png'});
+  for(const row of networks)expect(readFileSync(new URL('../public/'+row.image,import.meta.url)).length).toBeGreaterThan(100);
+ });
  it('filters saved identity locally by address, network, symbol and exchange venue',()=>{
   const {context:c}=fixture();
   for(const [query,key] of [['0X123',dex.key],['TEST',dex.key],['kraken',native.key],['ETH/USD',native.key]]){

@@ -13,13 +13,15 @@ function fixture({playing=false}={}){
   if(!elements.has(id))elements.set(id,{
    value:'',hidden:false,dataset:{searchNetwork:'all'},attributes:{},events:new Map(),
    setAttribute(name,value){this.attributes[name]=value;},
+   removeAttribute(name){delete this.attributes[name];},
    addEventListener(type,fn){this.events.set(type,fn);},
    querySelector(){return null;},
+   replaceChildren(...children){this.children=children;this.textContent=children.map(child=>child.textContent||'').join('');},
   });
   return elements.get(id);
  };
  const context=vm.createContext({
-  $,document:{addEventListener:(type,fn)=>events.set(type,fn)},AbortController,URLSearchParams,
+  $,document:{addEventListener:(type,fn)=>events.set(type,fn),createElement:()=>({textContent:''})},AbortController,URLSearchParams,
   navigator:{clipboard:{writeText:vi.fn(async()=>{})}},
   playing,ctx:{state:playing?'running':'suspended'},
   loading:false,searchRevision:0,searchController:null,liveConnection:null,discovered:[],captureMode:false,
@@ -150,7 +152,7 @@ describe('search playback intent',()=>{
   f.context.findOnchainMarkets=vi.fn(()=>new Promise(done=>{resolve=done;}));
   const restoring=f.restore('/?coin=0x123&network=ethereum');
   expect(f.$('address').value).toBe('');
-  expect(f.$('coin-address')).toMatchObject({hidden:false,textContent:'ethereum · 0x123',dataset:expect.objectContaining({address:'0x123'})});
+  expect(f.$('coin-address')).toMatchObject({hidden:false,textContent:'ETHEREUM · 0x123',dataset:expect.objectContaining({address:'0x123'})});
   expect(f.$('play').onclick).not.toHaveBeenCalled();
   resolve([coin]);await restoring;
   expect(f.context.market).toBe(coin);expect(f.$('address').value).toBe('');
@@ -159,7 +161,7 @@ describe('search playback intent',()=>{
  it('keeps the full address available for copying behind a compact label',async()=>{
   const f=fixture(),address='0x39dbed3a2bd333467115de45665cc57f813c4571';
   f.context.showCoinAddress(address,'ethereum');
-  expect(f.$('coin-address').textContent).toBe('ethereum · 0x39dbed…3c4571');
+  expect(f.$('coin-address').textContent).toBe('ETHEREUM · 0x39dbed…3c4571');
   expect(f.$('coin-address').attributes['aria-label']).toBe('Copy coin address '+address);
   await f.$('coin-address').events.get('click')();
   expect(f.context.navigator.clipboard.writeText).toHaveBeenCalledWith(address);
@@ -171,7 +173,7 @@ describe('search playback intent',()=>{
  });
  it('places the compact address after the coin name, outside the search form',()=>{
   const html=readFileSync(new URL('../public/instrument.html',import.meta.url),'utf8');
-  expect(html).toMatch(/<h2 id="coin-name"><\/h2><button[^>]+id="coin-address"/);
+  expect(html).toMatch(/<h2 id="coin-name"><\/h2><div[^>]+id="coin-address-row"[^>]*><button[^>]+id="coin-address"/);
   const form=html.slice(html.indexOf('<form id="coin-form"'),html.indexOf('</form>',html.indexOf('<form id="coin-form"')));
   expect(form).not.toContain('id="coin-address"');
  });

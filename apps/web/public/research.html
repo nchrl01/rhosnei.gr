@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Algorithmic music research and references informing UPIC’s audiovisual instrument.">
+<title>Research · UPIC</title>
+<link rel="preload" href="fonts/Unifont/Unifont.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">
+<!-- site-shell:entry:start -->
+<script>
+// Runs inline after each page's <base>, before its content is painted.
+(() => {
+  const appRoot = new URL('./', document.baseURI);
+  const markerKey = 'av-internal-arrival';
+  const isInternal = url => url.origin === appRoot.origin && (
+    url.pathname === appRoot.pathname.replace(/\/$/, '') ||
+    url.pathname.startsWith(appRoot.pathname)
+  );
+  const destination = url => {
+    const normalized = new URL(url);
+    normalized.hash = '';
+    return normalized.href;
+  };
+  let internalClick = false;
+  try {
+    const marker = JSON.parse(sessionStorage.getItem(markerKey) || 'null');
+    sessionStorage.removeItem(markerKey);
+    const age = marker ? Date.now() - marker.time : -1;
+    internalClick = age >= 0 && age < 60000 && marker.to === destination(location.href);
+  } catch { /* Referrer detection still works when storage is unavailable. */ }
+
+  let internalReferrer = false;
+  try {
+    internalReferrer = Boolean(document.referrer) && isInternal(new URL(document.referrer));
+  } catch { /* Missing or invalid referrers count as direct arrivals. */ }
+  const navigation = performance.getEntriesByType?.('navigation')[0]?.type;
+  const shouldReveal = navigation !== 'back_forward' && (
+    navigation === 'reload' || (!internalClick && !internalReferrer)
+  );
+  if (shouldReveal) document.documentElement.dataset.pageEntry = 'arrival';
+
+  document.addEventListener('click', event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey ||
+        event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest?.('a[href]');
+    if (!link || link.hasAttribute('download') ||
+        (link.target && link.target.toLowerCase() !== '_self')) return;
+    const target = new URL(link.href, document.baseURI);
+    if (!isInternal(target) || destination(target) === destination(location.href)) return;
+    try {
+      sessionStorage.setItem(markerKey, JSON.stringify({ to: destination(target), time: Date.now() }));
+    } catch { /* The same-app referrer remains the fallback. */ }
+  });
+  window.addEventListener('pageshow', event => {
+    if (event.persisted) delete document.documentElement.dataset.pageEntry;
+  });
+})();
+</script>
+<!-- site-shell:entry:end -->
+<!-- site-shell:styles:start -->
+<link rel="stylesheet" href="foundation.css?v=454">
+<link rel="stylesheet" href="style.css?v=448">
+<link rel="stylesheet" href="ui-controls.css?v=448">
+<link rel="stylesheet" href="research.css?v=448">
+<link rel="stylesheet" href="typography.css?v=448">
+<link rel="stylesheet" href="shared-navigation.css?v=457">
+<link rel="stylesheet" href="intro.css?v=448">
+<!-- site-shell:styles:end -->
+</head>
+<body class="credits-page research-page">
+<!-- site-shell:intro:start -->
+<div class="site-intro" aria-hidden="true" inert>
+  <span class="site-intro__veil"></span>
+  <span class="site-intro__curtain site-intro__curtain--top"></span>
+  <span class="site-intro__curtain site-intro__curtain--bottom"></span>
+</div>
+<!-- site-shell:intro:end -->
+<!-- site-shell:header:start -->
+<header class="site-navigation" aria-label="UPIC navigation"><div class="header-main"><a class="upic-brand site-navigation-brand" href="./" aria-label="UPIC home" title="UPIC"><span class="brand-icon" aria-hidden="true"><img src="upic-logo-transparent.svg?v=116" alt="" width="125" height="173" decoding="async" draggable="false"></span><span class="brand-name">UPIC <span class="brand-beta">(BETA)</span></span></a><div class="header-desktop-search" hidden></div><nav class="header-links" aria-label="Primary navigation"><a class="header-search" href="./#search" aria-label="Search coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a><a class="header-link" href="upic/marketplace/">Marketplace</a><a class="header-marketplace" href="upic/marketplace/" aria-label="Marketplace" title="Marketplace"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10v11h16V10M3 3h18l1 7a3 3 0 0 1-5 2 3 3 0 0 1-5 0 3 3 0 0 1-5 0 3 3 0 0 1-5-2l1-7Z"/><path d="M9 21v-6h6v6M8 3l-1 7M16 3l1 7"/></svg></a><div class="volume-widget"><button type="button" id="volume-button" aria-label="Volume" aria-expanded="false" aria-controls="volume-panel" title="Volume"><svg class="transport-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="volume-waves" d="M15 8a6 6 0 0 1 0 8"/><path class="volume-waves volume-wave-high" d="M18 5a10 10 0 0 1 0 14"/><path class="volume-muted" d="m16 9 6 6m0-6-6 6"/></svg></button><div id="volume-panel" hidden role="group" aria-label="Listening volume"><label for="master" class="volume-inline-label">Volume</label><input type="range" id="master" min="0" max="1" step=".01" value=".5" aria-label="Listening volume"><span id="master-value" class="volume-fallback-value">50%</span></div></div><button type="button" class="header-wallet" aria-label="Profile" title="Profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="9" r="3"/><path d="M5 18c1-5 13-5 14 0"/></svg></button></nav></div></header>
+<!-- site-shell:header:end -->
+<main class="credits-content" aria-labelledby="research-title">
+  <p><a href="about.html">← About</a> · <a href="credits.html">Technology, data sources and credits</a></p>
+  <h1 id="research-title">Research</h1>
+  <p>Algorithmic music begins with a system: rules for choosing notes, remembering phrases, shaping time and deciding when to remain silent. These references inform how UPIC turns changing market observations into musical form.</p>
+
+  <h2>Algorithmic Music Composing Techniques</h2>
+  <p><a href="https://www.youtube.com/watch?v=Tl85XW8wywU">“Algorithmic Music Composing Techniques” by Rolando Rampoldi</a> introduces chance, stochastic processes, Markov chains, genetic algorithms and live coding. It is a starting point for thinking about the composer as the designer of a musical process.</p>
+  <p>For a wider account, read Michael Edwards’s <a href="https://cacm.acm.org/research/algorithmic-composition/">Algorithmic Composition</a> and Jean-Louis Giavitto’s <a href="https://www.ircam.fr/en/magazine/a-brief-and-subjective-history-of-ai-technics-in-music-composition">A brief and subjective history of AI technics in music composition</a>. Both place contemporary systems within a longer history of composition, musical tools and collaboration.</p>
+
+  <h2>Rules and chance</h2>
+  <p>A deterministic process produces the same result from the same starting conditions. Transforming a motif, following a pitch sequence or enforcing a voice’s range can give a piece an identity that survives variation. Chance introduces alternatives within a chosen structure: a different fragment, rhythm or route through a phrase. Edwards discusses how such approaches can work together. <a href="https://www.pure.ed.ac.uk/ws/portalfiles/portal/16205214/algorithmic_composition_AM.pdf">Read the accepted manuscript</a>.</p>
+  <p>For UPIC, a stable coin seed can establish an identity while bounded choices provide variation. Repetition, an answering phrase and a recognisable return matter as much as producing new notes.</p>
+
+  <h2>Probability and musical movement</h2>
+  <p>Stochastic composition uses distributions to shape events: how often they occur, their register, duration or density. Xenakis explored probability alongside set theory and other formal processes. A changing mass of sound can be composed without prescribing every note individually. <a href="https://brahms.ircam.fr/fr/iannis-xenakis">IRCAM’s Xenakis reference</a>.</p>
+  <p>In a market instrument, observed activity can guide density and energy. Pitch and rhythm still need musical limits. Our design direction is to let a phrase absorb changing conditions gradually, with space for rests and endings.</p>
+
+  <h2>Memory and improvisation</h2>
+  <p>Tero Parviainen’s <a href="https://teropa.info/loop/#/title">How Generative Music Works</a> demonstrates phasing, musical rules, interaction and live-data sonification. His <a href="https://codepen.io/teropa/pen/PKoYXM">Stochastic Drum Machine</a> keeps a base pattern while probabilities vary its playback. UPIC applies this principle to original GB-style drums: the coin retains a groove while market observations shape density and deviations. Drum hits share the phrase clock, cadences and rests.</p>
+  <p>A Markov process chooses a next state using probabilities associated with its current context. Longer musical memory can preserve more than a local transition. IRCAM’s OMax analyses a performance and builds a navigable memory using a Factor Oracle, recombining material into an improvisation. <a href="https://www.stms-lab.fr/shop/product/omax/">OMax at STMS</a>.</p>
+  <p>For UPIC, the useful principle is to remember and transform a short motif: introduce it, answer it, vary it and bring it back. A coin should retain a musical character as its market changes.</p>
+
+  <h2>Coordinated voices and constraints</h2>
+  <p><a href="https://arxiv.org/pdf/1612.01010v1">DeepBach</a>, by Gaëtan Hadjeres and François Pachet, generates four-part chorales while allowing parts of the score to be fixed. Its representations include held notes and phrase-ending information; each voice is conditioned on musical context. It demonstrates how generation can remain steerable.</p>
+  <p>The lesson for a live instrument is to plan a short phrase so voices can respond to one another, share a pause and arrive at an ending. That requires musical look-ahead within a phrase, without predicting future market data.</p>
+
+  <h2>Gradual change and timbre</h2>
+  <p><a href="https://magenta.tensorflow.org/music-vae">MusicVAE</a> learns a space of musical sequences in which interpolation can produce intermediate patterns. It suggests a way to think about transitions between rhythmic or melodic ideas, rather than replacing a pattern abruptly.</p>
+  <p><a href="https://magenta.tensorflow.org/nsynth">NSynth</a> addresses a different layer: the sound of individual notes. <a href="https://www.orch-idea.org/intro/">Orchidea</a> searches for instrumental combinations that approximate a target sound. Composition, instrument design and orchestration are related choices, each with its own role. UPIC’s GB-style palette can remain distinct while its phrasing develops.</p>
+
+  <h2>Expression and human selection</h2>
+  <p>Pascal Dusapin’s <a href="https://www.youtube.com/watch?v=PJf7zEJVVsQ">Lullaby Experience</a> brings contributed voices, musical memory, composed scenarios and live musicians together. Breaths, individual intonation and the character of fragments become part of the work.</p>
+  <p>Daniele Ghisi’s <a href="https://www.danieleghisi.com/works/la-fabrique-des-monstres/">La Fabrique des Monstres</a> combines generated audio with selection and arrangement. Both projects make the composer’s decisions central. For UPIC, expression means connected phrases, varied articulation, coordinated rests and a considered relationship between layers.</p>
+
+  <h2>Early computer music</h2>
+  <p>The British Library’s account of the <a href="https://www.bl.uk/stories/blogs/posts/restoring-the-first-recording-of-computer-music">restored 1951 computer-music recording</a> documents a computer playing familiar melodies. It is an important distinction in this history: synthesising or performing music is different from composing it. <a href="https://soundcloud.com/the-british-library/first-recording-of-computer-music-1951-copeland-long-restoration">Listen to the restoration</a>.</p>
+
+  <h2>Research in UPIC</h2>
+  <p>UPIC connects market observations to phrase decisions, coordinated voices and the GB-style instruments. A recurring coin motif moves through introduction, answer, variation and return. Recent observations shape expression across bars; the voices share cadences and rests. Performed note attacks provide subtle visual accents on the same audio clock.</p>
+  <p>These are research references and design influences. The linked research systems are not bundled into UPIC. The current engine, its statistical MIDI model, sound sources and required notices are documented in <a href="credits.html">Technology, data sources and credits</a>.</p>
+</main>
+<!-- site-shell:footer:start -->
+<footer class="site-footer" aria-label="Site links"><nav class="footer-links" aria-label="Footer navigation"><a href="about.html">About</a><a href="help.html">Help / How it works</a><a href="report-issue.html" data-report-issue>Report issue</a><span class="footer-upcoming" aria-disabled="true">Platform Terms <small>Soon</small></span><span class="footer-upcoming" aria-disabled="true">Wallet &amp; Onramp Terms <small>Soon</small></span></nav><div class="footer-prices" aria-label="Current cryptocurrency prices in US dollars"><button type="button" class="footer-price-toggle" aria-label="Show SOL price" title="Switch to SOL"><span data-footer-coin="ETH">ETH <output data-spot="ETH">—</output></span><span data-footer-coin="SOL" hidden>SOL <output data-spot="SOL">—</output></span></button></div><nav class="footer-tools" aria-label="Community and account"><a href="https://x.com/upicdotapp" target="_blank" rel="noopener noreferrer" aria-label="UPIC on X">X</a><span class="footer-upcoming" aria-disabled="true">Discord <small>Soon</small></span><span class="footer-upcoming" aria-disabled="true">Telegram <small>Soon</small></span></nav></footer>
+<!-- site-shell:footer:end -->
+<!-- site-shell:scripts:start -->
+<script type="module" src="shared-header.js?v=456"></script>
+<!-- site-shell:scripts:end -->
+</body>
+</html>

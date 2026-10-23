@@ -12,7 +12,7 @@ export function historyRequest(url){
  return {network,pool:normalize(pool),token:normalize(token),frame,aggregate,limit,before,interval,key:JSON.stringify([network,normalize(pool),normalize(token),frame,aggregate,before??'latest'])};
 }
 export class SharedHistoryCache{
- constructor(sql,env){this.sql=sql;this.env=env;this.pending=new Map();
+ constructor(sql,env,{waitUntil}={}){this.sql=sql;this.env=env;this.waitUntil=waitUntil;this.pending=new Map();
   sql.exec('CREATE TABLE IF NOT EXISTS chart_pages (key TEXT PRIMARY KEY,payload TEXT NOT NULL,fetched INTEGER NOT NULL,expires INTEGER NOT NULL,bytes INTEGER NOT NULL)');
   sql.exec('CREATE TABLE IF NOT EXISTS chart_budget (day INTEGER PRIMARY KEY,used INTEGER NOT NULL,next INTEGER NOT NULL,blocked INTEGER NOT NULL)');
  }
@@ -20,7 +20,12 @@ export class SharedHistoryCache{
   const spec=historyRequest(url);if(!spec)return response({error:'Invalid history request'},400);
   let task=this.pending.get(spec.key);
   if(!task){task=this.read(spec);this.pending.set(spec.key,task);task.finally(()=>{if(this.pending.get(spec.key)===task)this.pending.delete(spec.key);}).catch(()=>{});}
-  const result=await task;if(result.status!==200)return response(result.body,result.status,{'Retry-After':String(result.retry||30)});
+  const saved=this.waitUntil?this.sql.exec('SELECT payload,fetched,expires FROM chart_pages WHERE key=?',spec.key).toArray()[0]:null;
+  const dated=saved&&saved.expires<=Date.now()&&saved.fetched>Date.now()-RETENTION&&JSON.parse(saved.payload).data?.attributes?.ohlcv_list?.length;
+  // Show real dated candles immediately while the refresh runs within the
+  // object's lifetime. Never replace their original observation timestamp.
+  if(dated)this.waitUntil(task.catch(()=>{}));
+  const result=dated?{...saved,status:200,cache:'stale',retry:10}:await task;if(result.status!==200)return response(result.body,result.status,{'Retry-After':String(result.retry||30)});
   const body=JSON.parse(result.payload),list=body.data?.attributes?.ohlcv_list;
   // Fetch/cache a canonical 1,000-row page once; callers can request a smaller tail.
   if(Array.isArray(list)&&list.length>spec.limit)body.data.attributes.ohlcv_list=list.slice(0,spec.limit);
@@ -36,7 +41,7 @@ export class SharedHistoryCache{
   const dailyLimit=Math.max(1,Math.min(10000,Number(this.env.HISTORY_REQUESTS_PER_DAY)||10000));
   const wait=Math.max(0,budget.next-now,budget.blocked-now);
   if(budget.blocked>now)return unavailable({status:429,body:{code:'PROVIDER_HISTORY_COOLDOWN',error:'History provider cooldown'},retry:Math.ceil((budget.blocked-now)/1000)});
-  if(budget.used>=dailyLimit||wait>24000)return unavailable({status:429,body:{code:'SHARED_HISTORY_QUOTA',error:'Shared history quota is cooling down; saved history remains available.'},retry:budget.used>=dailyLimit?Math.ceil(((day+1)*DAY-now)/1000):Math.ceil(wait/1000)});
+  if(budget.used>=dailyLimit||wait>6000)return unavailable({status:429,body:{code:'SHARED_HISTORY_QUOTA',error:'Shared history quota is cooling down; saved history remains available.'},retry:budget.used>=dailyLimit?Math.ceil(((day+1)*DAY-now)/1000):Math.ceil(wait/1000)});
   this.sql.exec('INSERT OR REPLACE INTO chart_budget(day,used,next,blocked) VALUES(?,?,?,?)',day,budget.used+1,now+wait+6000,budget.blocked);
   if(wait)await new Promise(resolve=>setTimeout(resolve,wait));
   const cooldown=this.sql.exec('SELECT blocked FROM chart_budget WHERE day=?',day).toArray()[0]?.blocked||0;if(cooldown>Date.now())return unavailable({status:429,body:{code:'PROVIDER_HISTORY_COOLDOWN',error:'History provider cooldown'},retry:Math.ceil((cooldown-Date.now())/1000)});

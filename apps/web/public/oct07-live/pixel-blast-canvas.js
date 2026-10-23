@@ -1,5 +1,7 @@
 import {originalArtworkPalette} from '../upic-artwork-palette.js';
-import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=214';
+import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=427';
+import {EARTHBOUND_LOOP_DURATION,TAU,loopTime,loopPhase} from './earthbound-loop.js?v=427';
+import {earthboundMotionFrame,earthboundFieldWarp} from './earthbound-presentation.js?v=472';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -7,6 +9,7 @@ import {capitalFeed} from './capital-field.js?v=167';
 // React Bits attribution/license: vendor/ui/REACT-BITS-LICENSE.md.
 import {ditherPixels} from './coin-dither.js?v=217';
 import {artworkForeground} from './artwork-foreground.js?v=391';
+import {artworkBackgroundTone} from './artwork-background-tone.js?v=473';
 const fract=x=>x-Math.floor(x);
 const hash=n=>fract(Math.sin(n)*43758.5453);
 const fade=x=>x*x*x*(x*(x*6-15)+10);
@@ -15,10 +18,14 @@ const clamp=x=>Math.max(0,Math.min(1,x));
 const b2=(x,y)=>fract(Math.floor(x)/2+Math.floor(y)**2*.75);
 const b4=(x,y)=>b2(x*.5,y*.5)*.25+b2(x,y);
 const b8=(x,y)=>b4(x*.5,y*.5)*.25+b2(x,y);
+// Noise revisits the same integer corners across marks and adjacent frames.
+// Cache their exact values in a bounded table, rather than repeat sine calls.
+const noiseKeys=new Float64Array(4096).fill(NaN),noiseValues=new Float64Array(4096);
+function noiseHash(n){const index=n&4095;if(noiseKeys[index]!==n){noiseKeys[index]=n;noiseValues[index]=hash(n);}return noiseValues[index];}
 function noise(x,y,z){
  const ix=Math.floor(x),iy=Math.floor(y),iz=Math.floor(z),n=ix+iy*57+iz*113;
  const a=fade(fract(x)),b=fade(fract(y)),c=fade(fract(z));
- return mix(mix(mix(hash(n),hash(n+1),a),mix(hash(n+57),hash(n+58),a),b),mix(mix(hash(n+113),hash(n+114),a),mix(hash(n+170),hash(n+171),a),b),c)*2-1;
+ return mix(mix(mix(noiseHash(n),noiseHash(n+1),a),mix(noiseHash(n+57),noiseHash(n+58),a),b),mix(mix(noiseHash(n+113),noiseHash(n+114),a),mix(noiseHash(n+170),noiseHash(n+171),a),b),c)*2-1;
 }
 // Prepare once when coin artwork changes, using the same image levels and
 // Bayer grain as the coin avatar. Select the subject, rather than always
@@ -56,7 +63,8 @@ export function preparePixelIdentity(source){
   const peak=Math.max(...primary),level=Math.max(.4,Math.sqrt(peak));
   for(let c=0;c<3;c++)colors[n*3+c]=peak>.001?primary[c]/peak*level:.4;
  }
- return {width:w,height:h,data,sizeData,rgba,palette,colors,...foreground};
+ const backgroundTone=artworkBackgroundTone(rgba,w,h);
+ return {width:w,height:h,data,sizeData,rgba,palette,colors,backgroundTone,...foreground};
 }
 function identityInk(mask,fx,fy,w,h,time,offset,params){
  const side=(params.fullscreen?Math.max(w,h):.82*Math.min(w,h)),x=fx/side,y=fy/side;
@@ -70,24 +78,31 @@ export function createPixelBlastCanvas(host){
  const canvas=document.createElement('canvas');canvas.className='pixel-blast-layer pixel-blast-software';canvas.setAttribute('aria-hidden','true');canvas.style.width='100%';canvas.style.height='100%';host.append(canvas);
  const ctx=canvas.getContext('2d',{alpha:true});let identityMask=null,counts=null,accents=null,output=null,lastCoverage=0,geometryKey=null,geometry=[];
  const layerCanvas=document.createElement("canvas"),layerContext=layerCanvas.getContext("2d");
+ const candidates=[],sampleCache=new Map();let sampleFrame=0,occupiedPixels=null;
  return {
   canvas,
   coverage(){return lastCoverage;},
-  setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown'});},
+  setImage(mask){identityMask=mask;Object.assign(canvas.dataset,{maskPolarity:mask?.polarity||'none',maskConfidence:(mask?.confidence||0).toFixed(3),maskBackground:mask?.background?.map(Math.round).join(',')||'unknown',backgroundTone:mask?.backgroundTone?.kind||'none',backgroundToneConfidence:(mask?.backgroundTone?.confidence||0).toFixed(3)});},
   render({width,height,time=0,liquidTime,eventTime=0,seed=0,params,dither=false,ripples=[],preserve=false}){
    if(!ctx)return;
+   time=loopTime(time);
+   const angle=loopPhase(time),orbitX=(Math.cos(angle)-1)*EARTHBOUND_LOOP_DURATION/TAU,orbitZ=Math.sin(angle)*EARTHBOUND_LOOP_DURATION/TAU;
    const viewWidth=Math.max(1,Number(width)||1),viewHeight=Math.max(1,Number(height)||1);
    const dpr=Math.min(Math.max(1,globalThis.devicePixelRatio||1),2,Math.sqrt((params.pixelBudget||1.2e6)/(viewWidth*viewHeight)));
    const w=Math.max(1,Math.floor(viewWidth*dpr)),h=Math.max(1,Math.floor(viewHeight*dpr));
    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
    if(!preserve)ctx.clearRect(0,0,w,h);ctx.imageSmoothingEnabled=false;ctx.globalCompositeOperation="source-over";
-   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);accents=new Uint8Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
+   if(!output||output.width!==w||output.height!==h){output=ctx.createImageData(w,h);counts=new Uint8Array(w*h);accents=new Uint8Array(w*h);occupiedPixels=new Uint32Array(w*h);layerCanvas.width=w;layerCanvas.height=h;}
    counts.fill(0);accents.fill(0);output.data.fill(0);
+   let occupied=0;sampleFrame++;
    const requested=Math.max(0,Math.round(params.holderCount||0));
    const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*3))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const pattern=battlePattern(params.patternKey??seed,time);
-   const cell=16,offset=(seed%65521)/65521*173.6,cache=new Map();
+   const cell=Math.max(12,Math.min(24,Number(params.patternSampleSize)||16)),offset=(seed%65521)/65521*173.6;
+   const presentationMotion=earthboundMotionFrame(time,seed,params),patternContrast=Math.max(1,Math.min(2.5,Number(params.patternContrast)||1));
+   const noiseOctaves=Math.max(1,Math.min(5,Math.round(Number(params.patternNoiseOctaves)||5)));
+   const selectionNoise=params.selectionNoise==null?1:clamp(params.selectionNoise);
    const liquidRadius=Math.max(.001,.12*params.liquidRadius),grainFrame=Math.floor(time*12);
    const touches=params.liquid?ripples.filter(p=>eventTime-p.time>=0&&eventTime-p.time<3).map(p=>{
     let dx=Number.isFinite(p.dx)?p.dx:params.direction,dy=Number.isFinite(p.dy)?p.dy:(params.balance-.5)*.6;
@@ -99,9 +114,14 @@ export function createPixelBlastCanvas(host){
     const age=eventTime-p.time,t=clamp(age/.16),out=clamp((age-.25)/1.55);
     return {...p,x:(p.x*w-originX)/ratio,y:(p.y*h-originY)/ratio,envelope:t*t*(3-2*t)*(1-out*out*(3-2*out))};
    });
-   function sampleAt(cx,cy){
-    const key=cx+cy*65536;let sample=cache.get(key);
-    if(sample===undefined){
+   function samplePoint(cx,cy){
+    const key=cx+cy*65536;let sample=sampleCache.get(key);
+    if(sample===undefined){sample={cx,cy,frame:0,feed:0,warpX:0,warpY:0};sampleCache.set(key,sample);}
+    return sample;
+   }
+   function sampleAt(sample){
+    if(sample.frame!==sampleFrame){
+     const {cx,cy}=sample;
      const u0=cx*cell/cssHeight,v0=cy*cell/cssHeight;
      let warpX=0,warpY=0;
      for(const p of packets){
@@ -109,14 +129,15 @@ export function createPixelBlastCanvas(host){
       const weight=Math.exp(-(dx*dx+dy*dy)*1.5)*p.envelope*p.strength*70/cssHeight;
       warpX+=((p.dx??1)-dy*.35)*weight;warpY+=((p.dy??0)+dx*.35)*weight;
      }
-     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
-     for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset)*freq,(v*params.scale+offset*.317)*freq,time*.05*freq);freq*=1.25;}
+     const [u,v]=earthboundFieldWarp(u0+warpX,v0+warpY,presentationMotion);let sum=1,freq=1;
+     for(let octave=0;octave<noiseOctaves;octave++){sum+=noise((u*params.scale+offset+orbitX*.05)*freq,(v*params.scale+offset*.317)*freq,orbitZ*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
-     feed+=params.ecosystem*noise(u*6+offset*.19,v*6+offset*.41,time*.04);
-     feed=Math.max(feed,.07+.045*noise(u*14+offset,v*14+offset,time*.03));
+     feed+=params.ecosystem*noise(u*6+offset*.19+orbitX*.04,v*6+offset*.41,orbitZ*.04);
+     feed=Math.max(feed,.07+.045*noise(u*14+offset+orbitX*.03,v*14+offset,orbitZ*.03));
      feed=battlePatternFeed(u*Math.max(.2,params.scale/.25),v*Math.max(.2,params.scale/.25),time,pattern,feed);
+     feed=.5+(feed-.5)*patternContrast;
      feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
-     sample={feed,warpX,warpY};cache.set(key,sample);
+     sample.frame=sampleFrame;sample.feed=feed;sample.warpX=warpX;sample.warpY=warpY;
     }
     return sample;
    }
@@ -130,10 +151,10 @@ export function createPixelBlastCanvas(host){
    const accentDirection=shapeWeights[0]===0?(shapeWeights[1]===1?1:shapeWeights[2]===1?-1:0):0;
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
-   const candidates=[];
-   const nextGeometryKey=[w,h,grid,cellSize,seed,params.edgeFade,pixelPresence,requested].join(':');
+   candidates.length=0;
+   const nextGeometryKey=[w,h,grid,cellSize,cell,seed,params.edgeFade,pixelPresence,requested].join(':');
    if(nextGeometryKey!==geometryKey){
-    geometryKey=nextGeometryKey;geometry=[];
+    geometryKey=nextGeometryKey;geometry=[];sampleCache.clear();
     for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
     if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
     const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
@@ -150,16 +171,18 @@ export function createPixelBlastCanvas(host){
      taper=smooth(nx/reach)*smooth((1-nx)/reach)*smooth(ny/reach)*smooth((1-ny)/reach);
     }
     if(edge<=0||(!requested&&taper<=.015))continue;
-    geometry.push({px,py,fx,fy,centerX,centerY,taper,threshold:hash(px*73.17+py*193.41+seed*.37),accent:hash(px*157.31+py*97.13+seed*.113)<.2});
+    const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy);
+    geometry.push({px,py,fx,fy,centerX,centerY,taper,tx:fract(sx),ty:fract(sy),a:samplePoint(cx,cy),b:samplePoint(cx+1,cy),c:samplePoint(cx,cy+1),d:samplePoint(cx+1,cy+1),threshold:hash(px*73.17+py*193.41+seed*.37),accent:hash(px*157.31+py*97.13+seed*.113)<.2});
     }
    }
-   for(const {px,py,fx,fy,centerX,centerY,taper,threshold,accent} of geometry){
+   for(const mark of geometry){
+    const {px,py,fx,fy,centerX,centerY,taper,threshold,accent}=mark;
     // Sparse stable perimeter: shrink and remove cells rather than draw a rim.
     if(!requested&&hash(px*127.1+py*311.7+19.7)>taper*taper)continue;
     // Snap the source cell first, then displace its sample continuously so
     // small liquid movement survives without moving the square lattice.
-    const sx=fx/cell,sy=fy/cell,cx=Math.floor(sx),cy=Math.floor(sy),tx=fract(sx),ty=fract(sy);
-    const a=sampleAt(cx,cy),b=sampleAt(cx+1,cy),cc=sampleAt(cx,cy+1),dd=sampleAt(cx+1,cy+1);
+    const {tx,ty}=mark;
+    const a=sampleAt(mark.a),b=sampleAt(mark.b),cc=sampleAt(mark.c),dd=sampleAt(mark.d);
     let feed=mix(mix(a.feed,b.feed,tx),mix(cc.feed,dd.feed,tx),ty);
     const warpX=mix(mix(a.warpX,b.warpX,tx),mix(cc.warpX,dd.warpX,tx),ty),warpY=mix(mix(a.warpY,b.warpY,tx),mix(cc.warpY,dd.warpY,tx),ty);
     let maskInk=0;
@@ -189,8 +212,8 @@ export function createPixelBlastCanvas(host){
     const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
-    const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
-    candidates.push({centerX,centerY,diameter,score,accent});
+    const score=feed+(threshold-.5)*selectionNoise+Math.log(Math.max(.000001,taper*taper))*.35;
+    mark.diameter=diameter;mark.score=score;candidates.push(mark);
    }
    // Partition the highest-scoring population without sorting every cell.
    if(requested&&requested<candidates.length){
@@ -205,9 +228,10 @@ export function createPixelBlastCanvas(host){
      if(target<=j)hi=j;else if(target>=i)lo=i;else break;
     }
    }
-   const selected=requested?candidates.slice(0,requested):candidates;
-   canvas.dataset.markCount=String(selected.length);let accentMarkCount=0;
-   for(const {centerX,centerY,diameter,accent} of selected){
+   const selectedCount=requested?Math.min(requested,candidates.length):candidates.length;
+   canvas.dataset.markCount=String(selectedCount);let accentMarkCount=0;
+   for(let selectedIndex=0;selectedIndex<selectedCount;selectedIndex++){
+    const {centerX,centerY,diameter,accent}=candidates[selectedIndex];
     const accentGlyph=accent&&diameter>=3&&accentDirection!==0;
     if(accentGlyph)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
@@ -220,28 +244,33 @@ export function createPixelBlastCanvas(host){
      const inside=diameter<3?dx*dx+dy*dy<=radius*radius:
       (Math.hypot(dx,dy)-radius)*weights[0]+(Math.min(Math.abs(dx),Math.abs(dy))-halfStroke)*weights[1]+(Math.abs(Math.abs(dx)-Math.abs(dy))*.70710678-halfStroke)*weights[2]<=0;
      if(!inside)continue;
-     const index=y*w+x;counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);
+     const index=y*w+x;if(!counts[index])occupiedPixels[occupied++]=index;
+     counts[index]=Math.min(2,counts[index]+1);if(accentGlyph)accents[index]=Math.min(2,accents[index]+1);
     }
    }
    canvas.dataset.accentMarkCount=String(accentMarkCount);
-   let occupied=0;
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
    // Only pixels belonging to resolved directional glyphs carry an accent.
    // Dots, including small-size fallbacks and every transitional shape, retain
    // the existing baseline/milestone palette.
    const accentR=(accentDirection>0?81:255)/255,accentG=(accentDirection>0?215:102)/255,accentB=(accentDirection>0?123:114)/255;
-   for(let n=0;n<counts.length;n++)if(counts[n]){
-    occupied++;const i=n*4;let r=1,g=1,b=1;
-    if(color&&mask?.colors){
+   for(let pixel=0;pixel<occupied;pixel++){
+    const n=occupiedPixels[pixel],i=n*4;let r=1,g=1,b=1,quiet=0;
+    if(mask&&(color||identity>0&&mask.backgroundTone?.empty)){
      const u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
      if(u>=0&&u<1&&v>=0&&v<1){
       const m=Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width),amount=color*mask.rgba[m*4+3]/255,c=m*3;
-      r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);
+      if(color&&mask.colors){r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);}
+      quiet=(mask.backgroundTone?.empty?.[m]||0)/255*(mask.backgroundTone?.confidence||0)*clamp(identity);
      }
     }
     if(accents[n]){const amount=Math.min(1,accents[n]/counts[n]);r=mix(r,accentR,amount);g=mix(g,accentG,amount);b=mix(b,accentB,amount);}
-    output.data[i]=ink*r;output.data[i+1]=ink*g;output.data[i+2]=ink*b;output.data[i+3]=255;
+    // Subtle tone only: retain every holder mark and its liquidity-driven size.
+    // Outside-image ripple grain and uncertain photos keep their original ink.
+    // Preserve full directional accents so rising/falling market cues stay clear.
+    const tone=1-.42*quiet*(1-(accents[n]?Math.min(1,accents[n]/counts[n]):0));
+    output.data[i]=ink*r*tone;output.data[i+1]=ink*g*tone;output.data[i+2]=ink*b*tone;output.data[i+3]=255;
    }
    lastCoverage=occupied/counts.length;
    layerContext.putImageData(output,0,0);ctx.drawImage(layerCanvas,0,0);

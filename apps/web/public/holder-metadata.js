@@ -1,6 +1,6 @@
 import {createNativeHolders} from './native-holders.js?v=359';
-import {createHolderBalances} from './holder-balances.js?v=350';
-import {fetchGoPlusCount} from './holder-count-providers.js?v=350';
+import {createHolderBalances} from './holder-balances.js?v=458';
+import {fetchHolderCount} from './holder-count-providers.js?v=458';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {createHolderClusters} from './holder-clusters.js?v=168';
 const RELAY='https://upic-insightx.nchrl01.workers.dev/holders';
@@ -14,17 +14,19 @@ async function browserCount(network,address,signal){
  if(delay>30000)return {state:'budget-wait',holders:null,retryAt:Date.now()+delay};
  if(delay)await new Promise(resolve=>setTimeout(resolve,delay));
  if(signal.aborted)throw new DOMException('Aborted','AbortError');
- const result=await fetchGoPlusCount(network,address,{signal});
+ // A cached relay miss must still try the index that supplies the actual count.
+ const result=await fetchHolderCount(network,address,{signal});
  if(result.state==='rate-limited')nextDirectAt=Math.max(nextDirectAt,Date.now()+60000);
  return result;
 }
 export function holderCountReadout(info={},historical=false){
  const available=Number.isSafeInteger(info.holders)&&info.holders>=0;
- const label=info.native?'ADDRESS SAMPLE':historical?'HOLDERS · LATEST':'HOLDERS';
- const value=!available&&info.native&&info.holdings?.weight>0?info.holdings.records.length.toLocaleString('en')+' sampled':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
+ const sampled=!available&&info.holdings?.weight>0&&info.holdings.records?.length;
+ const label=info.native?'ADDRESS SAMPLE':sampled?(historical?'HOLDER SAMPLE · LATEST':'HOLDER SAMPLE'):historical?'HOLDERS · LATEST':'HOLDERS';
+ const value=sampled?info.holdings.records.length.toLocaleString('en')+' sampled':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
  const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
  const title=info.native?'Native address balances · '+(info.holdings?.source||'provider')+' · total funded-address count unavailable'+(info.holdings?.scope==='transparent-addresses-only'?' · transparent balances only':info.holdings?.scope==='public-addresses-excludes-MWEB'?' · excludes private MWEB balances':''):available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
-  :'Waiting for holder data';
+  :sampled?'Total holder count unavailable':'Waiting for holder data';
  const h=info.holdings;const coverage=!historical&&h?.weight>0?' · Visual: '+h.records.length.toLocaleString('en')+' observed balances · '+h.source+(h.complete?' (complete indexed list)':h.truncated?' (10,000 display limit)':h.state==='loading'?' (loading more)':' (partial sample)'):historical?' · Historical balances unavailable':' · Individual balances unavailable';
  return {label,value,title:title+coverage};
 }
@@ -37,11 +39,14 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
  function snapshot(now=Date.now()){
   if(nativeActive){const holdings=native.snapshot(now);return {state:holdings.state,holders:null,watchers:null,native:true,weight:holdings.weight,holdings,relationships:{state:'unavailable',weight:0,clusters:[]}};}
   const relationships=clusters.snapshot(now),holdings=balances.snapshot(now);
-  if(state.holders===null)return {...state,weight:0,watchers:null,relationships,holdings};
+  const sampleAge=Number.isFinite(state.fetchedAt)?now-state.fetchedAt:null;
+  const sampleWeight=sampleAge!==null&&sampleAge>=0&&sampleAge<HOUR&&state.holderBalances?.length?1:0;
+  const holderBalances=sampleWeight?state.holderBalances:[];
+  if(state.holders===null)return {...state,weight:sampleWeight,holderBalances,watchers:null,relationships,holdings};
   // Provider time measures the snapshot, receipt time bounds our own cache.
   const age=state.countAt?Math.max(0,now-state.countAt,now-state.receivedAt):null;
   const weight=state.countAt?Math.max(0,Math.min(1,1-(age-HOUR)/(5*HOUR))):0;
-  return {...state,age,weight,watchers:null,relationships,holdings,state:age===null?'age-unknown':weight===0?'expired':state.state};
+  return {...state,age,weight:Math.max(weight,sampleWeight),holderBalances,watchers:null,relationships,holdings,state:age===null?'age-unknown':weight===0?'expired':state.state};
  }
  function setMarket(pair){
   nativeActive=Boolean(pair?.nativeAsset);clusters.setMarket(nativeActive?null:pair);balances.setMarket(nativeActive?null:pair);
@@ -58,18 +63,20 @@ export function createHolderMetadata({onInfo=()=>{},onChange=()=>{}}={}){
    try{
     let result;
     try{
-     const response=await fetch(RELAY+'?'+new URLSearchParams({network,address}),{signal:abort.signal,credentials:'omit'});
+     const response=await fetch(RELAY+'?'+new URLSearchParams({network,address}),{signal:AbortSignal.any([abort.signal,AbortSignal.timeout(8000)]),credentials:'omit'});
      if(response.ok)result=await response.json();
     }catch{if(abort.signal.aborted)return;}
-    if(result?.holders==null)result=await browserCount(network,address,abort.signal);
+    if(result?.holders==null&&!result?.holderBalances?.length)result=await browserCount(network,address,abort.signal);
     if(version!==epoch)return;
     const raw=result.holders,count=Number(raw),receivedAt=Date.now();
     if(result.image_url)try{onInfo({image_url:result.image_url},pair);}catch{}
-    if(!['number','string'].includes(typeof raw)||String(raw).trim()===''||!Number.isSafeInteger(count)||count<0){
+    const countAvailable=['number','string'].includes(typeof raw)&&String(raw).trim()!==''&&Number.isSafeInteger(count)&&count>=0;
+    const sample=Array.isArray(result.holderBalances)?result.holderBalances:[];
+    if(!countAvailable&&!sample.length){
      publish(state.holders===null?{state:result.state||'unavailable',holders:null,watchers:null,retryAt:result.retryAt}:{...state,state:'delayed',retryAt:result.retryAt});
     }else{
      const parsed=Date.parse(result.lastUpdated);
-     const next={state:result.state==='delayed'?'delayed':'snapshot',holders:count,countAt:Number.isFinite(parsed)&&parsed<=receivedAt+300000?parsed:null,receivedAt,source:result.source||'GeckoTerminal',approximate:Boolean(result.approximate),retryAt:result.retryAt,watchers:null};
+     const next={state:result.state==='delayed'?'delayed':'snapshot',holders:countAvailable?count:null,holderBalances:sample,fetchedAt:Number.isFinite(result.fetchedAt)&&result.fetchedAt<=receivedAt?result.fetchedAt:null,countAt:Number.isFinite(parsed)&&parsed<=receivedAt+300000?parsed:null,receivedAt,source:result.source||'GeckoTerminal',approximate:Boolean(result.approximate),retryAt:result.retryAt,watchers:null};
      cache.set(tokenKey,next);if(cache.size>32)cache.delete(cache.keys().next().value);saveCounts();publish(next);
     }
    }catch{if(version===epoch)publish(state.holders===null?{state:'unavailable',holders:null,watchers:null}:{...state,state:'delayed'});}

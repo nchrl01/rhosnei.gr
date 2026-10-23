@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {createTestMint} from '../apps/web/public/test-mint.js';
-import {TEST_MILESTONES, testStage, testEvolutionMetrics, testActivityEvent} from '../apps/web/public/test-evolution.js';
+import {createTestMint} from '../archive/retired-player-simulation/test-mint.js';
+import {TEST_MILESTONES, testStage, testEvolutionMetrics, testActivityEvent} from '../archive/retired-player-simulation/test-evolution.js';
 import {earthboundMarketState} from '../apps/web/public/upic-earthbound-visual.js';
 import {composeMarketBar} from '../apps/web/public/market-composition.js';
 

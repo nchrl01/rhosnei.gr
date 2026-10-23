@@ -1,8 +1,9 @@
-import {fetchGoPlusCount,HOLDER_NETWORKS,validHolderToken} from './holder-count-providers.js?v=350';
+import {fetchGoPlusCount,HOLDER_NETWORKS,validHolderToken} from './holder-count-providers.js?v=458';
 // Actual indexed ERC-20 balances. Public Blockscout reads require no API key.
 // A bounded, paginated sample is never expanded into invented wallets.
 const EXPLORERS={ethereum:'https://eth.blockscout.com',eth:'https://eth.blockscout.com',base:'https://base.blockscout.com',arbitrum:'https://arbitrum.blockscout.com',optimism:'https://explorer.optimism.io',polygon:'https://polygon.blockscout.com',polygon_pos:'https://polygon.blockscout.com',zksync:'https://zksync.blockscout.com',celo:'https://celo.blockscout.com',robinhood:'https://robinhoodchain.blockscout.com'};
 const ALIASES={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
+const SHARED_NETWORKS=new Set(['robinhood','xdc']);
 const RELAY='https://upic-insightx.nchrl01.workers.dev/holder-balances';
 const LIMIT=10000,PAGINATION_BUDGET=30000,TTL=15*60000,MAX_AGE=60*60000,cache=new Map();
 const addressPattern=/^0x[0-9a-f]{40}$/i;
@@ -33,7 +34,7 @@ export function createHolderBalances({onChange=()=>{}}={}){
  function setMarket(pair){
   close();const version=epoch,host=EXPLORERS[pair?.chainId],input=pair?.baseToken?.address;
   const network=pair?.geckoNetwork||ALIASES[pair?.chainId]||pair?.chainId,solana=network==='solana';
-  if((!host&&!HOLDER_NETWORKS[network]&&!solana)||!validHolderToken(network,input)){publish(empty(pair?'unsupported-network':'unavailable'));return;}
+  if((!host&&!HOLDER_NETWORKS[network]&&!solana&&!SHARED_NETWORKS.has(pair?.chainId))||!validHolderToken(network,input)){publish(empty(pair?'unsupported-network':'unavailable'));return;}
   const address=solana||network==='sui'||network==='tron'||network==='ton'?input:input.toLowerCase(),key=network+':'+address;
   const saved=cache.get(key);
   const reuse=saved&&!expired(saved)&&(saved.records.length||saved.complete||saved.nextAt>Date.now());
@@ -59,13 +60,13 @@ export function createHolderBalances({onChange=()=>{}}={}){
     return response.json();
    }
    async function sharedSample(){
-    if(pair.chainId!=='robinhood')throw Error('shared-holder-network-unavailable');
+    if(!SHARED_NETWORKS.has(pair.chainId))throw Error('shared-holder-network-unavailable');
     const target=new URL(RELAY);target.searchParams.set('network',pair.chainId);target.searchParams.set('address',address);
     const result=await read(target);if(!current())return;
     if(result.network!==pair.chainId||result.address!==address||!Array.isArray(result.records)||!result.records.length||!Number.isFinite(result.fetchedAt)||Date.now()-result.fetchedAt>=MAX_AGE||result.fetchedAt>Date.now()+1000)throw Error('shared-holder-sample-unavailable');
     const records=result.records.filter(item=>addressPattern.test(item.id||'')&&Number.isFinite(item.tokenBalance)&&item.tokenBalance>0);
     if(!records.length)throw Error('shared-holder-sample-unavailable');
-    publish({...result,records,source:'Blockscout shared index',state:result.state==='delayed'?'delayed':'snapshot',coverage:'top-holder-sample',nextAt:Math.max(Date.now()+60000,Number(result.nextAt)||Date.now()+TTL)});
+    publish({...result,records,source:result.source||'Shared holder index',state:result.state==='delayed'?'delayed':'snapshot',coverage:result.coverage||'partial-sample',nextAt:Math.max(Date.now()+60000,Number(result.nextAt)||Date.now()+TTL)});
    }
    async function sample(){
     const result=await fetchGoPlusCount(network,address,{signal});if(!current())return;
@@ -73,6 +74,7 @@ export function createHolderBalances({onChange=()=>{}}={}){
     publish({source:result.source||'GoPlus',network,address,totalHolders:result.holders,fetchedAt:result.fetchedAt,state:'snapshot',coverage:'top-holder-sample',records:result.holderBalances,complete:false,truncated:false,nextAt:Date.now()+TTL});
    }
    try{
+    if(pair.chainId==='xdc'){await sharedSample();return;}
     if(!host){await sample();return;}
     const token=await read(url);if(!current())return;
     const decimals=token.decimals==null?NaN:Number(token.decimals);

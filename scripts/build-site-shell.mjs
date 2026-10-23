@@ -8,17 +8,26 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
-const version = 407;
+const version = 448;
+// Audio and navigation updates have independent cache revisions.
+const audioVersion = 473;
+const searchVersion = 456;
+const marketplaceVersion = 473;
+const visualVersion = 473;
+const navigationVersion = 457;
+const foundationVersion = 454;
 const pages = [
+  { file: 'profile.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'profile.css'] },
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
   { file: 'instrument.html', type: 'instrument', active: 'instrument', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'transport-indicator.css?v=256', 'envion-view.css?v=256'] },
   { file: 'about.html', type: 'public', active: 'about', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
   { file: 'help.html', type: 'public', active: 'help', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
-  { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'marketplace.css'] },
+  { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', `marketplace.css?v=${marketplaceVersion}`] },
   { file: 'credits.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css'] },
+  { file: 'research.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'research.css'] },
   { file: 'visual-lab.html', type: 'lab', styles: ['visual-lab.css'] },
-  { file: 'audio-lab.html', type: 'lab', styles: ['visual-lab.css', 'audio-lab.css'] },
-  { file: 'av-lab.html', type: 'lab', styles: ['visual-lab.css', 'audio-lab.css', 'av-lab.css'] },
+  { file: 'audio-lab.html', type: 'lab', styles: ['visual-lab.css', `audio-lab.css?v=${audioVersion}`] },
+  { file: 'av-lab.html', type: 'lab', styles: ['visual-lab.css', `audio-lab.css?v=${audioVersion}`, 'av-lab.css'] },
   { file: 'mapping-lab.html', type: 'lab', styles: ['mapping-lab.css'] },
 ];
 
@@ -39,14 +48,14 @@ function header(page) {
   const isSiteNavigation = page.type === 'lab' || page.type === 'technology';
   const fields = {
     headerClass: isSiteNavigation ? 'site-navigation' : page.type === 'instrument' ? 'market-header trending-header' : 'market-header',
-    headerLabel: page.type === 'instrument' ? '$AV navigation and trending markets' : '$AV navigation',
+    headerLabel: page.type === 'instrument' ? 'UPIC navigation and trending markets' : 'UPIC navigation',
     brandClass: isSiteNavigation ? 'upic-brand site-navigation-brand' : 'upic-brand',
     brandImage: page.type === 'instrument'
       ? '<img id="upic-mark" alt="" width="125" height="173" decoding="async" hidden><span id="upic-mark-fallback">U</span>'
       : '<img src="upic-logo-transparent.svg?v=116" alt="" width="125" height="173" decoding="async" draggable="false">',
     marketplaceCurrent: page.active === 'marketplace' ? ' aria-current="page"' : '',
     aboutCurrent: page.active === 'about' ? ' aria-current="page"' : '',
-    search: (page.type === 'instrument' || page.file === 'upic/marketplace/index.html') ? '<button type="button" class="header-search" aria-label="Search coins" aria-controls="mobile-coin-search" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>' : '<a class="header-search" href="./#search" aria-label="Search coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a>',
+    search: (page.type === 'instrument' || page.file === 'upic/marketplace/index.html' || page.file === 'profile.html') ? '<button type="button" class="header-search" aria-label="Search coins" aria-controls="mobile-coin-search" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>' : '<a class="header-search" href="./#search" aria-label="Search coins"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></a>',
     volume: page.volume ? partials.volume : '',
     trending: page.type === 'instrument' ? partials['home-trending'] : '',
   };
@@ -56,7 +65,7 @@ function prepareTechnologyDocument(html) {
   if (/<head\b/.test(html)) return html;
   const main = html.match(/<main\b[\s\S]*?<\/main>/)?.[0];
   if (!main) throw new Error('Missing technology content');
-  return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="theme-color" content="#000000">\n<title>$AV Technology</title>\n<link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin>\n<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">\n</head>\n<body class="credits-page">\n<header class="site-navigation"></header>\n' + main.replace('<main class="credits-page">', '<main class="credits-content">') + '\n</body>\n</html>\n';
+  return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1">\n<meta name="theme-color" content="#000000">\n<title>UPIC Technology</title>\n<link rel="preload" href="fonts/Unifont/Unifont-ui.woff2" as="font" type="font/woff2" crossorigin>\n<link rel="icon" type="image/svg+xml" href="upic-favicon.svg?v=116" sizes="any">\n</head>\n<body class="credits-page">\n<header class="site-navigation"></header>\n' + main.replace('<main class="credits-page">', '<main class="credits-content">') + '\n</body>\n</html>\n';
 }
 for (const page of pages) {
   const file = path.join(publicRoot, page.file);
@@ -71,7 +80,13 @@ for (const page of pages) {
   }
   // Render the desktop search in its final position before the first paint.
   // Extract it before replacing a previously built header, keeping rebuilds idempotent.
-  const searchForm = html.match(/<form\b(?=[^>]*\bid=["'](?:coin-form|marketplace-coin-form)["'])[^>]*>[\s\S]*?<\/form>/)?.[0];
+  let searchForm = html.match(/<form\b(?=[^>]*\bid=["'](?:coin-form|marketplace-coin-form)["'])[^>]*>[\s\S]*?<\/form>/)?.[0];
+  if(page.file === 'profile.html' && !searchForm){
+    searchForm = '<form id="coin-form"><div class="address-row"><div class="address-field"><input id="address" placeholder=" " autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="search" required maxlength="250" aria-describedby="address-help" aria-controls="coin-search-results"><label id="address-label" for="address">Coin name / contract address</label></div><button type="submit">Search</button></div><p id="address-help">Search a coin or address, or a pair like BTC/USD.</p><p id="lookup" role="status" aria-live="polite" aria-atomic="true" hidden></p></form>';
+  }
+  if(page.file === 'profile.html' && !html.includes('id="coin-search-results"')){
+    html = html.replace('</main>', '<section id="coin-search-results" hidden aria-label="Matching coins"></section></main>');
+  }
   let pageHeader = header(page);
   if (searchForm) {
     html = html.replace(searchForm, '');
@@ -92,7 +107,7 @@ for (const page of pages) {
   }
   // Stylesheet order is deliberate: common controls, page layout, typography,
   // then shared navigation. Each page declares only the styles it uses.
-  const styles = ['foundation.css', ...page.styles, 'typography.css', 'shared-navigation.css', 'intro.css']
+  const styles = [`foundation.css?v=${foundationVersion}`, ...page.styles, 'typography.css', `shared-navigation.css?v=${navigationVersion}`, 'intro.css']
     .map(href => `<link rel="stylesheet" href="${href.includes('?') ? href : href + '?v=' + version}">`).join('\n');
   if (html.includes('<!-- site-shell:styles:start -->')) {
     html = replaceRegion(html, 'styles', styles);
@@ -108,15 +123,16 @@ for (const page of pages) {
   } else {
     html = html.replace('<!-- site-shell:styles:start -->', region('entry', entry) + '\n<!-- site-shell:styles:start -->');
   }
-  const sharedScripts = `<script type="module" src="shared-header.js?v=${version}"></script>`;
+  const sharedScripts = `<script type="module" src="shared-header.js?v=${searchVersion}"></script>`;
   if (html.includes('<!-- site-shell:scripts:start -->')) {
     html = replaceRegion(html, 'scripts', sharedScripts);
   } else {
     html = html.replace(/<script\b[^>]*\bsrc=["'](?:footer-prices|shared-header|wallet-connect)\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*/g, '');
     html = html.replace('</body>', region('scripts', sharedScripts) + '\n</body>');
   }
-  if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${version}"`);
-  if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${version}"`);
+  if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${Math.max(audioVersion,searchVersion,visualVersion)}"`);
+  html = html.replaceAll('href="fonts/Unifont/Unifont-ui.woff2"', 'href="fonts/Unifont/Unifont.woff2"');
+  if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${marketplaceVersion}"`);
   await writeFile(file, html);
 }
 console.log(`Rendered shared shell for ${pages.length} static pages.`);

@@ -1,5 +1,5 @@
-import {earthboundVisualSeed,layerCycle} from './earthbound-visual-seed.js?v=214';
-import {battleMotion,battleWarp} from './earthbound-motion.js?v=214';
+import {earthboundVisualSeed,layerCycle} from './earthbound-visual-seed.js?v=427';
+import {battleMotion,battleWarp} from './earthbound-motion.js?v=427';
 const tau=6.2831853,fract=n=>n-Math.floor(n),mix=(a,b,t)=>a+(b-a)*t;
 const clamp=n=>Math.max(0,Math.min(1,n));
 // Two independently distorted procedural tile arrangements. Palette movement

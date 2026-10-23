@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npm run dev:web",
+    "start": "npm run dev:instrument",
+    "dev:instrument": "node scripts/build-site-shell.mjs && node server.mjs",
+    "start:platform": "npm run dev:web",
     "build:site": "node scripts/build-site-shell.mjs",
     "build:ccxt": "node scripts/build-ccxt.mjs",
     "build:ui": "node scripts/build-ui.mjs",

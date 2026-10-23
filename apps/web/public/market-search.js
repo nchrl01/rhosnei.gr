@@ -1,4 +1,4 @@
-import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=395';
+import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=448';
 import {fetchGecko} from './gecko.js?v=277';
 import {geckoPoolMarket} from './trending.js?v=345';
 
@@ -37,7 +37,7 @@ export async function findOnchainMarkets(query,{network,signal}={}){
   const data=await fetchJSON('https://api.dexscreener.com/latest/dex/search?q='+encodeURIComponent(query),{signal});
   const pairs=rank(data.pairs||[]);if(pairs.length)return pairs;
  }catch(error){if(signal?.aborted)throw error;}
- const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro'};
+ const aliases={ethereum:'eth',polygon:'polygon_pos',avalanche:'avax',fantom:'ftm',cronos:'cro',flow:'flow-evm',sei:'sei-evm','sei-network':'sei-evm',elrond:'multiversx'};
  const geckoNetwork=network&&(aliases[network]||network),specific=geckoNetwork&&isTokenIdentifier(query);
  const params=new URLSearchParams({include:'base_token,quote_token,dex,network',page:'1'});
  if(!specific){params.set('query',query);if(geckoNetwork)params.set('network',geckoNetwork);}
@@ -54,7 +54,7 @@ export async function findOnchainMarkets(query,{network,signal}={}){
    if(!response.ok)throw Error('Market search provider returned '+response.status);
    const data=await response.json();if(!Array.isArray(data.data))throw Error('Unexpected market search response');
    const included=new Map((data.included||[]).map(item=>[item.id,item]));
-   return rank(data.data.map(pool=>geckoPoolMarket(pool,included,geckoNetwork||undefined)).filter(Boolean));
+   return rank(data.data.map(pool=>{const market=geckoPoolMarket(pool,included,geckoNetwork||undefined);return market&&network&&aliases[network]?{...market,chainId:network}:market;}).filter(Boolean));
   }
  }finally{clearTimeout(timeout);signal?.removeEventListener('abort',cancel);}
 }

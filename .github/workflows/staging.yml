@@ -60,10 +60,8 @@ jobs:
           npm ci --ignore-scripts
           node scripts/build-site-shell.mjs
           VITE_API_URL=/api npm run build -w @upic/web
-          # Route the instrument's data calls to the private staging data worker (same origin).
-          grep -rlF 'https://upic-insightx.nchrl01.workers.dev' apps/web/dist | xargs -r sed -i "s#https://upic-insightx.nchrl01.workers.dev#$ORIGIN/x#g"
-          rm -f apps/web/dist/_redirects
-          find apps/web/dist -name '*.map' -delete
+          # Build-only navigation and private same-origin data wiring, including Access cookies.
+          node infra/staging/prepare-web.mjs
       - name: Deploy data worker (no public URL)
         if: steps.ready.outputs.ok == 'true'
         working-directory: cloudflare/insightx
@@ -145,8 +143,11 @@ jobs:
           if [[ -z "$ID" ]]; then echo "::notice::Add CF_ACCESS_CLIENT_ID/SECRET to smoke test as CI."; exit 0; fi
           h=(-H "CF-Access-Client-Id: $ID" -H "CF-Access-Client-Secret: $SECRET")
           # Workers assets serve /page.html at /page (a 307 redirects the .html form).
-          for path in / /instrument /robots.txt; do
+          for path in / /instrument /profile /upic/marketplace/ /audio-lab /visual-lab /av-lab /mapping-lab /staging-navigation.js /robots.txt; do
             code=$(curl -s -o /dev/null -w '%{http_code}' "${h[@]}" "$ORIGIN$path"); echo "$path → $code"; [[ "$code" == 200 ]]
           done
+          # A shared/search coin link must open the instrument, while / stays the testnet desk.
+          target=$(curl -s -o /dev/null -w '%{redirect_url}' "${h[@]}" "$ORIGIN/?coin=ETH%2FUSD&native=ethereum")
+          [[ "$target" == "$ORIGIN/instrument?coin=ETH%2FUSD&native=ethereum" ]]
           curl -fsS "${h[@]}" -I "$ORIGIN/" | grep -i '^x-robots-tag: noindex'
           echo "### Staging deployed (behind Cloudflare Access)" >> "$GITHUB_STEP_SUMMARY"

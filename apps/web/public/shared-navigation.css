@@ -1,12 +1,17 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
-@import url("wallet-theme.css?v=281");
+@import url("wallet-theme.css?v=448");
 
-body:is(.instrument-page,.marketplace-page,.about-page)>main {
+body:is(.instrument-page,.marketplace-page,.about-page,.profile-page)>main {
   padding:0 var(--site-gutter) 28px;
 }
 body.instrument-page>main { min-height:100svh;padding-bottom:0; }
 @media(min-width:761px){ body.instrument-page>main { padding-bottom:var(--navigation-row-height); } }
 body.about-page>main { padding-bottom:0; }
+body.profile-page>main { padding-bottom:0; }
+@media(min-width:761px){
+ body.profile-page>main { padding-bottom:calc(var(--navigation-row-height) + env(safe-area-inset-bottom)); }
+ body.profile-page>main>.site-footer { position:fixed;inset:auto 0 0;z-index:10;margin:0; }
+}
 .marketplace-page main,.about-page main { align-items:stretch; }
 
 /* The header's 8px inset is independent of the page's content gutter. */
@@ -312,20 +317,17 @@ body.credits-page>.site-footer { margin-inline:0; }
 
 /* Search, replay, option groups and pagination use the same secondary action. */
 :is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button,
-.marketplace-content>button,.marketplace-networks button[data-chain=all]{
+.marketplace-content>button{
  color:var(--control-ink);background:#000;border-color:var(--control-line);
 }
 :is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:not(:disabled):not([aria-disabled=true]):hover,
-.marketplace-content>button:not(:disabled):not([aria-disabled=true]):hover,
-.marketplace-networks button[data-chain=all]:not(:disabled):hover{
+.marketplace-content>button:not(:disabled):not([aria-disabled=true]):hover{
  color:var(--control-ink);background:var(--control-hover);border-color:var(--control-ink);
 }
-:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true],
-.marketplace-networks button[data-chain=all][aria-pressed=true]{
+:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]{
  color:#000;background:var(--control-ink);border-color:var(--control-ink);
 }
-:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]:not(:disabled):hover,
-.marketplace-networks button[data-chain=all][aria-pressed=true]:not(:disabled):hover{
+:is(.replay-actions,.playback-speed,.display-options)>button[aria-pressed=true]:not(:disabled):hover{
  color:#000;background:var(--control-selected-hover);border-color:var(--control-selected-hover);
 }
 :is(.address-row,.replay-actions,.playback-speed,.display-options,.marketplace-empty)>button:focus-visible,
@@ -465,7 +467,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  #mobile-coin-search :is(#address-label,#coin-gallery-label) span{animation:none!important}
  #mobile-coin-search .address-row>button[type=submit]{display:inline-flex;order:-1;align-items:center;justify-content:center;flex:0 0 32px;width:32px;min-width:32px;height:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:0!important;background:transparent;color:var(--control-ink);font-size:0}
  #mobile-coin-search .address-row>button[type=submit]::before{content:"";width:18px;height:18px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center/contain no-repeat}
- #mobile-coin-search :is(input,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:inset 0 -2px var(--control-ink)}
+ #mobile-coin-search :is(input,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:none}
  #mobile-coin-search .address-row>button[type=submit]:not(:disabled):hover{background:var(--control-hover);border-color:var(--control-ink)}
  .mobile-coin-search form>p:not(#lookup){display:none}
  .mobile-search-feedback:empty{display:none}
@@ -565,7 +567,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .header-main.has-desktop-search>.header-links{justify-self:end}
  .header-main.has-desktop-search>.header-desktop-search{position:relative;display:block;width:100%;min-width:0;align-self:center}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form){display:block;width:100%;max-width:none;margin:0!important;padding:0}
- .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row{display:flex;align-items:stretch;gap:0;height:30px;box-sizing:border-box;margin:0;padding:0;border:0}
+ .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row{display:flex;align-items:stretch;gap:0;height:30px;box-sizing:border-box;margin:0;padding:0;border:0;border-bottom:1px solid var(--muted,#888)}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-field{height:100%;min-width:0;border:0;border-radius:0;background:transparent;box-shadow:none}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-field::after{display:none}
  .header-desktop-search :is(#address,#coin-gallery-search){display:block;width:100%;height:100%;min-width:0;padding:0 6px;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-body);line-height:20px}
@@ -575,7 +577,7 @@ button.collection-card:not(:disabled):hover,.market-tape .trending-pick:not(:dis
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row>button[type=submit]{display:inline-flex;order:-1;flex:0 0 32px;align-items:center;justify-content:center;width:32px;min-width:32px;max-width:none;height:29px;min-height:29px;aspect-ratio:auto;margin:0;padding:0;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:0;line-height:1}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row>button[type=submit]::before{content:'';display:block;width:18px;height:18px;background:currentColor;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.5'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center/contain no-repeat}
  .header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row>button[type=submit]:not(:disabled):hover{background:var(--control-hover)}
- .header-desktop-search :is(#address,#coin-gallery-search,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:inset 0 -2px var(--control-ink)}
+ .header-desktop-search :is(#address,#coin-gallery-search,.address-row>button[type=submit]):focus-visible{outline:none;box-shadow:none}
  .header-desktop-search :is(#address-help,#marketplace-coin-help){position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
  .header-desktop-search .mobile-search-paste{display:none}
  .header-search-panel{position:absolute;top:calc(100% + 8px);left:50%;transform:translateX(-50%);z-index:110;width:min(560px,calc(100vw - 32px));max-height:min(560px,calc(100dvh - var(--navigation-row-height) - 24px));overflow:auto;overscroll-behavior:contain;padding:12px;border:0;background:#000;box-shadow:0 12px 24px #0008}
@@ -634,11 +636,15 @@ html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:
  .site-footer>.footer-prices{order:3;display:flex;padding-top:16px;border-top:1px solid var(--line)}
 }
 
-/* Utility pages fill short viewports while their footer stays in document flow. */
+/* Utility pages fill short viewports. */
 body:is(.help-page,.report-page){display:flex;flex-direction:column;min-height:100svh;min-height:100dvh;padding-bottom:0}
 body.help-page>main{display:flex;flex-direction:column;flex:1 0 auto;min-height:0;padding-bottom:0}
 body.report-page>.issue-report-page{flex:1 0 auto}
 body.help-page>main>.site-footer,body.report-page>.site-footer{position:static;inset:auto;flex:none;margin-top:auto}
+@media(min-width:761px){
+ body.report-page{padding-bottom:calc(var(--navigation-row-height) + env(safe-area-inset-bottom))}
+ body.report-page>.site-footer{position:fixed;inset:auto 0 0;z-index:10;margin:0}
+}
 @media(min-width:761px){.header-main:not(.has-desktop-search) .header-search{display:inline-flex}}
 
 /* Menu loading keeps one stable status row, with four crisp square pixels. */
@@ -707,4 +713,58 @@ body.help-page>main>.site-footer,body.report-page>.site-footer{position:static;i
  .mobile-search-more{display:block;width:100%;min-height:44px;margin:16px 0;padding:8px 12px;border:1px solid var(--line);background:none;color:var(--control-ink);font:inherit;font-size:var(--font-size-small)}
  .mobile-search-more[hidden]{display:none}
 
+}
+
+/* Keep search lettering on the same scale as the header navigation. */
+@media(min-width:761px){.header-desktop-search :is(#address,#coin-gallery-search,#address-label,#coin-gallery-label){font-size:var(--font-size-small)!important}}
+
+/* Keep informational-page footers at the viewport edge without covering copy. */
+body.about-page{display:flex;flex-direction:column;min-height:100dvh;padding-bottom:0}
+body.about-page>main{display:flex;flex-direction:column;flex:1 0 auto;min-height:100dvh;padding-bottom:0}
+body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;margin-top:auto;z-index:110;background:var(--bg,#000)}
+
+@media(max-width:760px){
+ body.about-page>main>.site-footer{position:static;inset:auto;margin-top:28px;z-index:auto}
+}
+
+@media(min-width:761px){.header-desktop-search :is(#coin-form,#marketplace-coin-form) .address-row:focus-within{border-bottom-color:var(--control-ink)}}
+
+/* Match the search network selector's circular ALL state. */
+.marketplace-networks button[data-chain=all]{position:relative;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;margin:0;padding:8px;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small);box-shadow:none}
+.marketplace-networks button[data-chain=all][aria-pressed=true]::after{content:"";position:absolute;inset:3px;border:1px solid var(--control-ink);border-radius:50%!important;pointer-events:none}
+.marketplace-networks button[data-chain=all]:focus-visible{outline:2px solid var(--control-ink);outline-offset:-2px}
+
+/* Preserve the mixed-case All label in both shared search surfaces. */
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network[data-chain=all],
+.marketplace-networks button[data-chain=all]{font-family:UnifontText,var(--font-family);text-transform:none}
+
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network[data-chain=all],.marketplace-networks button[data-chain=all]{--font-family:UnifontText,"Noto Sans",sans-serif}
+
+/* Circular selection and keyboard focus, without the default square outline. */
+.marketplace-networks button[data-chain]:focus-visible{outline:none;box-shadow:none}
+.marketplace-networks button[data-chain]::after{content:"";position:absolute;inset:3px;width:auto;height:auto;max-width:none;aspect-ratio:1;border:1px solid transparent;border-radius:50%!important;background:transparent;transform:none;pointer-events:none}
+.marketplace-networks button[data-chain]:is([aria-pressed=true],:focus-visible)::after{border-color:var(--control-ink)}
+.marketplace-networks button[data-chain]:not([data-chain=all])[aria-pressed=true]::after{inset:3px;width:auto;height:auto;max-width:none;transform:none}
+.marketplace-networks .network-mark{border-radius:50%!important}
+
+/* Search network focus uses the same circular marker as marketplace. */
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network:focus-visible{outline:none;box-shadow:none}
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network:focus-visible::after{content:"";position:absolute;inset:3px;border:1px solid var(--control-ink);border-radius:50%!important;pointer-events:none}
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network img{border-radius:50%!important}
+
+/* Footer text shares the homepage's small size across pages and controls. */
+.site-footer,.footer-mobile-sheet{
+ --font-family:UnifontText,"Noto Sans",sans-serif;
+}
+.site-footer,.site-footer *,
+.footer-mobile-sheet,.footer-mobile-sheet *{
+ text-transform:none;
+}
+.site-footer,
+.site-footer :is(a,button,nav,span,small,output,summary),
+.footer-mobile-sheet,
+.footer-mobile-sheet :is(a,button,nav,span,small,output,summary),
+.footer-mobile-sheet .footer-sheet-heading{
+ font-size:var(--font-size-small);
+ line-height:1.4;
 }

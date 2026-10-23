@@ -1,4 +1,5 @@
-import {bindMobileCoinSearch} from './mobile-search.js?v=406';
+import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=456';
+import {bindMobileCoinSearch} from './mobile-search.js?v=456';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){
@@ -59,25 +60,29 @@ removeRetiredSampleStorage();
 // Optional footer features cannot prevent navigation or volume from starting.
 if(document.querySelector('.site-footer')&&new URLSearchParams(location.search).get('capture')!=='live'){
  void import('./footer-prices.js?v=240').catch(()=>{});
- if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=395').catch(()=>{
+ if(document.querySelector('.footer-wallet'))void import('./wallet-connect.js?v=448').catch(()=>{
   const button=document.querySelector('.footer-wallet'),status=document.querySelector('.wallet-status');
   if(button)button.disabled=true;
   if(status)status.textContent='Wallet unavailable. Reload to try again.';
  });
 }
 
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindMobileCoinSearch,{once:true});else bindMobileCoinSearch();
+function bindHeaderSearch(){
+ if(document.body.classList.contains('profile-page'))bindMarketplaceCoinSearch({formId:'coin-form',inputId:'address',labelId:'address-label'});
+ bindMobileCoinSearch();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindHeaderSearch,{once:true});else bindHeaderSearch();
 
 const headerWallet=new URLSearchParams(location.search).get('capture')==='live'?null:document.querySelector('.header-wallet');
 if(headerWallet){
  headerWallet.setAttribute('aria-label','Profile');headerWallet.title='Profile';
- void import('./profile.js?v=395').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
+ void import('./profile.js?v=448').then(({bindProfile})=>bindProfile(headerWallet)).catch(()=>{
   headerWallet.title='Profile is unavailable. Reload to try again.';
  });
 }
 
 function bindMobilePlayerOrder(){
- const transport=document.querySelector('.instrument-page .transport'),title=document.querySelector('.coin-title'),readings=title?.querySelector('.coin-live-readings'),avatar=title?.querySelector('.coin-avatar'),name=title?.querySelector('#coin-name'),address=title?.querySelector('#coin-address');
+ const transport=document.querySelector('.instrument-page .transport'),title=document.querySelector('.coin-title'),readings=title?.querySelector('.coin-live-readings'),avatar=title?.querySelector('.coin-avatar'),name=title?.querySelector('#coin-name'),address=title?.querySelector('.coin-address-row')||title?.querySelector('#coin-address');
  if(!transport||!readings||!avatar||!name)return;
  const home=document.createComment('transport position'),avatarHome=document.createComment('avatar position'),nameHome=document.createComment('coin name position'),addressHome=document.createComment('coin address position');transport.before(home);avatar.before(avatarHome);name.before(nameHome);address?.before(addressHome);
  const heading=document.createElement('div');heading.className='mobile-player-heading';

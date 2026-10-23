@@ -20,7 +20,7 @@ w3m-modal {
  --apkt-tokens-theme-textTertiary:#aaa;
  --apkt-tokens-theme-textInvert:#000;
  --apkt-tokens-theme-iconDefault:#fff;
- --apkt-tokens-theme-iconInverse:#000;
+ --apkt-tokens-theme-iconInverse:#fff;
  --apkt-tokens-theme-borderPrimary:#333;
  --apkt-tokens-theme-borderPrimaryDark:#333;
  --apkt-tokens-theme-borderSecondary:#666;
@@ -79,3 +79,42 @@ w3m-modal {
  --apkt-typography-sm-regular-mono-lineHeight:18px;
  --apkt-typography-sm-medium-lineHeight:18px;
 }
+
+.upic-wallet-dialog{position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(480px,calc(100vw - 32px));max-width:none;height:fit-content;max-height:90dvh;overflow:auto;overscroll-behavior:contain;padding:16px;border:1px solid #333;background:#000;color:#ddd;font:inherit}
+.upic-wallet-dialog:not([open]){display:none}
+.upic-wallet-dialog::backdrop{background:#000b}
+.upic-wallet-logo{display:block;width:58px;height:80px;object-fit:contain;margin:8px auto 16px;image-rendering:pixelated}
+.upic-wallet-dialog w3m-modal.appkit-modal{--apkt-modal-width:100%;position:relative;inset:auto;display:block;background:transparent;opacity:1;pointer-events:auto}
+@media(max-width:760px){.upic-wallet-dialog{inset:0;margin:auto;width:min(420px,calc(100% - 24px));height:fit-content;max-height:calc(100dvh - 32px);border:1px solid #333;padding:12px}}
+
+.upic-wallet-dialog[open]{animation:upic-wallet-in 220ms cubic-bezier(.2,0,0,1) both}
+.upic-wallet-dialog::backdrop{background:#0008;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:upic-wallet-backdrop-in 220ms ease-out both}
+.upic-wallet-dialog.is-closing{animation:upic-wallet-out 180ms ease-in both;pointer-events:none}
+.upic-wallet-dialog.is-closing::backdrop{animation:upic-wallet-backdrop-out 180ms ease-in both}
+@keyframes upic-wallet-in{from{opacity:0}to{opacity:1}}
+@keyframes upic-wallet-out{from{opacity:1}to{opacity:0}}
+@keyframes upic-wallet-backdrop-in{from{background:#0000;backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0)}to{background:#0008;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}}
+@keyframes upic-wallet-backdrop-out{from{background:#0008;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}to{background:#0000;backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0)}}
+@media(prefers-reduced-motion:reduce){.upic-wallet-dialog[open],.upic-wallet-dialog::backdrop,.upic-wallet-dialog.is-closing,.upic-wallet-dialog.is-closing::backdrop{animation:none}}
+
+@media(max-width:760px){
+ .upic-wallet-logo{width:36px;height:50px;margin:8px auto 12px}
+}
+
+
+.upic-wallet-dialog.is-wallet-action>.upic-wallet-logo{display:none}
+.upic-wallet-dialog w3m-modal{--apkt-tokens-theme-borderPrimary:transparent;--apkt-tokens-theme-borderPrimaryDark:transparent}
+
+.upic-signature-dialog{padding:20px;font-size:var(--font-size-body,16px);line-height:1.5}
+.upic-signature-header{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:12px;align-items:center}
+.upic-signature-header h2{margin:0;font:inherit;font-size:var(--font-size-title,24px);line-height:1.2;color:#fff}
+.upic-signature-dialog button{box-sizing:border-box;min-height:48px;border:1px solid #555;background:#000;color:#fff;font:inherit;cursor:pointer;touch-action:manipulation}
+.upic-signature-dialog .upic-signature-close{width:44px;min-height:44px;padding:0;border:0;font-size:28px;line-height:1}
+.upic-signature-explanation{margin:20px 0 24px;color:#aaa;overflow-wrap:anywhere}
+.upic-signature-status{margin:0 0 20px;color:#ddd;overflow-wrap:anywhere}
+.upic-signature-continue,.upic-signature-reopen{display:block;width:100%;padding:12px 16px}
+.upic-signature-dialog .upic-signature-reopen{margin-top:12px;border-color:#333}
+.upic-signature-dialog button:disabled{cursor:default;color:#aaa;border-color:#333}
+.upic-signature-dialog button:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.upic-signature-dialog [hidden]{display:none}
+@media(max-width:760px){.upic-signature-dialog{padding:16px}.upic-signature-header h2{font-size:20px}}

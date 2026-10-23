@@ -1,35 +1,50 @@
 import {harmoniousPitch} from './harmonic-network.js?v=208';
 // Original Pd control score: real observations -> finite microtones and noise.
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
-export function createDataSonification({send=()=>{},event=()=>{}}={}){
+export function createDataSonification({send=()=>{},event=()=>{},getArrangement=()=>null}={}){
  let enabled=true,seed=1917,lastTradeAt=-Infinity,lastObservation=null,lastPrice=null,signals={};
+ let arrangement=null,phraseGain=1,lastStrikeGain=1;
+ const phrase=()=>getArrangement()||arrangement;
+ const dataGain=state=>state?.active?unit(state.layers?.data??state.phraseGain??1):1;
  function strike(clock){
   if(!enabled||!signals.active||clock-lastTradeAt<.125)return false;
-  lastTradeAt=clock;signals.level=Math.max(.18,signals.level||0);
+  // Read the shared score clock at the event itself, including events that
+  // arrive between UI frames. A breath drops the onset, never queues it up.
+  const state=phrase();if(state?.active&&state.rest)return false;
+  lastStrikeGain=dataGain(state);lastTradeAt=clock;
+  signals.level=Math.max(.18,signals.baseLevel||0)*lastStrikeGain;
   // Set the audible gain before the onset, even when USD volume is unknown.
   send('data-level',signals.level);event('data-trade');return true;
  }
  function frame(m,{playing=false,seeking=false,ended=false,clock=0}={}){
   const active=enabled&&playing&&!seeking&&!ended;
+  arrangement=m.arrangement||null;
+  const state=phrase(),rest=Boolean(state?.active&&state.rest);
+  // Keep the prior gain through a rest so existing voices and reverbs decay.
+  if(!rest)phraseGain=dataGain(state);
   const fresh=unit(m.fresh),intensity=unit(m.music?.intensity),raw=m.raw||m;
   const activity=unit(raw.activity),volume=unit(raw.volume),pressure=unit(m.context?.pressure);
   const motion=unit(raw.motion),balance=m.availability?.balance===false?.5:unit(m.balance??.5);
   const liquidity=m.availability?.liquidity===false?0:unit(m.texture);
   // Historic candle volume is a labelled activity proxy, never a trade count.
-  const excitation=fresh*Math.max(intensity*unit(activity*10),.5*Math.sqrt(activity*volume));
+  // Old 5-minute volume/activity totals must not sustain sound in a quiet
+  // live market. Preserve labelled candle activity during historical replay.
+  const tradingActivity=unit(m.tradingActivity??(m.replay?(Number(m.replay.volume)>0?1:m.replay.volume==null&&raw.motion>0?1:0):0));
+  const excitation=fresh*tradingActivity*Math.max(intensity*unit(activity*10),.5*Math.sqrt(activity*volume));
   const density=active?unit(excitation*(.15+.85*Math.sqrt(activity||volume))):0;
   // Hold enough gain for the short voice to speak; only actual observations
   // refresh this envelope. The reverb receives the complete pulse.
   const age=Math.max(0,clock-lastTradeAt);
   const eventTail=age<.35?1:age<1.5?Math.exp(-(age-.35)*5):0;
-  const level=active?Math.max(.24*Math.sqrt(excitation),.18*eventTail):0;
+  const baseLevel=.24*Math.sqrt(excitation);
+  const level=active?Math.max(baseLevel*phraseGain,.18*eventTail*lastStrikeGain):0;
   const reverb=.65+.15*liquidity;
   const noise=unit(.08+.46*motion+.24*pressure);
   const tonic=m.music?.tonic??48+seed%12;
   const pitch=harmoniousPitch(tonic+21+Math.round(14*intensity+3*motion),tonic,m.music?.character,m.music?.harmony?.notes||[]);
   const params={'data-reverb':reverb,'data-enabled':active?1:0,'data-density':density,'data-level':level,'data-noise':noise,'data-pitch':pitch,'data-root':tonic-12,'data-duration':.7+.8*liquidity,'data-drive':1+2.5*intensity,'data-filter':1200+6500*Math.max(motion,volume),'data-pan-left':Math.sqrt(1-balance),'data-pan-right':Math.sqrt(balance)};
   for(const [name,value] of Object.entries(params))send(name,value);
-  signals={density,drive:params['data-drive'],pitch,noise,level,reverb,liquidity,duration:params['data-duration'],enabled,active,clock};
+  signals={density,drive:params['data-drive'],pitch,noise,level,baseLevel,reverb,liquidity,duration:params['data-duration'],enabled,active,rest,phraseGain,clock};
   const observation=m.replay?.at;
   if(observation!=null&&observation!==lastObservation){
    const prior=lastObservation;lastObservation=observation;
@@ -48,7 +63,7 @@ export function createDataSonification({send=()=>{},event=()=>{}}={}){
   },
   observePrice(price,{playing=false,clock=0}={}){const previous=lastPrice;lastPrice=Number(price);if(enabled&&playing&&previous>0&&lastPrice>0&&Math.abs(lastPrice/previous-1)>1e-7&&clock-lastTradeAt>=.125){return strike(clock);}return false;},
   setEnabled(value){enabled=Boolean(value);if(!enabled){send('data-enabled',0);send('data-level',0);}},
-  reset(value=seed){seed=Number(value)>>>0;lastTradeAt=-Infinity;lastObservation=null;lastPrice=null;signals={...signals,active:false,level:0};send('data-enabled',0);send('data-level',0);},
+  reset(value=seed){seed=Number(value)>>>0;lastTradeAt=-Infinity;lastObservation=null;lastPrice=null;arrangement=null;phraseGain=lastStrikeGain=1;signals={...signals,active:false,level:0};send('data-enabled',0);send('data-level',0);},
   snapshot(){return signals;},
  };
 }

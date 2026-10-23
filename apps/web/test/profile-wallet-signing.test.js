@@ -9,7 +9,7 @@ const sol={namespace:'solana',address:'SolanaAddress',caipAddress:'solana:mainne
 function fixture(account=evm){
  const provider={request:vi.fn(async()=>'0x'+'ab'.repeat(65)),signMessage:vi.fn(async()=>new Uint8Array(64).fill(9))};
  const modal={getAccount:vi.fn(()=>account),getProvider:vi.fn(()=>provider)};
- const context=vm.createContext({modal,TextEncoder,Uint8Array,ArrayBuffer,btoa});
+ const context=vm.createContext({modal,TextEncoder,Uint8Array,ArrayBuffer,btoa,CoreHelperUtil:{isMobile:()=>false}});
  vm.runInContext(signer,context);
  return {sign:context.signProfileMessage,provider,modal};
 }

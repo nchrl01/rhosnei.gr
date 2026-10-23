@@ -1,21 +1,32 @@
 // Expand the existing renderer, keeping its audio clock and GPU/canvas alive.
 export function createVisualFullscreen(host,{referenceSide=null}={}){
+ const hostAttributes=new Map(['role','tabindex','aria-label','aria-expanded','aria-disabled','title'].map(name=>[name,host.getAttribute(name)]));
+ const mobile=matchMedia('(max-width:760px)');
+ let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],volumePlaceholder=null;
+ function restoreHostAttributes(){for(const [name,value] of hostAttributes){if(value===null)host.removeAttribute(name);else host.setAttribute(name,value);}}
+ function hostInteractive(){return expanded||!mobile.matches&&host.dataset.marketLoaded==='true';}
+ function syncHost(){
+  if(!hostInteractive()){restoreHostAttributes();return;}
+  const label=expanded?'Collapse visualization':'Expand visualization';
+  host.setAttribute('role','button');host.tabIndex=0;host.setAttribute('aria-label',label);host.title=label;
+  host.setAttribute('aria-expanded',String(expanded));host.setAttribute('aria-disabled','false');
+ }
  const button=document.createElement('button');button.type='button';button.className='visual-fullscreen';host.append(button);
  function icon(expanded){
   const label=expanded?'Collapse visualization':'Expand visualization';
   button.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true" focusable="false"><path d="${expanded?'M5 5l14 14M11 19h8v-8':'M19 19 5 5M5 13V5h8'}"/></svg>`;
   button.setAttribute('aria-label',label);button.title=label;button.setAttribute('aria-expanded',String(expanded));
+  syncHost();
  }
  icon(false);
- const availability=new MutationObserver(()=>{button.disabled=host.dataset.marketLoaded!=='true';});
+ const availability=new MutationObserver(()=>{button.disabled=host.dataset.marketLoaded!=='true';icon(expanded);});
  availability.observe(host,{attributes:true,attributeFilter:['data-market-loaded']});
  button.disabled=host.dataset.marketLoaded!=='true';
  const header=document.querySelector('.market-header'),reduced=matchMedia('(prefers-reduced-motion: reduce)');
- let expanded=false,busy=false,placeholder=null,animation=null,savedInert=[],volumePlaceholder=null;
  const secondaryAction=document.querySelector('#save-coin,#share');
  const volumeWidget=document.querySelector('.volume-widget'),volumeButton=document.querySelector('#volume-button');
  function placeButton(){
-  if(!expanded&&matchMedia('(max-width:760px)').matches&&secondaryAction)secondaryAction.after(button);
+  if(!expanded&&mobile.matches&&secondaryAction)secondaryAction.after(button);
   else if(button.parentElement!==host)host.append(button);
  }
  placeButton();
@@ -87,10 +98,22 @@ export function createVisualFullscreen(host,{referenceSide=null}={}){
    for(const [node,value] of savedInert)node.inert=value;savedInert=[];
    icon(false);
   }
-  busy=false;button.focus({preventScroll:true});
+  busy=false;(hostInteractive()?host:button).focus({preventScroll:true});
  }
  function escape(event){if(event.key==='Escape'&&expanded&&!event.defaultPrevented){event.preventDefault();void toggle();}}
+ function tapToToggle(event){
+  if(!hostInteractive()||event.defaultPrevented||event.button!==0)return;
+  const control=event.target.closest('button,a,input,select,textarea,summary,[role="button"],[role="slider"],[contenteditable="true"]');
+  if(control&&control!==host)return;
+  void toggle();
+ }
+ function keyboardToggle(event){
+  if(!hostInteractive()||event.target!==host||event.defaultPrevented||!['Enter',' '].includes(event.key))return;
+  event.preventDefault();if(!event.repeat)void toggle();
+ }
+ host.addEventListener('click',tapToToggle);host.addEventListener('keydown',keyboardToggle);
+ const responsive=()=>{syncHost();top();};mobile.addEventListener('change',responsive);
  button.addEventListener('click',toggle);document.addEventListener('keydown',escape);window.addEventListener('resize',top);
  const observer=new ResizeObserver(()=>{if(expanded)top();});if(header)observer.observe(header);
- return {close(){availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();}};
+ return {close(){host.removeEventListener('click',tapToToggle);host.removeEventListener('keydown',keyboardToggle);mobile.removeEventListener('change',responsive);availability.disconnect();expanded=false;placeButton();fullscreenVolume();animation?.cancel();if(placeholder)placeholder.replaceWith(host);host.classList.remove('is-expanded');document.body.classList.remove('visual-expanded');for(const [node,value] of savedInert)node.inert=value;observer.disconnect();document.removeEventListener('keydown',escape);window.removeEventListener('resize',top);button.remove();restoreHostAttributes();}};
 }

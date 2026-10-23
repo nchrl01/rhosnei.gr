@@ -1,7 +1,7 @@
 import {Hono} from 'hono';
 import {bodyLimit} from 'hono/body-limit';
 import {createPublicClient,http,hashTypedData,verifyTypedData,type Address,type Hex,isAddress} from 'viem';
-import {CHAINS,canonicalToken,type ChainId,type Collection,type Edition,type Job} from '@upic/domain';
+import {CHAINS,canonicalToken,ENGINE_VERSION,type ChainId,type Collection,type Edition,type Job} from '@upic/domain';
 import {assetKey,domain,orderTypes,nftAbi,marketAbi,DOMAINS} from '@upic/sdk';
 import {DB} from './db';import {deployment,coordinator,type Env} from './env';import {challenge,login,walletFor,authorized} from './auth';
 import {prepare,renderFinished,type Intent,type AssetRow,clientFor} from './services';import {upkeepStatus,runUpkeep} from './upkeep';import {drip} from './faucet';import type {PoolPolicy} from './verification';
@@ -24,6 +24,20 @@ app.use('*',async(c,next)=>{
 });
 app.get('/health',c=>c.json({service:'upic',mode:c.env.MODE,configured:Boolean(c.env.DEPLOYMENT_JSON&&c.env.POSTGREST_TOKEN)}));
 app.get('/v1/config',c=>c.json({deployment:deployment(c.env),gateway:c.env.PINATA_GATEWAY,appURL:c.env.PUBLIC_APP_URL}));
+// Read-only setup information for testers. Configured credentials are not a
+// health check; a renderer with no active lease has no provable heartbeat.
+app.get('/v1/status',async c=>{
+ const env=c.env,services={database:Boolean(env.POSTGREST_URL&&env.POSTGREST_TOKEN),storage:Boolean(env.IPFS_API||env.PINATA_JWT),rendererAuthorization:Boolean(env.RENDERER_TOKEN),verification:Boolean(env.SOURCE_RPC_JSON&&env.VERIFIER_PRIVATE_KEY),gasFaucet:Boolean(env.FAUCET_PRIVATE_KEY)};
+ let renderer:{state:'unknown'|'waiting'|'working'|'failed';queued:number|null;leased:number|null;failed:number|null}={state:'unknown',queued:null,leased:null,failed:null};
+ let databaseReachable:boolean|null=null;
+ if(services.database){
+  try{
+   const db=new DB(env),[queued,leased,failed]=await Promise.all(['queued','leased','failed'].map(state=>db.count('upic_jobs',{kind:'eq.render',state:'eq.'+state,...(state==='leased'?{lease_until:'gt.'+new Date().toISOString()}:{} )})));
+   databaseReachable=true;renderer={state:leased!>0?'working':queued!>0?'waiting':failed!>0?'failed':'unknown',queued:queued!,leased:leased!,failed:failed!};
+  }catch{databaseReachable=false;}
+ }
+ return c.json({mode:env.MODE,chainId:Number(env.CHAIN_ID),engineVersion:ENGINE_VERSION,services,databaseReachable,renderer});
+});
 app.get('/v1/chains',c=>{const rpc=JSON.parse(c.env.SOURCE_RPC_JSON||'{}');return c.json(CHAINS.map(chain=>({...chain,adapterSupported:chain.verified,mintingEnabled:chain.verified&&Array.isArray(rpc[chain.id])&&rpc[chain.id].length===2})));});
 app.get('/v1/assets',async c=>c.json(await new DB(c.env).list('upic_assets',{select:'asset_key,chain,token,name,symbol,approved,latest,verified_at,evidence_uri',enabled:'eq.true',limit:'100'})));
 app.get('/v1/discover',c=>coordinator(c.env).fetch('https://internal/discover?q='+encodeURIComponent(c.req.query('q')||'')));
@@ -38,7 +52,8 @@ app.get('/v1/upkeep/:address',async c=>{const a=c.req.param('address');if(!isAdd
 app.post('/v1/faucet',async c=>{const wallet=await walletFor(c.env,c.req.header('Cookie')||'');return c.json(await drip(c.env,wallet));});
 app.post('/v1/auth/challenge',async c=>{const {wallet}=await c.req.json<{wallet:Address}>();if(!isAddress(wallet))return c.json({error:'invalid-wallet'},400);return c.json({message:await challenge(c.env,wallet)});});
 app.post('/v1/auth/login',async c=>{const {message,signature}=await c.req.json<{message:string;signature:Hex}>();if(message.length>4096)return c.json({error:'invalid-message'},400);const token=await login(c.env,message,signature);c.header('Set-Cookie','upic_session='+token+'; HttpOnly; Path=/; Max-Age=3600; '+(c.env.MODE==='local'?'SameSite=Lax':'SameSite=None; Secure'));return c.json({ok:true});});
-app.post('/v1/auth/logout',c=>{c.header('Set-Cookie','upic_session=; HttpOnly; Path=/; Max-Age=0');return c.json({ok:true});});
+app.get('/v1/auth/session',async c=>{try{return c.json({wallet:await walletFor(c.env,c.req.header('Cookie')||'')});}catch{return c.json({wallet:null});}});
+app.post('/v1/auth/logout',c=>{c.header('Set-Cookie','upic_session=; HttpOnly; Path=/; Max-Age=0; '+(c.env.MODE==='local'?'SameSite=Lax':'SameSite=None; Secure'));return c.json({ok:true});});
 app.use('/v1/prepare/*',async(c,next)=>{c.set('wallet',await walletFor(c.env,c.req.header('Cookie')||''));await next();});
 app.post('/v1/prepare/create',async c=>{const {assetKey:key}=await c.req.json<{assetKey:Hex}>();if(!/^0x[0-9a-f]{64}$/.test(key))return c.json({error:'invalid-asset'},400);return c.json(await prepare(c.env,c.get('wallet'),key,true),202);});
 app.post('/v1/prepare/mint',async c=>{const {assetKey:key}=await c.req.json<{assetKey:Hex}>();if(!/^0x[0-9a-f]{64}$/.test(key))return c.json({error:'invalid-asset'},400);return c.json(await prepare(c.env,c.get('wallet'),key,false),202);});

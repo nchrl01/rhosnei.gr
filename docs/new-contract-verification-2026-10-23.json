@@ -1,0 +1,120 @@
+{
+  "verifiedAt": "2026-10-23",
+  "accepted": [
+    {
+      "id": "hyperliquid",
+      "nativeChain": "hyperliquid",
+      "chain": "hyperevm",
+      "symbol": "WHYPE",
+      "address": "0x5555555555555555555555555555555555555555",
+      "kind": "wrapped",
+      "source": "https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/hyperevm/wrapped-hype",
+      "explorer": "https://hyperevmscan.io/token/0x5555555555555555555555555555555555555555"
+    },
+    {
+      "id": "zcash",
+      "nativeChain": "zcash",
+      "chain": "ethereum",
+      "symbol": "WZEC",
+      "address": "0x4A64515E5E1d1073e83f30cB97BEd20400b66E10",
+      "kind": "wrapped",
+      "source": "https://wrapped.com/",
+      "explorer": "https://etherscan.io/token/0x4A64515E5E1d1073e83f30cB97BEd20400b66E10"
+    },
+    {
+      "id": "monero",
+      "nativeChain": "monero",
+      "chain": "ethereum",
+      "symbol": "WXMR",
+      "address": "0x465e07d6028830124be2e4aa551fbe12805db0f5",
+      "kind": "wrapped",
+      "source": "https://www.btse.com/blog/introducing-wrapped-monero/",
+      "explorer": "https://etherscan.io/token/0x465e07d6028830124be2e4aa551fbe12805db0f5"
+    },
+    {
+      "id": "bittensor",
+      "nativeChain": "bittensor",
+      "chain": "ethereum",
+      "symbol": "wTAO",
+      "address": "0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44",
+      "kind": "wrapped",
+      "source": "https://etherscan.io/token/0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44",
+      "explorer": "https://etherscan.io/token/0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44"
+    },
+    {
+      "id": "kaspa",
+      "nativeChain": "kaspa",
+      "chain": "ethereum",
+      "symbol": "wKAS",
+      "address": "0x112b08621e27e10773ec95d250604a041f36c582",
+      "kind": "wrapped",
+      "source": "https://wiki.kaspa.org/en/timeline",
+      "explorer": "https://etherscan.io/token/0x112b08621e27e10773ec95d250604a041f36c582"
+    },
+    {
+      "id": "xdce-crowd-sale",
+      "nativeChain": "xdc-network",
+      "chain": "xdc",
+      "symbol": "WXDC",
+      "address": "0x951857744785e80e2de051c32ee7b25f9c458c42",
+      "kind": "wrapped",
+      "source": "https://xdcscan.com/token/0x951857744785E80e2De051c32EE7b25f9c458C42",
+      "explorer": "https://xdcscan.com/token/0x951857744785E80e2De051c32EE7b25f9c458C42"
+    },
+    {
+      "id": "stellar",
+      "nativeChain": "stellar",
+      "chain": "stellar",
+      "symbol": "XLM",
+      "address": "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+      "kind": "native",
+      "source": "https://github.com/orgs/stellar/discussions/1553",
+      "explorer": "https://stellar.expert/explorer/public/contract/CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA"
+    },
+    {
+      "id": "blockstack",
+      "nativeChain": "stacks",
+      "chain": "stacks",
+      "symbol": "wSTX",
+      "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx",
+      "kind": "wrapped",
+      "source": "https://api.hiro.so/v2/contracts/source/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1/wstx?proof=0",
+      "explorer": "https://explorer.hiro.so/txid/SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx?chain=mainnet"
+    }
+  ],
+  "unresolved": [
+    {
+      "id": "figure-heloc",
+      "reason": "Listed identifier is a Provenance metadata scope, not a fungible token contract. No verified tradable counterpart found.",
+      "source": "https://docs.provenance.io/blockchain/basics/modules/metadata/"
+    },
+    {
+      "id": "canton-network",
+      "reason": "CC is the native Global Synchronizer utility token; no verified static wrapped token contract found.",
+      "source": "https://www.canton.network/faq"
+    },
+    {
+      "id": "bfusd",
+      "reason": "Issuer explicitly confirms it is not a blockchain token and cannot leave Binance.",
+      "source": "https://www.binance.com/en/academy/articles/what-is-bfusd"
+    },
+    {
+      "id": "algorand",
+      "reason": "Native ALGO has no token contract; discovered Wrapped ALGO listing is inactive/deactivated. No verified active counterpart accepted.",
+      "source": "https://www.coingecko.com/en/coins/wrapped-algo"
+    },
+    {
+      "id": "pi-network",
+      "reason": "Native Pi L1 currency; no issuer-verified wrapped contract found.",
+      "source": "https://minepi.com/blog/pi-stablecoins/"
+    },
+    {
+      "id": "pearl-2",
+      "reason": "Native Pearl PRL, distinct from Perle. Independent wPRL proposal not an official mainnet deployment; Pilcrow new wraps disabled.",
+      "sources": [
+        "https://github.com/pearl-research-labs/pearl/issues/347",
+        "https://pilcrowbridge.com/"
+      ]
+    }
+  ]
+}

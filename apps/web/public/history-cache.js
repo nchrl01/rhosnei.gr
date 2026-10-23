@@ -12,7 +12,7 @@ function open(){return database??=new Promise((resolve,reject)=>{
 function memo(key,value){memory.delete(key);memory.set(key,value);while(memory.size>8)memory.delete(memory.keys().next().value);}
 export async function readSavedHistory(key){
  const now=Date.now(),hit=memory.get(key);if(hit&&now-hit.saved<HISTORY_RETENTION_MS)return hit;
- try{const db=await open();const record=await new Promise((resolve,reject)=>{const tx=db.transaction('records'),r=tx.objectStore('records').get(key);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});if(record&&record.expires>now){memo(key,record.value);return record.value;}}
+ try{const db=await open();const record=await new Promise((resolve,reject)=>{const tx=db.transaction('records'),r=tx.objectStore('records').get(key),timer=setTimeout(()=>reject(Error('History cache read timed out')),1000);r.onsuccess=()=>{clearTimeout(timer);resolve(r.result);};r.onerror=()=>{clearTimeout(timer);reject(r.error);};});if(record&&record.expires>now){memo(key,record.value);return record.value;}}
  catch{}
  // Migrate only this requested legacy entry. Never delete unrelated browser data.
  try{const value=JSON.parse(localStorage.getItem(key));if(value?.saved>now-HISTORY_RETENTION_MS){void writeSavedHistory(key,value);return value;}}catch{}

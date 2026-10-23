@@ -42,6 +42,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Capture regression checks
+        run: node --test scripts/live-capture-regression.test.mjs scripts/capture-network.test.mjs
       - name: Check cloud publisher before rendering
         run: node scripts/capture-marketplace-live.mjs --check-publisher
       - name: Install isolated capture browser
@@ -49,7 +51,11 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/upic-browsers
         run: |
           npm install --prefix "$RUNNER_TEMP/upic-capture-tools" --no-package-lock --no-audit --no-fund playwright@1.56.1
-          node "$RUNNER_TEMP/upic-capture-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          if command -v google-chrome >/dev/null 2>&1; then
+            echo "UPIC_CAPTURE_EXECUTABLE=$(command -v google-chrome)" >> "$GITHUB_ENV"
+          else
+            timeout 180 node "$RUNNER_TEMP/upic-capture-tools/node_modules/playwright/cli.js" install --with-deps chromium
+          fi
       - name: Render actual market inputs and publish original frames
         env:
           CI: 'true'
@@ -61,8 +67,8 @@ jobs:
           CAPTURE_TOP1000: ${{ inputs.top1000 || 'false' }}
           CAPTURE_PART: ${{ matrix.part }}
         run: |
-          args=(--publish --limit "$CAPTURE_LIMIT" --timeout 90 --concurrency 2)
-          if [[ "$CAPTURE_TOP1000" == "true" ]]; then args+=(--top1000 --part "$CAPTURE_PART"); fi
+          args=(--publish --contracts-only --limit "$CAPTURE_LIMIT" --timeout 90 --concurrency 2)
+          if [[ "$CAPTURE_TOP1000" == "true" ]]; then args+=(--top1000 --part "$CAPTURE_PART"); else args+=(--collectibles); fi
           if [[ -n "$CAPTURE_IDS" ]]; then args+=(--ids "$CAPTURE_IDS"); fi
           node scripts/capture-marketplace-live.mjs "${args[@]}"
       - name: Preserve capture coverage report

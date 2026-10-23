@@ -1,0 +1,3 @@
+/* Keep the Credits layout with readable, sentence-case research notes. */
+body.research-page { text-transform:none; }
+.research-page .credits-content { overflow-wrap:break-word; }
