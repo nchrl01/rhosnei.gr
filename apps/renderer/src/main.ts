@@ -1,9 +1,11 @@
 import {createServer} from 'node:http';import {readFile,writeFile,mkdir,rm,stat} from 'node:fs/promises';import {resolve,extname} from 'node:path';import {spawn} from 'node:child_process';
 import {chromium} from 'playwright';import type {ArtworkInput,Job} from '@upic/domain';import {ENGINE_VERSION,assertArtwork} from '@upic/domain';
 const API=process.env.UPIC_API_URL||'http://127.0.0.1:8787',TOKEN=process.env.RENDERER_TOKEN||'',IPFS=process.env.IPFS_API||'http://127.0.0.1:5001';
+// Behind Cloudflare Access (private staging), every API call also carries the CI service token.
+const ACCESS:Record<string,string>=process.env.CF_ACCESS_CLIENT_ID?{'CF-Access-Client-Id':process.env.CF_ACCESS_CLIENT_ID,'CF-Access-Client-Secret':process.env.CF_ACCESS_CLIENT_SECRET||''}:{};
 const root=resolve(process.env.REPO_ROOT||'../..'),artifacts=resolve(process.env.ARTIFACTS_DIR||root+'/artifacts');
 if(TOKEN.length<32)throw Error('Configure RENDERER_TOKEN');
-const configuration=await fetch(API+'/v1/config').then(r=>r.json()) as {deployment:{mode:string}};
+const configuration=await fetch(API+'/v1/config',{headers:ACCESS}).then(r=>{if(!r.ok)throw Error('API config '+r.status+(r.status===403||r.status===302?' (check CF_ACCESS_CLIENT_ID/SECRET)':''));return r.json();}) as {deployment:{mode:string}};
 const localMode=configuration.deployment.mode==='local';
 const local=createServer(async(req,res)=>{try{const path=new URL(req.url||'/', 'http://localhost').pathname;if(path==='/'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><script src="/renderer.js"></script>');return;}
  const base=path==='/renderer.js'?root+'/apps/renderer/dist':root+'/apps/web/public';const file=resolve(base,'.'+path);if(!file.startsWith(resolve(base)+'/'))throw Error('path');
@@ -11,7 +13,7 @@ const local=createServer(async(req,res)=>{try{const path=new URL(req.url||'/', '
 await new Promise<void>(r=>local.listen(8790,'127.0.0.1',r));
 const browser=await chromium.launch({headless:true,args:['--disable-dev-shm-usage','--no-sandbox']});
 let stopping=false;process.on('SIGINT',()=>{stopping=true;});process.on('SIGTERM',()=>{stopping=true;});
-async function request(path:string,body:unknown){const r=await fetch(API+path,{method:'POST',headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('API '+r.status);return r.json();}
+async function request(path:string,body:unknown){const r=await fetch(API+path,{method:'POST',headers:{...ACCESS,Authorization:'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(30000)});if(!r.ok)throw Error('API '+r.status);return r.json();}
 async function run(cmd:string,args:string[]){await new Promise<void>((resolve,reject)=>{const p=spawn(cmd,args,{stdio:['ignore','ignore','pipe']});let error='';p.stderr.on('data',v=>{error=(error+v).slice(-2000);});p.on('error',reject);p.on('exit',code=>code===0?resolve():reject(Error('Encoder failed: '+error)));});}
 async function pin(name:string,data:Uint8Array,mime:string){
  // Preserve a local pin even when remote publication fails.

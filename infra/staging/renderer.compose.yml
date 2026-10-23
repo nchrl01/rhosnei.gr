@@ -1,0 +1,19 @@
+# Runs the edition renderer against private staging (e.g. on your Mac with Docker Desktop):
+#   cp infra/staging/renderer.env.example infra/staging/.env.renderer   # then fill it in
+#   docker compose -f infra/staging/renderer.compose.yml up --build
+# It polls the staging API for render jobs, draws each edition with Playwright + ffmpeg,
+# pins media to a local IPFS node and to Pinata (CIDs must match), then reports back.
+services:
+  ipfs:
+    image: ipfs/kubo:v0.38.2
+    volumes: ["ipfs:/data/ipfs"]
+  renderer:
+    build: {context: ../.., dockerfile: apps/renderer/Dockerfile}
+    env_file: [.env.renderer]
+    environment: {IPFS_API: "http://ipfs:5001"}
+    volumes: ["artifacts:/artifacts"]
+    depends_on: [ipfs]
+    restart: unless-stopped
+volumes:
+  ipfs:
+  artifacts:
