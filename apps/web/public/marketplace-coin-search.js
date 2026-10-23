@@ -1,9 +1,9 @@
 import {bindSearchField} from './search-field.js?v=394';
-import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=437';
-import {findOnchainMarkets} from './market-search.js?v=437';
+import {isTokenIdentifier,showCoinMatches} from './coin-search.js?v=438';
+import {findOnchainMarkets} from './market-search.js?v=438';
 import {isExchangeQuery,searchExchangeMarkets} from './ccxt-market.js?v=359';
-import {rememberRecentCoin} from './coin-catalogue.js?v=437';
-import {savedCoins} from './saved-coins.js?v=437';
+import {rememberRecentCoin} from './coin-catalogue.js?v=438';
+import {savedCoins} from './saved-coins.js?v=438';
 
 // Search live markets using the same discovery, ranking and result UI as home.
 export function bindMarketplaceCoinSearch(){

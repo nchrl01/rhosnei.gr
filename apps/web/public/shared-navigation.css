@@ -1,5 +1,5 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
-@import url("wallet-theme.css?v=437");
+@import url("wallet-theme.css?v=438");
 
 body:is(.instrument-page,.marketplace-page,.about-page,.profile-page)>main {
   padding:0 var(--site-gutter) 28px;

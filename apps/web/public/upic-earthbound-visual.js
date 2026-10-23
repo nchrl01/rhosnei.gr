@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=437';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=438';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
@@ -173,7 +173,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const motionTarget=latest.tradingActivity*latest.fresh*inputFreshness;
   motionActivity+=(motionTarget-motionActivity)*(1-Math.exp(-dt/(motionTarget>motionActivity ? .45 : 2.4)));
   if(motionActivity<.00001)motionActivity=0;
-  const motionRate=.001+.999*motionActivity;
+  const motionRate=.12+.88*motionActivity;
   // Pause keeps the field coasting as its light dies away. An uninterrupted
   // envelope also lets Play reverse a fade without jumping to full brightness.
   const nextTransport=playing?1:0;
@@ -197,20 +197,24 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(latest.fresh<presence){staleElapsed+=dt;const steps=Math.floor(staleElapsed);if(steps){staleElapsed-=steps;presence+=(latest.fresh-presence)*(1-Math.exp(-steps/marketCapReleaseSeconds(latest.marketCap)));}}
    else{staleElapsed=0;presence+=(latest.fresh-presence)*(1-Math.exp(-dt/.08));}
    if(presence<.0001)presence=0;
-   if(fresh){
+   // Keep a gentle ambient drift even when fresh activity has faded away.
+   // The data-driven acceleration still requires observed market activity.
+   {
     let elapsed=dt;
     if(settings.clock!=null){
      const cursor=sourceValue+Math.min(.25,Math.max(0,(now-sourceAt)/1000))*Math.max(0,Number(settings.rate)||1);
      elapsed=sourceCursor===null?0:Math.max(0,cursor-sourceCursor);sourceCursor=Math.max(sourceCursor??cursor,cursor);
     }else sourceCursor=null;
     if(!reduced.matches)clock+=elapsed*1.35*latest.tempo/100*motionRate;
+   }
+   if(fresh){
     const target=marketCapIdentity(latest.marketCap);
     identityInput+=(target-identityInput)*(1-Math.exp(-dt/.16));identity+=(identityInput-identity)*(1-Math.exp(-dt/1.4));
     if(color!==colorTarget){colorElapsed+=dt;const progress=Math.min(1,Math.floor(colorElapsed/.25)*.25/colorDuration);color=colorStart+(colorTarget-colorStart)*progress*progress*(3-2*progress);if(colorElapsed>=colorDuration)color=colorTarget;}
     else colorElapsed=0;
    }
   }
-  if(!playing&&transportPresence>0&&fresh&&!reduced.matches)clock+=dt*1.35*latest.tempo/100*transportPresence*motionRate;
+  if(!playing&&transportPresence>0&&!reduced.matches)clock+=dt*1.35*latest.tempo/100*transportPresence*motionRate;
   // A new coin has a resting preview. Once played, Stop fades all the way out.
   // Keep population and placement stable throughout the fade.
   const frameInterval=1000/(renderer.kind==='canvas'?30:60);
@@ -223,7 +227,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   syncVisualLoading();
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
-  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String((playing||transportPresence>0)&&fresh&&!reduced.matches),motion:clock.toFixed(4),motionRate:motionRate.toFixed(4),marketActivity:motionActivity.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
+  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String((playing||transportPresence>0)&&!reduced.matches),motion:clock.toFixed(4),motionRate:motionRate.toFixed(4),marketActivity:motionActivity.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
  }
  raf=requestAnimationFrame(draw);
  return {
@@ -299,7 +303,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,marketActivity:motionActivity,motionRate:.001+.999*motionActivity,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
