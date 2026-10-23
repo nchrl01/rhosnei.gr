@@ -1,6 +1,6 @@
 import {contextualizeMarket} from './market-state.js?v=208';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
-export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,bar.observedThrough??bar.lastAt??bar.time+interval);
+export const candleEnd=(bar,interval)=>Math.min(bar.time+interval,Math.max(bar.observedThrough??bar.lastAt??bar.time+interval,bar.lastAt??bar.time));
 export function replaySpeed(value){
  const speed=String(value);
  // Older shared replays used the third speed slot for skipping price changes.
@@ -15,7 +15,9 @@ export function createMarketReplay(){
  function frames(){return recordings.get(key)||[];}
  return {
   state,
-  freeze(bars,market,interval){state.frozen={bars:structuredClone(bars),market:structuredClone(market),interval,observations:structuredClone(frames())};},
+  // Rebuild candle controls for each snapshot: the open candle and supply may
+  // have changed since the previous replay. Frozen playback stays immutable.
+  freeze(bars,market,interval){archive().controls.clear();state.controls=null;state.frozen={bars:structuredClone(bars),market:structuredClone(market),interval,observations:structuredClone(frames())};},
   preserveScore(score,interval){
    const saved=archive().scores;
    for(const [time,frame] of score.frames){const id=interval+':'+time;if(saved.has(id))score.frames.set(time,structuredClone(saved.get(id)));else saved.set(id,structuredClone(frame));}
