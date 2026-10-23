@@ -1,5 +1,5 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
-@import url("wallet-theme.css?v=446");
+@import url("wallet-theme.css?v=447");
 
 body:is(.instrument-page,.marketplace-page,.about-page,.profile-page)>main {
   padding:0 var(--site-gutter) 28px;
@@ -742,3 +742,8 @@ body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;ma
 .marketplace-networks button[data-chain]:is([aria-pressed=true],:focus-visible)::after{border-color:var(--control-ink)}
 .marketplace-networks button[data-chain]:not([data-chain=all])[aria-pressed=true]::after{inset:3px;width:auto;height:auto;max-width:none;transform:none}
 .marketplace-networks .network-mark{border-radius:50%!important}
+
+/* Search network focus uses the same circular marker as marketplace. */
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network:focus-visible{outline:none;box-shadow:none}
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network:focus-visible::after{content:"";position:absolute;inset:3px;border:1px solid var(--control-ink);border-radius:50%!important;pointer-events:none}
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network img{border-radius:50%!important}
