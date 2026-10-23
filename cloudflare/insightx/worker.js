@@ -197,9 +197,12 @@ export class HolderCache extends DurableObject {
   const now=Date.now(),day=Math.floor(now/DAY),key=(network==='robinhood'&&this.env.BLOCKSCOUT_API_KEY?'blockscout-v1:':'')+network+':'+address;
   const cached=this.sql.exec('SELECT * FROM holder_counts WHERE key=?',key).toArray()[0];
   const saved=cached?.payload?JSON.parse(cached.payload):null;
-  if(saved?.holders!=null&&now-cached.fetched<30*60000)return {...saved,cached:true};
-  const fallback=(reason,retryAt)=>saved?.holders!=null&&now-cached.fetched<7*DAY?{...saved,state:'delayed',reason,retryAt}:{state:reason,holders:null,retryAt};
-  if(cached?.retry>now)return fallback('unavailable',cached.retry);
+  const hasCount=saved?.holders!=null,hasSample=Boolean(saved?.holderBalances?.length);
+  if((hasCount||hasSample)&&now-cached.fetched<30*60000)return {...saved,cached:true};
+  const fallback=(reason,retryAt)=>(hasCount&&now-cached.fetched<7*DAY||hasSample&&now-cached.fetched<HOUR)?{...saved,state:'delayed',reason,retryAt}:{state:reason,holders:null,retryAt};
+  // Also release old cached failures created with the previous 30-minute delay.
+  const retryAt=hasCount||hasSample?cached?.retry:Math.min(cached?.retry||0,(cached?.fetched||0)+(saved?.state==='rate-limited'?5*60000:60000));
+  if(retryAt>now)return fallback('unavailable',retryAt);
   // Keep a healthy Robinhood index independent of unrelated free-provider cooldowns.
   // Its 2,000 calls/day at 20 credits/call stay below the free 100,000-credit daily allowance.
   const budgetTable=network==='robinhood'&&this.env.BLOCKSCOUT_API_KEY?'holder_index_budget':'holder_count_budget';
@@ -216,12 +219,12 @@ export class HolderCache extends DurableObject {
   const indexed=await fetchBlockscoutCount(network,address,this.env.BLOCKSCOUT_API_KEY);
   const goplusAccessToken=await goPlusAccessToken(this.env);
   const result=indexed||await fetchHolderCount(network,address,{goplusAccessToken});
-  if(result.holders!==null){
+  if(result.holders!=null||result.holderBalances?.length){
    this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,JSON.stringify(result),now,now+30*60000);return result;
   }
   if(result.state==='rate-limited')this.sql.exec(`UPDATE ${budgetTable} SET next=MAX(next,?) WHERE day=?`,Date.now()+60000,day);
-  const retry=now+(result.state==='rate-limited'?5*60000:30*60000);
-  this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,cached?.payload||null,cached?.fetched||now,retry);
+  const retry=now+(result.state==='rate-limited'?5*60000:60000);
+  this.sql.exec('INSERT OR REPLACE INTO holder_counts VALUES (?,?,?,?)',key,hasCount||hasSample?cached.payload:JSON.stringify(result),hasCount||hasSample?cached.fetched:now,retry);
   return fallback(result.state,retry);
  }
  async load(key,network,address){

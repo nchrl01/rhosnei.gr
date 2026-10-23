@@ -12,6 +12,7 @@ const version = 448;
 // Audio and navigation updates have independent cache revisions.
 const audioVersion = 455;
 const searchVersion = 456;
+const visualVersion = 458;
 const navigationVersion = 457;
 const foundationVersion = 454;
 const pages = [
@@ -127,7 +128,7 @@ for (const page of pages) {
     html = html.replace(/<script\b[^>]*\bsrc=["'](?:footer-prices|shared-header|wallet-connect)\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*/g, '');
     html = html.replace('</body>', region('scripts', sharedScripts) + '\n</body>');
   }
-  if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${Math.max(audioVersion,searchVersion)}"`);
+  if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${Math.max(audioVersion,searchVersion,visualVersion)}"`);
   html = html.replaceAll('href="fonts/Unifont/Unifont-ui.woff2"', 'href="fonts/Unifont/Unifont.woff2"');
   if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${Math.max(version,searchVersion)}"`);
   await writeFile(file, html);

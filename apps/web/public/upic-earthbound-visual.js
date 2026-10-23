@@ -50,7 +50,8 @@ function observedHolderSnapshot(m){
  // Fetch completion and coverage are separate: a terminal partial/fallback
  // sample can sharpen without being presented as a complete holder list.
  const primaryProviderState=holdings?.state||'unavailable';
- const loading=primaryProviderState==='loading'||(selected!==holdings&&!supplied&&relations?.state==='loading');
+ const countLoading=audience.state==='loading'&&!balances.length&&!(finite(audience.holders)>0);
+ const loading=countLoading||primaryProviderState==='loading'||(selected!==holdings&&!supplied&&relations?.state==='loading');
  const settled=Boolean(holdings||relations||supplied)&&!loading;
  return {balances,source,coverage,fetchedAt:finite(selected?.fetchedAt),providerState:selected?.state||primaryProviderState,primaryProviderState,loading,settled};
 }
@@ -121,7 +122,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   loaderSignature=signature;
   loader.hidden=!pending&&!revealing;
   loader.dataset.state=signature;
-  const label=revealing?'Visual ready':unavailable?'Visual unavailable':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
+  const label=revealing?'Visual ready':unavailable?'Holder data unavailable · retrying':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
   host.dataset.visualLoading=String(pending&&!unavailable);host.setAttribute('aria-busy',String(pending&&!unavailable));
  }
  function reset(){clock=0;motionActivity=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}

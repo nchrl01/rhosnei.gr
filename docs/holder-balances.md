@@ -11,6 +11,8 @@ Data path:
 6. observedHolderBalances values tokens at the latest UPIC quote from context.path (or latestPrice when supplied). No sample-normalized shares or hypothetical wallets.
 7. Earthbound applies the existing absolute-dollar/liquidity sizing and faintness.
 
+Recovery: an empty shared holder response falls back to GeckoTerminal token info before GoPlus, with an eight-second relay deadline. The relay retries ordinary missing-data outcomes after one minute (rate limits keep a five-minute backoff), including failures cached by older deployments. Authenticated relay wallet samples retain their original retrieval time and expire after one hour. The visual stays loading while the aggregate count is pending; a settled failure is labelled as missing holder data and retried.
+
 Networks: Ethereum, Base, Arbitrum, Optimism, Polygon, ZKsync, Celo, Robinhood. Hosts come from the official Blockscout chain directory. Other GoPlus-supported EVM networks and Solana use actual GoPlus top-holder samples. InsightX remains the final fallback.
 
 Coverage:

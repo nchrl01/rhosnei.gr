@@ -9,16 +9,17 @@ export function validHolderToken(network,address){
  return /^0x[0-9a-f]{40}$/i.test(address||'');
 }
 export function countValue(raw){if(!['number','string'].includes(typeof raw)||String(raw).trim()==='')return null;const count=Number(raw);return Number.isSafeInteger(count)&&count>=0?count:null;}
-export async function fetchHolderCount(network,address,{goplusAccessToken}={}){
+export async function fetchHolderCount(network,address,{goplusAccessToken,signal}={}){
  let reason='unavailable',image_url=null;
  try{
-  const response=await fetch('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/tokens/'+encodeURIComponent(address)+'/info',{headers:{Accept:'application/json'},signal:AbortSignal.timeout(12000)});
+  const timeout=AbortSignal.timeout(12000);
+  const response=await fetch('https://api.geckoterminal.com/api/v2/networks/'+encodeURIComponent(network)+'/tokens/'+encodeURIComponent(address)+'/info',{headers:{Accept:'application/json'},signal:signal?AbortSignal.any([signal,timeout]):timeout});
   if(response.ok){
    const body=await response.json(),info=body.data?.attributes,count=countValue(info?.holders?.count);image_url=info?.image_url||null;
    if(count!==null)return {state:'snapshot',holders:count,lastUpdated:info.holders.last_updated||null,image_url,source:'GeckoTerminal',approximate:false,fetchedAt:Date.now()};
   }else if(response.status===429)reason='rate-limited';
- }catch{}
- return fetchGoPlusCount(network,address,{image_url,reason,goplusAccessToken});
+ }catch{if(signal?.aborted)throw signal.reason;}
+ return fetchGoPlusCount(network,address,{image_url,reason,goplusAccessToken,signal});
 }
 
 // GoPlus returns token-unit balances, not raw integer base units.

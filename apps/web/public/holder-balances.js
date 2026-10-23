@@ -1,4 +1,4 @@
-import {fetchGoPlusCount,HOLDER_NETWORKS,validHolderToken} from './holder-count-providers.js?v=350';
+import {fetchGoPlusCount,HOLDER_NETWORKS,validHolderToken} from './holder-count-providers.js?v=458';
 // Actual indexed ERC-20 balances. Public Blockscout reads require no API key.
 // A bounded, paginated sample is never expanded into invented wallets.
 const EXPLORERS={ethereum:'https://eth.blockscout.com',eth:'https://eth.blockscout.com',base:'https://base.blockscout.com',arbitrum:'https://arbitrum.blockscout.com',optimism:'https://explorer.optimism.io',polygon:'https://polygon.blockscout.com',polygon_pos:'https://polygon.blockscout.com',zksync:'https://zksync.blockscout.com',celo:'https://celo.blockscout.com',robinhood:'https://robinhoodchain.blockscout.com'};
