@@ -17,19 +17,21 @@ import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
 import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=448';
-import {createEngineView} from './engine-view.js?v=470';
+import {createEngineView} from './engine-view.js?v=472';
 import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=470';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=472';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=458';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=448';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=471';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=472';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle,replaySpeed,replayObservationForBar} from './market-replay.js?v=470';
-import {marketPerformance,marketActivityDecay} from './market-performance.js?v=470';
+import {createMarketReplay,candleEnd,scoreCandle,replaySpeed,replayObservationForBar} from './market-replay.js?v=472';
+import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';
+import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
+import {audioPresentationTime} from './chip-visual-events.js?v=472';
 import {signalFreshness} from './market-controls.js?v=18';
 import {orchestraTempo} from './orchestra.js?v=449';
 import {subscribePool} from './realtime.js?v=4';
@@ -101,7 +103,7 @@ const replay=createMarketReplay();
 createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
 const displaySettings={dither:false};
-const dataVisual=createAudioDots($('audio-dots'),{getClock:()=>ctx?.state==='running'?ctx.currentTime:null,getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
+const dataVisual=createAudioDots($('audio-dots'),{getClock:()=>audioPresentationTime(ctx),getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
 const replayVisualHistory=createReplayVisualHistory($('audio-dots').closest('.audio-visualizer'));
 const coinSummary=createCoinSummary($('nft-owner-preview'));
 const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'));
@@ -206,7 +208,7 @@ function marketRoot(m){
  // Market movement changes phrases and energy, never detunes a ringing ensemble.
  return seedTonic(seed);
 }
-function pianoMusic(m,music=m.music){return {...music,activity:m.activity,tonic:marketRoot(m)};}
+function pianoMusic(m,music=m.music){return {...music,activity:m.raw?.activity??m.activity,tempo:marketMusicalMapping(marketPerformance(m,music)).tempo.bpm,tonic:marketRoot(m)};}
 
 let lastMarketActivityAt=0;
 const liveLandmarks=new Map();
@@ -241,7 +243,7 @@ function liveMetrics(){
  const volumeRate=decoded?observedVolume/30:(Number(market.volume?.m5)||0)/300;
  const activityAt=Math.max(lastMarketActivityAt,...tradeEvents.map(e=>Number(e.occurredAt)||Number(e.receivedAt)||0),...poolEvents.map(e=>Number(e.occurredAt)||Number(e.receivedAt)||0));
  const tradingActivity=marketActivityDecay((Date.now()-activityAt)/1000);
- const raw={tradingActivity,activityObservedAt:activityAt,tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:book?.balance!=null?book.balance:decoded?(knownSides?buys/knownSides:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,liquidity||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
+ const raw={liquidity,tradingActivity,activityObservedAt:activityAt,tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:book?.balance!=null?book.balance:decoded?(knownSides?buys/knownSides:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,liquidity||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
  return {...contextualizeMarket(raw,{price:livePrice,moodMovement,marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(liquidity),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:book?.balance!=null||(decoded?knownSides>0:total>0),liquidity:liquidity!=null&&Number.isFinite(Number(liquidity)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
 }
 function metrics(){
@@ -270,7 +272,7 @@ function updateReplayUI(m){
  $('replay-speed').classList.toggle('is-live',!active);
  $('replay-speed').inert=!active;
  $('replay-speed').setAttribute('aria-hidden',String(!active));
- transportIndicator.render({marketReady:!!market,playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended||replay.state.endHold!==null,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
+ transportIndicator.render({marketReady:!!market,playing,audioRunning:ctx?.state==='running',replay:active,seeking:replay.state.dragging,ended:replay.state.ended,streamConnected,streamKind,fresh:m.snapshotFresh??m.fresh??0});
  $('replay-live').disabled=!active||!!liveConnection;
  $('replay-play').disabled=!market||pendingHistoryReplay;
  $('replay-restart').hidden=!active;
@@ -294,13 +296,13 @@ function updateReplayUI(m){
 let outputGateOpen=null;
 function syncLevels(m){
 
- m={...m,arrangement:m.arrangement??piano?.arrangement?.(),music:{...m.music,tonic:marketRoot(m),harmony:sharedHarmony}};
+ m={...m,arrangement:m.arrangement??piano?.arrangement?.(),music:{...pianoMusic(m),harmony:sharedHarmony}};
  // The final candle gets its existing one-second hold to sound before pause.
  const audibleTransport=playing&&!replay.state.dragging&&!replay.state.ended;
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1:0,ctx.currentTime,.025);}
  updateCoinReadout(m);
  replayVisualHistory.frame(m,replay.state.active?replay.state.cursor:null);
- dataVisual.frame(m,{playing:playing||captureMode,seed,clock:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:replay.state.dragging,ended:(replay.state.ended||replay.state.endHold!==null),position:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
+ dataVisual.frame(m,{playing:playing||captureMode,seed,clock:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??0))/1000:null,rate:replay.state.active?(replay.state.speed==='candle'?(replay.state.frozen?.interval??chart.interval)/1000:Number(replay.state.speed)||1):1,seeking:replay.state.dragging,ended:replay.state.ended,position:replay.state.active?(replay.state.cursor-(replay.state.frozen?.bars?.[0]?.time??chart.renderedBars?.[0]?.time??0))/Math.max(1000,replay.state.frozen?.interval??chart.interval):null});
  piano?.resonance(m.context?.latestCap);
  piano?.setTempo(m.music?.tempo);
  const activity=clamp(Number(m.tradingActivity??m.raw?.activity??m.activity)||0,0,1),fresh=clamp(Number(m.fresh)||0,0,1);
@@ -386,7 +388,12 @@ function replayPiano(m){
   const segments=bars.map(bar=>{
    const score=replay.state.score?.frames.get(bar.time);
    const observed=replayObservationForBar(frozen?.observations,bar,interval);
-   const music=observed?pianoMusic(observed.metrics):pianoMusic({music:score?.music||{},activity:score?.activity||0});
+   // Match scoreCandle's observed USD-per-second proxy exactly. Historical
+   // price intensity and today's holder/liquidity snapshots cannot set BPM.
+   const volumeKnown=bar.volume!=null&&Number.isFinite(Number(bar.volume));
+   const volumeRate=Math.max(0,Number(bar.volume)||0)/Math.max(1,(candleEnd(bar,interval)-bar.time)/1000);
+   const activity=Math.max(0,Math.min(1,Math.log1p(volumeRate)/Math.log(10001)));
+   const music=observed?pianoMusic(observed.metrics):pianoMusic({music:score?.music||{},activity,volume:activity,availability:{activity:volumeKnown,volume:volumeKnown},observed:true,fresh:1,replay:{source:'candles',volume:bar.volume}});
    let resolved;
    // Resolve only candles the transport visits. Audio and pixels share the
    // frozen control cache, including recorded observations when available.
@@ -405,7 +412,7 @@ function replayPiano(m){
  pianoReplayCursor=cursor;
 }
 function tick(){
- const m=metrics();
+ const raw=metrics(),m={...raw,music:pianoMusic(raw)};
  if(replay.state.active)replayPiano(m);else{pianoReplayCursor=null;replayPianoPrimed=false;}
  const historical=replay.state.active,bar=replay.state.bar;
  piano?.frame({...m,music:pianoMusic(m)},{playing,seeking:replay.state.dragging,ended:replay.state.ended,at:historical?replay.state.cursor:Date.now(),price:historical?bar?.close:currentPrice(),referencePrice:historical?bar?.open:undefined,known:historical?bar?.volume===0:(m.decoded&&streamKind!=='trade-poll'&&m.fresh>0)||(tradePollingAt>0&&Date.now()-tradePollingAt<25000),quiet:historical?bar?.volume===0:true});

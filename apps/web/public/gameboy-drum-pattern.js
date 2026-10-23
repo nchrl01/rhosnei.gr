@@ -1,4 +1,5 @@
 import {chipMarketExpression} from './chip-ensemble-arrangement.js?v=470';
+import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 
 // Original asynchronous market packets for the four-channel UPIC APU.
 // Stochastic gate inspiration: Tero Parviainen's Stochastic Drum Machine,
@@ -27,6 +28,7 @@ const baseSeed=(seed,context)=>hash(Number(seed)>>>0,variationValue(context.drum
 export function gameBoyDrumControls(context={}){
  const signal=context.signal||{};
  const {activity,intensity,motion,volume,pace,energy,tradingActivity}=chipMarketExpression(signal);
+ const mapping=marketMusicalMapping(signal);
  const tradeRate=signal.tradeRateKnown===false?0:unit(number(signal.tradeRate)/8);
  return {
   // Rate and activity share one pace axis; price-derived intensity is not
@@ -34,6 +36,7 @@ export function gameBoyDrumControls(context={}){
   density:tradingActivity*unit(context.drumDensity,pace*.36+volume*.3+motion*.34),
   deviation:unit(context.drumDeviation,motion*.75),
   activity,intensity,motion,volume,tradeRate,energy,tradingActivity,
+  rhythmRate:mapping.rhythm.rate,rhythmRegularity:mapping.rhythm.regularity,
  };
 }
 
@@ -66,7 +69,9 @@ function packets(seed,start,end,context,performance){
  const first=hash(id.circuit,7302)%primes.length;
  const stride=1+hash(id.circuit,7303)%(primes.length-1);
  for(let voice=0;voice<voices.length;voice++){
-  const drum=voices[voice],period=primes[(first+voice*stride)%primes.length]/denominator;
+  // Market cap spaces the same prime-ratio circuit, independently of BPM
+  // and observed density. Unknown cap has rate 1 and leaves timing unchanged.
+  const drum=voices[voice],period=primes[(first+voice*stride)%primes.length]/denominator/controls.rhythmRate;
   const phase=(.1+.8*roll(id.circuit,voice+7351))*period;
   const weight=.48+.42*roll(id.circuit,voice+7381);
   const firstStep=Math.max(0,Math.floor((start-phase)/period)-1);
@@ -81,7 +86,10 @@ function packets(seed,start,end,context,performance){
    // Perturbation is bounded inside this lane's own cycle, not a sixteenth-
    // note swing. The circuit retains its direction while market deviation
    // controls how far this packet moves.
-   const offset=performance?(roll(playbackSeed,address+8111)-.5)*period*.4*controls.deviation:0;
+   // Larger cap is more regular without imposing a human backbeat. The
+   // neutral midpoint preserves the old jitter; the bounds are 0.5–1.5×.
+   const regularity=1.5-controls.rhythmRegularity;
+   const offset=performance?(roll(playbackSeed,address+8111)-.5)*period*.4*controls.deviation*regularity:0;
    const at=step*period+phase+offset;
    // Strong volume plus activity or motion may double one packet. Quieter
    // observations retain isolated attacks instead of a continuous rattle.
@@ -110,14 +118,14 @@ export function gameBoyDrumPattern(seed,context={}){
   if(cells.kick[index])cells.tom[index]=false;
   if(cells.snare[index])cells.hat[index]=false;
  }
- return {patternId:plan.patternId,density:plan.density,cells,mode:'market-packets'};
+ return {patternId:plan.patternId,density:plan.density,rhythmRate:plan.rhythmRate,rhythmRegularity:plan.rhythmRegularity,cells,mode:'market-packets'};
 }
 
 export function composeGameBoyDrumBar(seed,bar,context={},development={}){
  const position=Math.max(0,Math.floor(number(bar))),start=position*4;
  const plan=packets(seed,start,start+4,context,true);
  const {patternId,density,deviation,activity,intensity,motion,volume,energy}=plan;
- const result={events:[],patternId,density,deviation,performance:variationValue(context.drumPerformance),mode:'market-packets',signalFingerprint:plan.fingerprint};
+ const result={events:[],patternId,density,deviation,rhythmRate:plan.rhythmRate,rhythmRegularity:plan.rhythmRegularity,performance:variationValue(context.drumPerformance),mode:'market-packets',signalFingerprint:plan.fingerprint};
  if(!plan.packets.length)return result;
  const signal=context.signal,delta=number(signal.delta),direction=Math.sign(delta);
  const change=unit(Math.abs(delta)/2),balance=signal.balanceKnown===false?.5:unit(signal.balance,.5),fresh=unit(signal.fresh);

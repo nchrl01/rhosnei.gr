@@ -3,10 +3,10 @@
 Source: https://github.com/gjtorikian/Earthbound-Battle-Backgrounds-JS
 Reference revision: 572caf31f996e3055251368011a5d073b5a59003
 
-The renderer now uses the complete canonical chain + contract address to
-produce two independent layers. Numeric seeds remain available in the labs.
-Every parameter uses a separately labeled hash of the full identity; coins
-are no longer reduced to an index in the Suggested Layers list.
+The player hashes the canonical chain + contract address into a stable seed
+for two independent layers. Numeric seeds remain available in the labs.
+Every parameter uses a separately labeled draw from that seed; coins are no
+longer reduced to an index in the Suggested Layers list.
 
 ## Characteristics carried into UPIC
 
@@ -26,17 +26,34 @@ but marks their implementation TODO. No game texture/ROM is loaded at runtime.
 Numeric metadata can be rebuilt with scripts/build-earthbound-visual-metadata.py.
 Original attribution remains in public/licenses/earthbound-backgrounds.txt.
 
-The address fixes the visual structure. Market/audio controls the shared clock,
-mark size, spacing, directional notation and persistence. No active frame skip
-is introduced. WebGL and the software fallback share the parameter profile and
-matching field equations. Color remains black and white.
+The production path is the Canvas renderer in `upic-oct07-renderer.js` and
+`oct07-live/pixel-blast-canvas.js`. The shared clock retains its 24-second
+cycle. Active market input increases motion; a quiet market keeps the existing
+slow drift. The mark population remains the observed holder count, capped at
+10,000; historical candles use the existing reconstructed population. Liquidity
+continues to determine mark size, independently of sound.
 
-Artwork formation is now tied to cap: no forced periodic image reveal. Between
-$10M and $1B, a smooth logarithmic curve gradually resolves the same marks into
-the token's dithered image. At $100M the mask influence is 50%; at $1B it is 100%.
-Existing saturation generations shrink away during formation. Missing artwork
-keeps the abstract composition. Quiet marks remain faintly visible.
+`earthbound-presentation.js` makes the two layers easier to distinguish:
+
+- Stronger procedural contrast and broad counter-moving bands.
+- Reduced random selection noise, so the pattern determines which existing
+  lattice positions are selected.
+- Artwork blend follows the player's supplied cap-identity progression from
+  30% to 68%, leaving a procedural share at the highest cap. Missing artwork
+  keeps the abstract composition. No periodic image reveal is introduced.
+- Accepted score attacks, sustains and echoes briefly increase field emphasis;
+  they do not add holders, resize marks, or reset the motion clock.
+
+The added warping uses integer harmonics of the shared loop phase. With fixed
+market and sound inputs, both the field and complete rendered pixels repeat
+after 24 seconds. Changing observations and performed notes remain independent
+inputs. Reduced motion disables added warping and sound-driven motion.
+
+The 480,000-pixel render budget and holder cap remain in place. Source sampling
+uses a 14-pixel field grid and two noise octaves in production, replacing five
+octaves so the stronger band treatment does not add a second raster pass.
 
 These are deterministic generative identities, not a proof that every possible
 address must be perceptually unique. No browser visual/audio audition accompanied
-this source change.
+this source change. Offline regressions cover periodic field/pixel output,
+bounded sound emphasis, fixed holder count and unchanged liquidity sizing.

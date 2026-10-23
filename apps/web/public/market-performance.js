@@ -17,6 +17,8 @@ export function marketPerformance(metrics={}, suppliedMusic=metrics.music||{}){
  const price=number(metrics.price??metrics.context?.latestPrice??metrics.replay?.price??metrics.context?.path?.at(-1)?.close);
  const reference=number(metrics.referencePrice);
  const delta=price>0&&reference>0?100*(price/reference-1):number(metrics.delta??music.lastMove??music.changePct);
+ const deltaKnown=metrics.availability?.change!==false&&(price>0&&reference>0||finite(metrics.delta??music.lastMove??music.changePct));
+ const activityKnown=metrics.availability?.activity!==false&&finite(raw.activity??music.activity);
  const activity=unit(raw.activity??music.activity),motion=unit(raw.motion??music.volatility);
  const volumeKnown=metrics.availability?.volume!==false&&finite(raw.volume);
  const volume=volumeKnown?unit(raw.volume):0;
@@ -42,8 +44,14 @@ export function marketPerformance(metrics={}, suppliedMusic=metrics.music||{}){
  const balance=balanceKnown?unit(metrics.balance):.5;
  const marketCap=number(metrics.context?.latestCap??metrics.marketCap,null);
  const liquidity=metrics.availability?.liquidity===false?null:number(metrics.observation?.liquidity??metrics.liquidity,null);
- return {source,price,delta,direction:Math.sign(delta),activity,volume,volumeKnown,motion,
+ // Candle history does not contain historical ownership. Only a recorded
+ // observation can carry its own holder snapshot into replay.
+ const audience=metrics.audience||{},holderCount=number(audience.holders??metrics.holders,null);
+ const holdersKnown=!candle&&metrics.availability?.holders!==false&&holderCount!==null&&holderCount>=0
+  &&audience.state!=='expired'&&audience.state!=='unavailable'&&audience.weight!==0;
+ return {source,price,delta,deltaKnown,direction:Math.sign(delta),activity,activityKnown,volume,volumeKnown,motion,
   intensity:unit(music.intensity??metrics.intensity),pressure:unit(metrics.context?.pressure??metrics.pressure),
   balance,balanceKnown,tradeRate,tradeRateKnown,observed:!!observed,fresh,tradingActivity,
-  excitation:fresh*tradingActivity,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null};
+  excitation:fresh*tradingActivity,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
+  holders:holdersKnown?holderCount:null,holdersKnown};
 }

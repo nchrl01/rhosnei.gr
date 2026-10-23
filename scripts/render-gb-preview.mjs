@@ -1,6 +1,7 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
-import {composeChipBar,chipHash} from '../apps/web/public/market-chip-score.js';
+import {composeChipBar,chipHash,marketChipSignal} from '../apps/web/public/market-chip-score.js';
+import {marketMusicalMapping} from '../apps/web/public/market-musical-mapping.js';
 import {renderGameBoyRack} from '../apps/web/public/gb-chip-rack.js';
 
 import {installOriginalityIndex} from '../apps/web/public/midi-originality.js?v=455';
@@ -27,9 +28,10 @@ for(let bar=0;time<seconds;bar++){
  const last=past.at(-1),first=window[0],volumeUsd=window.reduce((sum,trade)=>sum+trade.price*trade.size,0);
  const delta=last&&first?100*(last.price/first.price-1):0,activity=Math.min(1,Math.log1p(window.length/30)/Math.log(21));
  const volume=Math.min(1,Math.log1p(volumeUsd/30)/Math.log(10001)),motion=Math.min(1,Math.abs(delta)/8);
- const intensity=Math.max(activity,motion,volume*.7),tempo=40+120*intensity,beat=60/tempo;
+ const intensity=Math.max(activity,motion,volume*.7);
  const metrics={price:last?.price,referencePrice:first?.price,delta,activity,volume,motion,tradeRate:window.length/30,
   fresh:window.length?1:0,observed:!!last,source:'captured-trades',availability:{volume:true,tradeRate:true,balance:false}};
+ const tempo=marketMusicalMapping(marketChipSignal({metrics})).tempo.bpm,beat=60/tempo;
  const plan=composeChipBar(seed,bar,{metrics,music:{tempo,intensity,activity,volatility:motion},active:window.length>0});
  observations.push({at:new Date(at).toISOString(),price:last?.price,volumeUsd,tradeCount:window.length,tempo,patternId:plan.drums.patternId});
  for(const event of plan.events){

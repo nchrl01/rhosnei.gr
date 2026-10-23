@@ -1,8 +1,9 @@
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=471';
-import {createGameBoyRack} from './gb-chip-rack.js?v=469';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=472';
+import {createGameBoyRack} from './gb-chip-rack.js?v=472';
 import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
-import {marketActivityDecay} from './market-performance.js?v=470';
+import {marketActivityDecay} from './market-performance.js?v=472';
+import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 // Compatibility name for stored mixer settings. The chip has calibrated output
@@ -61,7 +62,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   if(active&&(observation||initial))liveUntil=ctx.currentTime+30;
   pending={...context,signal,active:active&&ctx.currentTime<liveUntil};
   if(pending.active)audible(true);else silenceMarket();
-  if(changed){captureBeat();tempo=scoreTempo(context.music);invalidate();}
+  if(changed){captureBeat();tempo=scoreTempo({tempo:signal.source==='lab'?context.music?.tempo:marketMusicalMapping(signal).tempo.bpm});invalidate();}
   // Stale/missing data cannot renew the excitation window just by rendering.
   if(!active){cancelAfter(ctx.currentTime+.005);pending.active=false;}
   return active;
@@ -115,7 +116,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const sounded=chip.schedule(spec,start);
     if(!sounded)continue;
     voices.add(sounded.voice);scheduled.set(id,{time:sounded.time,voice:sounded.voice});
-    if(elapsed<=.025)onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,gain:amplitude,duration:sounded.voice.end-sounded.time,development:plan.development,isCancelled:()=>sounded.voice.cancelled});
+    onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,gain:amplitude,duration:sounded.voice.end-sounded.time,direction:barSignal.direction,development:plan.development,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});
     if(event.kind==='arp')onArpeggio({midi:sounded.midi,step:bar*4+event.beat,time:sounded.time,tempo:raw.audibleTempo||tempo,instrument:'GB transmission'});
    }
    const voiceKey=bar+':'+key;
@@ -152,7 +153,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    const gainValue=.018*(.3+.7*Math.max(s.volume,s.activity,s.motion))*s.fresh*(lab.dataGain??1)*phrase.roleGains.texture;
    const duration=Math.min(.02+.045*s.volume,phrase.restInBeats*60/tempo);
    const sounded=chip.texture({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(0,Math.round(10-8*Math.max(s.motion,s.volume))),noiseWidth:stamp%2,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:{initial:5,direction:-1,pace:1}}},time);
-   if(sounded){lastPacketAt=ctx.currentTime;voices.add(sounded.voice);onScoreEvent({id:'observation:'+String(identity??stamp),time:sounded.time,midi:sounded.midi,kind:'texture',gain:gainValue,duration,isCancelled:()=>sounded.voice.cancelled});}
+   if(sounded){lastPacketAt=ctx.currentTime;voices.add(sounded.voice);onScoreEvent({id:'observation:'+String(identity??stamp),time:sounded.time,midi:sounded.midi,kind:'texture',gain:gainValue,duration,direction:s.direction,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});}
   }
   return active;
  }
@@ -172,7 +173,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setArpeggioPattern(){},
   setTempo(value){captureBeat();tempo=scoreTempo({tempo:value});pending.music={...pending.music,tempo};},
   resonance(cap){currentCap=cap;return marketResonance(cap);},
-  snapshot(){const state=chip.snapshot();return {name:'GB transmission',family:'Two Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Learned motifs / market circuits',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'scored chip echoes, wave resonance and hardware envelopes',chip:state,signal:arrangement().signal};},
+  snapshot(){const state=chip.snapshot(),performance=arrangement();return {name:'GB transmission',family:'Two Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Learned motifs / market circuits',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo:performance.audibleTempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'scored chip echoes, wave resonance and hardware envelopes',chip:state,signal:performance.signal,musicalMapping:marketMusicalMapping(performance.signal)};},
   setTimeline(value){clear();segments=value||[];timeline=createCompositionTimeline(segments,anchor?.rate||1);},
   seekTimeline(at,rate=1){held=false;clear();rate=Math.max(.1,Number(rate)||1);timeline=createCompositionTimeline(segments,rate);anchor={at,clock:ctx.currentTime,rate};gain();},
   syncTimeline(at,rate=1){if(!anchor||rate!==anchor.rate||Math.abs(scoreNow()-at)>200*Math.max(1,rate))this.seekTimeline(at,rate);},

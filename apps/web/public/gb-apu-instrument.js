@@ -39,7 +39,11 @@ function envelope(expression, settings, dynamics) {
  const supplied = expression.envelope && typeof expression.envelope === 'object' ? expression.envelope : {};
  // Explicit market envelopes still obey the scored gain/mute controls.
  const strength = Math.sqrt(clamp(dynamics, 0, .24) / .12);
- const volume = integer(number(supplied.initial, 12) * strength, 0, 0, 15);
+ let volume = integer(number(supplied.initial, 12) * strength, 0, 0, 15);
+ // An echo is a quieter *hardware level* than its source. Applying another
+ // tiny floating-point gain used to round the whole repeat to silence. A
+ // source already at level one has no quieter audible chip level to repeat.
+ if (Number.isFinite(expression.echoDecay)) volume = Math.max(0, Math.min(volume - 1, Math.round(volume * clamp(expression.echoDecay, 0, 1))));
  const pace = integer(supplied.pace, number(expression.envelope, settings.chipEnvelope), 0, 7);
  const increasing = supplied.direction === 1 || expression.envelopeRise === true;
  return {volume, register:(volume << 4) | (increasing ? 8 : 0) | pace};
@@ -85,8 +89,18 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
  }
  const envelopeValue = envelope(expression, settings, dynamics);
  if (!envelopeValue.volume) return null;
- const length = lengthControl(durationFrames / sampleRate, channel === 2 ? 256 : 64);
+ const manualEnvelope = Object.hasOwn(configured, 'chipEnvelope') && Number.isFinite(configured.chipEnvelope);
+ const sustain = !noise && !manualEnvelope && expression.sustain && typeof expression.sustain === 'object' ? expression.sustain : null;
+ const manualDuty = Object.hasOwn(configured, 'chipDuty') && Number.isFinite(configured.chipDuty);
+ const dutyShift = channel < 2 && !manualDuty && expression.dutyShift && typeof expression.dutyShift === 'object' ? expression.dutyShift : null;
+ if (sustain) envelopeValue.register = envelopeValue.volume << 4;
+ // Register macros share the note's owner and explicit end. A duty write or
+ // release retrigger must not accidentally reload the hardware length clock.
+ const length = sustain || dutyShift ? {value:0, enable:0} : lengthControl(durationFrames / sampleRate, channel === 2 ? 256 : 64);
  const writes = [], updates = [];
+ const slide = number(expression.slide, 0);
+ const slideSeconds = Math.min(duration, Math.max(.004, number(expression.slideTime, Math.min(.12, duration * .7))));
+ const pitchAt = seconds => midi + clamp(slide, -24, 24) * Math.min(1, seconds / slideSeconds);
  if (noise) {
   const widthValue = expression.noiseWidth ?? (drum === 'hat' ? 7 : settings.chipNoiseWidth);
   const width = widthValue === 7 || widthValue === 1 ? 1 : 0;
@@ -108,17 +122,50 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
   writes.push([volumeRegister - 1, (duty << 6) | length.value], [volumeRegister, envelopeValue.register],
    ...frequencyWrites(channel, midi, 0x80 | length.enable));
  }
- const slide = number(expression.slide, 0);
+ if (sustain) {
+  const hold = clamp(number(sustain.hold, .6), .25, .9);
+  const steps = integer(sustain.steps, 3, 1, 3);
+  const initialLevel = envelopeValue.volume <= 3 ? 3 : envelopeValue.volume <= 7 ? 2 : 1;
+  let previousLevel = channel === 2 ? initialLevel : envelopeValue.volume;
+  for (let i = 1; i <= steps; i++) {
+   const seconds = duration * (hold + (1 - hold) * (i - 1) / steps);
+   const frame = Math.round(seconds * sampleRate);
+   if (frame <= 0 || frame >= durationFrames) continue;
+   if (channel === 2) {
+    const level = Math.min(3, initialLevel + i);
+    if (level === previousLevel) continue;
+    // Wave output has only full, half and quarter levels. Change NR32 in
+    // place; no wave RAM corruption or fake post-chip volume envelope.
+    updates.push({frame, writes:[[0xff1c, level << 5]]});
+    previousLevel = level;
+   } else {
+    const level = Math.floor(envelopeValue.volume * (steps + 1 - i) / (steps + 1));
+    if (level <= 0 || level === previousLevel) continue;
+    const volumeRegister = channel === 0 ? 0xff12 : 0xff17;
+    // Explicitly retrigger the lower held envelope. Merely writing NRx2
+    // while running relies on model-specific "zombie" envelope behaviour.
+    updates.push({frame, writes:[[volumeRegister, level << 4], ...frequencyWrites(channel, pitchAt(seconds), 0x80)]});
+    previousLevel = level;
+   }
+  }
+ }
+ if (dutyShift) {
+  const duty = integer(expression.duty, settings.chipDuty, 0, 3), next = integer(dutyShift.duty, duty, 0, 3);
+  const frame = Math.round(duration * clamp(number(dutyShift.at, .35), .1, .85) * sampleRate);
+  if (next !== duty && frame > 0 && frame < durationFrames) updates.push({frame, writes:[[channel === 0 ? 0xff11 : 0xff16, next << 6]]});
+ }
  if (!noise && Math.abs(slide) > .001) {
   const target = midi + clamp(slide, -24, 24);
-  const slideSeconds = Math.min(duration, Math.max(.004, number(expression.slideTime, Math.min(.12, duration * .7))));
-  const count = Math.min(16, Math.max(1, Math.floor(slideSeconds * 128)));
+  // The worklet accepts sixteen owner-checked updates per voice. Reserve
+  // those required by release/duty before sampling the pitch gesture.
+  const count = Math.min(16 - updates.length, Math.max(1, Math.floor(slideSeconds * 128)));
   for (let i = 1; i <= count; i++) {
    const frame = Math.round(slideSeconds * sampleRate * i / count);
    if (frame >= durationFrames) break;
    updates.push({frame, writes:frequencyWrites(channel, midi + (target - midi) * i / count, length.enable)});
   }
  }
+ updates.sort((a, b) => a.frame - b.frame);
  const pan = settings.chipStereo ? number(expression.pan, 0) : 0;
  return {midi, channel, kind, category:drum ? 'drum' : 'note', durationFrames, writes, updates,
   pan:pan < -.33 ? -1 : pan > .33 ? 1 : 0};

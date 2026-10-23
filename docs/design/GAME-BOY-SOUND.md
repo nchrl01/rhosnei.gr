@@ -2,7 +2,7 @@
 
 Implementation record · 24 October 2026.
 
-The version 471 audio path uses two MAME-derived Game Boy APUs, four channels each. Lead, arpeggios, chords, bass, drone, texture and percussion become register writes to those eight slots. The browser and offline artwork renderer share the rack, register compiler and sound core. Version 470 aligned audio and visual market interpretation; version 471 corrects arp/chord presence, their pulse envelopes and replay note continuity while retaining sparse harmony.
+The version 472 audio path uses two MAME-derived Game Boy APUs, four channels each. Lead, arpeggios, chords, bass, drone, texture and percussion become register writes to those eight slots. The browser and offline artwork renderer share the rack, register compiler and sound core. Version 470 aligned audio and visual market interpretation; version 471 corrects arp/chord presence, their pulse envelopes and replay note continuity while retaining sparse harmony.
 
 The host is a JavaScript adaptation of MAME's Game Boy sound device with explicit corrections informed by current Pan Docs. It is sound-only: it does not execute a Game Boy CPU or ROM. The score and market-to-register mapping remain UPIC's own implementation. MAME provenance does not establish exact MAME output or physical-hardware conformance.
 
@@ -146,6 +146,30 @@ Depth comes from register, relative levels, different envelope lengths, interrup
 
 The extra polyphony comes from the second four-channel APU. There is no independent sample instrument, direct FM oscillator, granular PCM machine or conventional reverb processor.
 
+## Version 472: readable market music and chip depth
+
+The input mapping is shared by the live score, replay controls and frozen audio renderer:
+
+| Observation | Sound | Visual relationship |
+| --- | --- | --- |
+| Market cap | Logarithmic rhythm spacing and regularity; no BPM change | Existing cap-dependent composition and artwork identity |
+| Liquidity | Harmonic settlement and length of held/released phrases | Existing liquidity mark sizes; held voices deform the same field |
+| Holder count | Two to four notes across a bounded one-to-two-octave arp range | Existing population count; each performed arp has a visible cue |
+| Signed percentage change | Rising/falling arp contour, bounded pitch/duty/noise colour | Matching direction and onset displacement |
+| Actual activity | 40–140 BPM; replay folds accelerated time into musical bounds | Same audible tempo and observed-activity release |
+
+Unavailable dimensions use explicitly neutral controls. Candle history does not borrow today's holders or liquidity. A known quiet/stale observation still cannot create sound. High liquidity does not make harmony compulsory: chord entrances and coordinated rests remain sparse.
+
+The MIDI research remains in the running instrument: pooled note intervals, conditional interval transitions, note spacing, gate, accent and phrase occupancy generate material; introduce/answer/vary/return development preserves motif memory. Holder/cap/liquidity controls reshape those new phrases. The existing verified source-melody screen remains at the final chip scheduling boundary.
+
+Sustain is now a held register state followed by two or three quieter chip levels. Pulse releases explicitly retrigger decreasing held levels; wave releases use NR32's full/half/quarter levels. Selected pulse notes change duty once. Echoes inherit their actual source phrase gain and compile to lower 4-bit levels, rather than dying in the closed arp response window. Shared rests, inactivity, manual envelope controls, cancellation and channel ownership still win. This is scored chip depth, not a hardware reverb unit or added convolution processor.
+
+Accepted sound events now carry onset, role, pitch, direction, lifetime and cancellation handles to the EarthBound renderer. It follows the output presentation clock where available. Attacks, held tones, arp/texture detail and echoes deform the existing pattern without inventing holders or changing measured mark sizes. Muting, seeking and reduced motion suppress cues. Cancelled lookahead events cannot swallow replacement cues. Final replay audio and visual hold together. The pattern keeps its exact 24-second cycle at fixed controls; an evolving market naturally changes the image during a cycle.
+
+The field reserves a visible procedural share beneath artwork, uses stronger bands and less random selection noise, and retains the existing holder/raster budgets. Offline pixel rendering verifies periodicity and visible event responses; no browser/phone audition is claimed for this revision.
+
+Release checks: 409 automated tests passed, with two environment-dependent tests skipped; workspace type checks and the production build passed. A 32-second stereo reconstruction from public ETH trade observations scheduled 222 events across both chips and all eight channels, including arp, chord, drone and echo roles. Its peak was 0.1980 and RMS 0.02017. The verified MIDI index covered 31,136 source files; the originality guard revoiced two windows and blocked none. These checks establish scheduling, rendered output and bounded levels, not subjective listening quality. The reconstruction identity is `ed048284`.
+
 ## Limits that remain explicit
 
 - This is a sound-only core, not a CPU/ROM emulator.
@@ -155,7 +179,7 @@ The extra polyphony comes from the second four-channel APU. There is no independ
 - DMG active-RAM access and corruption behavior are not hardware-verified. The normal driver avoids active-RAM writes by disabling CH3 for updates.
 - Event-area averaging reduces aliasing compared with point sampling; it is not a brick-wall reconstruction filter.
 - The analog speaker/headphone amplifier and real transducer response are not simulated.
-- The version 469 and 471 public-trade-driven offline previews and separate automated checks are listed above. They do not establish subjective listening quality or hardware conformance. No physical-phone performance measurement, hardware comparison or emulator conformance suite is claimed.
+- The version 469, 471 and 472 public-trade-driven offline previews and separate automated checks are listed above. They do not establish subjective listening quality or hardware conformance. No physical-phone performance measurement, hardware comparison or emulator conformance suite is claimed.
 
 Pan Docs describes these distinctions and model-dependent behavior in [Audio details](https://gbdev.io/pandocs/Audio_details.html). Never describe this implementation as an exact replacement for every console revision.
 
@@ -165,7 +189,7 @@ The browser and offline renderer use the same `gb-chip-rack.js`, `compileGameBoy
 
 Sharing these components does not recover an unrecorded live session. Frozen observations produce a deterministic historical reconstruction under their declared input, score, model and renderer settings. Reproduction of a particular live performance additionally requires its actual accepted events and timing/state records.
 
-The collectible renderer identifies version 471 as `upic-nft-gb-v5` (version 470 used `upic-nft-gb-v4`, and version 469 used `upic-nft-gb-v3`). Equivalence between uninterrupted playback and arbitrary live/replay seeks, including the guard's preceding-note history, remains unverified.
+The collectible renderer identifies version 472 as `upic-nft-gb-v6` (version 471 used `upic-nft-gb-v5`) (version 470 used `upic-nft-gb-v4`, and version 469 used `upic-nft-gb-v3`). Equivalence between uninterrupted playback and arbitrary live/replay seeks, including the guard's preceding-note history, remains unverified.
 
 Missing volume, trades or holder observations must remain missing. Candle aggregates must not be labeled as captured individual trades.
 

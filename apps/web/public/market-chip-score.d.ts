@@ -1,7 +1,9 @@
 export interface ChipSignal {
  price:number;
  delta:number;
+ deltaKnown:boolean;
  activity:number;
+ activityKnown:boolean;
  volume:number;
  motion:number;
  intensity:number;
@@ -11,6 +13,8 @@ export interface ChipSignal {
  excitation:number;
  marketCap:number|null;
  liquidity:number|null;
+ holders:number|null;
+ holdersKnown:boolean;
  balance:number;
  balanceKnown:boolean;
  tradeRate:number;

@@ -1,6 +1,7 @@
 import {originalArtworkPalette} from '../upic-artwork-palette.js';
 import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=427';
 import {EARTHBOUND_LOOP_DURATION,TAU,loopTime,loopPhase} from './earthbound-loop.js?v=427';
+import {earthboundMotionFrame,earthboundFieldWarp} from './earthbound-presentation.js?v=472';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -96,7 +97,10 @@ export function createPixelBlastCanvas(host){
    const cellSize=requested?Math.min(params.cellSize,Math.sqrt(viewWidth*viewHeight/(requested*3))):params.cellSize,grid=Math.max(2,Math.round(cellSize*dpr)),ratio=grid/cellSize;
    const cssWidth=w/ratio,cssHeight=h/ratio,originX=Math.floor(w/2),originY=Math.floor(h/2);
    const pattern=battlePattern(params.patternKey??seed,time);
-   const cell=16,offset=(seed%65521)/65521*173.6;
+   const cell=Math.max(12,Math.min(24,Number(params.patternSampleSize)||16)),offset=(seed%65521)/65521*173.6;
+   const presentationMotion=earthboundMotionFrame(time,seed,params),patternContrast=Math.max(1,Math.min(2.5,Number(params.patternContrast)||1));
+   const noiseOctaves=Math.max(1,Math.min(5,Math.round(Number(params.patternNoiseOctaves)||5)));
+   const selectionNoise=params.selectionNoise==null?1:clamp(params.selectionNoise);
    const liquidRadius=Math.max(.001,.12*params.liquidRadius),grainFrame=Math.floor(time*12);
    const touches=params.liquid?ripples.filter(p=>eventTime-p.time>=0&&eventTime-p.time<3).map(p=>{
     let dx=Number.isFinite(p.dx)?p.dx:params.direction,dy=Number.isFinite(p.dy)?p.dy:(params.balance-.5)*.6;
@@ -123,12 +127,13 @@ export function createPixelBlastCanvas(host){
       const weight=Math.exp(-(dx*dx+dy*dy)*1.5)*p.envelope*p.strength*70/cssHeight;
       warpX+=((p.dx??1)-dy*.35)*weight;warpY+=((p.dy??0)+dx*.35)*weight;
      }
-     const u=u0+warpX,v=v0+warpY;let sum=1,freq=1;
-     for(let octave=0;octave<5;octave++){sum+=noise((u*params.scale+offset+orbitX*.05)*freq,(v*params.scale+offset*.317)*freq,orbitZ*.05*freq);freq*=1.25;}
+     const [u,v]=earthboundFieldWarp(u0+warpX,v0+warpY,presentationMotion);let sum=1,freq=1;
+     for(let octave=0;octave<noiseOctaves;octave++){sum+=noise((u*params.scale+offset+orbitX*.05)*freq,(v*params.scale+offset*.317)*freq,orbitZ*.05*freq);freq*=1.25;}
      let feed=(sum*.5+.5)*.5-.65+(params.density-.5)*.3;
      feed+=params.ecosystem*noise(u*6+offset*.19+orbitX*.04,v*6+offset*.41,orbitZ*.04);
      feed=Math.max(feed,.07+.045*noise(u*14+offset+orbitX*.03,v*14+offset,orbitZ*.03));
      feed=battlePatternFeed(u*Math.max(.2,params.scale/.25),v*Math.max(.2,params.scale/.25),time,pattern,feed);
+     feed=.5+(feed-.5)*patternContrast;
      feed+=holderClusterFeed(cx*cell/cssWidth,cy*cell/cssHeight,cssWidth/cssHeight,params.holderGroups);
      sample.frame=sampleFrame;sample.feed=feed;sample.warpX=warpX;sample.warpY=warpY;
     }
@@ -145,7 +150,7 @@ export function createPixelBlastCanvas(host){
    const firstX=Math.floor(-originX/grid),firstY=Math.floor(-originY/grid);
    const lastX=Math.ceil((w-originX)/grid),lastY=Math.ceil((h-originY)/grid);
    candidates.length=0;
-   const nextGeometryKey=[w,h,grid,cellSize,seed,params.edgeFade,pixelPresence,requested].join(':');
+   const nextGeometryKey=[w,h,grid,cellSize,cell,seed,params.edgeFade,pixelPresence,requested].join(':');
    if(nextGeometryKey!==geometryKey){
     geometryKey=nextGeometryKey;geometry=[];sampleCache.clear();
     for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
@@ -205,7 +210,7 @@ export function createPixelBlastCanvas(host){
     const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
-    const score=feed+threshold-.5+Math.log(Math.max(.000001,taper*taper))*.35;
+    const score=feed+(threshold-.5)*selectionNoise+Math.log(Math.max(.000001,taper*taper))*.35;
     mark.diameter=diameter;mark.score=score;candidates.push(mark);
    }
    // Partition the highest-scoring population without sorting every cell.

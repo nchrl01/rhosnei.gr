@@ -1,9 +1,9 @@
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=469';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {createTradePiano} from './trade-piano.js?v=471';
-import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=470';
-import {marketChipSignal} from './market-chip-score.js?v=471';
+import {createTradePiano} from './trade-piano.js?v=472';
+import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=472';
+import {marketChipSignal} from './market-chip-score.js?v=472';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:[...pianoSpecs,...phraseSpecs,...drumSpecs,...chipSpecs]};
@@ -31,7 +31,7 @@ for(const [name,text] of Object.entries(engineStatus)){const row=document.create
 function market(){
  const s=state.market;
  const music={tempo:s.tempo,activity:s.activity,changePct:s.change,intensity:s.intensity,volatility:s.motion,group:s.change<0?'down':'up'};
- return {activity:s.activity,volume:s.volume,motion:s.motion,texture:s.liquidity,balance:s.balance,fresh:s.fresh,tradeRate:s.activity*20,observed:true,source:'lab',music,arrangement:piano?.arrangement?.(),raw:{activity:s.activity,volume:s.volume,motion:s.motion},availability:{liquidity:true,balance:true,volume:true},context:{latestCap:s.cap*price,direction:Math.sign(s.change),pressure:s.pressure,shock:s.shock},replay:{sceneSeed:s.seed,at:0,volume:s.volume}};
+ return {activity:s.activity,volume:s.volume,motion:s.motion,texture:s.liquidity,liquidity:s.liquidityUsd,holders:s.holders,delta:s.change,balance:s.balance,fresh:s.fresh,tradeRate:s.activity*20,observed:true,source:'lab',music,arrangement:piano?.arrangement?.(),raw:{activity:s.activity,volume:s.volume,motion:s.motion},availability:{liquidity:true,holders:true,activity:true,change:true,balance:true,volume:true},context:{latestCap:s.cap*price,direction:Math.sign(s.change),pressure:s.pressure,shock:s.shock},replay:{sceneSeed:s.seed,at:0,volume:s.volume}};
 }
 function chipConfiguration(){
  return {...state.piano,arpeggios:state.arpeggios,drums:state.drums&&level('earthbound')>0,

@@ -1,9 +1,11 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=448';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=472';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
-import {marketPerformance,marketActivityDecay} from './market-performance.js?v=470';
+import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';
+import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
+import {createChipVisualEvents} from './chip-visual-events.js?v=472';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
 // the legacy audio/metadata-driven visual parameter path.
@@ -65,7 +67,9 @@ export function earthboundMarketState(m={},coinKey='unselected'){
  const holders=observedHolderSnapshot(m),holderBalances=holders.balances;
  return {coinKey,chartHistory:m.replay?.source==='candles'?m.replay.chart:null,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
   holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
-  tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:performance.fresh,activity:performance.activity,
+  tempo:finite(m.arrangement?.audibleTempo)??marketMusicalMapping(performance).tempo.bpm,fresh:performance.fresh,activity:performance.activity,
+  volume:performance.volume,motion:performance.motion,pressure:performance.pressure,balance:performance.balance,
+  direction:performance.direction,delta:performance.delta,
   // Snapshot totals are historical aggregates, not evidence of a new trade.
   tradingActivity:performance.tradingActivity,
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
@@ -109,23 +113,17 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
  let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
  let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
  let visualReady=false,loaderHasPlayed=false,loaderSignature='',loaderRevealUntil=0;
- let scoreEvents=[],scoreAccent=0;
+ const scoreEvents=createChipVisualEvents();let scoreAccent=0;
  const scoreClock=()=>{const value=getClock();return Number.isFinite(value)?value:null;};
- function clearScoreEvents(){scoreEvents=[];scoreAccent=0;}
- function scoreActive(){return !closed&&!reduced.matches&&getState().playing&&settings.playing!==false&&!settings.seeking&&!settings.ended&&latest?.fresh>0&&identityKey(getState().coinKey)===key;}
+ function clearScoreEvents(){scoreEvents.clear();scoreAccent=0;}
+ function scoreActive(){return !closed&&getState().playing&&getState().master!==0&&settings.playing!==false&&!settings.seeking&&!settings.ended&&latest?.fresh>0&&latest?.tradingActivity>0&&identityKey(getState().coinKey)===key;}
  function readScoreAccent(){
   const now=scoreClock();
-  if(now===null||!scoreActive()){clearScoreEvents();return 0;}
+  if(now===null||!scoreActive()){clearScoreEvents();return {};}
   // Audio lookahead can be cancelled before a voice starts. Read the actual
   // audio clock and its cancellation handle, never the UI callback's arrival.
-  scoreEvents=scoreEvents.filter(event=>!event.isCancelled?.()&&now-event.time<.7);
-  scoreAccent=0;
-  for(const event of scoreEvents){
-   const age=now-event.time;if(age<0)continue;
-   const envelope=(1-Math.exp(-age/.012))*Math.exp(-age/.16);
-   scoreAccent=Math.max(scoreAccent,event.strength*envelope);
-  }
-  return scoreAccent;
+  const pulse=scoreEvents.sample(now,{active:true,reducedMotion:reduced.matches});
+  scoreAccent=pulse.attack;return pulse;
  }
  function syncVisualLoading(){
   if(visualReady&&loaderSignature==='hidden')return;
@@ -177,7 +175,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   if(closed)return;raf=requestAnimationFrame(draw);
   syncVisualLoading();
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
-  const musicalAccent=readScoreAccent();
+  const scorePulse=readScoreAccent();
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
   syncHolderLoading();
   if(latest.liveHolders&&!initialHoldersReady)return;
@@ -185,8 +183,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   // A selection can update app state before its first market frame arrives.
   // Never attribute the old coin's pixels to the newly selected coin.
   if(identityKey(state.coinKey)!==key)return;
-  // Share the market-cap readout's up/down pulse; price change is not a shape input.
-  latest.change=latest.chartHistory?Math.sign(latest.chartHistory.at(-1)?.close-latest.chartHistory.at(-1)?.open):Math.sign(Number(state.markDirection)||0);
+  // Sound and pixels use the same observed signed return, including replay.
+  // A short-lived readout flash must not erase the phrase's direction.
+  latest.change=latest.direction;
   const fresh=latest.fresh>0;
   // Ease into activity, then settle gently. A stopped input loop must also
   // decay; the animation loop itself is never evidence of a live market.
@@ -225,7 +224,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
     let elapsed=dt;
     if(settings.clock!=null){
      const cursor=sourceValue+Math.min(.25,Math.max(0,(now-sourceAt)/1000))*Math.max(0,Number(settings.rate)||1);
-     elapsed=sourceCursor===null?0:Math.max(0,cursor-sourceCursor);sourceCursor=Math.max(sourceCursor??cursor,cursor);
+     // Audio folds accelerated history into an audible tempo. Move at that
+     // same pace instead of also multiplying the field by the replay rate.
+     elapsed=sourceCursor===null?0:Math.max(0,cursor-sourceCursor)/Math.max(.1,Number(settings.rate)||1);sourceCursor=Math.max(sourceCursor??cursor,cursor);
     }else sourceCursor=null;
     if(!reduced.matches)clock+=elapsed*1.35*latest.tempo/100*motionRate;
    }
@@ -242,10 +243,9 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   const frameInterval=1000/(renderer.kind==='canvas'?30:60);
   if(now-lastRender<frameInterval)return;lastRender=now-(now-lastRender)%frameInterval;
   overlay?.clearRect(0,0,canvas.width,canvas.height);
-  // A tiny luminance breath marks a performed onset. It changes no observed
-  // market field, holder geometry, colour ratio or seamless motion phase.
-  const scoreInk=1-.035*musicalAccent*latest.fresh;
-  renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence:presence*imageReveal,pixelPresence:1,inkColor:transportInk*scoreInk,reducedMotion:reduced.matches});
+  // Actual channel onsets/holds/echoes deform the existing battle pattern.
+  // Population and liquidity sizes remain measurements, not audio meters.
+  renderer.render({width,height,time:clock,seed,inputs:latest,identity,scorePulse,artworkColor:color,presence:presence*imageReveal,pixelPresence:1,inkColor:transportInk,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
   renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
   renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
@@ -261,7 +261,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
    const backwards=options.clock!=null&&settings.clock!=null&&options.clock<settings.clock;
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
    if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;}
-   key=nextKey;seed=seedFor(key);settings=options;marketFrameAt=performance.now();latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
+   key=nextKey;seed=seedFor(key);settings=options;marketFrameAt=performance.now();latest=earthboundMarketState(m,key);latest.change=latest.direction;
    if(!scoreActive())clearScoreEvents();
    syncHolderLoading();
    if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
@@ -273,11 +273,11 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   },
   scoreEvent(event={}){
    const now=scoreClock();
-   if(now===null||!scoreActive()||!Number.isFinite(event.time)||event.time<now-.7||event.time>now+2||event.isCancelled?.())return;
-   const strength=unit(Number(event.gain)/.085)*(event.kind==='chord'?.5:event.kind==='bass'?.75:1);
-   if(!strength)return;
-   scoreEvents.push({time:event.time,strength,isCancelled:event.isCancelled});
-   if(scoreEvents.length>128)scoreEvents.splice(0,scoreEvents.length-128);
+   // Play can flush a real first packet before the next market frame sets
+   // settings.playing. Admit it by transport identity here; sampling applies
+   // freshness, seeking and reduced-motion gates after that synchronous frame.
+   if(now===null||closed||!getState().playing||getState().master===0||identityKey(getState().coinKey)!==key)return;
+   scoreEvents.enqueue(event,now);
   },
   // Raw market and legacy meter callbacks do not invent musical onsets.
   event(){},pulse(){},piano(){},
@@ -337,7 +337,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,scoreReactive:true,scoreAccent,scheduledScoreEvents:scoreEvents.length,marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,scoreReactive:true,scoreAccent,scheduledScoreEvents:scoreEvents.snapshot().queued,scorePulse:scoreEvents.snapshot(),marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;clearScoreEvents();cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };

@@ -29,7 +29,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    <section><small>Visual field</small><dl data-visuals></dl></section>
   </div>
   <div class="engine-overview" data-channels aria-label="Two Game Boy chips with eight hardware channels"></div>
-  <p class="engine-note">Activity controls occupancy, volume controls packet bursts, price changes bend pitch, and motion changes the noise clock. Missing or stale observations stop new sound. These are artistic mappings of the available data.</p>
+  <p class="engine-note">Market cap shapes rhythm; liquidity shapes harmonic stability and sustain; holders shape arpeggio length and range; rising and falling prices shape contour and tone; activity sets tempo. Learned MIDI phrasing supplies motif, timing and articulation. Audible attacks, holds and echoes also move the visual. Missing measurements stay neutral; missing or stale activity stops new sound.</p>
   <details class="engine-source"><summary>Controls and accepted events</summary><div class="engine-overview"><section><small>App controls</small><dl data-controls></dl></section><section><small>Event feedback</small><dl data-events></dl></section></div></details>
   <details class="engine-console"><summary>Engine messages</summary><pre data-log>No engine messages.</pre></details>
  </details>`;
@@ -118,7 +118,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
   ]);
   const channels=chips.flatMap(state=>Array.isArray(state.apu?.channels)?state.apu.channels:[]);
   const sounding=channels.length?channels.filter(channel=>channel.enabled).length:null;
-  const drums=instrument.drums||{};
+  const drums=instrument.drums||{},mapping=instrument.musicalMapping;
   table('[data-chip]',[
    ['Instrument',instrument.name||'Waiting'],
    ['Hardware',chips.length+' chips · '+channelCount+' channels'],
@@ -129,6 +129,11 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Rejected events',finite(chip.rejected)?chip.rejected:'Unavailable'],
    ['Packet identity',drums.patternId||'Waiting'],
    ['Packet density',percent(drums.density)],['Packet deviation',percent(drums.deviation)],
+   ['Cap → rhythm',mapping?.known?.marketCap?pretty(mapping.rhythm.rate)+'× spacing rate':'Neutral · cap unavailable'],
+   ['Liquidity → stability',mapping?.known?.liquidity?percent(mapping.harmony.stability):'Neutral · liquidity unavailable'],
+   ['Holders → arpeggio',mapping?.known?.holders?mapping.arpeggio.notes+' notes · '+mapping.arpeggio.span+' semitones':'Neutral · holders unavailable'],
+   ['Price → contour',mapping?.known?.change?mapping.change.direction>0?'Rising':mapping.change.direction<0?'Falling':'Level':'Neutral · change unavailable'],
+   ['Activity → tempo',mapping?.known?.activity?pretty(mapping.tempo.bpm)+' BPM before replay folding':'Neutral · activity unavailable'],
    ...chips.flatMap((state,index)=>[['Chip '+(index+1)+' routing',hex(state.apu?.routing)],['Chip '+(index+1)+' master',hex(state.apu?.master)]]),
    ['MIDI phrasing',chip.phrasing?.ready?'Source checks ready':chip.phrasing?.state||'Waiting'],
    ['Output','Chip mixers and DC removal'],

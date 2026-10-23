@@ -1,5 +1,6 @@
 import {type ArtworkInput,type MarketFrame,ENGINE_VERSION,assertArtwork} from '@upic/domain';
-import {composeChipBar} from '../../../apps/web/public/market-chip-score.js';
+import {composeChipBar,marketChipSignal} from '../../../apps/web/public/market-chip-score.js';
+import {marketMusicalMapping} from '../../../apps/web/public/market-musical-mapping.js';
 import {battlePattern,battlePatternFeed} from './legacy/earthbound-pattern.js';
 export {ENGINE_VERSION};
 export interface Note {at:number;midi?:number;duration:number;gain:number;kind:string;drum?:string;channel?:number;chip?:number;seed?:number;expression?:Record<string,unknown>;parameters?:Record<string,unknown>}
@@ -22,14 +23,14 @@ function frameSignal(input:ArtworkInput,frame:MarketFrame,seconds:number){
  const buyVolume=trades.filter(trade=>trade.side==='buy').reduce((sum,trade)=>sum+Math.max(0,numeric(trade.volumeUsd)??0),0);
  const tradeRate=trades.length/30,balance=trades.length&&observedVolume&&observedVolume>0?buyVolume/observedVolume:.5;
  const marketCap=numeric(frame.marketCapUsd),liquidity=numeric(frame.liquidityUsd);
- return {price,referencePrice,delta,observedVolume,activity,motion,volume,fresh,balance,tradeRate,marketCap,liquidity,source:frame.source,observed:price!==null||observedVolume!==null||trades.length>0,availability:{balance:trades.length>0,tradeRate:!!frame.trades,volume:observedVolume!==null,liquidity:liquidity!==null}};
+ return {price,referencePrice,delta,observedVolume,activity,motion,volume,fresh,balance,tradeRate,marketCap,liquidity,source:frame.source,observed:price!==null||observedVolume!==null||trades.length>0,availability:{activity:!!frame.trades||observedVolume!==null,change:price!==null&&referencePrice!==null&&referencePrice>0,balance:trades.length>0,tradeRate:!!frame.trades,volume:observedVolume!==null,liquidity:liquidity!==null}};
 }
 export function score(input:ArtworkInput):Note[]{
  assertArtwork(input);const notes:Note[]=[],seed=componentSeed(input.seed,'music');
  let seconds=0;
  for(let bar=0;seconds<input.seconds;bar++){
   const frame=frameAt(input,seconds),metrics=frameSignal(input,frame,seconds);
-  const intensity=Math.max(metrics.activity,metrics.motion,metrics.volume*.7),tempo=40+120*intensity,beat=60/tempo;
+ const intensity=Math.max(metrics.activity,metrics.motion,metrics.volume*.7),tempo=marketMusicalMapping(marketChipSignal({metrics})).tempo.bpm,beat=60/tempo;
   const plan=composeChipBar(seed,bar,{cap:numeric(frame.marketCapUsd),metrics,active:metrics.fresh>0,arpeggios:input.stage>=4,drums:input.stage>=3,textureGain:input.stage>=1?.55:0,music:{tempo,intensity,activity:metrics.activity,volatility:metrics.motion,group:metrics.delta<0?'down':'up'}});
   for(const note of plan.events){
    if(note.kind==='bass'&&input.stage<2)continue;
@@ -60,7 +61,7 @@ type ChipRenderer={prepareChipPhrasing:()=>Promise<{ready:boolean;error?:string|
 const chipModules=new Map<string,Promise<ChipRenderer>>();
 const chipRenders=new WeakMap<ArtworkInput,Map<string,Promise<{left:Float32Array;right:Float32Array}>>>();
 function chipModule(assetBase:string){
- const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=469';
+ const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=472';
  let pending=chipModules.get(url);
  if(!pending){pending=import(/* @vite-ignore */ url).catch(error=>{chipModules.delete(url);throw error;});chipModules.set(url,pending!);}
  return pending!;
