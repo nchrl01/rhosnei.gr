@@ -1,6 +1,6 @@
 import {catalogueNative} from './native-coins.js?v=359';
-import {compareCoinNetworks,supportedCoinNetwork} from './coin-network-choice.js?v=444';
-import {coinOnNetwork} from './coin-catalogue.js?v=444';
+import {compareCoinNetworks,supportedCoinNetwork} from './coin-network-choice.js?v=445';
+import {coinOnNetwork} from './coin-catalogue.js?v=445';
 const captureEndpoint='https://upic-insightx.nchrl01.workers.dev/coin-captures';
 let cachedCaptures=[],loadedAt=0,loading;
 export const previewKey=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);

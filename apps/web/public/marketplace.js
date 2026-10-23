@@ -1,8 +1,9 @@
-import {collectiblePreview,genesisCollectibles} from './collectible-selection.js?v=444';
-import {storeCapture,loadCloudCaptures} from './coin-previews.js?v=444';
-import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=444';
-import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=444';
-import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=444';
+import {searchNetworks} from './network-marks.js?v=445';
+import {collectiblePreview,genesisCollectibles} from './collectible-selection.js?v=445';
+import {storeCapture,loadCloudCaptures} from './coin-previews.js?v=445';
+import {clearLegacyCoinSnapshots} from './coin-snapshot-store.js?v=445';
+import {loadCoinCatalogue,coinPlayerURL,rememberRecentCoin} from './coin-catalogue.js?v=445';
+import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=445';
 const $=id=>document.getElementById(id),gallery=$('coin-gallery'),grid=$('coin-gallery-grid');
 const search=$('coin-gallery-search'),network=$('coin-gallery-network'),count=$('coin-gallery-count');
 let records=[],visible=40,refreshSaved=()=>{},candidateCoins=[],selectionRevision=0;
@@ -41,11 +42,9 @@ function render(append=false){
  }
  $('coin-gallery-empty').hidden=items.length>0;more.hidden=items.length<=visible;more.textContent='Load more · '+Math.min(visible,items.length)+' / '+items.length.toLocaleString();
 }
-const networkIcons=["ethereum", "base", "solana", "arbitrum", "polygon", "optimism", "avalanche", "robinhood", "abstract", "animechain", "ape_chain", "arc", "bera_chain", "blast", "flow", "gunzilla", "hyperevm", "hyperliquid", "ink", "megaeth", "monad", "ronin", "sei", "shape", "somnia", "soneium", "stablechain", "unichain", "zora"];
-const networkAliases={bera_chain:'berachain',sei:'sei-network',ape_chain:'apechain',animechain:'animechain',stablechain:'stable',hyperevm:'hyperevm'};
 const networkGroup=document.querySelector('.marketplace-networks');
 networkGroup.replaceChildren();
-function networkButton(chain,name,icon){const button=element('button');button.type='button';button.dataset.chain=chain;button.setAttribute('aria-pressed',String(chain==='all'));button.setAttribute('aria-label',name);if(icon){const image=element('img',null,'network-mark');image.src='images/networks/'+icon+'.svg';image.alt='';image.width=32;image.height=32;image.draggable=false;button.append(image,element('span',name,'network-name'));}else{button.textContent=chain==='all'?'All':name;button.title=name;}button.addEventListener('click',()=>{if(![...network.options].some(o=>o.value===chain)){const option=element('option',name);option.value=chain;network.append(option);}network.value=chain;for(const item of networkGroup.querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===button));network.dispatchEvent(new Event('change'));});networkGroup.append(button);}
+function networkButton(chain,name,imageURL){const button=element('button');button.type='button';button.dataset.chain=chain;button.setAttribute('aria-pressed',String(chain==='all'));button.setAttribute('aria-label',name);if(imageURL){const image=element('img',null,'network-mark');image.src=imageURL;image.alt='';image.width=32;image.height=32;image.draggable=false;image.addEventListener('error',()=>{image.remove();button.prepend(element('span',chain.slice(0,2).toUpperCase(),'network-fallback'));},{once:true});button.append(image,element('span',name,'network-name'));}else{button.textContent=chain==='all'?'All':name;button.title=name;}button.addEventListener('click',()=>{if(![...network.options].some(o=>o.value===chain)){const option=element('option',name);option.value=chain;network.append(option);}network.value=chain;for(const item of networkGroup.querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===button));network.dispatchEvent(new Event('change'));});networkGroup.append(button);}
 networkButton('all','All networks');
 
 function verifyPreview(source){
@@ -81,7 +80,7 @@ async function selectReadyCoins(){
  for(const chain of chains){const option=element('option',chain==='solana'?'SOL':chain.toUpperCase());option.value=chain;network.append(option);}
  const selected=networkGroup.querySelector('[aria-pressed=true]')?.dataset.chain||'all';network.value=chains.includes(selected)?selected:'all';
  networkGroup.replaceChildren();networkButton('all','All networks');
- for(const chain of chains){const icon=networkIcons.find(icon=>(networkAliases[icon]||icon)===chain);networkButton(chain,chain==='solana'?'SOL':chain.toUpperCase(),icon);}
+ for(const chain of chains){const mark=searchNetworks(candidateCoins).find(item=>item.chain===chain);networkButton(chain,mark?.name||chain,mark?.image);}
  for(const button of networkGroup.children)button.setAttribute('aria-pressed',String(button.dataset.chain===network.value));
  render();
 }

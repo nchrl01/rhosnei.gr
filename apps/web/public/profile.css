@@ -1,7 +1,6 @@
-@font-face{font-family:UnifontText;src:url("fonts/Unifont/Unifont.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
 .profile-page>main{display:flex;flex-direction:column;min-height:100dvh;min-width:0;padding-bottom:0}
 #profile-page-content{flex:1;width:100%;min-width:0;box-sizing:border-box}
-.profile-content{--profile-body:18px;--profile-small:14px;max-width:1200px;margin:0 auto;padding:40px 24px 64px;text-transform:uppercase;font-size:var(--profile-body);line-height:1.5}
+.profile-content{--profile-body:var(--font-size-body);--profile-small:var(--font-size-small);max-width:1200px;margin:0 auto;padding:40px 24px 64px;text-transform:uppercase;font-size:var(--profile-body);line-height:1.5}
 .profile-content [hidden]{display:none!important}
 .profile-content :is(button,a){font:inherit;color:inherit}
 .profile-content button{min-height:44px;box-sizing:border-box;cursor:pointer}
@@ -14,7 +13,7 @@
 .profile-wallet-name{font-size:var(--profile-small);color:var(--muted,#aaa);margin:0}
 .profile-content .profile-account-address{font-size:var(--profile-body);width:fit-content;max-width:100%;min-height:44px;margin:0;padding:4px 0;border:0;background:transparent;text-transform:none;overflow-wrap:anywhere}
 .profile-content .profile-account-address:hover{text-decoration:underline;text-underline-offset:4px;background:transparent}
-.profile-balance{font-size:28px;line-height:1.25;margin:4px 0 0;overflow-wrap:anywhere}
+.profile-balance{font-size:var(--font-size-title);line-height:1.25;margin:4px 0 0;overflow-wrap:anywhere}
 .profile-content .profile-network{min-height:36px;font-size:var(--profile-small);border:0;background:transparent;color:var(--muted,#aaa);padding:0 8px;max-width:100%;white-space:normal}
 .profile-wallet-actions{display:grid;gap:8px;margin-top:8px}
 .profile-content .profile-wallet-action{display:flex;align-items:center;gap:16px;width:100%;min-height:64px;margin:0;padding:8px;border:0;background:transparent;text-align:left;text-transform:uppercase;font-size:var(--profile-body)}
@@ -49,12 +48,11 @@
 .header-wallet.has-profile-color svg{filter:none}
 .profile-notice{position:fixed;bottom:64px;left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);width:max-content;padding:12px 16px;background:#111;border:1px solid #444;z-index:1200;color:#ddd;font-size:14px}
 @media(max-width:760px){
- .profile-content{--profile-body:16px;--profile-small:13px;padding:24px 8px 40px}
+ .profile-content{padding:24px 8px 40px}
  .profile-layout{grid-template-columns:minmax(0,1fr);gap:36px}
  .profile-account{width:100%;max-width:400px;justify-self:center}
  .profile-identity{padding:0 16px 16px}
  .profile-avatar{width:72px;height:100px;margin-bottom:12px}
- .profile-balance{font-size:26px}
  .profile-wallet-actions{gap:4px}
  .profile-content .profile-wallet-action{min-height:60px}
  .profile-tabs{gap:24px}
@@ -75,3 +73,5 @@
 /* Preserve sentence case and lowercase glyphs throughout the profile library. */
 .profile-library{font-family:UnifontText,var(--font-family);text-transform:none}
 .profile-content .profile-library :is(.profile-refresh,.profile-retry){font-family:inherit;text-transform:none}
+
+.profile-library{--font-family:UnifontText,"Noto Sans",sans-serif}

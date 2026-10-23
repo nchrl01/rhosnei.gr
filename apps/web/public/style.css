@@ -818,3 +818,8 @@ button.coin-address:not(:disabled):hover,button.coin-address{background:transpar
  .mobile-player-heading .coin-address-row .coin-address{flex:0 1 auto;max-width:calc(100% - 44px);text-align:center}
  .mobile-player-heading .coin-contract-link{min-width:44px;min-height:44px}
 }
+
+/* Collection copy keeps natural case, including action labels. */
+.coin-collection-status,.coin-collection-status :is(h3,p,a,button){font-family:UnifontText,var(--font-family);text-transform:none}
+
+.coin-collection-status{--font-family:UnifontText,"Noto Sans",sans-serif}

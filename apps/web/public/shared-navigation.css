@@ -1,5 +1,5 @@
 /* Shared site shell and interaction patterns. Tokens live in foundation.css. */
-@import url("wallet-theme.css?v=444");
+@import url("wallet-theme.css?v=445");
 
 body:is(.instrument-page,.marketplace-page,.about-page,.profile-page)>main {
   padding:0 var(--site-gutter) 28px;
@@ -729,3 +729,9 @@ body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;ma
 .marketplace-networks button[data-chain=all]{position:relative;display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;min-height:44px;margin:0;padding:8px;border:0;background:transparent;color:var(--control-ink);font:inherit;font-size:var(--font-size-small);box-shadow:none}
 .marketplace-networks button[data-chain=all][aria-pressed=true]::after{content:"";position:absolute;inset:3px;border:1px solid var(--control-ink);border-radius:50%!important;pointer-events:none}
 .marketplace-networks button[data-chain=all]:focus-visible{outline:2px solid var(--control-ink);outline-offset:-2px}
+
+/* Preserve the mixed-case All label in both shared search surfaces. */
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network[data-chain=all],
+.marketplace-networks button[data-chain=all]{font-family:UnifontText,var(--font-family);text-transform:none}
+
+:is(.mobile-coin-search,.header-search-panel) .mobile-search-network[data-chain=all],.marketplace-networks button[data-chain=all]{--font-family:UnifontText,"Noto Sans",sans-serif}

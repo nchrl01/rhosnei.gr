@@ -1,18 +1,10 @@
-import {collectiblePreview} from './collectible-selection.js?v=444';
-import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=444';
-import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=444';
+import {collectiblePreview} from './collectible-selection.js?v=445';
+import {storeCapture,coinPreview,previewKey,loadCloudCaptures} from './coin-previews.js?v=445';
+import {loadCoinCatalogue,coinOnNetwork,recentCoins,removeRecentCoin,rememberRecentCoin} from './coin-catalogue.js?v=445';
 import {attachArtworkDither} from './coin-dither.js?v=276';
 import {loadTrendingCoins} from './trending.js?v=391';
-import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=444';
-// Use the same network artwork as the marketplace, with native coin logos where available.
-const networkMarks=Object.fromEntries(['ethereum','base','solana','arbitrum','polygon','optimism','avalanche','robinhood','abstract','animechain','ape_chain','arc','bera_chain','blast','flow','gunzilla','hyperevm','hyperliquid','ink','megaeth','monad','ronin','sei','shape','somnia','soneium','stablechain','unichain','zora'].map(icon=>[({ape_chain:'apechain',bera_chain:'berachain',sei:'sei-network',stablechain:'stable',zora:'zora-network'})[icon]||icon,'images/networks/'+icon+'.svg']));
-networkMarks.bsc='images/networks/bsc.png';
-function searchNetworks(rows){
- const represented=new Set(rows.flatMap(coin=>[coin.chain,...(coin.nativeChains||[]),...(coin.platforms||[]).map(platform=>platform.chain)]).filter(Boolean));
- const native=new Map();for(const coin of rows)if(coin.contractStatus==='native')for(const chain of coin.nativeChains||[coin.nativeChain||coin.chain])if(!native.has(chain)&&/^https?:\/\//.test(coin.image||''))native.set(chain,coin);
- const preferred=Object.keys(networkMarks),names={bsc:'BNB Chain',apechain:'ApeChain',berachain:'Berachain','sei-network':'Sei','zora-network':'Zora',hyperevm:'HyperEVM'};
- return [...represented].map(chain=>({chain,name:names[chain]||native.get(chain)?.name||chain.replace(/[-_]/g,' ').replace(/\b\w/g,char=>char.toUpperCase()),image:networkMarks[chain]||native.get(chain)?.image})).filter(item=>item.image).sort((a,b)=>{const ai=preferred.indexOf(a.chain),bi=preferred.indexOf(b.chain);return(ai<0?999:ai)-(bi<0?999:bi)||a.name.localeCompare(b.name);});
-}
+import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=445';
+import {searchNetworks} from './network-marks.js?v=445';
 const money=value=>Number.isFinite(value)&&value>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(value):'—';
 function node(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;}
 const icons={back:'<path d="m15 5-7 7 7 7"/>',paste:'<path d="M8 5H5v16h14V5h-3M9 3h6v4H9zM8 11h8M8 15h6"/>',trash:'<path d="M3 6h18M9 3h6M6 6l1 15h10l1-15M10 10v7M14 10v7"/>'};
