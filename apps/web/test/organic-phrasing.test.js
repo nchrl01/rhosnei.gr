@@ -151,8 +151,8 @@ async function pianoFixture(){
  await installOriginalityIndex(index);
  vi.stubGlobal('fetch',vi.fn(()=>{throw Error('The installed index and register-driven host require no sample fetches');}));
  const {createTradePiano}=await import('../public/trade-piano.js');
- const {marketChipSignal}=await import('../public/market-chip-score.js?v=469');
- const {chipEnsembleArrangement}=await import('../public/chip-ensemble-arrangement.js?v=469');
+ const {marketChipSignal}=await import('../public/market-chip-score.js?v=470');
+ const {chipEnsembleArrangement}=await import('../public/chip-ensemble-arrangement.js?v=470');
  const fixture=audioContextFixture();
  fixture.arrangementAt=beat=>chipEnsembleArrangement(seed,beat,marketChipSignal(context));
  fixture.piano=await createTradePiano(fixture.ctx,fixture.ctx.createGain(),{initialSeed:seed});return fixture;
@@ -200,14 +200,64 @@ describe('shared chip arrangement clock',()=>{
   piano.close();
  });
 
- it('allows one finite market phrase after a real observation, then stops new notes',async()=>{
+ it('releases a real observation for at most thirty seconds when input delivery stops',async()=>{
   const {piano,sources}=await pianoFixture();piano.configure({phraseLength:8});piano.setRunning(true);
   piano.trade({kind:'swap',id:'one',priceUsd:10,receivedAt:0},context.cap,context.music);
   await vi.advanceTimersByTimeAsync(4700);expect(piano.arrangement().active).toBe(true);expect(sources.length).toBeGreaterThan(0);
-  const expiresAt=6+context.music.activity*10;
+  expect(piano.arrangement().signal.tradingActivity).toBeCloseTo(Math.exp(-(4.7-2)/8),10);
+  const expiresAt=30;
   expect(sources.filter(source=>!source.cancelled).every(source=>source.startAt<expiresAt)).toBe(true);
   await vi.advanceTimersByTimeAsync(expiresAt*1000-4700+50);expect(piano.arrangement().active).toBe(false);const count=sources.length;
   await vi.advanceTimersByTimeAsync(500);expect(sources).toHaveLength(count);piano.close();
+ });
+ it('ignores unchanged price polls even when their IDs and old aggregate activity are positive',async()=>{
+  const {piano,sources}=await pianoFixture();piano.setRunning(true);
+  expect(piano.observePrice({kind:'price-observation',id:'poll-0',price:100,referencePrice:100},context.cap,context.music)).toBe(false);
+  await vi.advanceTimersByTimeAsync(500);expect(sources).toHaveLength(0);
+  expect(piano.observePrice({kind:'price-observation',id:'poll-1',price:101,referencePrice:100},context.cap,context.music)).toBe(true);
+  await vi.advanceTimersByTimeAsync(1000);expect(sources.length).toBeGreaterThan(0);
+  for(let i=0;i<30;i++){
+   expect(piano.observePrice({kind:'price-observation',id:`unchanged-${i}`,price:101,referencePrice:101},context.cap,context.music)).toBe(false);
+   await vi.advanceTimersByTimeAsync(1000);
+  }
+  expect(piano.snapshot().phrase).toBe(false);expect(piano.arrangement().signal.tradingActivity).toBe(0);
+  const count=sources.length;await vi.advanceTimersByTimeAsync(500);expect(sources).toHaveLength(count);piano.close();
+ });
+ it('accepts distinct same-price swaps as real activity but rejects duplicate event IDs',async()=>{
+  const {piano}=await pianoFixture();piano.setRunning(true);
+  const event={kind:'swap',id:'swap-1',price:100,referencePrice:100};
+  expect(piano.trade(event,context.cap,context.music)).toBe(true);
+  await vi.advanceTimersByTimeAsync(28000);
+  expect(piano.trade(event,context.cap,context.music)).toBe(false);
+  expect(piano.trade({...event,id:'swap-2'},context.cap,context.music)).toBe(true);
+  expect(piano.arrangement().signal.tradingActivity).toBe(1);
+  await vi.advanceTimersByTimeAsync(2500);expect(piano.snapshot().phrase).toBe(true);
+  await vi.advanceTimersByTimeAsync(27550);expect(piano.snapshot().phrase).toBe(false);piano.close();
+ });
+ it('immediately gates old positive aggregates when a live frame explicitly reports no recent activity',async()=>{
+  const {piano,sources}=await pianoFixture();piano.setRunning(true);
+  piano.trade({kind:'swap',id:'active',price:101,referencePrice:100},context.cap,context.music);
+  await vi.advanceTimersByTimeAsync(1000);expect(sources.length).toBeGreaterThan(0);
+  const count=sources.length;
+  for(const snapshotAge of [5000,0,5000,0]){
+   expect(piano.frame({price:101,activity:1,volume:1,motion:1,tradeRate:12,fresh:1,tradingActivity:0,
+    snapshotAge,decoded:true,music:context.music},{playing:true})).toBe(false);
+   expect(piano.snapshot().phrase).toBe(false);expect(piano.arrangement().active).toBe(false);
+   await vi.advanceTimersByTimeAsync(250);expect(sources).toHaveLength(count);
+  }
+  piano.close();
+ });
+ it('preserves the last observed return and cannot renew it merely by rendering another frame',async()=>{
+  const {piano,sources}=await pianoFixture();piano.setRunning(true);
+  piano.trade({kind:'swap',id:'moved',price:101,referencePrice:100},context.cap,context.music);
+  const frame={price:101,observed:true,activity:.8,fresh:1,tradingActivity:1,music:{...context.music,lastMove:20}};
+  for(let i=0;i<31;i++){
+   piano.frame(frame,{playing:true});
+   expect(piano.arrangement().signal.delta).toBeCloseTo(1,10);
+   await vi.advanceTimersByTimeAsync(1000);
+  }
+  expect(piano.snapshot().phrase).toBe(false);expect(piano.arrangement().active).toBe(false);
+  const count=sources.length;await vi.advanceTimersByTimeAsync(500);expect(sources).toHaveLength(count);piano.close();
  });
  it('changes GB timbre without restarting the market phrase clock',async()=>{
   const {piano,sources,modules,processors}=await pianoFixture();piano.setRunning(true);

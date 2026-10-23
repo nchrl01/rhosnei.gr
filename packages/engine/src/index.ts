@@ -21,7 +21,8 @@ function frameSignal(input:ArtworkInput,frame:MarketFrame,seconds:number){
  const motion=unit(Math.abs(delta)/4),age=Math.max(0,(at-frame.at)/1000),fresh=frame.stale||age>=30?0:1-age/30;
  const buyVolume=trades.filter(trade=>trade.side==='buy').reduce((sum,trade)=>sum+Math.max(0,numeric(trade.volumeUsd)??0),0);
  const tradeRate=trades.length/30,balance=trades.length&&observedVolume&&observedVolume>0?buyVolume/observedVolume:.5;
- return {price,referencePrice,delta,observedVolume,activity,motion,volume,fresh,balance,tradeRate,source:frame.source,observed:price!==null||observedVolume!==null||trades.length>0,availability:{balance:trades.length>0,tradeRate:!!frame.trades,volume:observedVolume!==null}};
+ const marketCap=numeric(frame.marketCapUsd),liquidity=numeric(frame.liquidityUsd);
+ return {price,referencePrice,delta,observedVolume,activity,motion,volume,fresh,balance,tradeRate,marketCap,liquidity,source:frame.source,observed:price!==null||observedVolume!==null||trades.length>0,availability:{balance:trades.length>0,tradeRate:!!frame.trades,volume:observedVolume!==null,liquidity:liquidity!==null}};
 }
 export function score(input:ArtworkInput):Note[]{
  assertArtwork(input);const notes:Note[]=[],seed=componentSeed(input.seed,'music');

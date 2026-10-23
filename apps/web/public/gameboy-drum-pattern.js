@@ -1,3 +1,5 @@
+import {chipMarketExpression} from './chip-ensemble-arrangement.js?v=470';
+
 // Original asynchronous market packets for the four-channel UPIC APU.
 // Stochastic gate inspiration: Tero Parviainen's Stochastic Drum Machine,
 // https://codepen.io/teropa/pen/PKoYXM. No samples or reference code are used.
@@ -24,14 +26,14 @@ const baseSeed=(seed,context)=>hash(Number(seed)>>>0,variationValue(context.drum
 
 export function gameBoyDrumControls(context={}){
  const signal=context.signal||{};
- const activity=unit(signal.activity),intensity=unit(signal.intensity),motion=unit(signal.motion);
- const volume=unit(signal.volume),tradeRate=unit(number(signal.tradeRate)/8);
- const change=unit(Math.abs(number(signal.delta))/2);
- const energy=Math.max(activity,intensity,motion,volume,tradeRate,change);
+ const {activity,intensity,motion,volume,pace,energy,tradingActivity}=chipMarketExpression(signal);
+ const tradeRate=signal.tradeRateKnown===false?0:unit(number(signal.tradeRate)/8);
  return {
-  density:unit(context.drumDensity,activity*.3+volume*.25+motion*.17+intensity*.12+tradeRate*.15+change*.1),
-  deviation:unit(context.drumDeviation,motion*.55+change*.25),
-  activity,intensity,motion,volume,tradeRate,energy,
+  // Rate and activity share one pace axis; price-derived intensity is not
+  // counted again as motion. Recency closes gates even if old volume is high.
+  density:tradingActivity*unit(context.drumDensity,pace*.36+volume*.3+motion*.34),
+  deviation:unit(context.drumDeviation,motion*.75),
+  activity,intensity,motion,volume,tradeRate,energy,tradingActivity,
  };
 }
 
@@ -40,7 +42,7 @@ export function gameBoyDrumsActive(context={}){
  if(context.drums===false||context.active===false||!signal||signal.observed!==true||unit(signal.fresh)<=0)return false;
  // Manual density/deviation and descriptive intensity cannot create activity
  // from absent or zero data. Match the shared chip score's observation gate.
- return unit(signal.activity)>0||unit(signal.motion)>0||unit(signal.volume)>0||number(signal.tradeRate)>0||Math.abs(number(signal.delta))>1e-9;
+ return chipMarketExpression(signal).active;
 }
 
 function identity(seed,context){
@@ -73,7 +75,7 @@ function packets(seed,start,end,context,performance){
    const address=step*251+voice*47;
    const base=roll(id.state,address)<controls.density*weight;
    if(performance){
-    const probability=base?1-controls.deviation*.35:controls.deviation*.2*controls.energy;
+    const probability=base?1-controls.deviation*.35:controls.deviation*.2*controls.energy*controls.tradingActivity;
     if(roll(playbackSeed,address+7919)>=probability)continue;
    }else if(!base)continue;
    // Perturbation is bounded inside this lane's own cycle, not a sixteenth-
@@ -84,7 +86,7 @@ function packets(seed,start,end,context,performance){
    // Strong volume plus activity or motion may double one packet. Quieter
    // observations retain isolated attacks instead of a continuous rattle.
    const burstEnergy=unit((controls.volume-.6)/.4)*unit((Math.max(controls.activity,controls.tradeRate,controls.motion)-.45)/.55);
-   const count=1+Number(roll(playbackSeed,address+8623)<burstEnergy*.7);
+   const count=1+Number(roll(playbackSeed,address+8623)<burstEnergy*.7*controls.tradingActivity);
    const spacing=Math.min(period*.65/(count+1),.035+.05*controls.motion+.04*controls.volume);
    for(let burst=0;burst<count;burst++){
     const absolute=at+burst*spacing;
@@ -118,7 +120,7 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
  const result={events:[],patternId,density,deviation,performance:variationValue(context.drumPerformance),mode:'market-packets',signalFingerprint:plan.fingerprint};
  if(!plan.packets.length)return result;
  const signal=context.signal,delta=number(signal.delta),direction=Math.sign(delta);
- const change=unit(Math.abs(delta)/2),balance=unit(signal.balance,.5),fresh=unit(signal.fresh);
+ const change=unit(Math.abs(delta)/2),balance=signal.balanceKnown===false?.5:unit(signal.balance,.5),fresh=unit(signal.fresh);
  const support=unit(development.supportGain,1);
  const cutoffs=[4,context.cutoffBeat,development.cadenceBeat].filter(finite).map(Number);
  const cutoff=clamp(Math.min(...cutoffs),0,4),candidates=[];
@@ -127,13 +129,13 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
   if(beat>=cutoff)continue;
   const tonal=lane(packet.drum)==='tonal',fraction=roll(packet.seed,31);
   const duration=Math.min((tonal?.06:.025)+(.04+.12*volume)*(1-.55*motion),packet.period*.58,cutoff-beat);
-  const gain=(tonal?.026+.067*energy+.022*intensity:.03+.042*energy+.01*intensity)*(packet.burst===0?1:.72)*support*fresh;
+  const gain=(tonal?.026+.089*energy:.03+.052*energy)*(packet.burst===0?1:.72)*support*fresh;
   if(duration<.012||gain<=0)continue;
   const duty=(hash(plan.circuit,packet.voice+43)+Math.floor(balance*4)+(direction>0?1:0))&3;
   const pan=balance<.4?-1:balance>.6?1:0;
   // Noise sits beneath the pulse melody. Its register envelope decays fast
   // enough to reveal each hit while retaining the raw LFSR texture.
-  const initial=clamp(Math.round((tonal?4+5*Math.max(volume,intensity,activity):3+3*Math.max(volume,motion,activity))*(packet.burst===0?1:.72)),1,tonal?9:6);
+  const initial=clamp(Math.round((tonal?4+3*volume+2*intensity:3+2*volume+motion)*(packet.burst===0?1:.72)),1,tonal?9:6);
   const expression={
    duty,
    envelope:{initial,direction:tonal&&motion>.78&&fraction>.5?1:-1,pace:tonal?clamp(Math.round(1+(1-motion)*4+fraction*2),1,7):1+Number(motion<.45)},

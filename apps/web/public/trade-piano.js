@@ -1,7 +1,8 @@
-import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=468';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=469';
+import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=470';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=470';
 import {createGameBoyRack} from './gb-chip-rack.js?v=469';
-import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=469';
+import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=470';
+import {marketActivityDecay} from './market-performance.js?v=470';
 
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 // Compatibility name for stored mixer settings. The chip has calibrated output
@@ -10,7 +11,7 @@ export const EARTHBOUND_OUTPUT_GAIN=.72;
 export async function preloadPianoSamples(){return [];}
 export function marketResonance(cap){return Number(cap)>0?unit((Math.log10(Number(cap))-4)/4):0;}
 
-// The public transport API stays stable. All four voices are produced by one
+// The public transport API stays stable. Every voice is produced by one
 // pair of persistent APUs; the score, browser and visual renderer never synthesize audio.
 export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},onScoreEvent=()=>{},initialSeed=1917}={}){
  const master=ctx.createGain();master.gain.value=0;master.connect(destination);
@@ -19,11 +20,23 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  let seed=initialSeed>>>0,enabled=true,running=false,closed=false,held=false,volume=.5,lab={};
  let liveBeat=0,liveAt=ctx.currentTime,tempo=100,liveUntil=-Infinity,lastPrice=null,currentCap=null;
  let pending={music:{},signal:marketChipSignal(),active:false},timeline=null,segments=[],anchor=null,resume=true;
- let revision=0,lastPlan=null,lastVoiceKey=null,sourceFingerprint=null,lastPacketAt=-Infinity,lastSnapshotAge=Infinity;
+ let revision=0,lastPlan=null,lastVoiceKey=null,sourceFingerprint=null,lastPacketAt=-Infinity;
+ let inputUpdatedAt=-Infinity,marketAudible=false;
  const observedEvents=new Set();
  const plans=new Map(),scheduled=new Map(),voices=new Set();
  const lookAhead=.12;
- const gain=()=>master.gain.setTargetAtTime(enabled&&running&&!held?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.012);
+ const gain=()=>master.gain.setTargetAtTime(enabled&&running&&!held&&marketAudible?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.025);
+ function audible(value){if(marketAudible!==value){marketAudible=value;gain();}}
+ function currentSignal(context,replaying=false){
+  const signal=marketChipSignal(context||{});
+  if(replaying)return signal;
+  // Match the visual's release when the input loop itself stops delivering
+  // frames. The score timer cannot keep a cached observation fresh forever.
+  const decay=marketActivityDecay(ctx.currentTime-inputUpdatedAt);
+  const tradingActivity=(signal.tradingActivity??Number(chipSignalActive(signal)))*decay;
+  return {...signal,tradingActivity,excitation:signal.fresh*tradingActivity,
+   fingerprint:decay===1?signal.fingerprint:chipHash(signal.fingerprint,Math.round(decay*10000))};
+ }
  function position(){if(!running||held)return liveBeat;return liveBeat+(ctx.currentTime-liveAt)*tempo/60;}
  function captureBeat(){liveBeat=position();liveAt=ctx.currentTime;}
  function scoreNow(){return anchor?anchor.at+(ctx.currentTime-anchor.clock)*1000*anchor.rate:null;}
@@ -35,11 +48,13 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  function clear(){chip.clear();for(const voice of voices){voice.fading=true;voice.cancelled=true;}voices.clear();scheduled.clear();plans.clear();resume=true;lastVoiceKey=null;}
  function invalidate(){cancelAfter(ctx.currentTime+.015);plans.clear();revision++;resume=false;}
  function updateContext(context,{observation=false}={}){
+  inputUpdatedAt=ctx.currentTime;
   const signal=marketChipSignal(context),changed=sourceFingerprint!==signal.fingerprint,initial=sourceFingerprint===null;
   if(changed)sourceFingerprint=signal.fingerprint;
   const active=chipSignalActive(signal)&&context.active!==false;
-  if(active&&(observation||initial))liveUntil=ctx.currentTime+Math.max(2,Math.min(16,6+signal.activity*10));
+  if(active&&(observation||initial))liveUntil=ctx.currentTime+30;
   pending={...context,signal,active:active&&ctx.currentTime<liveUntil};
+  audible(pending.active);
   if(changed){captureBeat();tempo=scoreTempo(context.music);invalidate();}
   // Stale/missing data cannot renew the excitation window just by rendering.
   if(!active){cancelAfter(ctx.currentTime+.005);pending.active=false;}
@@ -49,7 +64,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const at=scoreNow(),beat=timeline&&at!==null?timeline.beatAt(at):position();
   const context=timeline&&at!==null?timeline.contextAtBeat(beat):pending;
   const inRange=timeline&&at!==null?!!context&&at>=context.start&&at<context.end:ctx.currentTime<liveUntil;
-  const signal=marketChipSignal(context||{}),active=!!(!closed&&running&&enabled&&!held&&ctx.state==='running'&&inRange&&context?.active!==false&&chipSignalActive(signal));
+  const signal=currentSignal(context,!!(timeline&&at!==null)),active=!!(!closed&&running&&enabled&&!held&&ctx.state==='running'&&inRange&&context?.active!==false&&chipSignalActive(signal));
   const phrase=chipEnsembleArrangement(seed,beat,signal),audibleTempo=context?.audibleTempo||tempo;
   return {...phrase,beat,bar:Math.floor(beat/4),active:active&&!phrase.rest,audibleTempo,rest:!active||phrase.rest,secondsUntilRest:phrase.restInBeats*60/audibleTempo,secondsUntilRestEnd:(phrase.restEndBeat-beat)*60/audibleTempo,signal};
  }
@@ -57,19 +72,20 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   if(closed||!running||!enabled||held||ctx.state!=='running')return;
   const now=ctx.currentTime,at=scoreNow(),replaying=!!(timeline&&at!==null),beat=replaying?timeline.beatAt(at):position();
   const context=replaying?timeline.contextAtBeat(beat):pending;
-  const signal=marketChipSignal(context||{}),validRange=replaying?context&&at>=context.start&&at<context.end:now<liveUntil;
-  if(!validRange||context?.active===false||!chipSignalActive(signal)){cancelAfter(now+.005);resume=false;return;}
+  const signal=currentSignal(context,replaying),validRange=replaying?context&&at>=context.start&&at<context.end:now<liveUntil;
+  if(!validRange||context?.active===false||!chipSignalActive(signal)){audible(false);cancelAfter(now+.005);resume=false;return;}
+  audible(true);
   const currentBar=Math.floor(beat/4),rate=anchor?.rate||1;
   const atBeat=b=>replaying?now+(timeline.atBeat(b)-at)/1000/rate:now+(b-beat)*60/tempo;
   const lastBeat=replaying?timeline.beatAt(at+lookAhead*1000*rate):beat+lookAhead*tempo/60;
   for(let bar=currentBar;bar<=Math.min(currentBar+8,Math.floor(lastBeat/4));bar++){
    const raw=replaying?timeline.contextAtBeat(Math.max(beat,bar*4)):pending;
    if(!raw)continue;
-   const currentSignal=marketChipSignal(raw),key=revision+':'+currentSignal.fingerprint;
+   const barSignal=currentSignal(raw,replaying),key=revision+':'+barSignal.fingerprint;
    let cached=plans.get(bar);
    if(!cached||cached.key!==key){
     if(cached)cancelAfter(now+.015);
-    const plan=composeChipBar(seed,bar,{...raw,...lab,signal:currentSignal});
+    const plan=composeChipBar(seed,bar,{...raw,...lab,signal:barSignal});
     cached={key,plan};plans.set(bar,cached);
    }
    const plan=cached.plan;lastPlan=plan;
@@ -104,6 +120,9 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   if(closed||!running||!enabled||held)return false;
   const price=Number(event.priceUsd??event.price),reference=Number(event.referencePrice??lastPrice);
   if(!(price>0)||!Number.isFinite(price))return false;
+  // A repeated price poll is not another packet. Repeated-price swaps are
+  // different: their unique event IDs still represent real trader activity.
+  if(event.kind==='price-observation'&&reference>0&&Math.abs(price/reference-1)<=1e-9)return false;
   if(event.historical&&!(Number(event.volume)>0))return false;
   const identity=event.id==null?null:String(event.id);
   if(identity&&observedEvents.has(identity))return false;
@@ -119,7 +138,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const phrase=chipEnsembleArrangement(seed,position(),pending.signal);
   if(active&&!anchor&&!phrase.rest&&phrase.restInBeats>.12&&ctx.currentTime-lastPacketAt>=.4&&(lab.dataGain??1)>0){
    const s=pending.signal,stamp=chipHash(seed,s.fingerprint),time=ctx.currentTime+.008;
-   const gainValue=.018*(.3+.7*Math.max(s.volume,s.activity,s.motion))*(lab.dataGain??1)*phrase.roleGains.texture;
+   const gainValue=.018*(.3+.7*Math.max(s.volume,s.activity,s.motion))*s.fresh*(lab.dataGain??1)*phrase.roleGains.texture;
    const duration=Math.min(.02+.045*s.volume,phrase.restInBeats*60/tempo);
    const sounded=chip.texture({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(0,Math.round(10-8*Math.max(s.motion,s.volume))),noiseWidth:stamp%2,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:{initial:5,direction:-1,pace:1}}},time);
    if(sounded){lastPacketAt=ctx.currentTime;voices.add(sounded.voice);onScoreEvent({id:'observation:'+String(identity??stamp),time:sounded.time,midi:sounded.midi,kind:'texture',gain:gainValue,duration,isCancelled:()=>sounded.voice.cancelled});}
@@ -138,11 +157,11 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setMaster(value){volume=unit(value);gain();},
   setRunning(value){captureBeat();running=!!value;held=!value;liveAt=ctx.currentTime;gain();if(!running)clear();},
   setEnabled(value){enabled=!!value;gain();if(!enabled)clear();},
-  reset(value=seed){clear();seed=Number(value)>>>0;timeline=null;segments=[];anchor=null;liveBeat=0;liveAt=ctx.currentTime;lastPrice=null;liveUntil=-Infinity;lastPacketAt=-Infinity;lastSnapshotAge=Infinity;observedEvents.clear();sourceFingerprint=null;pending={music:{},signal:marketChipSignal(),active:false};revision++;},
+  reset(value=seed){clear();audible(false);inputUpdatedAt=-Infinity;seed=Number(value)>>>0;timeline=null;segments=[];anchor=null;liveBeat=0;liveAt=ctx.currentTime;lastPrice=null;liveUntil=-Infinity;lastPacketAt=-Infinity;observedEvents.clear();sourceFingerprint=null;pending={music:{},signal:marketChipSignal(),active:false};revision++;},
   setArpeggioPattern(){},
   setTempo(value){captureBeat();tempo=scoreTempo({tempo:value});pending.music={...pending.music,tempo};},
   resonance(cap){currentCap=cap;return marketResonance(cap);},
-  snapshot(){const state=chip.snapshot();return {name:'GB transmission',family:'Two Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Learned motifs / market circuits',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held,tempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'scored chip echoes, wave resonance and hardware envelopes',chip:state,signal:lastPlan?.signal??pending.signal};},
+  snapshot(){const state=chip.snapshot();return {name:'GB transmission',family:'Two Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Learned motifs / market circuits',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'scored chip echoes, wave resonance and hardware envelopes',chip:state,signal:arrangement().signal};},
   setTimeline(value){clear();segments=value||[];timeline=createCompositionTimeline(segments,anchor?.rate||1);},
   seekTimeline(at,rate=1){held=false;clear();rate=Math.max(.1,Number(rate)||1);timeline=createCompositionTimeline(segments,rate);anchor={at,clock:ctx.currentTime,rate};gain();},
   syncTimeline(at,rate=1){if(!anchor||rate!==anchor.rate||Math.abs(scoreNow()-at)>200*Math.max(1,rate))this.seekTimeline(at,rate);},
@@ -157,12 +176,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    if(m.replay)return false;
    // Returning to live must release the historical cursor and chip ownership.
    if(anchor){clear();anchor=null;timeline=null;liveAt=ctx.currentTime;}
-   const metrics={...m,price:price??m.price,referencePrice,observed:m.observed??(Number(price)>0)};
+   const value=price??m.price,priceChanged=Number(value)>0&&Number(value)!==pending.signal.price;
+   const reference=referencePrice??m.referencePrice??(priceChanged&&pending.signal.price>0?pending.signal.price:null);
+   const metrics={...m,price:value,referencePrice:reference,delta:m.delta??(!priceChanged?pending.signal.delta:undefined),observed:m.observed??(Number(value)>0)};
    currentCap=m.context?.latestCap;
-   const priceChanged=Number(metrics.price)>0&&Number(metrics.price)!==pending.signal.price;
-   const snapshotAge=Number(m.snapshotAge),newSnapshot=Number.isFinite(snapshotAge)&&snapshotAge+100<lastSnapshotAge;
-   if(Number.isFinite(snapshotAge))lastSnapshotAge=snapshotAge;
-   return updateContext({music:m.music||{},metrics,cap:currentCap,active:true},{observation:priceChanged||newSnapshot});
+   const activityObserved=Number(m.activityObservedAt)>Number(pending.metrics?.activityObservedAt||0);
+   return updateContext({music:m.music||{},metrics,cap:currentCap,active:true},{observation:priceChanged||activityObserved});
   },
   close(){closed=true;clearInterval(timer);clear();chip.close();master.disconnect();},
  };

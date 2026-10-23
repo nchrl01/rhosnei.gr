@@ -1,6 +1,6 @@
 # UPIC transmission instrument
 
-Current implementation and continuation plan · 23 October 2026.
+Current implementation and continuation plan · 24 October 2026.
 
 ## Product direction
 
@@ -8,9 +8,9 @@ Current implementation and continuation plan · 23 October 2026.
 
 Each coin should have a recognizable circuit: different phase relationships, register behavior, wave character and packet opportunities. Its changing observations excite that circuit. The intended result is an evolving electronic field, with pitched structure emerging through noise and interlocking pulses.
 
-Every audible component goes through the MAME-derived Game Boy core, including offline artwork audio. The raw single-chip version 468 was deployed at commit `a84fac4`; version 469 adds a second instance of that unchanged core and learned musical phrasing. Each chip retains four channels. The host has explicit Pan Docs corrections and a browser/offline output adapter; it is not an exact MAME executable or a verified physical-console replica. This replaces the earlier sampled-instrument/Envion design.
+Every audible component goes through the MAME-derived Game Boy core, including offline artwork audio. The raw single-chip version 468 was deployed at commit `a84fac4`; version 469 added a second instance of that unchanged core and learned musical phrasing. Version 470 shares the audio/visual observation policy, keeps circuit identity stable under market updates and admits sparse chord entrances. Each chip retains four channels. The host has explicit Pan Docs corrections and a browser/offline output adapter; it is not an exact MAME executable or a verified physical-console replica. This replaces the earlier sampled-instrument/Envion design.
 
-This update includes source inspection, successful build/type checks and a 32-second public ETH trade-driven offline render. It does not claim a listening result, phone measurement or hardware-conformance result.
+The version 470 changes described here have received source inspection. Successful build/type checks and the 32-second public ETH trade-driven offline render reported below belong to version 469; they do not validate this revision. No new test, render, listening result, phone measurement or hardware-conformance result is claimed here.
 
 ## One causal signal path
 
@@ -43,37 +43,45 @@ The composer chooses events. The register compiler chooses hardware instructions
 
 The layer controls are **Signal**, **Texture** and **Packets**. Their compatibility keys remain `piano`, `envion` and `data`; those keys do not imply that the previous engines still run.
 
-Tonal percussion shares the foreground lead lane; arpeggios and their echoes share its second pulse lane. Harmony holds two pulse tones and a delayed wave-root drone on the second chip, producing simultaneous chord tones. Texture occupies that chip's noise lane. Later events replace or truncate their `(chip, channel)` occupant. The rack gives each chip fixed 0.55 output gain before master volume.
+Tonal percussion shares the foreground lead lane; arpeggios and their echoes share its second pulse lane. At admitted chord entrances, two pulse tones and a simultaneous wave root occupy the second chip. A separate wave drone can enter selected non-chord bars. Texture occupies that chip's noise lane. Later events replace or truncate their `(chip, channel)` occupant. The rack gives each chip fixed 0.55 output gain before master volume.
 
 The original 32-step wave tables are packed into CH3 RAM. They are not decoded as sampled instruments. Bass is now CH3 rather than the earlier Kraken sample bank.
 
 ## Market data creates the differences
 
-`marketChipSignal()` creates an explicit signal containing observation availability, freshness, source, activity, volume, motion, intensity, price delta, balance and trade rate. It retains separate availability flags for volume, balance and trade rate. An observation fingerprint addresses circuit gates; a full fingerprint includes freshness, intensity and source for caching. Missing values must not be relabeled as observed data.
+`marketPerformance()` interprets the same observation for the chip score and visual motion: availability, source freshness, activity recency, activity, volume, motion, intensity, price delta, balance, trade rate, market cap and liquidity. `marketChipSignal()` adds observation/full fingerprints for inspection and caching. Fingerprints do not seed the scheduled circuit's random gates. Separate availability flags remain attached to volume, balance and trade rate; missing market cap/liquidity remain null. Missing values must not be relabeled as observed data.
 
 | Input | Current artistic mapping |
 | --- | --- |
 | Coin seed | Stable motif, harmonic field, circuit periods, phases, duty and wave identity |
-| Observation fingerprint | Packet occupancy for the current state; does not reseed the whole melodic motif |
+| Observation fingerprint | Input identity and cache invalidation; does not reseed motif candidates or packet gate thresholds |
 | Activity / trade rate | Number and density of eligible packet opportunities |
 | Observed volume | Packet multiplicity and body; bounded bursts rather than a generic fill |
 | Price-change direction / magnitude | Bounded tonal bends and packet expression within the stable harmonic field |
 | Motion | Noise clock shift/width and irregular timing depth |
 | Buy share, when available | Duty and left/right routing decisions |
-| Freshness | Excitation eligibility and attenuation |
-| No new observation | Freshness decays and excitation expires; a cached repaint does not renew activity |
+| Activity recency | Admission probability and role presence; expires without a qualifying observation |
+| Source freshness | Separate excitation eligibility and event-gain attenuation |
+| Market cap / liquidity | Harmonic waveform color / eligible grain size; cannot create activity |
+| No new observation | Shared activity release reaches zero; a cached repaint does not renew activity |
 
 These are composition mappings, not a claim that a tone directly measures a financial quantity. The interface must distinguish observed values from normalized artistic controls. A neutral fallback balance must not be labeled an observed 50% buy share.
+
+Live `tradingActivity` is authoritative, while `excitation = fresh × tradingActivity`. Its shared decay has a two-second grace, an eight-second exponential time constant and a hard stop at 30 seconds. The app advances its activity timestamp for actual price changes, decoded trades and pool events. Identical price polls and unchanged snapshots do not advance it. The audio and visual hosts also decay a cached input if their frame supply stops. High rolling volume or descriptive intensity cannot keep stale observations audible indefinitely.
+
+Rate and normalized activity share one pace axis; motion and absolute price change share one movement axis. They are combined with maxima instead of repeatedly adding measures of the same event. Composition energy combines pace, volume and movement. Pressure can deepen a selected tonal bend, and intensity can shape expression within already eligible activity. Liquidity and market cap affect only a permitted event's color/size.
 
 ### Generated motifs and asynchronous circuits
 
 `market-chip-score.js` now combines newly generated two-bar motifs with an eight-bar introduce, answer, vary and return form. Its compact model contains 301 pooled lead, bass and drum distributions from 31,136 usable unique arrangements. Lead intervals/rhythm, bass timing/gates and drum accents/gates draw on those statistics. Harmony, form and channel roles remain authored rules; no source song is selected or replayed.
 
-The foreground chip carries separate lead, arpeggio and bass parts. The harmony chip holds chord tones within each bar; harmonic degree changes once per two bars. `chip-ensemble-arrangement.js` assigns stage-specific lead/arpeggio response windows, then brings the drone/texture field forward after the chord opening. Role gains are applied at event onsets, not as continuous gain automation over held notes. Shared breaths occupy beats 14.5–16 and 30–32 in each 32-beat cycle, and the score caps all roles at those boundaries.
+The foreground chip carries separate lead, arpeggio and bass parts. Harmonic degree changes once per two bars as an internal field. Audible chords are optional: each coin has one stable candidate entrance per two- or four-bar group, admitted according to current activity, volume and intensity. Even at maximum input, the admission probability is at most 90%; intervening bars are chord-free. The chord's two pulses are staggered by 0.025 beat, with a shared wave root, and last 0.45–1.70 beats before phrase/channel limits. A separate probabilistic drone can enter selected bars without a chord.
 
-The drum planner keeps independent prime periods and phase offsets. There is no fixed kick/backbeat template or automatic phrase-ending fill. Tonal percussion leaves gaps for the lead. Chip texture grains use activity-dependent duration and spacing, volume-dependent overlap and motion-dependent expression. These Envion-inspired relationships are evaluated on the common score clock, not an independent sample-grain timer.
+`chip-ensemble-arrangement.js` assigns stage-specific lead/arpeggio response windows and gives the later part of a bar more drone/texture presence. These are opportunities, not mandatory entries. Role gains are applied at event onsets, not as continuous gain automation over held notes. Falling activity recency reduces admissions and scales role presence by its square root; source freshness is applied once to score-event gain. Shared breaths occupy beats 14.5–16 and 30–32 in each 32-beat cycle, and the score caps all roles at those boundaries.
 
-The coin seed defines the underlying circuit. `drumVariation` changes that circuit; `drumPerformance` changes its bounded deviations while retaining its base periods. The observation fingerprint changes gates. Choices are addressed by seed, observation and score position; they do not use wall-clock randomness.
+The drum planner keeps independent prime periods and phase offsets. There is no fixed kick/backbeat template or automatic phrase-ending fill. Tonal percussion leaves gaps for the lead. Chip texture grains use stable candidate times with activity-dependent admission/duration, volume-dependent overlap proposals and motion-dependent expression. Actual overlap is limited by replacement on one noise lane. These Envion-inspired relationships are evaluated on the common score clock, not an independent sample-grain timer.
+
+The coin seed defines the underlying circuit. `drumVariation` changes that circuit; `drumPerformance` changes its bounded deviations while retaining its base periods. Seed, variation settings and score position address stable candidates and probability thresholds. Market values alter admission, articulation and register expression without changing the motif generator's random walk or replacing the whole drum pattern. Observation fingerprints identify the current evidence rather than rerandomizing it. There is no wall-clock randomness.
 
 The 16-cell Audio Lab display is a compact binning of the first eight beats of asynchronous opportunities. It is not a quantization grid or a claim that every visible cell will sound after channel arbitration.
 
@@ -88,7 +96,7 @@ Activity must not turn every role into a dense foreground. The second chip suppl
 ## Transmission materials inside the APUs
 
 - **Signal:** pulse duty, integer period changes, short register bends and stepped envelopes.
-- **Harmony:** two held pulse tones and a wave-root drone on the harmony chip, alongside foreground bass.
+- **Harmony:** occasional overlapping pulse tones and a wave root on the harmony chip, alongside foreground bass.
 - **Drone:** an authored 32-sample, four-bit wave with a market-controlled harmonic peak; waveform coloration rather than a resonant-filter simulation.
 - **Texture:** the harmony chip's noise clock, divider and register width form short Envion-inspired chip grains.
 - **Echo:** quieter arpeggio repeats occupy the foreground chip's second pulse lane and use real chip envelopes.
@@ -108,10 +116,11 @@ Accepted note, packet and texture onsets carry their actual audio-clock time and
 | Shared information | Sound | Image |
 | --- | --- | --- |
 | Coin identity | Circuit and register character | Existing coin artwork/pattern identity |
-| Observed activity | Excitation and packet occupancy | Existing motion envelope |
+| Shared observation and recency | Excitation, admission probability and role presence | Existing motion envelope |
 | Accepted onset | Chip channel trigger | Scheduled accent |
 | Cancellation / pause / stale state | Cancel future authorization | Clear invalid queued accents |
-| Liquidity and holder evidence | Context, never a fabricated trade trigger | Existing observed-data geometry |
+| Liquidity / market cap | Grain size / waveform color, never a fabricated trade trigger | Existing observed-data geometry |
+| Holder evidence | No invented sound events | Existing observed holder geometry |
 
 Do not describe the visual as driven by audio amplitude when it is driven by accepted score events. Do not infer a continuous sound bed from a visual's slow idle motion.
 
@@ -122,12 +131,16 @@ Do not describe the visual as driven by audio amplitude when it is driven by acc
 | Fresh observations with eligible activity | Authorize bounded asynchronous signal, texture and packets |
 | Observed zero activity | Stop new excitation |
 | Missing or stale observations | Stop new excitation and expose the source state |
-| Unchanged but still eligible observations | Retain the circuit within its finite excitation window; do not renew the window merely because a visual frame was rendered |
+| Unchanged but still eligible observations | Retain the circuit while activity releases; do not renew it merely because a visual frame was rendered |
 | Paused, seeking, coin change or closed | Cancel old queued events and channel ownership through the transport |
-| Candle history | Interpret known aggregates; do not invent intra-candle trades |
+| Candle history with known positive volume | Interpret aggregate activity; do not invent intra-candle trades |
+| Candle history with explicit zero volume | Remain silent even if open and close differ |
+| Candle history with missing volume | Permit actual open-to-close movement, while keeping volume unavailable |
 | Frozen artwork input | Reconstruct from its actual frames with the declared engine settings |
 
-The live scheduler expires excitation unless qualifying observations renew it. Old musical metrics must not authorize sound indefinitely after a source stops updating. Legacy interfaces must pass the normalized signal explicitly; the packet gate has no synthetic activity default.
+The live scheduler expires excitation unless a new price change or increasing activity timestamp renews it. It also closes its output gate when the normalized signal is ineligible. Old musical metrics must not authorize sound indefinitely after a source stops updating. Legacy interfaces must pass the normalized signal explicitly; the packet gate has no synthetic activity default. The visual's slow ambient movement does not authorize audio.
+
+Replay audio and visuals share `controlsForBar()`. A frozen recorded observation can be used only at or before the current cursor and when it matches the closed bar's time/price. Otherwise `scoreCandle()` derives motion from absolute open-to-close percent change divided by eight, and both activity and volume from logarithmically normalized volume per second. A candle supplies neither individual trades, buy/sell balance nor historical liquidity. Its explicit zero volume takes precedence over price movement; missing volume remains unknown. Controls resolve lazily and are cached within the frozen replay, preserving the closed-bar boundary without eagerly rescoring every prefix.
 
 ## Runtime and offline execution
 
@@ -135,7 +148,9 @@ The current files divide responsibilities as follows:
 
 | Source | Responsibility |
 | --- | --- |
-| `market-chip-score.js` | Observed-data normalization, learned motifs, harmonic support, circuit composition and final channel allocation |
+| `market-performance.js` | Shared observation availability, activity decay, source freshness and candle policy |
+| `market-chip-score.js` | Input fingerprints, learned motifs, sparse harmony, circuit composition and final channel allocation |
+| `market-replay.js` | Shared recorded-observation/closed-candle controls, cached within frozen replay |
 | `midi-phrase-model.js` | Aggregate lead/bass/drum statistics, with source coverage and checksum |
 | `phrase-development.js` | Generated two-bar memory and eight-bar development |
 | `chip-ensemble-arrangement.js` | Stage-dependent role windows, shared cadence breaths and chip-grain proposals |
@@ -146,7 +161,7 @@ The current files divide responsibilities as follows:
 | `mame-gb-apu.js` | MAME-derived counters, registers, wave/noise state and documented hardware/output corrections |
 | `gb-apu-silence.js` | Shared DAC-enabled rests for browser and offline execution |
 | `trade-piano.js` | Live/replay transport, finite observation authorization and accepted-onset publication |
-| `upic-earthbound-visual.js` | Consume accepted onsets while preserving data geometry |
+| `upic-earthbound-visual.js` | Consume the shared observation/decay policy and accepted onsets while preserving data geometry |
 | `engine-view.js` | Inspect both four-channel snapshots and current observations |
 | `packages/engine/src/index.ts` | Derive a score from frozen frames and render through the shared chip path |
 
@@ -165,7 +180,7 @@ A deterministic reconstruction is not automatically a recording of an earlier pe
 - **Historical reconstruction:** declared observations, settings and versions are interpreted again.
 - **Recorded performance:** the actual accepted register/event timeline and necessary chip state are retained.
 
-The present offline renderer, identified as `upic-nft-gb-v3`, prepares the verified source index, resets both chips and executes from the beginning, including before a requested output window. This retains envelopes, noise state, wave state and earlier channel replacements.
+The present offline renderer, identified as `upic-nft-gb-v4`, prepares the verified source index, resets both chips and executes from the beginning, including before a requested output window. This retains envelopes, noise state, wave state and earlier channel replacements. Version 469 used `upic-nft-gb-v3`.
 
 Further work on frozen-performance provenance should record exact coin identity, observation timestamps and source resolution, signal/mapping version, score/register timeline, model, sample rate, settings and render environment. Record corrections and cancellations explicitly. A durable accepted-performance ledger and verified arbitrary-seek equivalence remain acceptance work; this document does not claim they are complete.
 
@@ -198,7 +213,7 @@ The core is sound-only. It does not implement a CPU, DIV-write coupling, every m
 
 The adaptation documents corrections for duty retriggers, CH3 buffering, extreme noise-clock settings, stereo register semantics and DAC/DC-removal behavior against current Pan Docs. CH3 retains MAME's six-cycle startup delay; envelope writes retain MAME's interpretation rather than a complete revision-specific zombie model. `cgb` means CGB04; `mgb` uses DMG digital logic with its selected output-filter constant. The output adapter also differs from MAME's complete runtime. Describe it as MAME-derived with hardware corrections, not bit-identical MAME audio or proven hardware accuracy. The distributed [MAME license](../../apps/web/public/vendor/licenses/mame-gb/LICENSE.txt) and [provenance](../../apps/web/public/vendor/licenses/mame-gb/PROVENANCE.md) record the source dependency.
 
-The refined 32-second ETH preview contains 231 scored events across all eight channels, finite output and a peak of approximately 0.198 with fixed rack headroom and master gain. Lead, arpeggio, echo, chord, bass, drone, percussion and texture roles are represented. The final lead guard reports two revoicings and zero blocked candidates; this is not a count of unchanged audible events. Build checks succeeded. No subjective audition, browser playback, phone profiling, hardware comparison or conformance suite is claimed for this refinement.
+**Historical version 469 evidence:** the 32-second ETH preview contains 231 scored events across all eight channels, finite output and a peak of approximately 0.198 with fixed rack headroom and master gain. Lead, arpeggio, echo, chord, bass, drone, percussion and texture roles are represented. The final lead guard reported two revoicings and zero blocked candidates; this is not a count of unchanged audible events. Build checks succeeded for that revision. This preview predates version 470's shared input policy and sparse chord entrances. Version 470 passed 304 automated tests, production build and workspace type checks, with two environment-dependent tests skipped. These include shared input interpretation, replay cache isolation, sparse harmony and transport release. No new render, subjective audition, browser playback, phone profiling, hardware comparison or conformance suite is claimed.
 
 ### Next acceptance work
 

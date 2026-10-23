@@ -17,18 +17,19 @@ import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
 import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=448';
-import {createEngineView} from './engine-view.js?v=469';
+import {createEngineView} from './engine-view.js?v=470';
 import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=464';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=470';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=458';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=448';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=469';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=470';
 import {contextualizeMarket} from './market-state.js?v=208';
-import {createMarketReplay,candleEnd,scoreCandle,replaySpeed} from './market-replay.js?v=462';
+import {createMarketReplay,candleEnd,scoreCandle,replaySpeed,replayObservationForBar} from './market-replay.js?v=470';
+import {marketPerformance,marketActivityDecay} from './market-performance.js?v=470';
 import {signalFreshness} from './market-controls.js?v=18';
 import {orchestraTempo} from './orchestra.js?v=449';
 import {subscribePool} from './realtime.js?v=4';
@@ -238,10 +239,9 @@ function liveMetrics(){
  const observedVolume=tradeEvents.reduce((sum,e)=>sum+(e.usdVolume||0),0);
  const rate=decoded?tradeEvents.length/30:streamConnected&&streamKind==='pool'?poolEvents.length/10:total/300;
  const volumeRate=decoded?observedVolume/30:(Number(market.volume?.m5)||0)/300;
- const activityAt=Math.max(lastMarketActivityAt,...tradeEvents.map(e=>Number(e.occurredAt)||Number(e.receivedAt)||0));
- const activityAge=Date.now()-activityAt;
- const tradingActivity=activityAt>0&&activityAge>=0&&activityAge<30000?Math.exp(-Math.max(0,activityAge-2000)/8000):0;
- const raw={tradingActivity,tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:book?.balance!=null?book.balance:decoded?(knownSides?buys/knownSides:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,liquidity||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
+ const activityAt=Math.max(lastMarketActivityAt,...tradeEvents.map(e=>Number(e.occurredAt)||Number(e.receivedAt)||0),...poolEvents.map(e=>Number(e.occurredAt)||Number(e.receivedAt)||0));
+ const tradingActivity=marketActivityDecay((Date.now()-activityAt)/1000);
+ const raw={tradingActivity,activityObservedAt:activityAt,tradeRate:decoded?tradeEvents.length/30:0,motion:clamp((decoded?movement:Math.abs(Number(market.priceChange?.m5)||0))/8,0,1),activity:clamp(Math.log1p(rate)/Math.log(21),0,1),balance:book?.balance!=null?book.balance:decoded?(knownSides?buys/knownSides:.5):(total?(tx.buys||0)/total:.5),texture:clamp(Math.log10(Math.max(1,liquidity||1))/7,0,1),volume:clamp(Math.log1p(volumeRate)/Math.log(10001),0,1),...signalFreshness(decoded,lastSnapshot),decoded,observedVolume};
  return {...contextualizeMarket(raw,{price:livePrice,moodMovement,marketCap:Number(market.marketCap),snapshotPrice:Number(market.priceUsd),history:musicalCandles,interval:musicalInterval,changes:market.priceChange||{},liquidity:Number(liquidity),volumeRate,observedAt:Math.max(lastSnapshot,lastTrade?.receivedAt||0,lastChainPrice?.receivedAt||0)}),availability:{balance:book?.balance!=null||(decoded?knownSides>0:total>0),liquidity:liquidity!=null&&Number.isFinite(Number(liquidity)),volume:decoded||market.volume?.m5!=null},audience:holderMetadata.snapshot()};
 }
 function metrics(){
@@ -307,7 +307,7 @@ function syncLevels(m){
  levels.melody=chipLayers.envion?activity*fresh:0;
  orchestraState={state:fresh<.1?'Signal fading':activity>.65?'Intense':activity>.1?'Active':'Sparse',phrase:Math.floor((piano?.arrangement?.()?.beat||0)/32)%4,parameters:{},levels};
  const textureMeter=$('melody'),textureValue=$('melody-value');if(textureMeter)textureMeter.value=levels.melody;if(textureValue)textureValue.textContent=Math.round(levels.melody*100)+'%';
- $('orchestra-state').textContent=orchestraState.state+' · Four-channel GB chip';
+ $('orchestra-state').textContent=orchestraState.state+' · Two Game Boy chips';
  $('energy-value').textContent=Math.round(m.volume*m.fresh*100)+'%';
  $('volume').textContent=m.replay?cash(m.replay.volume):market?cash(m.decoded?m.observedVolume:market.volume?.m5):'—';
  $('volume-window').textContent=m.replay?'REPLAY USD VOLUME':m.decoded?'OBSERVED USD · LAST 30 SEC':'TRADED USD · 5 MIN';
@@ -338,7 +338,7 @@ function setupStream(){
   if(gen!==generation)return;
   if(e.kind==='market-price'){
    const quoteUsd=Number(market.priceUsd)/Number(market.priceNative),priceUsd=e.priceQuote*quoteUsd;
-   if(priceUsd>0&&Number.isFinite(priceUsd)){const previous=lastChainPrice?.priceUsd??currentPrice();if(!replay.state.active&&previous>0&&Math.abs(priceUsd/previous-1)>1e-9){dataVisual.event({...e,priceUsd});}lastChainPrice={...e,priceUsd};observePianoPrice(priceUsd,previous,e.receivedAt);chart.add({at:e.occurredAt||e.receivedAt,price:priceUsd,source:'rpc-state'});$('chart-source').textContent='Direct Robinhood RPC pool state · refreshed during quiet periods · USD quote conversion uses snapshots';display();}
+   if(priceUsd>0&&Number.isFinite(priceUsd)){const previous=lastChainPrice?.priceUsd??currentPrice();const changed=previous>0&&Math.abs(priceUsd/previous-1)>1e-9;if(changed){lastMarketActivityAt=Math.max(lastMarketActivityAt,Number(e.occurredAt)||Number(e.receivedAt)||Date.now());if(!replay.state.active)dataVisual.event({...e,priceUsd});}lastChainPrice={...e,priceUsd};observePianoPrice(priceUsd,previous,e.receivedAt);chart.add({at:e.occurredAt||e.receivedAt,price:priceUsd,source:'rpc-state'});$('chart-source').textContent='Direct Robinhood RPC pool state · refreshed during quiet periods · USD quote conversion uses snapshots';display();}
    session?.events?.push(e);return;
   }
   if(e.kind==='timing'){const trade=tradeEvents.find(t=>t.id===e.id)||(lastTrade?.id===e.id?lastTrade:null);if(trade){trade.occurredAt=e.occurredAt;trade.precision=e.precision;}chart.retime(e.id,e.occurredAt);session?.events?.push(e);return;}
@@ -362,7 +362,7 @@ function setupStream(){
    if(e.priceUsd)chart.add({at:Number.isFinite(e.occurredAt)?e.occurredAt:e.receivedAt,price:e.priceUsd,volume:e.usdVolume,id:e.id,source:'swap'});
    $('chart-source').textContent=source==='ccxt'?market.exchangeName+' · public WebSocket trades · '+(market.quoteApproximate?market.quoteToken.symbol+' prices used as a USD proxy':'USD trade prices')+' · history volume estimated from base volume':source==='rpc'?(e.protocol==='orca'?'Orca post-swap spot prices · confirmed WebSocket events · USD uses snapshot SOL/quote conversion':e.protocol==='v4'?'Direct Uniswap v4 post-swap prices · RPC polling ≥2s · USD quote conversion uses snapshots':'Streamed swap execution prices · USD estimated using latest quote conversion'):'Observed trade prices · GeckoTerminal / ≥8s polling · upstream cached · provider USD values';
    $('last-event').textContent=e.side.toUpperCase()+(source==='ccxt'?' · '+market.exchangeName:' · block '+e.block);display();
-  }else{poolEvents.push(e);if(!replay.state.active){dataVisual.event(e);}if(streamKind==='pool')$('last-event').textContent='Pool event · slot '+e.slot;}
+  }else{poolEvents.push(e);lastMarketActivityAt=Math.max(lastMarketActivityAt,Number(e.occurredAt)||Number(e.receivedAt)||0);if(!replay.state.active){dataVisual.event(e);}if(streamKind==='pool')$('last-event').textContent='Pool event · slot '+e.slot;}
   session?.events?.push(e);
   if(playing&&performance.now()-lastExcitation>=40){lastExcitation=performance.now();tick();}
  };
@@ -380,15 +380,25 @@ function setupStream(){
 }
 function replayPiano(m){
  if(!playing||replay.state.dragging||!piano||!pianoEnabled||ctx?.state!=='running')return;
- const cursor=replay.state.cursor,bars=replay.state.frozen?.bars||chart.renderedBars,interval=replay.state.frozen?.interval||chart.interval;
+ const frozen=replay.state.frozen,cursor=replay.state.cursor,bars=frozen?.bars||chart.renderedBars,interval=frozen?.interval||chart.interval;
  const rate=replay.state.speed==='candle'?interval/1000:Number(replay.state.speed)||1;
  if(!replayPianoPrimed){
   const segments=bars.map(bar=>{
-   const score=replay.state.score?.frames.get(bar.time),music=pianoMusic({music:score?.music||{},activity:score?.activity||0});
-   const observedVolume=Number.isFinite(Number(bar.volume))&&bar.volume!=null?Number(bar.volume):null;
-   const motion=Number(bar.open)>0?clamp(Math.abs(Number(bar.close)/Number(bar.open)-1)*100,0,1):0;
-   const signal={price:Number(bar.close),referencePrice:Number(bar.open),observedVolume,activity:score?.activity||0,motion,volume:observedVolume===null?null:clamp(Math.log1p(observedVolume/Math.max(1,interval/1000))/Math.log(10001),0,1),fresh:1,balance:.5,tradeRate:0,source:'candles',observed:true};
-   return {start:candleEnd(bar,interval),end:candleEnd(bar,interval)+interval,music,metrics:signal,cap:score?.cap,harmonyStep:score?.harmonyStep||0,active:observedVolume>0||(observedVolume===null&&score?.selection?.reason==='movement')};
+   const score=replay.state.score?.frames.get(bar.time);
+   const observed=replayObservationForBar(frozen?.observations,bar,interval);
+   const music=observed?pianoMusic(observed.metrics):pianoMusic({music:score?.music||{},activity:score?.activity||0});
+   let resolved;
+   // Resolve only candles the transport visits. Audio and pixels share the
+   // frozen control cache, including recorded observations when available.
+   const resolve=()=>{
+    if(resolved)return resolved;
+    const controls=frozen?replay.controlsForBar(bar,undefined,frozen):scoreCandle(bars,market,interval,bar);
+    if(!controls)return resolved={metrics:{observed:false,fresh:0},active:false};
+    if(controls.replay?.source==='candles'&&score?.music)controls.music={...controls.music,...score.music};
+    const music=pianoMusic(controls),performance=marketPerformance(controls,music);
+    return resolved={music,metrics:controls,cap:controls.context?.latestCap,active:performance.excitation>0};
+   };
+   return {start:candleEnd(bar,interval),end:candleEnd(bar,interval)+interval,music,resolve,harmonyStep:score?.harmonyStep||0};
   });
   piano.setTimeline(segments);piano.seekTimeline(cursor,rate);replayPianoPrimed=true;
  }else piano.syncTimeline(cursor,rate);
@@ -404,7 +414,7 @@ function tick(){
  syncLevels(m);
  bpm=orchestraTempo(m);$('tempo').textContent=bpm+' BPM · '+Math.round((m.music?.intensity||0)*100)+'% INTENSITY';
 }
-// One chip owns every voice; market frames update its shared score.
+// The chip rack owns every voice; market frames update its shared score.
 function loop(){if(!playing)return;tick();if(playing)timer=setTimeout(loop,150);}
 async function initialize(){
  if(audioContext().state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}

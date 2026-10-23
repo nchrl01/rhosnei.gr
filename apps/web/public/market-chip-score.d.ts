@@ -5,6 +5,12 @@ export interface ChipSignal {
  volume:number;
  motion:number;
  intensity:number;
+ pressure:number;
+ direction:number;
+ tradingActivity:number;
+ excitation:number;
+ marketCap:number|null;
+ liquidity:number|null;
  balance:number;
  balanceKnown:boolean;
  tradeRate:number;

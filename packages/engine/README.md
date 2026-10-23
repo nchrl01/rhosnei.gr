@@ -1,8 +1,9 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v3`.
+Current engine version: `upic-nft-gb-v4`.
 
-Version 469 introduces the two-chip ensemble. The raw single-chip version 468
+Version 470 adds shared market interpretation and intermittent harmony to the
+two-chip ensemble introduced in version 469. The raw single-chip version 468
 was deployed at commit `a84fac4`; each four-channel core itself is unchanged.
 
 The browser collectible player and headless renderer import this package. Its
@@ -18,12 +19,17 @@ the noise shift register run inside each chip. The rack mixes at fixed 0.55 gain
 per chip. There is no sampled GeneralUser, external texture generator,
 sine-oscillator fallback or separate percussion synthesizer in this path.
 
-Foreground lead, arpeggios and bass coexist with held harmony tones and a wave
-drone on the second chip. The drone's harmonic emphasis is encoded in its
+Foreground lead, arpeggios and bass can answer occasional short harmony tones
+and an independent wave drone on the second chip. Each coin has a seeded chord
+entrance window every two or four bars; current activity decides whether it
+sounds. The drone's harmonic emphasis is encoded in its
 four-bit waveform, not a modeled resonant filter. Echo repeats consume the arp
 lane. Envion-inspired grain duration/overlap becomes short noise-channel events,
 not granular sample playback. Role windows and common cadence rests coordinate
-the ensemble; harmony changes every two bars.
+the ensemble; the underlying harmonic field changes every two bars without
+requiring a chord attack. Pace, movement, volume and recency control admission,
+articulation and strength. Available market cap and liquidity colour eligible
+waveforms and grains without generating activity by themselves.
 
 ## Captured data and replay
 
@@ -62,7 +68,7 @@ rate and duration. Rendering currently runs synchronously after module/index
 preparation; device performance and listening quality require separate browser and
 audio checks.
 
-Build checks succeeded. A 32-second ETH preview using the shared path contains
+Historical version 469 evidence: a 32-second ETH preview using the shared path contains
 231 scored events across all eight channels and peaks near 0.198 with fixed rack
 headroom and master gain; the guard reports two revoicings and zero blocked candidates. Scored events
 are not an unchanged-audible-event count. No subjective audition or browser
@@ -70,7 +76,7 @@ verification is claimed for this refinement.
 
 ## Identity and visual scope
 
-The SDK and deployment metadata identify the new audio with `upic-nft-gb-v3`.
+The SDK and deployment metadata identify the new audio with `upic-nft-gb-v4`.
 The paired SDK/contract seed namespace remains `upic-nft-v1` so the existing
 seed derivation does not change merely because the audio engine advances.
 

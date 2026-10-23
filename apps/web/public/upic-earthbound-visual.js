@@ -3,6 +3,7 @@
 import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=448';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
+import {marketPerformance,marketActivityDecay} from './market-performance.js?v=470';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
 // the legacy audio/metadata-driven visual parameter path.
@@ -59,13 +60,14 @@ export function observedHolderBalances(m={}){
  return observedHolderSnapshot(m).balances;
 }
 export function earthboundMarketState(m={},coinKey='unselected'){
+ const performance=marketPerformance(m);
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const holders=observedHolderSnapshot(m),holderBalances=holders.balances;
  return {coinKey,chartHistory:m.replay?.source==='candles'?m.replay.chart:null,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
   holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
-  tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:unit(m.fresh),activity:unit(m.activity),
+  tempo:Math.max(10,Math.min(240,finite(m.music?.tempo)??40)),fresh:performance.fresh,activity:performance.activity,
   // Snapshot totals are historical aggregates, not evidence of a new trade.
-  tradingActivity:m.replay?.source==='candles'?unit(Number(m.replay.volume)>0||m.replay.volume==null&&m.raw?.motion>0?1:0):unit(m.tradingActivity),
+  tradingActivity:performance.tradingActivity,
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
 export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>null}={}){
@@ -189,7 +191,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   // Ease into activity, then settle gently. A stopped input loop must also
   // decay; the animation loop itself is never evidence of a live market.
   const inputAge=Math.max(0,(now-marketFrameAt)/1000);
-  const inputFreshness=inputAge<30?Math.exp(-Math.max(0,inputAge-2)/8):0;
+  const inputFreshness=marketActivityDecay(inputAge);
   const motionTarget=latest.tradingActivity*latest.fresh*inputFreshness;
   motionActivity+=(motionTarget-motionActivity)*(1-Math.exp(-dt/(motionTarget>motionActivity ? .45 : 2.4)));
   if(motionActivity<.00001)motionActivity=0;

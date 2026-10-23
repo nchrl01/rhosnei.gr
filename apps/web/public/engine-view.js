@@ -108,6 +108,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Coin',view.coin||'Waiting'],['Source',signal.source||view.feed||'Waiting'],
    ['Observations',observed?'Available':'Unavailable'],
    ['Freshness',metric(signal.fresh)],
+   ['Recent market activity',metric(signal.tradingActivity)],['Shared excitation',metric(signal.excitation)],
    ['Activity',metric(signal.activity)],['Volume intensity',signal.volumeKnown===true?metric(signal.volume):'Unavailable'],
    ['Motion',metric(signal.motion)],
    ['Price change',observed&&finite(signal.delta)?pretty(signal.delta)+'%':'Unavailable'],
