@@ -636,11 +636,15 @@ html[dir=rtl] body select:not([multiple]):not([size]),html[dir=rtl] body select:
  .site-footer>.footer-prices{order:3;display:flex;padding-top:16px;border-top:1px solid var(--line)}
 }
 
-/* Utility pages fill short viewports while their footer stays in document flow. */
+/* Utility pages fill short viewports. */
 body:is(.help-page,.report-page){display:flex;flex-direction:column;min-height:100svh;min-height:100dvh;padding-bottom:0}
 body.help-page>main{display:flex;flex-direction:column;flex:1 0 auto;min-height:0;padding-bottom:0}
 body.report-page>.issue-report-page{flex:1 0 auto}
 body.help-page>main>.site-footer,body.report-page>.site-footer{position:static;inset:auto;flex:none;margin-top:auto}
+@media(min-width:761px){
+ body.report-page{padding-bottom:calc(var(--navigation-row-height) + env(safe-area-inset-bottom))}
+ body.report-page>.site-footer{position:fixed;inset:auto 0 0;z-index:10;margin:0}
+}
 @media(min-width:761px){.header-main:not(.has-desktop-search) .header-search{display:inline-flex}}
 
 /* Menu loading keeps one stable status row, with four crisp square pixels. */
