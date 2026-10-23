@@ -26,7 +26,7 @@ export function createMarketReplay(){
   },
   setMarket(value){key=value;this.live();if(!recordings.has(key)){recordings.set(key,[]);if(recordings.size>8){const oldest=recordings.keys().next().value;recordings.delete(oldest);archives.delete(oldest);};}},
   record(metrics,price,at=Date.now()){
-   const rows=frames();if(rows.length&&at-rows.at(-1).at<1000)return;
+   const rows=frames();if(rows.length&&at-rows.at(-1).at<1000&&rows.at(-1).price===price)return;
    rows.push({at,price,metrics:structuredClone({...metrics,context:{...metrics.context,path:[]}})});
    if(rows.length>3600)rows.shift();recordings.set(key,rows);
   },
@@ -55,7 +55,8 @@ export function createMarketReplay(){
    const end=candleEnd(bar,interval),observations=state.frozen?.observations||frames();
    // Never borrow an observation from after the historical cursor.
    const observed=observations.findLast(row=>row.at<=Math.min(at,end));
-   if(observed&&end-observed.at<=2000){
+   // Nearby inputs must represent this candle close, not an earlier price.
+   if(observed&&end-observed.at<=2000&&Math.abs(observed.price-bar.close)<=Math.max(Math.abs(bar.close)*1e-8,Number.EPSILON)){
     state.source='observed';state.price=observed.price;
     state.controls={...structuredClone(observed.metrics),replay:{source:'observed',at:observed.at,price:observed.price}};
    }else{
