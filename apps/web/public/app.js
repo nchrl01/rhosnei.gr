@@ -4,7 +4,7 @@ import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
 import {createCoinSummary} from './coin-summary.js?v=336';
 import {rememberRecentCoin} from './coin-catalogue.js?v=448';
 import {archivePlayerFrames} from './coin-snapshot-store.js?v=448';
-import {bindSearchField} from './search-field.js?v=394';
+import {bindSearchField,bindAddressSearch} from './search-field.js?v=456';
 import {createVinylTransport} from './vinyl-transport.js?v=215';
 import {createMarketLandmarks} from './market-landmarks.js?v=208';
 import {seedTonic} from './seed-key.js?v=1';
@@ -757,15 +757,18 @@ function searchFeedback(message,state='ready'){
  if(node.textContent!==message)node.textContent=message;
  ui.loading('search',!message?null:state==='loading'?'working':state==='error'?'error':'done',message,{operation:searchRevision});
 }
-function searchBusy(value){
- loading=value;$('load').disabled=value;$('load').textContent=value?'Searching…':'Search';
+function searchBusy(value,suggestions=false){
+ loading=value;$('load').disabled=value&&!suggestions;$('load').textContent=value?'Searching…':'Search';
  $('load').setAttribute('aria-busy',String(value));$('coin-form').setAttribute('aria-busy',String(value));
 }
 $('address').addEventListener('input',()=>{
+ cancelSearch();
+});
+function cancelSearch(){
  liveConnection?.abort();liveConnection=null;searchController?.abort();
  searchRevision++;searchBusy(false);searchFeedback('');
  $('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
-});
+}
 $('coin-search-results').addEventListener('keydown',event=>{if(event.key==='Escape'){searchController?.abort();searchRevision++;searchBusy(false);searchFeedback('');}},true);
 $('address').addEventListener('keydown',event=>{
  const results=$('coin-search-results');
@@ -796,17 +799,16 @@ document.addEventListener('upic:search-coin',event=>{
 });
 $('coin-form').onsubmit=async e=>{
  e.preventDefault();
- if(loading)return;
  const selectedNetwork=$('coin-form').dataset.searchNetwork;
  return searchForCoin($('address').value,{network:selectedNetwork&&selectedNetwork!=='all'?selectedNetwork:null,autoPlay:true});
 };
-async function searchForCoin(query,{network:wantedNetwork=null,autoPlay=true}={}){
+async function searchForCoin(query,{network:wantedNetwork=null,autoPlay=true,suggestions=false}={}){
  const address=String(query||'').trim();if(address.length<1||address.length>250){searchFeedback('Enter a coin name, contract address or exchange pair.','error');return;}
  if(autoPlay&&(!playing||ctx?.state!=='running'))primeAudio();
  const revision=++searchRevision,tokenAddress=isTokenIdentifier(address),exchangeOnly=isExchangeQuery(address);
  searchController?.abort();const searchAbort=new AbortController();searchController=searchAbort;
  const current=()=>revision===searchRevision;
- searchBusy(true);$('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
+ searchBusy(true,suggestions);$('coin-search-results').hidden=true;$('address').setAttribute('aria-expanded','false');
  searchFeedback(tokenAddress?'Finding this coin…':exchangeOnly?'Finding exchange markets…':'Finding markets…','loading');
  let dexPairs=[],exchangePairs=[],errors=[],remaining=2;
  function publish(){
@@ -830,6 +832,12 @@ async function searchForCoin(query,{network:wantedNetwork=null,autoPlay=true}={}
   const pairs=[...exchangePairs,...dexPairs];
   if(!pairs.length)throw Error(errors.length?'Market search is unavailable. Please try again.':'No matching market. Try its contract address or a pair such as BTC/USD.');
   if(tokenAddress){
+   if(suggestions){
+    const matches=wantedNetwork?dexPairs.filter(pair=>pair.chainId===wantedNetwork):dexPairs;
+    if(!matches.length)throw Error('No indexed market found on this network.');
+    showCoinMatches($('coin-search-results'),matches,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay:true,revision:selectedRevision});});
+    searchFeedback('');return;
+   }
    const selection=wantedNetwork?dexPairs.find(p=>p.chainId===wantedNetwork):dexPairs[0];
    if(!selection)throw Error('No indexed market found on this network.');
    await selectSearchMarket(selection,{autoPlay,revision});return;
@@ -839,7 +847,7 @@ async function searchForCoin(query,{network:wantedNetwork=null,autoPlay=true}={}
    showCoinMatches($('coin-search-results'),pairs,pair=>{const selectedRevision=++searchRevision;searchBusy(false);void selectSearchMarket(pair,{autoPlay:true,revision:selectedRevision});});
    searchFeedback('Choose an exchange market');
   }
- }catch(error){if(revision===searchRevision){status(error.message);searchFeedback(error.message,'error');}}
+ }catch(error){if(revision===searchRevision){if(!suggestions)status(error.message);searchFeedback(error.message,'error');}}
  finally{if(revision===searchRevision)searchBusy(false);}
 }
 function showCoinAddress(address,network='',nativeAsset=null){
@@ -867,6 +875,10 @@ $('coin-address').addEventListener('click',async()=>{
  catch{savedFeedback('Could not copy the address.');}
 });
 let savingCoin=false;
+bindAddressSearch($('address'),{
+ current:()=>searchRevision,cancel:cancelSearch,
+ lookup:query=>{const network=$('coin-form').dataset.searchNetwork;void searchForCoin(query,{network:network&&network!=='all'?network:null,autoPlay:false,suggestions:true});},
+});
 function syncSavedCoin(){
  const button=$('save-coin'),coin=savedCoinForMarket(market,market&&coinImageKey===imageKey(market)?coinImageURL:'');
  const saved=Boolean(coin&&isCoinSaved(coin.key));

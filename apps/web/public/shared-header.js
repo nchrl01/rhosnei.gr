@@ -1,5 +1,5 @@
-import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=448';
-import {bindMobileCoinSearch} from './mobile-search.js?v=448';
+import {bindMarketplaceCoinSearch} from './marketplace-coin-search.js?v=456';
+import {bindMobileCoinSearch} from './mobile-search.js?v=456';
 import {bindListeningVolume} from './listening-volume.js?v=281';
 
 function markCurrentPage(){

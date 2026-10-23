@@ -5,6 +5,7 @@ import {attachArtworkDither} from './coin-dither.js?v=276';
 import {loadTrendingCoins} from './trending.js?v=391';
 import {savedCoins,savedCoinsState,loadSavedCoins,signInSavedCoins,removeSavedCoin} from './saved-coins.js?v=448';
 import {searchNetworks} from './network-marks.js?v=448';
+import {isTokenIdentifier} from './coin-identifiers.js?v=448';
 const money=value=>Number.isFinite(value)&&value>=0?'$'+new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:2}).format(value):'—';
 function node(tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(cls)n.className=cls;return n;}
 const icons={back:'<path d="m15 5-7 7 7 7"/>',paste:'<path d="M8 5H5v16h14V5h-3M9 3h6v4H9zM8 11h8M8 15h6"/>',trash:'<path d="M3 6h18M9 3h6M6 6l1 15h10l1-15M10 10v7M14 10v7"/>'};
@@ -40,7 +41,7 @@ export function bindMobileCoinSearch(){
   // Keep that result mounted through the pointer's click so selection can run.
   desktop.addEventListener('focusout',()=>queueMicrotask(()=>{if(!pointerInside&&!desktop.contains(document.activeElement)){desktopOpen=false;paintDesktop();}}));
   document.addEventListener('pointerdown',event=>{if(!desktop.contains(event.target)){desktopOpen=false;paintDesktop();}});
-  desktop.addEventListener('keydown',event=>{if(event.key==='Escape')queueMicrotask(()=>{desktopOpen=false;paintDesktop();});},true);
+  desktop.addEventListener('keydown',event=>{if(event.key==='Escape'){form.dispatchEvent(new Event('upic:search-dismiss'));queueMicrotask(()=>{desktopOpen=false;paintDesktop();});}},true);
  }
  const dialog=node('dialog',null,'mobile-coin-search');dialog.id='mobile-coin-search';dialog.setAttribute('aria-label','Search coins');
  const top=node('div',null,'mobile-search-top'),back=iconButton('Back to player','back','mobile-search-back');top.append(back);
@@ -59,6 +60,7 @@ export function bindMobileCoinSearch(){
  content.append(mobileFeedback,status,suggestions,more);dialog.append(top,categories,recent,content);document.body.append(dialog);let catalogue=[],trending=[],trendingLoading=null,trendingError='',loading,paintedRows='',oldOverflow='',placeholder=input.getAttribute('placeholder');
  const paste=iconButton('Paste address','paste','mobile-search-paste');input.after(paste);
  function close(focus=true){if(dialog.open)dialog.close();document.documentElement.style.overflow=oldOverflow;if(focus)trigger.focus({preventScroll:true});trigger.setAttribute('aria-expanded','false');}
+ function dismiss(){form.dispatchEvent(new Event('upic:search-dismiss'));close();}
  function select(coin){coin=coinOnNetwork(coin,network.value);rememberRecentCoin(coin);paintRecent();document.dispatchEvent(new CustomEvent('upic:search-coin',{detail:coin}));}
  function selectSaved(coin){
   // A bookmark remembers the exact market; the discovery filter must not replace it.
@@ -135,6 +137,8 @@ export function bindMobileCoinSearch(){
   let rows=source.filter(r=>(network.value==='all'||r.chain===network.value||r.nativeChains?.includes(network.value)||r.platforms?.some(p=>p.chain===network.value))&&(!q||[r.name,r.symbol,r.address,...(r.platforms||[]).map(p=>p.address)].some(v=>String(v||'').toLowerCase().includes(q))));
   rows.sort((a,b)=>form.id==='marketplace-coin-form'&&category==='coins'?(b.marketCap||0)-(a.marketCap||0):q?Number(b.symbol.toLowerCase()===q)-Number(a.symbol.toLowerCase()===q)||(b.marketCap||0)-(a.marketCap||0):Number(Boolean(b.featured))-Number(Boolean(a.featured))||(a.trendingRank||999)-(b.trendingRank||999)||(b.marketCap||0)-(a.marketCap||0));
   status.textContent=rows.length?(q?'Matching coins':category==='trending'?'Trending · 24H':form.id==='marketplace-coin-form'?'Genesis Collection':'Coins'):(pending?category==='trending'?'Loading trending coins…':'Loading coins…':q?'No local matches. Press Search to search live markets.':category==='trending'?trendingError||'No trending coins above $1M on this network.':'No coins available.');
+  // Address searches have their own live lookup feedback, even outside the catalogue.
+  if(!rows.length&&isTokenIdentifier(input.value.trim()))status.hidden=true;
   more.hidden=rows.length<=visible;
   const rowsKey=JSON.stringify([category,network.value,q,visible,rows.slice(0,visible).map(row=>{const view=cataloguePreview(row,network.value);return [row.key,view.selection?.key,view.capture?.capturedAt,row.image,row.marketCap];})]);
   if(rowsKey===paintedRows)return;paintedRows=rowsKey;
@@ -151,6 +155,7 @@ export function bindMobileCoinSearch(){
  }
  for(const [key,label] of [['coins','Coins'],['trending','Trending'],['saved','Saved']]){const button=node('button',label);button.type='button';button.dataset.category=key;button.setAttribute('aria-pressed',String(key===category));button.addEventListener('click',()=>setCategory(key));tabs.append(button);}
  form.addEventListener('submit',()=>{if(category!=='coins')setCategory('coins');});
+ form.addEventListener('upic:address-lookup',()=>{if(category!=='coins')setCategory('coins');});
  window.addEventListener('upic:saved-coins-changed',()=>{paintDesktopSaved();paint();});
  async function loadTrending(){
   if(trendingLoading)return trendingLoading;trendingError='';
@@ -189,7 +194,7 @@ export function bindMobileCoinSearch(){
   document.body.classList.toggle('desktop-header-search',Boolean(desktop)&&!mobile.matches);
   if(placeholder===null)input.removeAttribute('placeholder');else input.setAttribute('placeholder',placeholder);paintDesktopSaved();paintDesktop();
  }
- trigger.addEventListener('click',open);back.addEventListener('click',()=>close());dialog.addEventListener('cancel',event=>{event.preventDefault();close();});dialog.addEventListener('close',()=>{document.documentElement.style.overflow=oldOverflow;trigger.setAttribute('aria-expanded','false');});
+ trigger.addEventListener('click',open);back.addEventListener('click',dismiss);dialog.addEventListener('cancel',event=>{event.preventDefault();dismiss();});dialog.addEventListener('close',()=>{document.documentElement.style.overflow=oldOverflow;trigger.setAttribute('aria-expanded','false');});
  clear.addEventListener('click',()=>{try{localStorage.removeItem('upic-recent-coins-v1');}catch{}paintRecent();});
  paste.addEventListener('pointerdown',event=>event.stopPropagation());paste.addEventListener('click',async event=>{event.stopPropagation();try{const value=(await navigator.clipboard.readText()).trim();if(!value||value.length>250||/[\r\n]/.test(value))return;input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));input.focus();}catch{status.hidden=false;status.textContent='Touch and hold the search field to paste.';}});
  const grow=()=>{visible+=30;paint();};more.addEventListener('click',grow);if('IntersectionObserver' in window){let scheduled=false;const observer=new IntersectionObserver(entries=>{if(scheduled||!dialog.open||more.hidden||!entries.some(e=>e.isIntersecting))return;scheduled=true;requestAnimationFrame(()=>{if(dialog.open&&!more.hidden)grow();scheduled=false;});},{root:dialog,rootMargin:'240px'});observer.observe(more);}network.addEventListener('change',()=>{form.dataset.searchNetwork=network.value;if(results){input.dispatchEvent(new Event('input',{bubbles:true}));results.hidden=true;results.replaceChildren();}visible=30;paint();});input.addEventListener('input',()=>{visible=30;paint();});if(results)new MutationObserver(paint).observe(results,{attributes:true,attributeFilter:['hidden']});
