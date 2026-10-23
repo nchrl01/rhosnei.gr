@@ -1,6 +1,7 @@
-// Allowed presets; deterministic coin assignments use this active sound palette.
+import {GB_INSTRUMENTS,gameBoyProfile} from './gameboy-instruments.js?v=451';
+// Legacy preset IDs preserve seeded coin assignments and saved controls.
 export const EARTHBOUND_PRESETS=[13,23,24,30,31,34,35,36,37,139,145,146,147,169];
-export const EARTHBOUND_INSTRUMENTS=[{"preset":13,"name":"Doctor Solo"},{"preset":23,"name":"Fast Strings"},{"preset":24,"name":"Slow Strings"},{"preset":30,"name":"Flute"},{"preset":31,"name":"Whistle"},{"preset":34,"name":"Sine Wave · soft"},{"preset":35,"name":"Sine Wave · bright"},{"preset":36,"name":"Square Lead"},{"preset":37,"name":"Saw Lead"},{"preset":139,"name":"Atmosphere"},{"preset":147,"name":"Synth Strings 1"},{"preset":169,"name":"Tonewheel Organ"},{"preset":145,"name":"Kraken Sine 1 · bass"},{"preset":146,"name":"Kraken Sine 2 · bass"}];
+export const EARTHBOUND_INSTRUMENTS=[...GB_INSTRUMENTS.map(({preset,name})=>({preset,name})),{preset:145,name:'Kraken Sine 1 · bass'},{preset:146,name:'Kraken Sine 2 · bass'}];
 const families={
  strings:{attack:.025,decay:.16,sustain:.58,release:.16,noteMax:1.8,phraseMax:.7,gate:.9,low:48,high:88,cutoff:5600,room:.2},
  bass:{attack:.008,decay:.12,sustain:.35,release:.08,noteMax:1,phraseMax:.4,gate:.85,low:28,high:55,cutoff:2800,room:.08},
@@ -21,6 +22,7 @@ export function earthboundPreset(seed){
  return leads[hash%leads.length];
 }
 export function instrumentProfile(preset){
+ const chip=gameBoyProfile(preset);if(chip)return chip;
  const family=familyByPreset[preset]||'piano';return {...families[family],family};
 }
 export function instrumentPitch(midi,profile){

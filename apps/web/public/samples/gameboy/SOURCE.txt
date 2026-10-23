@@ -1,0 +1,7 @@
+UPIC GB style instruments
+
+Original pulse and quantized wave tables authored for UPIC.
+Rendered by scripts/render-gameboy.mjs, with band-limited cycles,
+zero DC, level matching and exact loop tuning. No game ROM or
+Nintendo sample recordings are used. This is a musical sound palette,
+not an emulation of Game Boy hardware or its channel limits.

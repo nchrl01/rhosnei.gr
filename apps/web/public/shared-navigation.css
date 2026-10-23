@@ -747,3 +747,20 @@ body.about-page>main>.site-footer{position:sticky;top:auto;bottom:0;flex:none;ma
 :is(.mobile-coin-search,.header-search-panel) .mobile-search-network:focus-visible{outline:none;box-shadow:none}
 :is(.mobile-coin-search,.header-search-panel) .mobile-search-network:focus-visible::after{content:"";position:absolute;inset:3px;border:1px solid var(--control-ink);border-radius:50%!important;pointer-events:none}
 :is(.mobile-coin-search,.header-search-panel) .mobile-search-network img{border-radius:50%!important}
+
+/* Footer text shares the homepage's small size across pages and controls. */
+.site-footer,.footer-mobile-sheet{
+ --font-family:UnifontText,"Noto Sans",sans-serif;
+}
+.site-footer,.site-footer *,
+.footer-mobile-sheet,.footer-mobile-sheet *{
+ text-transform:none;
+}
+.site-footer,
+.site-footer :is(a,button,nav,span,small,output,summary),
+.footer-mobile-sheet,
+.footer-mobile-sheet :is(a,button,nav,span,small,output,summary),
+.footer-mobile-sheet .footer-sheet-heading{
+ font-size:var(--font-size-small);
+ line-height:1.4;
+}

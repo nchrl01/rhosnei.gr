@@ -1,6 +1,8 @@
-import {arpRhythm,arpPosition} from './arp-rhythm.js?v=211';
-import {MOTIF_MODEL} from './motif-model.js?v=209';
+import {arpRhythm} from './arp-rhythm.js?v=211';
+import {marketPhraseTone} from './market-phrase.js?v=453';
 import {pianoHarmony} from './music-context.js?v=208';
+import {phraseArrangement,noteExpression} from './phrase-arrangement.js?v=449';
+import {learnedMarketMelody} from './learned-market-phrase.js?v=455';
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 export const scoreTempo=music=>Math.max(20,Math.min(200,Number(music?.tempo)||100));
 const hash=(seed,n)=>{let x=(seed^Math.imul(n+1,2654435761))>>>0;x=Math.imul(x^(x>>>16),2246822507);return (x^(x>>>13))>>>0;};
@@ -8,17 +10,30 @@ const hash=(seed,n)=>{let x=(seed^Math.imul(n+1,2654435761))>>>0;x=Math.imul(x^(
 // reset its phase. Motif development follows A / A' / B / A'' over eight bars.
 export function composeMarketBar(seed,bar,context,motif=[]){
  const music=context.music||{},cap=Number(context.cap)||0;
- const energy=unit(Math.max(music.intensity,.15+.6*unit(music.activity)));
+ const energy=unit(Math.max(Number(music.intensity)||0,.15+.6*unit(music.activity)));
  const rave=cap>=1e6?unit(.35+(Math.log10(cap)-6)*.3):0;
  const harmonicStep=(context.harmonyStep||0)+Math.floor(bar/2);
  const harmony=pianoHarmony(seed,{chordStep:harmonicStep-seed%4},music);
  const notes=[...harmony.notes].sort((a,b)=>a-b),events=[];
- const push=(beat,midi,duration,gain,kind)=>events.push({beat,midi,duration,gain,kind});
+ let expressionIndex=0;
+ const push=(beat,midi,duration,gain,kind,details={})=>{
+  const expression=noteExpression(seed,bar,expressionIndex++,kind),arrangement=phraseArrangement(seed,bar*4+beat);
+  // Score the breathing space, including notes held across a bar boundary.
+  // The shared state lets the other layers leave this same short rest open.
+  if(arrangement.rest||arrangement.restInBeats<.09)return;
+  duration=Math.min(duration*expression.duration,arrangement.restInBeats);
+  events.push({beat,midi,duration,gain:gain*arrangement.layers.piano*expression.gain,kind,expression,...details});
+ };
  if(context.active===false)return {events,harmony};
  const wet=1-unit((Math.log10(Math.max(1000,cap))-4)/3);
  const chordBeats=rave?[.5,2.5]:[0];
- for(const beat of chordBeats)for(const pitch of notes.slice(0,4))push(beat,pitch,rave?.45:1.5+1.8*wet,.038*(.65+.35*energy),'chord');
- const shape=learnedContour(seed,Math.floor(bar/8));
+ const chordNotes=notes.slice(0,4),reverse=hash(seed,bar+419)%2===1;
+ if(reverse)chordNotes.reverse();
+ // Roll the hand by 9–17 ms per tone. Convert to score beats so fast replay
+ // retains a modest audible spread, without altering the arpeggio's swing.
+ const audibleTempo=Number(context.audibleTempo)||scoreTempo(music);
+ const spread=(.009+.008*(hash(seed,bar+420)/4294967296))*audibleTempo/60;
+ for(const beat of chordBeats)chordNotes.forEach((pitch,index)=>push(beat+index*spread,pitch,rave?.45:1.5+1.8*wet,.038*(.65+.35*energy)*(.92+.08*index/Math.max(1,chordNotes.length-1)),'chord'));
  const groove=arpRhythm(seed,bar,music,cap);
  // Build a palette inside the actual instrument register before choosing
  // contour positions. Later octave folding cannot undo the market direction.
@@ -29,11 +44,16 @@ export function composeMarketBar(seed,bar,context,motif=[]){
  const offset=hash(seed,Math.floor(bar/4)+97)%Math.max(1,palette.length-width+1);
  const pitches=palette.slice(offset,offset+width);
  const down=music.group==='down';
- if(context.arpeggios!==false&&pitches.length)groove.events.forEach((event,i)=>{
-  const learned=motif.length?Math.round((motif[i%motif.length][1]-60)/4):shape[i%shape.length];
-  const position=arpPosition(groove.gesture,i,groove.events.length,learned);
+ const learnedAmount=context.phraseLearning==null?1:unit(context.phraseLearning);
+ if(context.arpeggios!==false&&pitches.length&&learnedAmount>0){
+  const melody=learnedMarketMelody(seed,bar,{...context,music,harmony,groove,phraseLearning:learnedAmount});
+  for(const event of melody)push(event.beat,event.midi,event.duration,.06*(.65+.35*energy)*event.accent,'arp',{allowedPitches:event.allowedPitches});
+ }else if(context.arpeggios!==false&&pitches.length)groove.events.forEach((event,i)=>{
+  const phrase=marketPhraseTone(seed,bar*4+event.beat,i,groove.events.length,context);
+  const motifTurn=motif.length?(motif[i%motif.length][1]-66)/48:0;
+  const position=unit(phrase.position+motifTurn*Math.sin(Math.PI*i/Math.max(1,groove.events.length-1)));
   const index=Math.round((down?1-position:position)*(pitches.length-1));
-  push(event.beat,pitches[index],event.duration,.06*(.65+.35*energy)*event.accent,'arp');
+  push(event.beat,pitches[index],event.duration*phrase.duration,.06*(.65+.35*energy)*event.accent*phrase.accent,'arp',{allowedPitches:palette});
  });
  // Kraken is always the bass voice, never a coin's lead. Root/fifth/octave
 // movement follows this bar's chord, with a cadence every fourth bar.
@@ -45,12 +65,18 @@ export function composeMarketBar(seed,bar,context,motif=[]){
   push(beat,bassRoot+octave+fifth,rave?.42:1.3,.085*(.7+.3*energy),'bass');
  });
  const landmark=music.movement?.event;
- if(landmark&&context.landmarkBar===bar){
+ if(context.arpeggios!==false&&landmark&&context.landmarkBar===bar){
   const tones=[notes[0]+12,notes[1]+12,notes.at(-1)+12,notes[0]+24];
   if(landmark.direction<0)tones.reverse();
-  for(let i=0;i<4;i++)push(i*.5,tones[i],.35,.08,'arp');
+  for(let i=0;i<4;i++)push(i*.5,tones[i],.35,.08,'arp',{allowedPitches:palette,landmark:true});
  }
- return {events:events.sort((a,b)=>a.beat-b.beat),harmony,groove:groove.name};
+ // Keep one audible lead line. Landmark accents replace coincident attacks;
+ // their pitches still pass through the same final originality guard.
+ const lead=new Map();
+ for(const event of events.filter(e=>e.kind==='arp').sort((a,b)=>a.beat-b.beat))lead.set(event.beat,event);
+ const melody=[...lead.values()];
+ melody.forEach((event,i)=>{event.duration=Math.min(event.duration,(melody[i+1]?.beat??4)-event.beat);});
+ return {events:[...events.filter(e=>e.kind!=='arp'),...melody.filter(e=>e.duration>=.025)].sort((a,b)=>a.beat-b.beat),harmony,groove:learnedAmount>0?'Learned MIDI phrasing':groove.name};
 }
 import {chartHarmony} from './harmonic-characters.js?v=208';
 function chordFifth(music,index){const chord=chartHarmony(music.character||'serene',music).chords[index];return ((chord[2]??chord[0]+7)-chord[0]+12)%12;}
@@ -66,16 +92,4 @@ export function createCompositionTimeline(segments,playbackRate=1){
  const rows=segments.map((segment,i)=>{const start=segment.start,end=Math.max(start+1,segments[i+1]?.start??segment.end),sourceTempo=scoreTempo(segment.music),fold=2**Math.max(0,Math.ceil(Math.log2(sourceTempo*rate/200))),tempo=sourceTempo/fold,row={...segment,start,end,tempo,audibleTempo:tempo*rate,beat,endBeat:beat+(end-start)*tempo/60000};beat=row.endBeat;return row;});
  const find=(value,field)=>{let lo=0,hi=rows.length-1;while(lo<hi){const mid=Math.ceil((lo+hi)/2);if(rows[mid][field]<=value)lo=mid;else hi=mid-1;}return rows[lo];};
  return {rows,beatAt(at){const row=find(at,'start');return row?row.beat+(at-row.start)*row.tempo/60000:0;},atBeat(value){const row=find(value,'beat');return row?row.start+(value-row.beat)*60000/row.tempo:0;},contextAtBeat(value){return find(value,'beat');}};
-}
-
-function learnedContour(seed,section){
- let state=hash(seed,section),a=0,b=2,position=0;const shape=[];
- for(let i=0;i<8;i++){
-  const options=MOTIF_MODEL.transitions[a+','+b]||MOTIF_MODEL.fallback;
-  const weights=options.map(([interval,count])=>count/(1+Math.abs(interval)*.2+(Math.abs(position+interval)>10?8:0)));
-  state=hash(state,i);let draw=state/4294967296*weights.reduce((x,y)=>x+y,0),choice=options.at(-1)[0];
-  for(let j=0;j<options.length;j++)if((draw-=weights[j])<=0){choice=options[j][0];break;}
-  position=Math.max(-10,Math.min(10,position+choice));shape.push(Math.round(position/2));a=b;b=choice;
- }
- return shape;
 }

@@ -28,7 +28,7 @@
 
 :root {
   color-scheme: dark;
-  --font-family: Unifont, "Noto Sans", sans-serif;
+  --font-family: UnifontText, "Noto Sans", sans-serif;
   --font-size-small: 12px;
   --font-size-body: 16px;
   --font-size-title: 24px;

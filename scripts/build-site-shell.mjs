@@ -9,6 +9,10 @@ const webRoot = path.join(root, 'apps/web');
 const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
 const version = 448;
+// Audio and navigation updates have independent cache revisions.
+const audioVersion = 455;
+const navigationVersion = 452;
+const foundationVersion = 454;
 const pages = [
   { file: 'profile.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'profile.css'] },
   { file: 'report-issue.html', type: 'public', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'report-issue.css'] },
@@ -18,8 +22,8 @@ const pages = [
   { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'marketplace.css'] },
   { file: 'credits.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css'] },
   { file: 'visual-lab.html', type: 'lab', styles: ['visual-lab.css'] },
-  { file: 'audio-lab.html', type: 'lab', styles: ['visual-lab.css', 'audio-lab.css'] },
-  { file: 'av-lab.html', type: 'lab', styles: ['visual-lab.css', 'audio-lab.css', 'av-lab.css'] },
+  { file: 'audio-lab.html', type: 'lab', styles: ['visual-lab.css', `audio-lab.css?v=${audioVersion}`] },
+  { file: 'av-lab.html', type: 'lab', styles: ['visual-lab.css', `audio-lab.css?v=${audioVersion}`, 'av-lab.css'] },
   { file: 'mapping-lab.html', type: 'lab', styles: ['mapping-lab.css'] },
 ];
 
@@ -99,7 +103,7 @@ for (const page of pages) {
   }
   // Stylesheet order is deliberate: common controls, page layout, typography,
   // then shared navigation. Each page declares only the styles it uses.
-  const styles = ['foundation.css', ...page.styles, 'typography.css', 'shared-navigation.css', 'intro.css']
+  const styles = [`foundation.css?v=${foundationVersion}`, ...page.styles, 'typography.css', `shared-navigation.css?v=${navigationVersion}`, 'intro.css']
     .map(href => `<link rel="stylesheet" href="${href.includes('?') ? href : href + '?v=' + version}">`).join('\n');
   if (html.includes('<!-- site-shell:styles:start -->')) {
     html = replaceRegion(html, 'styles', styles);
@@ -122,7 +126,8 @@ for (const page of pages) {
     html = html.replace(/<script\b[^>]*\bsrc=["'](?:footer-prices|shared-header|wallet-connect)\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*/g, '');
     html = html.replace('</body>', region('scripts', sharedScripts) + '\n</body>');
   }
-  if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${version}"`);
+  if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${audioVersion}"`);
+  html = html.replaceAll('href="fonts/Unifont/Unifont-ui.woff2"', 'href="fonts/Unifont/Unifont.woff2"');
   if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${version}"`);
   await writeFile(file, html);
 }
