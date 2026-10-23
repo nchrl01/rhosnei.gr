@@ -101,3 +101,10 @@ button.collection-card{display:block;padding:0;border:0;background:none;text-ali
 .coin-collectible.is-contract-unavailable:hover{background:#0b0b0b;border-color:#252525}
 .coin-collectible.is-contract-unavailable:hover h2{text-decoration:none}
 .coin-collectible.is-contract-unavailable .coin-open{font-size:var(--font-size-small);color:var(--muted)}
+
+/* Preserve natural letter case rather than the uppercase UI font mapping. */
+@font-face{font-family:UnifontText;src:url("fonts/Unifont/Unifont.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+.marketplace-heading,.genesis-heading{font-family:UnifontText,var(--font-family);text-transform:none}
+body.marketplace-page>main{padding-bottom:0}
+@media(min-width:761px){body.marketplace-page>main{padding-bottom:var(--navigation-row-height)}body.marketplace-page>main>.site-footer{position:fixed;inset:auto 0 0;z-index:10;margin:0}}
+@media(max-width:760px){body.marketplace-page>main{padding-bottom:0}body.marketplace-page>main>.site-footer{margin-top:auto}}

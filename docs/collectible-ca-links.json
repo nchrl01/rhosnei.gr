@@ -1,9 +1,11 @@
 {
-  "scope": "Top 100 collectible slots",
-  "policy": "Only exact contract/identifier plus network can be opened. Native exchange routes and unrelated captures are not collectible targets.",
+  "verifiedAt": "2026-10-23",
+  "linked": 94,
+  "pending": 6,
   "coins": [
     {
       "id": "bitcoin",
+      "rank": 1,
       "originalSymbol": "BTC",
       "symbol": "WBTC",
       "chain": "ethereum",
@@ -13,6 +15,7 @@
     },
     {
       "id": "ethereum",
+      "rank": 2,
       "originalSymbol": "ETH",
       "symbol": "WETH",
       "chain": "ethereum",
@@ -22,6 +25,7 @@
     },
     {
       "id": "tether",
+      "rank": 3,
       "originalSymbol": "USDT",
       "symbol": "USDT",
       "chain": "ethereum",
@@ -31,6 +35,7 @@
     },
     {
       "id": "binancecoin",
+      "rank": 4,
       "originalSymbol": "BNB",
       "symbol": "WBNB",
       "chain": "bsc",
@@ -40,6 +45,7 @@
     },
     {
       "id": "ripple",
+      "rank": 5,
       "originalSymbol": "XRP",
       "symbol": "XRP",
       "chain": "bsc",
@@ -49,6 +55,7 @@
     },
     {
       "id": "usd-coin",
+      "rank": 6,
       "originalSymbol": "USDC",
       "symbol": "USDC",
       "chain": "ethereum",
@@ -58,6 +65,7 @@
     },
     {
       "id": "solana",
+      "rank": 7,
       "originalSymbol": "SOL",
       "symbol": "WSOL",
       "chain": "solana",
@@ -67,6 +75,7 @@
     },
     {
       "id": "tron",
+      "rank": 8,
       "originalSymbol": "TRX",
       "symbol": "WTRX",
       "chain": "tron",
@@ -76,33 +85,37 @@
     },
     {
       "id": "figure-heloc",
+      "rank": 9,
       "originalSymbol": "FIGR_HELOC",
       "symbol": "FIGR_HELOC",
       "chain": null,
       "address": null,
       "url": null,
-      "status": "contract-unavailable"
+      "status": "pending-verification"
     },
     {
       "id": "zcash",
+      "rank": 10,
       "originalSymbol": "ZEC",
-      "symbol": "ZEC",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "WZEC",
+      "chain": "ethereum",
+      "address": "0x4A64515E5E1d1073e83f30cB97BEd20400b66E10",
+      "url": "./?coin=0x4A64515E5E1d1073e83f30cB97BEd20400b66E10&network=ethereum",
+      "status": "contract-linked"
     },
     {
       "id": "hyperliquid",
+      "rank": 11,
       "originalSymbol": "HYPE",
-      "symbol": "HYPE",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "WHYPE",
+      "chain": "hyperevm",
+      "address": "0x5555555555555555555555555555555555555555",
+      "url": "./?coin=0x5555555555555555555555555555555555555555&network=hyperevm",
+      "status": "contract-linked"
     },
     {
       "id": "dogecoin",
+      "rank": 12,
       "originalSymbol": "DOGE",
       "symbol": "DOGE",
       "chain": "bsc",
@@ -112,15 +125,17 @@
     },
     {
       "id": "monero",
+      "rank": 13,
       "originalSymbol": "XMR",
-      "symbol": "XMR",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "WXMR",
+      "chain": "ethereum",
+      "address": "0x465e07d6028830124be2e4aa551fbe12805db0f5",
+      "url": "./?coin=0x465e07d6028830124be2e4aa551fbe12805db0f5&network=ethereum",
+      "status": "contract-linked"
     },
     {
       "id": "usds",
+      "rank": 14,
       "originalSymbol": "USDS",
       "symbol": "USDS",
       "chain": "ethereum",
@@ -130,6 +145,7 @@
     },
     {
       "id": "whitebit",
+      "rank": 15,
       "originalSymbol": "WBT",
       "symbol": "WBT",
       "chain": "ethereum",
@@ -139,6 +155,7 @@
     },
     {
       "id": "chainlink",
+      "rank": 16,
       "originalSymbol": "LINK",
       "symbol": "LINK",
       "chain": "ethereum",
@@ -148,6 +165,7 @@
     },
     {
       "id": "leo-token",
+      "rank": 17,
       "originalSymbol": "LEO",
       "symbol": "LEO",
       "chain": "ethereum",
@@ -157,6 +175,7 @@
     },
     {
       "id": "cardano",
+      "rank": 18,
       "originalSymbol": "ADA",
       "symbol": "ADA",
       "chain": "bsc",
@@ -166,6 +185,7 @@
     },
     {
       "id": "rain",
+      "rank": 19,
       "originalSymbol": "RAIN",
       "symbol": "RAIN",
       "chain": "arbitrum",
@@ -175,6 +195,7 @@
     },
     {
       "id": "near",
+      "rank": 20,
       "originalSymbol": "NEAR",
       "symbol": "wNEAR",
       "chain": "near",
@@ -184,15 +205,17 @@
     },
     {
       "id": "stellar",
+      "rank": 21,
       "originalSymbol": "XLM",
       "symbol": "XLM",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "chain": "stellar",
+      "address": "CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA",
+      "url": "./?coin=CAS3J7GYLGXMF6TDJBBYYSE3HQ6BBSMLNUQ34T6TZMYMW2EVH34XOWMA&network=stellar",
+      "status": "contract-linked"
     },
     {
       "id": "bitcoin-cash",
+      "rank": 22,
       "originalSymbol": "BCH",
       "symbol": "BCH",
       "chain": "bsc",
@@ -202,6 +225,7 @@
     },
     {
       "id": "ethena-usde",
+      "rank": 23,
       "originalSymbol": "USDE",
       "symbol": "USDE",
       "chain": "ethereum",
@@ -211,6 +235,7 @@
     },
     {
       "id": "dai",
+      "rank": 24,
       "originalSymbol": "DAI",
       "symbol": "DAI",
       "chain": "ethereum",
@@ -220,6 +245,7 @@
     },
     {
       "id": "litecoin",
+      "rank": 25,
       "originalSymbol": "LTC",
       "symbol": "LTC",
       "chain": "bsc",
@@ -229,6 +255,7 @@
     },
     {
       "id": "uniswap",
+      "rank": 26,
       "originalSymbol": "UNI",
       "symbol": "UNI",
       "chain": "ethereum",
@@ -238,6 +265,7 @@
     },
     {
       "id": "avalanche-2",
+      "rank": 27,
       "originalSymbol": "AVAX",
       "symbol": "WAVAX",
       "chain": "avalanche",
@@ -247,6 +275,7 @@
     },
     {
       "id": "usd1-wlfi",
+      "rank": 28,
       "originalSymbol": "USD1",
       "symbol": "USD1",
       "chain": "ethereum",
@@ -256,6 +285,7 @@
     },
     {
       "id": "sui",
+      "rank": 29,
       "originalSymbol": "SUI",
       "symbol": "SUI",
       "chain": "sui",
@@ -265,15 +295,17 @@
     },
     {
       "id": "canton-network",
+      "rank": 30,
       "originalSymbol": "CC",
       "symbol": "CC",
       "chain": null,
       "address": null,
       "url": null,
-      "status": "contract-unavailable"
+      "status": "pending-verification"
     },
     {
       "id": "the-open-network",
+      "rank": 31,
       "originalSymbol": "GRAM",
       "symbol": "GRAM",
       "chain": "ethereum",
@@ -283,6 +315,7 @@
     },
     {
       "id": "hedera-hashgraph",
+      "rank": 32,
       "originalSymbol": "HBAR",
       "symbol": "WHBAR",
       "chain": "hedera",
@@ -292,6 +325,7 @@
     },
     {
       "id": "bitway",
+      "rank": 33,
       "originalSymbol": "BTW",
       "symbol": "BTW",
       "chain": "ethereum",
@@ -301,6 +335,7 @@
     },
     {
       "id": "tether-gold",
+      "rank": 34,
       "originalSymbol": "XAUT",
       "symbol": "XAUT",
       "chain": "ethereum",
@@ -310,6 +345,7 @@
     },
     {
       "id": "global-dollar",
+      "rank": 35,
       "originalSymbol": "USDG",
       "symbol": "USDG",
       "chain": "ethereum",
@@ -319,15 +355,17 @@
     },
     {
       "id": "bittensor",
+      "rank": 36,
       "originalSymbol": "TAO",
-      "symbol": "TAO",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "wTAO",
+      "chain": "ethereum",
+      "address": "0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44",
+      "url": "./?coin=0x77e06c9eccf2e797fd462a92b6d7642ef85b0a44&network=ethereum",
+      "status": "contract-linked"
     },
     {
       "id": "shiba-inu",
+      "rank": 37,
       "originalSymbol": "SHIB",
       "symbol": "SHIB",
       "chain": "ethereum",
@@ -337,6 +375,7 @@
     },
     {
       "id": "paypal-usd",
+      "rank": 38,
       "originalSymbol": "PYUSD",
       "symbol": "PYUSD",
       "chain": "ethereum",
@@ -346,6 +385,7 @@
     },
     {
       "id": "crypto-com-chain",
+      "rank": 39,
       "originalSymbol": "CRO",
       "symbol": "CRO",
       "chain": "ethereum",
@@ -355,6 +395,7 @@
     },
     {
       "id": "quant-network",
+      "rank": 40,
       "originalSymbol": "QNT",
       "symbol": "QNT",
       "chain": "ethereum",
@@ -364,6 +405,7 @@
     },
     {
       "id": "ethena",
+      "rank": 41,
       "originalSymbol": "ENA",
       "symbol": "ENA",
       "chain": "ethereum",
@@ -373,6 +415,7 @@
     },
     {
       "id": "ripple-usd",
+      "rank": 42,
       "originalSymbol": "RLUSD",
       "symbol": "RLUSD",
       "chain": "ethereum",
@@ -382,6 +425,7 @@
     },
     {
       "id": "hashnote-usyc",
+      "rank": 43,
       "originalSymbol": "USYC",
       "symbol": "USYC",
       "chain": "ethereum",
@@ -391,6 +435,7 @@
     },
     {
       "id": "ondo-us-dollar-yield",
+      "rank": 44,
       "originalSymbol": "USDY",
       "symbol": "USDY",
       "chain": "ethereum",
@@ -400,6 +445,7 @@
     },
     {
       "id": "okb",
+      "rank": 45,
       "originalSymbol": "OKB",
       "symbol": "OKB",
       "chain": "ethereum",
@@ -409,6 +455,7 @@
     },
     {
       "id": "aave",
+      "rank": 46,
       "originalSymbol": "AAVE",
       "symbol": "AAVE",
       "chain": "ethereum",
@@ -418,6 +465,7 @@
     },
     {
       "id": "blackrock-usd-institutional-digital-liquidity-fund",
+      "rank": 47,
       "originalSymbol": "BUIDL",
       "symbol": "BUIDL",
       "chain": "ethereum",
@@ -427,6 +475,7 @@
     },
     {
       "id": "ondo-finance",
+      "rank": 48,
       "originalSymbol": "ONDO",
       "symbol": "ONDO",
       "chain": "ethereum",
@@ -436,6 +485,7 @@
     },
     {
       "id": "pump-fun",
+      "rank": 49,
       "originalSymbol": "PUMP",
       "symbol": "PUMP",
       "chain": "solana",
@@ -445,6 +495,7 @@
     },
     {
       "id": "falcon-finance",
+      "rank": 50,
       "originalSymbol": "USDF",
       "symbol": "USDF",
       "chain": "ethereum",
@@ -454,6 +505,7 @@
     },
     {
       "id": "aster-2",
+      "rank": 51,
       "originalSymbol": "ASTER",
       "symbol": "ASTER",
       "chain": "bsc",
@@ -463,6 +515,7 @@
     },
     {
       "id": "polkadot",
+      "rank": 52,
       "originalSymbol": "DOT",
       "symbol": "DOT",
       "chain": "bsc",
@@ -472,6 +525,7 @@
     },
     {
       "id": "pax-gold",
+      "rank": 53,
       "originalSymbol": "PAXG",
       "symbol": "PAXG",
       "chain": "ethereum",
@@ -481,6 +535,7 @@
     },
     {
       "id": "world-liberty-financial",
+      "rank": 54,
       "originalSymbol": "WLFI",
       "symbol": "WLFI",
       "chain": "ethereum",
@@ -490,6 +545,7 @@
     },
     {
       "id": "worldcoin-wld",
+      "rank": 55,
       "originalSymbol": "WLD",
       "symbol": "WLD",
       "chain": "ethereum",
@@ -499,6 +555,7 @@
     },
     {
       "id": "usdd",
+      "rank": 56,
       "originalSymbol": "USDD",
       "symbol": "USDD",
       "chain": "ethereum",
@@ -508,6 +565,7 @@
     },
     {
       "id": "mantle",
+      "rank": 57,
       "originalSymbol": "MNT",
       "symbol": "MNT",
       "chain": "ethereum",
@@ -517,6 +575,7 @@
     },
     {
       "id": "memecore",
+      "rank": 58,
       "originalSymbol": "M",
       "symbol": "M",
       "chain": "bsc",
@@ -526,6 +585,7 @@
     },
     {
       "id": "spiko-amundi-overnight-swap-fund-eur",
+      "rank": 59,
       "originalSymbol": "EURSAFO",
       "symbol": "EURSAFO",
       "chain": "ethereum",
@@ -535,6 +595,7 @@
     },
     {
       "id": "pepe",
+      "rank": 60,
       "originalSymbol": "PEPE",
       "symbol": "PEPE",
       "chain": "ethereum",
@@ -544,6 +605,7 @@
     },
     {
       "id": "morpho",
+      "rank": 61,
       "originalSymbol": "MORPHO",
       "symbol": "MORPHO",
       "chain": "ethereum",
@@ -553,6 +615,7 @@
     },
     {
       "id": "sky",
+      "rank": 62,
       "originalSymbol": "SKY",
       "symbol": "SKY",
       "chain": "ethereum",
@@ -562,6 +625,7 @@
     },
     {
       "id": "internet-computer",
+      "rank": 63,
       "originalSymbol": "ICP",
       "symbol": "ICP",
       "chain": "ethereum",
@@ -571,6 +635,7 @@
     },
     {
       "id": "united-stables",
+      "rank": 64,
       "originalSymbol": "U",
       "symbol": "U",
       "chain": "ethereum",
@@ -580,6 +645,7 @@
     },
     {
       "id": "htx-dao",
+      "rank": 65,
       "originalSymbol": "HTX",
       "symbol": "HTX",
       "chain": "ethereum",
@@ -589,15 +655,17 @@
     },
     {
       "id": "bfusd",
+      "rank": 66,
       "originalSymbol": "BFUSD",
       "symbol": "BFUSD",
       "chain": null,
       "address": null,
       "url": null,
-      "status": "contract-unavailable"
+      "status": "pending-verification"
     },
     {
       "id": "bitget-token",
+      "rank": 67,
       "originalSymbol": "BGB",
       "symbol": "BGB",
       "chain": "ethereum",
@@ -607,6 +675,7 @@
     },
     {
       "id": "usdgo",
+      "rank": 68,
       "originalSymbol": "USDGO",
       "symbol": "USDGO",
       "chain": "ethereum",
@@ -616,6 +685,7 @@
     },
     {
       "id": "arbitrum",
+      "rank": 69,
       "originalSymbol": "ARB",
       "symbol": "ARB",
       "chain": "ethereum",
@@ -625,6 +695,7 @@
     },
     {
       "id": "ethereum-classic",
+      "rank": 70,
       "originalSymbol": "ETC",
       "symbol": "ETC",
       "chain": "bsc",
@@ -634,6 +705,7 @@
     },
     {
       "id": "just",
+      "rank": 71,
       "originalSymbol": "JST",
       "symbol": "JST",
       "chain": "tron",
@@ -643,6 +715,7 @@
     },
     {
       "id": "venice-token",
+      "rank": 72,
       "originalSymbol": "VVV",
       "symbol": "VVV",
       "chain": "base",
@@ -652,6 +725,7 @@
     },
     {
       "id": "kucoin-shares",
+      "rank": 73,
       "originalSymbol": "KCS",
       "symbol": "WKCS",
       "chain": "kcc",
@@ -661,6 +735,7 @@
     },
     {
       "id": "gatechain-token",
+      "rank": 74,
       "originalSymbol": "GT",
       "symbol": "GT",
       "chain": "ethereum",
@@ -670,24 +745,27 @@
     },
     {
       "id": "algorand",
+      "rank": 75,
       "originalSymbol": "ALGO",
       "symbol": "ALGO",
       "chain": null,
       "address": null,
       "url": null,
-      "status": "contract-unavailable"
+      "status": "pending-verification"
     },
     {
       "id": "kaspa",
+      "rank": 76,
       "originalSymbol": "KAS",
-      "symbol": "KAS",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "wKAS",
+      "chain": "ethereum",
+      "address": "0x112b08621e27e10773ec95d250604a041f36c582",
+      "url": "./?coin=0x112b08621e27e10773ec95d250604a041f36c582&network=ethereum",
+      "status": "contract-linked"
     },
     {
       "id": "blockchain-capital",
+      "rank": 77,
       "originalSymbol": "BCAP",
       "symbol": "BCAP",
       "chain": "ethereum",
@@ -697,6 +775,7 @@
     },
     {
       "id": "polygon-ecosystem-token",
+      "rank": 78,
       "originalSymbol": "POL",
       "symbol": "POL",
       "chain": "ethereum",
@@ -706,6 +785,7 @@
     },
     {
       "id": "jupiter-exchange-solana",
+      "rank": 79,
       "originalSymbol": "JUP",
       "symbol": "JUP",
       "chain": "solana",
@@ -715,6 +795,7 @@
     },
     {
       "id": "render-token",
+      "rank": 80,
       "originalSymbol": "RENDER",
       "symbol": "RENDER",
       "chain": "ethereum",
@@ -724,6 +805,7 @@
     },
     {
       "id": "cosmos",
+      "rank": 81,
       "originalSymbol": "ATOM",
       "symbol": "ATOM",
       "chain": "bsc",
@@ -733,15 +815,17 @@
     },
     {
       "id": "pi-network",
+      "rank": 82,
       "originalSymbol": "PI",
       "symbol": "PI",
       "chain": null,
       "address": null,
       "url": null,
-      "status": "contract-unavailable"
+      "status": "pending-verification"
     },
     {
       "id": "filecoin",
+      "rank": 83,
       "originalSymbol": "FIL",
       "symbol": "WFIL",
       "chain": "filecoin",
@@ -751,6 +835,7 @@
     },
     {
       "id": "open-usd",
+      "rank": 84,
       "originalSymbol": "OUSD",
       "symbol": "OUSD",
       "chain": "ethereum",
@@ -760,6 +845,7 @@
     },
     {
       "id": "superstate-short-duration-us-government-securities-fund-ustb",
+      "rank": 85,
       "originalSymbol": "USTB",
       "symbol": "USTB",
       "chain": "ethereum",
@@ -769,6 +855,7 @@
     },
     {
       "id": "injective-protocol",
+      "rank": 86,
       "originalSymbol": "INJ",
       "symbol": "INJ",
       "chain": "ethereum",
@@ -778,6 +865,7 @@
     },
     {
       "id": "nexo",
+      "rank": 87,
       "originalSymbol": "NEXO",
       "symbol": "NEXO",
       "chain": "ethereum",
@@ -787,6 +875,7 @@
     },
     {
       "id": "aerodrome-finance",
+      "rank": 88,
       "originalSymbol": "AERO",
       "symbol": "AERO",
       "chain": "base",
@@ -796,6 +885,7 @@
     },
     {
       "id": "lighter",
+      "rank": 89,
       "originalSymbol": "LIT",
       "symbol": "LIT",
       "chain": "ethereum",
@@ -805,6 +895,7 @@
     },
     {
       "id": "layerzero",
+      "rank": 90,
       "originalSymbol": "ZRO",
       "symbol": "ZRO",
       "chain": "ethereum",
@@ -814,6 +905,7 @@
     },
     {
       "id": "gho",
+      "rank": 91,
       "originalSymbol": "GHO",
       "symbol": "GHO",
       "chain": "ethereum",
@@ -823,15 +915,17 @@
     },
     {
       "id": "pearl-2",
+      "rank": 92,
       "originalSymbol": "PRL",
       "symbol": "PRL",
       "chain": null,
       "address": null,
       "url": null,
-      "status": "contract-unavailable"
+      "status": "pending-verification"
     },
     {
       "id": "pancakeswap-token",
+      "rank": 93,
       "originalSymbol": "CAKE",
       "symbol": "CAKE",
       "chain": "ethereum",
@@ -841,6 +935,7 @@
     },
     {
       "id": "aptos",
+      "rank": 94,
       "originalSymbol": "APT",
       "symbol": "APT",
       "chain": "aptos",
@@ -850,6 +945,7 @@
     },
     {
       "id": "akedo",
+      "rank": 95,
       "originalSymbol": "AKE",
       "symbol": "AKE",
       "chain": "bsc",
@@ -859,15 +955,17 @@
     },
     {
       "id": "blockstack",
+      "rank": 96,
       "originalSymbol": "STX",
-      "symbol": "STX",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "wSTX",
+      "chain": "stacks",
+      "address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx",
+      "url": "./?coin=SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.wstx&network=stacks",
+      "status": "contract-linked"
     },
     {
       "id": "stable-2",
+      "rank": 97,
       "originalSymbol": "STABLE",
       "symbol": "STABLE",
       "chain": "bsc",
@@ -877,15 +975,17 @@
     },
     {
       "id": "xdce-crowd-sale",
+      "rank": 98,
       "originalSymbol": "XDC",
-      "symbol": "XDC",
-      "chain": null,
-      "address": null,
-      "url": null,
-      "status": "contract-unavailable"
+      "symbol": "WXDC",
+      "chain": "xdc",
+      "address": "0x951857744785e80e2de051c32ee7b25f9c458c42",
+      "url": "./?coin=0x951857744785e80e2de051c32ee7b25f9c458c42&network=xdc",
+      "status": "contract-linked"
     },
     {
       "id": "midnight-3",
+      "rank": 99,
       "originalSymbol": "NIGHT",
       "symbol": "NIGHT",
       "chain": "bsc",
@@ -895,6 +995,7 @@
     },
     {
       "id": "eutbl",
+      "rank": 100,
       "originalSymbol": "EUTBL",
       "symbol": "EUTBL",
       "chain": "ethereum",

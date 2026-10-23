@@ -16,7 +16,7 @@ fallbacks. The main instrument can still open explicitly selected native markets
 - Cards without a verified contract have no href and show CONTRACT UNAVAILABLE.
 - Named verified identifiers, including `wrap.near`, use exact token discovery.
 
-`collectible-ca-links.json` records all 100 slots: 86 contract links and 14 pending
+`collectible-ca-links.json` records all 100 slots: 94 contract links and 6 pending
 at this catalogue revision. The 100-coin market-cap order is unchanged.
 
 ## Capture integration
@@ -31,3 +31,16 @@ The user explicitly approved the production backend update. The exact-identity
 allowlist was deployed on 2026-10-23 (Worker version
 `2fe6a17c-3d68-401e-928a-76e3b2387080`) before publishing the matching
 workflow and catalogue updates.
+
+## Follow-up verification and marketplace repair
+
+See `new-contract-verification-2026-10-23.json` for the eight newly verified
+identities and source-backed reasons for the six remaining entries. Verification
+means contract identity, not a guarantee of bridge backing, safety, or available
+market observations. No native artwork or metrics are substituted for wrappers.
+
+The gallery rendering regression was an update-before-append error: the name
+node was queried before it existed. The offline gallery check renders all 100
+cards and asserts 94 exact contract links. The address-copy fixture now provides
+the DOM methods used by the current control. Full workspace checks pass
+(198 passed, 2 intentionally skipped); browser control was not used.

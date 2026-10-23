@@ -1,4 +1,4 @@
-import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=433';
+import {isTokenIdentifier,rankCoinMatches} from './coin-search.js?v=434';
 import {fetchGecko} from './gecko.js?v=277';
 import {geckoPoolMarket} from './trending.js?v=345';
 
