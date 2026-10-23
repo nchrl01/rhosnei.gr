@@ -795,7 +795,7 @@ body.advanced-view #advanced-panel{grid-template-rows:1fr;opacity:1;visibility:v
 body.advanced-view #advanced-panel>.advanced-panel-content{transform:translateY(0);transition:transform 320ms cubic-bezier(.2,0,0,1)}
 @media(prefers-reduced-motion:reduce){#advanced-panel,#advanced-panel>.advanced-panel-content,body.advanced-view #advanced-panel,body.advanced-view #advanced-panel>.advanced-panel-content{transition:none;transform:none}}
 /* Interface labels use one case; coin names, addresses and values retain theirs. */
-:is(#advanced-view,.advanced-group h3,.advanced-group dt,#advanced-market-source h3,#chain,#mode,#history-loading,.coin-live-readings small,.chart-measure,#tick-position,.transport-readout,#transport-status,.coin-collection-status h3,.coin-collection-actions a,.coin-collection-actions button,.playback-modes button,.replay-actions button,.replay-speed-select){text-transform:uppercase}
+:is(#advanced-view,.advanced-group h3,.advanced-group dt,#advanced-market-source h3,#chain,#mode,#history-loading,.coin-live-readings small,.chart-measure,#tick-position,.transport-readout,#transport-status,.playback-modes button,.replay-actions button,.replay-speed-select){text-transform:uppercase}
 
 #advanced-panel,#advanced-panel .advanced-panel-content,#advanced-readings,.advanced-group{background:#000!important}
 button.coin-address:not(:disabled):hover,button.coin-address{background:transparent!important;text-decoration:none;box-shadow:none}
