@@ -1,6 +1,6 @@
-import {isTokenIdentifier} from './coin-identifiers.js?v=442';
-import {NATIVE_CONTRACT_REFERENCES} from './native-contracts.js?v=442';
-import {compareCoinNetworks} from './coin-network-choice.js?v=442';
+import {isTokenIdentifier} from './coin-identifiers.js?v=443';
+import {NATIVE_CONTRACT_REFERENCES} from './native-contracts.js?v=443';
+import {compareCoinNetworks,supportedCoinNetwork} from './coin-network-choice.js?v=443';
 const key=(chain,address)=>chain+':'+(/^0x[\da-f]{40}$/i.test(address||'')?address.toLowerCase():address);
 export const collectibleKey=key;
 const contractIdentifier=address=>isTokenIdentifier(address)&&!/^0x(?:0{40}|e{40})$/i.test(address)&&address!=='EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c';
@@ -31,7 +31,7 @@ export function collectiblePreview(coin,network='all'){
 
 // Keep ranking data intact while filling Genesis slots with contract-linked coins.
 export function genesisCollectibles(coins,limit=100){
- return coins.filter(coin=>coin.top1000&&collectiblePreview(coin).selection)
+ return coins.filter(coin=>{const selection=collectiblePreview(coin).selection;return coin.top1000&&selection&&supportedCoinNetwork(selection,selection);})
   .sort((a,b)=>(b.marketCap||0)-(a.marketCap||0)||(a.catalogueRank||Infinity)-(b.catalogueRank||Infinity))
   .slice(0,limit);
 }

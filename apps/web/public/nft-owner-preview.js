@@ -1,4 +1,4 @@
-import {getWalletAccount,subscribeWalletAccount} from './wallet-session.js?v=442';
+import {getWalletAccount,subscribeWalletAccount} from './wallet-session.js?v=443';
 
 const ADDRESS=/^0x[0-9a-f]{40}$/i,ZERO=/^0x0{40}$/i;
 const canonical=value=>typeof value==='string'?(ADDRESS.test(value)?value.toLowerCase():value):'';
