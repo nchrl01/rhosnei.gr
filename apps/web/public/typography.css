@@ -7,3 +7,6 @@ html body,html body *,html body *::before,html body *::after{font-family:var(--f
 /* Uppercase interface copy; typed queries and contract addresses keep their case. */
 body{text-transform:uppercase}
 input,textarea,.coin-address,.tokenize-address{ text-transform:none }
+
+/* Informational pages retain natural casing, including their shared navigation. */
+body:is(.about-page,.help-page,.report-page){--font-family:UnifontText,"Noto Sans",sans-serif;text-transform:none}
