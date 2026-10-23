@@ -1,3 +1,4 @@
+import {xdcTokenSample} from './token-rpc-sample.js';
 import {captureIdentity} from './coin-captures.js';
 const TTL=15*60000,MAX_AGE=60*60000,DAILY_CALLS=1000;
 const ALIASES={eth:'ethereum',polygon_pos:'polygon'};
@@ -19,7 +20,7 @@ export class HolderBalanceRelay{
  async get(url){
   const network=ALIASES[url.searchParams.get('network')]||url.searchParams.get('network'),input=url.searchParams.get('address');
   const identity=captureIdentity(network,input);
-  if(!identity||!CHAINS[network]||!ADDRESS.test(input||''))return {state:'unsupported-network',records:[],totalHolders:null};
+  if(!identity||(!CHAINS[network]&&network!=='xdc')||!ADDRESS.test(input||''))return {state:'unsupported-network',records:[],totalHolders:null};
   const address=input.toLowerCase(),key=identity.key,now=Date.now();
   const saved=this.sql.exec('SELECT data,next_at FROM shared_holder_samples WHERE key=?',key).toArray()[0];
   const cached=saved?JSON.parse(saved.data):null;
@@ -39,6 +40,10 @@ export class HolderBalanceRelay{
   const save=data=>{this.sql.exec('INSERT OR REPLACE INTO shared_holder_samples(key,data,next_at) VALUES(?,?,?)',key,JSON.stringify(data),data.nextAt);return data;};
   let checks={};
   const failed=(state,nextAt,reason)=>save(cached?.records?.length&&Date.now()-cached.fetchedAt<MAX_AGE?{...cached,state:'delayed',nextAt,reason,checks}:{...base,state,nextAt,reason,checks});
+  if(network==='xdc'){
+   try{return save({...await xdcTokenSample(address,{reserve:()=>this.reserveCalls(Date.now())}),nextAt:Date.now()+TTL});}
+   catch(error){return failed('unavailable',Date.now()+2*60000,/^(rpc-[a-z0-9-]+|daily-budget-exhausted)$/.test(error.reason||'')?error.reason:'rpc-provider-unavailable');}
+  }
   if(!this.env.BLOCKSCOUT_API_KEY)return failed('unavailable',now+5*60000,'missing-configuration');
   try{
    const read=async suffix=>{

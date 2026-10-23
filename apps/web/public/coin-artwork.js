@@ -1,4 +1,4 @@
-import {loadCoinCatalogue} from './coin-catalogue.js?v=436';
+import {loadCoinCatalogue} from './coin-catalogue.js?v=437';
 const aliases={eth:'ethereum',polygon_pos:'polygon',avax:'avalanche',ftm:'fantom',cro:'cronos'};
 const network=value=>aliases[value]||value;
 const address=value=>/^0x[\da-f]{40}$/i.test(value||'')?value.toLowerCase():value;

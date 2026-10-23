@@ -1,5 +1,5 @@
 import {createNativeHolders} from './native-holders.js?v=359';
-import {createHolderBalances} from './holder-balances.js?v=350';
+import {createHolderBalances} from './holder-balances.js?v=437';
 import {fetchGoPlusCount} from './holder-count-providers.js?v=350';
 // Free, delayed holder snapshots. These are wallets, not people or viewers.
 import {createHolderClusters} from './holder-clusters.js?v=168';
@@ -20,11 +20,12 @@ async function browserCount(network,address,signal){
 }
 export function holderCountReadout(info={},historical=false){
  const available=Number.isSafeInteger(info.holders)&&info.holders>=0;
- const label=info.native?'ADDRESS SAMPLE':historical?'HOLDERS · LATEST':'HOLDERS';
- const value=!available&&info.native&&info.holdings?.weight>0?info.holdings.records.length.toLocaleString('en')+' sampled':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
+ const sampled=!available&&info.holdings?.weight>0&&info.holdings.records?.length;
+ const label=info.native?'ADDRESS SAMPLE':sampled?(historical?'HOLDER SAMPLE · LATEST':'HOLDER SAMPLE'):historical?'HOLDERS · LATEST':'HOLDERS';
+ const value=sampled?info.holdings.records.length.toLocaleString('en')+' sampled':available?(info.approximate?'≈ ':'')+info.holders.toLocaleString('en'):'Waiting';
  const reported=info.countAt?' · reported '+new Date(info.countAt).toLocaleString():' · snapshot time unavailable';
  const title=info.native?'Native address balances · '+(info.holdings?.source||'provider')+' · total funded-address count unavailable'+(info.holdings?.scope==='transparent-addresses-only'?' · transparent balances only':info.holdings?.scope==='public-addresses-excludes-MWEB'?' · excludes private MWEB balances':''):available?'Total token-holder wallets · '+(info.source||'provider')+' snapshot'+reported+(['delayed','expired'].includes(info.state)?' · latest available; updates delayed':'')
-  :'Waiting for holder data';
+  :sampled?'Total holder count unavailable':'Waiting for holder data';
  const h=info.holdings;const coverage=!historical&&h?.weight>0?' · Visual: '+h.records.length.toLocaleString('en')+' observed balances · '+h.source+(h.complete?' (complete indexed list)':h.truncated?' (10,000 display limit)':h.state==='loading'?' (loading more)':' (partial sample)'):historical?' · Historical balances unavailable':' · Individual balances unavailable';
  return {label,value,title:title+coverage};
 }
