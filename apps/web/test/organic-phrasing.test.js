@@ -1,11 +1,9 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
+import {readFile} from 'node:fs/promises';
 import {phraseArrangement,noteExpression} from '../public/phrase-arrangement.js';
 import {composeMarketBar,createCompositionTimeline} from '../public/market-composition.js';
 import {arpRhythm} from '../public/arp-rhythm.js';
 import {pianoHarmony} from '../public/music-context.js';
-import {EARTHBOUND_PRESETS} from '../public/earthbound-instruments.js';
-import {GB_INSTRUMENTS} from '../public/gameboy-instruments.js';
-import {renderGameBoySample} from '../../../scripts/render-gameboy.mjs';
 
 const seed=1917;
 const context={active:true,cap:100000,music:{tempo:100,intensity:.7,activity:.8,group:'up',character:'serene'}};
@@ -101,64 +99,104 @@ describe('organic score phrasing',()=>{
 });
 
 function audioContextFixture(){
- const sources=[];
+ const sources=[],processors=[],modules=[];
  const parameter=(value=0)=>({value,setTargetAtTime(value){this.value=value;},setValueAtTime(value){this.value=value;},linearRampToValueAtTime(value){this.value=value;},exponentialRampToValueAtTime(value){this.value=value;},cancelAndHoldAtTime(){},cancelScheduledValues(){}});
  const node=()=>({connect(){},disconnect(){}});
  const ctx={
-  state:'running',sampleRate:1000,get currentTime(){return Date.now()/1000;},
+  state:'running',sampleRate:48000,get currentTime(){return Date.now()/1000;},
+  audioWorklet:{addModule:vi.fn(async url=>{modules.push(String(url));})},
   createGain:()=>({...node(),gain:parameter(1)}),
-  createBiquadFilter:()=>({...node(),frequency:parameter(1000),Q:parameter(1)}),
-  createConvolver:()=>({...node(),buffer:null}),
-  createDelay:()=>({...node(),delayTime:parameter()}),
-  createStereoPanner:()=>({...node(),pan:parameter()}),
-  createBuffer:(channels,length,sampleRate=1000)=>({duration:length/sampleRate,length,sampleRate,numberOfChannels:channels,getChannelData:()=>new Float32Array(length)}),
-  decodeAudioData:async()=>({duration:4}),
-  createBufferSource:()=>{const source={...node(),playbackRate:parameter(1),start(time,offset){this.startAt=time;this.offset=offset;sources.push(this);},stop(time){this.stopAt=time;}};return source;},
  };
- return {ctx,sources};
+ // Exercise the real score, rack and register compiler. This fixture replaces
+ // only the browser worklet boundary, retaining frame timing, channel steals,
+ // generation resets and cancellation semantics for transport assertions.
+ vi.stubGlobal('AudioWorkletNode',class{
+  constructor(context,name,options){
+   this.context=context;this.name=name;this.options=options;this.messages=[];
+   this.generation=options.processorOptions.generation;processors.push(this);
+   this.port={onmessage:null,postMessage:message=>{
+    this.messages.push(message);
+    const mine=sources.filter(source=>source.processor===this&&!source.cancelled);
+    if(message.type==='reset'||message.type==='close'){
+     for(const source of mine){
+      if(source.startAt>=ctx.currentTime)source.cancelled=true;
+      source.stopAt=Math.min(source.stopAt,ctx.currentTime);
+     }
+     this.generation=message.generation;
+    }else if(message.generation===this.generation&&message.type==='schedule'){
+     const event=message.event,startAt=event.startFrame/ctx.sampleRate,stopAt=event.endFrame/ctx.sampleRate;
+     for(const source of mine)if(source.channel===event.channel&&source.startAt<=startAt&&source.stopAt>startAt)source.stopAt=startAt;
+     sources.push({...event,startAt,stopAt,processor:this,generation:message.generation,cancelled:false});
+    }else if(message.generation===this.generation&&message.type==='cancelAfter'){
+     for(const source of mine)if(source.startFrame>=message.frame&&(!message.drumsOnly||source.category==='drum'))source.cancelled=true;
+    }else if(message.generation===this.generation&&message.type==='cancelVoice'){
+     for(const source of mine)if(source.id===message.id){
+      const at=message.frame/ctx.sampleRate;
+      if(at<=ctx.currentTime||at<=source.startAt)source.cancelled=true;
+      source.stopAt=Math.min(source.stopAt,at);
+     }
+    }
+   }};
+  }
+  connect(){}
+  disconnect(){}
+ });
+ return {ctx,sources,processors,modules};
 }
 
 async function pianoFixture(){
  vi.useFakeTimers();vi.setSystemTime(0);vi.resetModules();
- const entries=EARTHBOUND_PRESETS.map(preset=>({preset,file:`${preset}.wav`,midi:preset>=145&&preset<=146?36:60,velocity:64,trim:1,loop:true,loopStart:.1,loopEnd:3}));
- vi.stubGlobal('fetch',vi.fn(async path=>({ok:true,json:async()=>({files:entries.filter(entry=>String(path).includes('gameboy')?![145,146].includes(entry.preset):[145,146].includes(entry.preset))}),arrayBuffer:async()=>{if(!String(path).includes('gameboy/'))return new ArrayBuffer(8);const pcm=renderGameBoySample(GB_INSTRUMENTS[0],60).bytes;return pcm.buffer.slice(pcm.byteOffset,pcm.byteOffset+pcm.byteLength);}})));
+ const index=await readFile(new URL('../public/midi-originality-index.bin',import.meta.url));
+ const {installOriginalityIndex}=await import('../public/midi-originality.js?v=455');
+ await installOriginalityIndex(index);
+ vi.stubGlobal('fetch',vi.fn(()=>{throw Error('The installed index and register-driven host require no sample fetches');}));
  const {createTradePiano}=await import('../public/trade-piano.js');
- const fixture=audioContextFixture();fixture.piano=await createTradePiano(fixture.ctx,fixture.ctx.createGain(),{initialSeed:seed});return fixture;
+ const {marketChipSignal}=await import('../public/market-chip-score.js?v=469');
+ const {chipEnsembleArrangement}=await import('../public/chip-ensemble-arrangement.js?v=469');
+ const fixture=audioContextFixture();
+ fixture.arrangementAt=beat=>chipEnsembleArrangement(seed,beat,marketChipSignal(context));
+ fixture.piano=await createTradePiano(fixture.ctx,fixture.ctx.createGain(),{initialSeed:seed});return fixture;
 }
 
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();vi.unstubAllGlobals();});
 
-describe('shared piano arrangement clock',()=>{
- it('returns neutral state while stopped, disabled, or closed, and never changes time when read',async()=>{
-  const {piano}=await pianoFixture();
-  const neutral=()=>expect(piano.arrangement()).toMatchObject({active:false,rest:false,phraseGain:1,layers:{piano:1,envion:1,data:1},secondsUntilRest:Infinity});
-  piano.setTimeline(segments);piano.seekTimeline(createCompositionTimeline(segments,50).atBeat(15.5),50);neutral();
+describe('shared chip arrangement clock',()=>{
+ it('stays inactive while stopped, disabled, or closed, and never changes time when read',async()=>{
+  const {piano,sources}=await pianoFixture();
+  const inactive=()=>expect(piano.arrangement().active).toBe(false);
+  piano.setTimeline(segments);piano.seekTimeline(createCompositionTimeline(segments,50).atBeat(15.5),50);inactive();
   piano.setRunning(true);
-  const first=piano.arrangement();expect(first.active).toBe(true);expect(first.rest).toBe(true);
+  const first=piano.arrangement();expect(first.active).toBe(false);expect(first.rest).toBe(true);
   for(let i=0;i<10;i++)expect(piano.arrangement()).toEqual(first);
-  piano.setEnabled(false);neutral();piano.setEnabled(true);
+  expect(sources).toHaveLength(0);
+  piano.setEnabled(false);inactive();piano.setEnabled(true);
   expect(piano.arrangement()).toEqual(first);
-  piano.setRunning(false);neutral();piano.close();neutral();
+  piano.setRunning(false);inactive();piano.close();inactive();
+  vi.advanceTimersByTime(1000);expect(sources).toHaveLength(0);
  });
 
  it('uses replay timing through a 50× seek and does not schedule attacks or held notes into shared rests',async()=>{
-  const {piano,sources}=await pianoFixture(),rate=50,timeline=createCompositionTimeline(segments,rate);
-  const breath=phraseArrangement(seed,12),at=timeline.atBeat(breath.restStartBeat-.2);
+  const {piano,sources,arrangementAt}=await pianoFixture(),rate=50,timeline=createCompositionTimeline(segments,rate);
+  const breath=arrangementAt(12),at=timeline.atBeat(12);
   piano.setTimeline(segments);piano.seekTimeline(at,rate);piano.setRunning(true);
   expect(piano.arrangement().secondsUntilRest).toBeCloseTo((timeline.atBeat(breath.restStartBeat)-at)/1000/rate,10);
-  vi.advanceTimersByTime(650);
-  expect(sources.length).toBeGreaterThan(0);
-  for(const source of sources){
-   const beat=timeline.beatAt(at+source.startAt*1000*rate),state=phraseArrangement(seed,beat);
+  const untilRestEnd=(timeline.atBeat(breath.restEndBeat)-at)/1000/rate;
+  vi.advanceTimersByTime(Math.ceil(untilRestEnd*1000)+50);
+  const audible=sources.filter(source=>!source.cancelled);
+  expect(audible.length).toBeGreaterThan(0);
+  for(const source of audible){
+   const beat=timeline.beatAt(at+source.startAt*1000*rate),state=arrangementAt(beat);
    expect(state.rest).toBe(false);
    const end=timeline.beatAt(at+source.stopAt*1000*rate);
-   expect(end).toBeLessThanOrEqual(state.restStartBeat+1e-8);
+   // Register commands round upward to an output sample boundary.
+   const sampleBeat=200/60/48000;
+   expect(end).toBeLessThanOrEqual(state.restStartBeat+sampleBeat);
   }
   const before=sources.length,seekAt=timeline.atBeat(31.5);
   piano.seekTimeline(seekAt,rate);expect(piano.arrangement().rest).toBe(true);
   const seekClock=Date.now()/1000;
   vi.advanceTimersByTime(25);
-  for(const source of sources.slice(before))expect(phraseArrangement(seed,timeline.beatAt(seekAt+(source.startAt-seekClock)*1000*rate)).rest).toBe(false);
+  for(const source of sources.slice(before).filter(source=>!source.cancelled))expect(arrangementAt(timeline.beatAt(seekAt+(source.startAt-seekClock)*1000*rate)).rest).toBe(false);
   piano.close();
  });
 
@@ -166,15 +204,29 @@ describe('shared piano arrangement clock',()=>{
   const {piano,sources}=await pianoFixture();piano.configure({phraseLength:8});piano.setRunning(true);
   piano.trade({kind:'swap',id:'one',priceUsd:10,receivedAt:0},context.cap,context.music);
   await vi.advanceTimersByTimeAsync(4700);expect(piano.arrangement().active).toBe(true);expect(sources.length).toBeGreaterThan(0);
-  await vi.advanceTimersByTimeAsync(300);expect(piano.arrangement().active).toBe(false);const count=sources.length;
+  const expiresAt=6+context.music.activity*10;
+  expect(sources.filter(source=>!source.cancelled).every(source=>source.startAt<expiresAt)).toBe(true);
+  await vi.advanceTimersByTimeAsync(expiresAt*1000-4700+50);expect(piano.arrangement().active).toBe(false);const count=sources.length;
   await vi.advanceTimersByTimeAsync(500);expect(sources).toHaveLength(count);piano.close();
  });
  it('changes GB timbre without restarting the market phrase clock',async()=>{
-  const {piano}=await pianoFixture();piano.setRunning(true);
+  const {piano,sources,modules,processors}=await pianoFixture();piano.setRunning(true);
   piano.trade({kind:'swap',id:'one',priceUsd:10,receivedAt:0},context.cap,context.music);
   await vi.advanceTimersByTimeAsync(1000);const before=piano.arrangement().beat;
-  piano.configure({preset:13});await vi.advanceTimersByTimeAsync(0);
-  expect(piano.arrangement().beat).toBeCloseTo(before,10);expect(piano.snapshot().loading).toBe(false);piano.close();
+  const beforeMessages=sources.length;piano.configure({chipDuty:0});await vi.advanceTimersByTimeAsync(0);
+  expect(piano.arrangement().beat).toBeCloseTo(before,10);expect(piano.snapshot().loading).toBe(false);
+  await vi.advanceTimersByTimeAsync(4000);
+  const pulses=sources.slice(beforeMessages).filter(source=>!source.cancelled&&source.channel<2);
+  expect(pulses.length).toBeGreaterThan(0);
+  for(const source of pulses){
+   const duty=source.writes.find(([address])=>address===(source.channel===0?0xff11:0xff16));
+   expect(duty).toBeTruthy();expect(duty[1]>>>6).toBe(0);
+   expect(source.writes.every(([address,value])=>Number.isInteger(address)&&address>=0xff10&&address<=0xff3f&&Number.isInteger(value)&&value>=0&&value<=255)).toBe(true);
+  }
+  expect(modules).toHaveLength(1);expect(modules[0]).toContain('gb-apu-worklet.js');
+  expect(processors).toHaveLength(2);
+  expect(piano.snapshot().chip).toMatchObject({chipCount:2,channelCount:8});
+  expect(fetch).not.toHaveBeenCalled();piano.close();
  });
  it('keeps genuine activity gating independent of phrase dynamics',async()=>{
   const {piano,sources}=await pianoFixture();

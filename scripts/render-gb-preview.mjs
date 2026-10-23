@@ -1,7 +1,9 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
 import {composeChipBar,chipHash} from '../apps/web/public/market-chip-score.js';
-import {renderGameBoyScore} from '../apps/web/public/gb-apu-instrument.js';
+import {renderGameBoyRack} from '../apps/web/public/gb-chip-rack.js';
+
+import {installOriginalityIndex} from '../apps/web/public/midi-originality.js?v=455';
 
 // Render public Coinbase trade observations through the production score and
 // APU. This is a reconstruction, not a recording of a prior browser session.
@@ -36,7 +38,8 @@ for(let bar=0;time<seconds;bar++){
  }
  time+=4*beat;
 }
-const {left,right}=renderGameBoyScore(notes,{sampleRate,seconds,model:'dmg'}),frames=left.length;
+await installOriginalityIndex(await readFile(new URL('../apps/web/public/midi-originality-index.bin',import.meta.url)));
+const {left,right,phrasing}=renderGameBoyRack(notes,{sampleRate,seconds,model:'dmg'}),frames=left.length;
 const output=Buffer.alloc(44+frames*4);
 output.write('RIFF',0);output.writeUInt32LE(output.length-8,4);output.write('WAVEfmt ',8);
 output.writeUInt32LE(16,16);output.writeUInt16LE(1,20);output.writeUInt16LE(2,22);output.writeUInt32LE(sampleRate,24);
@@ -55,7 +58,7 @@ const path=resolve(args['--out']);await mkdir(dirname(path),{recursive:true});aw
 const metadata={coin,source:'https://api.exchange.coinbase.com/products/'+coin+'/trades',
  type:'Deterministic reconstruction from public trade observations; not a historical audio recording',
  from:new Date(origin).toISOString(),to:new Date(end).toISOString(),seconds,sampleRate,seed,events:notes.length,
- channels:[...new Set(notes.map(event=>event.channel+1))].sort(),peak,rms:Math.sqrt(power/(frames*2)),
- renderIdentity:chipHash(seed,notes.length).toString(16),observations};
+ chips:2,channels:[...new Set(notes.map(event=>(event.chip||0)*4+event.channel+1))].sort((a,b)=>a-b),roles:[...new Set(notes.map(event=>event.kind))],peak,rms:Math.sqrt(power/(frames*2)),
+ renderIdentity:chipHash(seed,notes.length).toString(16),phrasing,observations};
 await writeFile(path.replace(/\.wav$/i,'')+'.json',JSON.stringify(metadata,null,2)+'\n');
 console.log(JSON.stringify({path,...metadata,observations:observations.length},null,2));

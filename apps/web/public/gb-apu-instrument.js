@@ -1,6 +1,7 @@
 import {GB_INSTRUMENTS} from './gameboy-instruments.js?v=451';
 import {GameBoyApu} from './mame-gb-apu.js?v=468';
 import {silenceGameBoyChannel} from './gb-apu-silence.js?v=468';
+import {createMelodyOriginalityGuard, prepareLearnedPhrases} from './learned-market-phrase.js?v=469';
 
 // Score-to-register driver for one four-channel APU. Envelopes, pulse sweep,
 // wave output and noise all execute in the hardware model, never extra synths.
@@ -16,6 +17,17 @@ const periodFor = (midi, wave=false) => integer(2048 - (wave ? 65536 : 131072) /
 const MIDI_CHANNEL = kind => kind === 'bass' ? 2 : ['chord', 'harmony', 'interlock'].includes(kind) ? 1 : 0;
 const WAVE_PRESETS = [31, 30, 35, 139];
 const DEFAULTS = Object.freeze({preset:36, chipDuty:2, chipEnvelope:2, chipNoiseShift:3, chipNoiseWidth:0, chipWave:0, chipStereo:1, model:'dmg'});
+
+// Aggregate MIDI phrasing is optional: chip percussion and other original
+// voices can start while its source-melody membership index is loading.
+export const prepareChipPhrasing = () => prepareLearnedPhrases();
+const isLearnedLead = event => Array.isArray(event?.expression?.allowedPitches);
+
+function screenLearnedLead(event, guard) {
+ if (!isLearnedLead(event)) return event;
+ const midi = guard.choose(event.midi, event.expression.allowedPitches);
+ return midi === null ? null : {...event, midi};
+}
 
 function waveTable(wave, preset) {
  if ((Array.isArray(wave) || ArrayBuffer.isView(wave)) && wave.length === 32) return Array.from(wave, value => integer(value, 0, 0, 15));
@@ -122,15 +134,38 @@ export function renderGameBoyScore(events, {sampleRate=48000, seconds=20, model=
  const apu = new GameBoyApu({sampleRate, model:String(model).toLowerCase()});
  apu.write(0xff26, 0x80); apu.write(0xff24, 0x77); apu.write(0xff25, 0xff);
  const queue = [], records = new Map(), owners = [null, null, null, null];
- let order = 0;
+ const phrasing = createMelodyOriginalityGuard();
+ // Final channel allocation precedes screening. A pair of attacks in the
+ // same output sample cannot both sound; screen only the surviving attack.
+ const starts = new Map();
  for (let id = 0; id < events.length; id++) {
   const event = events[id];
   if (!event || !Number.isFinite(event.at) || event.at < 0 || event.at >= seconds) continue;
   const startFrame = Math.ceil(event.at * sampleRate);
   const endFrame = Math.min(frames, Math.ceil((event.at + number(event.duration, event.drum ? .12 : .15)) * sampleRate));
   if (endFrame <= startFrame) continue;
-  const compiled = compileGameBoyEvent({...event, duration:(endFrame - startFrame) / sampleRate}, settings, sampleRate);
+  const adjusted = {...event, duration:(endFrame - startFrame) / sampleRate};
+  const compiled = compileGameBoyEvent(adjusted, settings, sampleRate);
   if (!compiled) continue;
+  const key = `${startFrame}:${compiled.channel}`;
+  const candidates = starts.get(key) || [];
+  candidates.push({id, event:adjusted, compiled, startFrame, endFrame});
+  starts.set(key, candidates);
+ }
+ let order = 0;
+ const groups = [...starts.values()].sort((a, b) => a[0].startFrame - b[0].startFrame || a.at(-1).id - b.at(-1).id);
+ for (const candidates of groups) {
+  let accepted = null;
+  for (let index = candidates.length - 1; index >= 0; index--) {
+   const candidate = candidates[index];
+   const screened = screenLearnedLead(candidate.event, phrasing);
+   if (!screened) continue;
+   const compiled = screened === candidate.event ? candidate.compiled : compileGameBoyEvent(screened, settings, sampleRate);
+   if (compiled) { accepted = {...candidate, compiled}; break; }
+  }
+  if (!accepted) continue;
+  const {id, event, compiled, startFrame, endFrame} = accepted;
+  if (isLearnedLead(event)) phrasing.remember(compiled.midi, startFrame / sampleRate, id);
   records.set(id, compiled);
   queue.push({id, frame:startFrame, type:'on', priority:2, writes:compiled.writes, order:order++});
   for (const update of compiled.updates) if (startFrame + update.frame < endFrame) {
@@ -165,11 +200,12 @@ export function renderGameBoyScore(events, {sampleRate=48000, seconds=20, model=
   }
   apu.sample(stereo); left[frame] = stereo[0]; right[frame] = stereo[1];
  }
- return {left, right};
+ return {left, right, phrasing:phrasing.snapshot()};
 }
 
 export async function createGameBoyInstrument(ctx, destination, options={}) {
  if (!ctx?.audioWorklet || typeof AudioWorkletNode === 'undefined') throw new Error('This browser does not support the Game Boy audio engine');
+ void prepareChipPhrasing().catch(() => {});
  let loading = MODULES.get(ctx);
  if (!loading) {
   loading = ctx.audioWorklet.addModule(new URL('./gb-apu-worklet.js?v=468', import.meta.url));
@@ -187,6 +223,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
   processorOptions:{model:settings.model, generation},
  });
  const records = new Map();
+ const phrasing = createMelodyOriginalityGuard();
  node.connect(destination);
 
  function send(type, payload={}) {
@@ -196,10 +233,12 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
  node.port.onmessage = ({data}) => {
   if (!data || data.generation !== generation) return;
   if (data.type === 'ended' || data.type === 'rejected') {
+   if (data.type === 'rejected') phrasing.cancel(data.id);
    const record = records.get(data.id);
    if (record) {
     const beforeOnset = Number.isSafeInteger(data.frame) && data.frame <= record.startFrame;
     const cancelled = data.type === 'rejected' || data.reason === 'cancelled' || (data.reason === 'stolen' && beforeOnset);
+    if (cancelled && beforeOnset) phrasing.cancel(data.id);
     record.voice.cancelled ||= cancelled;
     record.voice.fading ||= cancelled;
     record.voice.ended = true;
@@ -214,6 +253,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
   error = 'Game Boy audio processor stopped';
   for (const record of records.values()) { record.voice.fading = true; record.voice.cancelled = true; }
   records.clear();
+  phrasing.reset();
  };
 
  function expire() {
@@ -237,8 +277,24 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
    if (record.channel === channel && record.startFrame > startFrame && record.startFrame < endFrame) endFrame = record.startFrame;
   }
   const start = startFrame / ctx.sampleRate, end = endFrame / ctx.sampleRate;
-  const compiled = compileGameBoyEvent({...event, duration:end - start}, overrides, ctx.sampleRate);
+  const adjusted = {...event, duration:end - start};
+  let compiled = compileGameBoyEvent(adjusted, overrides, ctx.sampleRate);
   if (!compiled) return null;
+  // Only the last owner of a sample can sound. Remove an unsounded prior
+  // lead before checking its replacement, but restore it if this one rests.
+  const replaced = [...records.values()].filter(record => record.channel === channel && record.startFrame === startFrame && record.learnedMidi !== null);
+  for (const record of replaced) phrasing.cancel(record.voice.id);
+  const screened = screenLearnedLead(adjusted, phrasing);
+  if (!screened) {
+   for (const record of replaced) phrasing.remember(record.learnedMidi, record.voice.start, record.voice.id);
+   return null;
+  }
+  if (screened !== adjusted) compiled = compileGameBoyEvent(screened, overrides, ctx.sampleRate);
+  if (!compiled) {
+   for (const record of replaced) phrasing.remember(record.learnedMidi, record.voice.start, record.voice.id);
+   return null;
+  }
+  for (const record of replaced) record.learnedMidi = null;
   const {midi, kind, category, writes, pan} = compiled;
   const updates = compiled.updates.map(update => ({frame:startFrame + update.frame, writes:update.writes})).filter(update => update.frame < endFrame);
   const id = `${generation}:${++serial}`;
@@ -246,7 +302,9 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
   for (const record of records.values()) {
    if (record.channel === channel && record.voice.start <= start && record.voice.end > start) record.voice.end = start;
   }
-  records.set(id, {voice, channel, startFrame, category});
+  const learnedMidi = isLearnedLead(event) ? midi : null;
+  records.set(id, {voice, channel, startFrame, category, learnedMidi});
+  if (learnedMidi !== null) phrasing.remember(midi, start, id);
   send('schedule', {event:{id, channel, startFrame, endFrame, writes, updates, category, pan}});
   return {time:start, midi, voice};
  }
@@ -267,6 +325,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
   const frame = frameAt(ctx, Math.max(0, when));
   record.voice.end = Math.min(record.voice.end, frame / ctx.sampleRate);
   if (when <= ctx.currentTime || when <= record.voice.start) {
+   if (frame <= record.startFrame || ctx.currentTime <= record.voice.start) phrasing.cancel(id);
    record.voice.fading = true;
    record.voice.cancelled = true;
    records.delete(id);
@@ -282,6 +341,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
     record.voice.fading = true;
     record.voice.cancelled = true;
     record.voice.end = Math.min(record.voice.end, ctx.currentTime);
+    if (record.voice.start >= ctx.currentTime) phrasing.cancel(id);
     records.delete(id);
    }
   }
@@ -292,6 +352,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
   if (closed) return;
   for (const record of records.values()) { record.voice.fading = true; record.voice.cancelled = true; record.voice.end = Math.min(record.voice.end, ctx.currentTime); }
   records.clear();
+  phrasing.reset();
   generation++;
   lastSnapshot = null;
   snapshotAt = -Infinity;
@@ -321,7 +382,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
    if (!closed && ctx.currentTime - snapshotAt >= .25) { snapshotAt = ctx.currentTime; send('snapshot'); }
    return {engine:'Game Boy APU', model:settings.model, settings:{...settings}, overrides:{...overrides}, error, pending:records.size,
     voices:[...records.values()].filter(record => !record.voice.fading && record.voice.start <= ctx.currentTime && record.voice.end > ctx.currentTime).length,
-    apu:lastSnapshot?.apu ?? null, rejected:lastSnapshot?.rejected ?? 0};
+    apu:lastSnapshot?.apu ?? null, rejected:lastSnapshot?.rejected ?? 0, phrasing:phrasing.snapshot()};
   },
   close() {
    if (closed) return;

@@ -1,4 +1,4 @@
-import {MIDI_PHRASE_MODEL} from './midi-phrase-model.js?v=455';
+import {MIDI_PHRASE_MODEL} from './midi-phrase-model.js?v=469';
 import {marketPhraseTone} from './market-phrase.js?v=453';
 import {loadOriginalityIndex,originalityIndexStatus,sourceMelodyMatch,MIDI_ORIGINALITY_INFO} from './midi-originality.js?v=455';
 

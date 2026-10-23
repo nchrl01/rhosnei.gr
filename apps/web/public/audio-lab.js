@@ -1,9 +1,9 @@
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=468';
+import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=469';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {createTradePiano} from './trade-piano.js?v=468';
-import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=468';
-import {marketChipSignal} from './market-chip-score.js?v=468';
+import {createTradePiano} from './trade-piano.js?v=469';
+import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=469';
+import {marketChipSignal} from './market-chip-score.js?v=469';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:[...pianoSpecs,...phraseSpecs,...drumSpecs,...chipSpecs]};
@@ -51,11 +51,11 @@ async function loadEngines(){
  if(loadJob)return loadJob;
  loadJob=(async()=>{
   if(piano)return;
-  setStatus('GB chip','Starting four channels…');
+  setStatus('GB chip','Starting eight channels…');
   try{
    const result=await createTradePiano(ctx,buses.earthbound,{initialSeed:state.market.seed,onVoice:event=>{$('last-note').textContent=(event.instrument||'GB chip')+' · '+(event.notes||[]).join(' / ')+' · '+(event.reason||'market packet');},onArpeggio:event=>{$('last-note').textContent='Pulse packet · MIDI '+event.midi;}});
    if(closed){result.close();return;}
-   piano=result;piano.reset(state.market.seed);piano.setMaster(1);piano.setRunning(running);applyAudio();setStatus('GB chip','Ready · every voice from one chip');
+   piano=result;piano.reset(state.market.seed);piano.setMaster(1);piano.setRunning(running);applyAudio();setStatus('GB chip','Ready · two Game Boy chips');
   }catch(error){setStatus('GB chip',error.message);throw error;}
  })();try{await loadJob;}finally{loadJob=null;if(!running&&!closed)stop();}
 }
@@ -75,7 +75,7 @@ async function start(){
   if(!ctx)setup();await unlockPlayback(ctx);running=true;lastTime=ctx.currentTime;nextTrade=elapsed;transport.gain.setTargetAtTime(1,ctx.currentTime,.04);
   piano?.setRunning(true);
   $('play').textContent='Pause audio';$('chord').disabled=false;$('trade').disabled=false;
-  void loadEngines().then(()=>{if(!closed&&running){nextTrade=elapsed;report('GB chip ready. Every tone, packet and noise voice uses the same four channels.');}}).catch(error=>{if(!closed){stop();report('GB chip could not start: '+error.message);}});
+  void loadEngines().then(()=>{if(!closed&&running){nextTrade=elapsed;report('GB ensemble ready. Every tone, packet and noise voice comes from the two Game Boy chips.');}}).catch(error=>{if(!closed){stop();report('GB chip could not start: '+error.message);}});
   applyAudio();
  }catch(error){stop();report(error.message);}finally{starting=false;$('play').disabled=false;}
 }
@@ -154,7 +154,7 @@ function pianoAuto(key){
 }
 function build(){
  $('controls').replaceChildren();paints=[];$('notes').value=state.notes;
- const mixer=section('01 / Mixer','Signal, texture and packets share one four-channel GB chip. Mute or solo their score roles; the channels are shared. Listening volume follows the chip.',true);
+ const mixer=section('01 / Mixer','Signal, texture and packets share two coordinated GB chips. Mute or solo their score roles; the channels are shared. Listening volume follows the chip.',true);
  addKnob(mixer,['master','Listening volume',0,1,.01],()=>state.master,v=>state.master=v);
  for(const spec of mixSpecs)direct(mixer,'mix',spec);
  const switches=document.createElement('div');switches.className='switches';mixer.append(switches);
@@ -162,7 +162,7 @@ function build(){
  const input=section('02 / Market + musical context','Simulated market observations control the same chip used on the homepage. Activity, price movement, volume and freshness shape the transmission. Send a packet to hear one observation; automatic trades follow the selected interval. Price change compounds the simulated price. Raw holder, liquidity and volume inputs are also available for connections in the combined lab.',true);
  for(const spec of marketSpecs)direct(input,'market',spec);
  const tradeSwitch=document.createElement('div');tradeSwitch.className='switches';input.append(tradeSwitch);switchButton(tradeSwitch,'Automatic trades',()=>state.autoTrades,v=>{state.autoTrades=v;nextTrade=elapsed;});
- const melodic=section('03 / Transmission score','Market observations shape a fractured machine signal: pitched packets, harmonic fragments, clipped pulses and deliberate gaps. Fracture, cycle span and gates change the shared score; every event competes for the same four chip channels.',true);
+ const melodic=section('03 / Transmission score','New motifs use the MIDI collection’s phrasing, with a shared harmonic base and room to breathe. Market observations shape the machine rhythms, accents and disruption. Every sound still comes from two Game Boy chips.',true);
  melodic.parentElement.id='market-phrase';
  for(const spec of [...phraseSpecs,...pianoSpecs]){const key=spec[0];addKnob(melodic,spec,()=>state.piano[key]??pianoAuto(key),v=>state.piano[key]=v,()=>delete state.piano[key],()=>Object.hasOwn(state.piano,key));}
  const pulseSwitch=document.createElement('div');pulseSwitch.className='switches';melodic.append(pulseSwitch);switchButton(pulseSwitch,'Pitched packets',()=>state.arpeggios,v=>state.arpeggios=v);

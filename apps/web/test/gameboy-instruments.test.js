@@ -46,22 +46,14 @@ describe('GB style instrument library',()=>{
    expect(buffer.sampleRate).toBe(48000);expect(buffer.duration).toBe(sample.loopEnd);
   }
  });
- it('preloads the GB bank through the real loader without requesting GeneralUser',async()=>{
-  const requests=[];
-  vi.stubGlobal('fetch',async path=>{
-   requests.push(String(path));
-   const file=new URL('../public/'+String(path).split('?')[0],import.meta.url);
-   const data=await readFile(file);
-   return {ok:true,json:async()=>JSON.parse(data.toString()),arrayBuffer:async()=>data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength)};
-  });
+ it('keeps the legacy preload entry point sample-free for the register-driven GB host',async()=>{
+  const fetch=vi.fn(()=>{throw Error('The Game Boy host must not request instrument samples');});
+  vi.stubGlobal('fetch',fetch);
   try{
    const {preloadPianoSamples}=await import('../public/trade-piano.js');
    const samples=await preloadPianoSamples(1917,13);
-   expect(samples.filter(item=>item.preset===13)).toHaveLength(5);
-   expect(samples.some(item=>item.preset===145)).toBe(true);
-   expect(samples.some(item=>item.preset===146)).toBe(true);
-   expect(requests.some(path=>path.includes('samples/gameboy/'))).toBe(true);
-   expect(requests.some(path=>path.includes('generaluser'))).toBe(false);
+   expect(samples).toEqual([]);
+   expect(fetch).not.toHaveBeenCalled();
   }finally{vi.unstubAllGlobals();}
  });
 });

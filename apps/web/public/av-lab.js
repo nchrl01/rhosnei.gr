@@ -1,6 +1,6 @@
 import {labVisualMappings,LAB_MAPPING_VERSION,UPDATED_TARGETS} from './lab-visual-mappings.js?v=3';
 import {createLabConnections} from './lab-connections.js?v=468';
-import {audioLab} from './audio-lab.js?v=468';
+import {audioLab} from './audio-lab.js?v=469';
 import {knob} from './lab-knob.js?v=1';
 import {createPixelBlastField,pixelBlastParameters} from './pixel-blast-field.js?v=276';
 import {advancePixelSurvival} from './pixel-blast-parameters.js?v=220';
@@ -31,7 +31,7 @@ function configureRoute(key,patch){const spec=specs.find(s=>s[0]===key);settings
 function section(title,note){const d=document.createElement('details');d.open=true;const h=document.createElement('summary');h.textContent=title;const p=document.createElement('p');p.className='group-note';p.textContent=note;const grid=document.createElement('div');grid.className='grid';d.append(h,p,grid);$('visual-controls').append(d);return grid;}
 function build(){
  $('visual-controls').replaceChildren();paints=[];
- const global=section('Shared context','The starter patch connects activity to visual flow and score fracture; cap to spacing, edge shrink and survival; holder concentration to mark variation; audio level to pixel presence; liquidity to chip texture level; motion to noise clock; and volume to packet level. Every sound uses the same four chip channels.');
+ const global=section('Shared context','The starter patch connects activity to visual flow and score fracture; cap to spacing, edge shrink and survival; holder concentration to mark variation; audio level to pixel presence; liquidity to chip texture level; motion to noise clock; and volume to packet level. Every sound comes from the two Game Boy chips.');
  knob(global,['reference','Reference cap · USD',1000,1e9,1000,100000,true],()=>settings.referenceCap,v=>settings.referenceCap=v,{paints,onChange:persist});
  knob(global,['wallet','Wallet size variation',0,1,.01],()=>settings.wallet,v=>settings.wallet=v,{paints,onChange:persist});
  const cycle=document.createElement('button');cycle.className='action';cycle.onclick=()=>{settings.cycles=!settings.cycles;rebuild();persist();};global.append(cycle);paints.push(()=>{cycle.textContent='White / black cycles · '+(settings.cycles?'on':'off');cycle.setAttribute('aria-pressed',settings.cycles);});

@@ -26,7 +26,7 @@ contract Deploy is Script {
   string memory id="deployment";
   vm.serializeUint(id,"chainId",block.chainid);vm.serializeAddress(id,"factory",address(factory));vm.serializeAddress(id,"vault",address(vault));
   vm.serializeAddress(id,"marketplace",address(market));vm.serializeAddress(id,"buyback",address(buyback));vm.serializeAddress(id,"upic",address(token));vm.serializeAddress(id,"router",address(router));
-  vm.serializeUint(id,"startBlock",start);vm.serializeString(id,"engineVersion","upic-nft-gb-v2");
+  vm.serializeUint(id,"startBlock",start);vm.serializeString(id,"engineVersion","upic-nft-gb-v3");
   string memory data=vm.serializeString(id,"mode",block.chainid==31337?"local":"testnet");
   vm.writeJson(data,string.concat("deployments/",vm.toString(block.chainid),".json"));
  }

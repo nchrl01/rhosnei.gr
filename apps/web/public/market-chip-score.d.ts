@@ -24,6 +24,7 @@ export interface ChipScoreEvent {
  kind:string;
  drum?:string;
  channel?:number;
+ chip?:number;
  seed?:number;
  expression?:Record<string,unknown>;
  parameters?:Record<string,unknown>;
@@ -40,3 +41,5 @@ export function chipHash(seed:number,value:number):number;
 export function marketChipSignal(context?:Record<string,unknown>):ChipSignal;
 export function chipSignalActive(signal:ChipSignal):boolean;
 export function composeChipBar(seed:number,bar:number,context?:Record<string,unknown>):ChipScorePlan;
+
+export function chipPhraseArrangement(seed:number,beat:number):{rest:boolean;restInBeats:number;restStartBeat:number;restEndBeat:number;phraseGain:number;layers:Record<string,number>};

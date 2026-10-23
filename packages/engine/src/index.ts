@@ -2,7 +2,7 @@ import {type ArtworkInput,type MarketFrame,ENGINE_VERSION,assertArtwork} from '@
 import {composeChipBar} from '../../../apps/web/public/market-chip-score.js';
 import {battlePattern,battlePatternFeed} from './legacy/earthbound-pattern.js';
 export {ENGINE_VERSION};
-export interface Note {at:number;midi?:number;duration:number;gain:number;kind:string;drum?:string;channel?:number;seed?:number;expression?:Record<string,unknown>;parameters?:Record<string,unknown>}
+export interface Note {at:number;midi?:number;duration:number;gain:number;kind:string;drum?:string;channel?:number;chip?:number;seed?:number;expression?:Record<string,unknown>;parameters?:Record<string,unknown>}
 export function componentSeed(seed:string,label:string){let value=2166136261;for(const c of seed+':'+label)value=Math.imul(value^c.charCodeAt(0),16777619);return value>>>0;}
 export function frameAt(input:ArtworkInput,t:number){const first=input.frames.reduce((a,b)=>a.at<=b.at?a:b),at=first.at+t*1000;return input.frames.reduce((prior,frame)=>frame.at<=at&&frame.at>=prior.at?frame:prior,first);}
 const unit=(value:number)=>Math.max(0,Math.min(1,value));
@@ -55,11 +55,11 @@ export function draw(canvas:HTMLCanvasElement,input:ArtworkInput,t:number){
  // Market motion stays separate from stage-dependent layer unlocks.
  if(frame.stale){ctx.font=Math.max(10,w/80)+'px monospace';ctx.fillText('cached market observation',step,h-step);}
 }
-type ChipRenderer={renderGameBoyScore(events:Note[],options:{sampleRate:number;seconds:number;settings?:Record<string,number>}):{left:Float32Array;right:Float32Array}};
+type ChipRenderer={prepareChipPhrasing:()=>Promise<{ready:boolean;error?:string|null}>;renderGameBoyRack(events:Note[],options:{sampleRate:number;seconds:number;settings?:Record<string,number>}):{left:Float32Array;right:Float32Array}};
 const chipModules=new Map<string,Promise<ChipRenderer>>();
 const chipRenders=new WeakMap<ArtworkInput,Map<string,Promise<{left:Float32Array;right:Float32Array}>>>();
 function chipModule(assetBase:string){
- const url=assetBase.replace(/\/$/,'')+'/gb-apu-instrument.js?v=468';
+ const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=469';
  let pending=chipModules.get(url);
  if(!pending){pending=import(/* @vite-ignore */ url).catch(error=>{chipModules.delete(url);throw error;});chipModules.set(url,pending!);}
  return pending!;
@@ -73,7 +73,7 @@ export async function schedule(ctx:BaseAudioContext,input:ArtworkInput,assetBase
   // The platform player updates its input object in place. Cache the captured
   // data, not just that object's identity, and bound retained generations.
   const frozen=JSON.parse(captured) as ArtworkInput;
-  pending=chipModule(assetBase).then(renderer=>renderer.renderGameBoyScore(score(frozen),{sampleRate:ctx.sampleRate,seconds:frozen.seconds})).catch(error=>{cache.delete(key);throw error;});
+  pending=chipModule(assetBase).then(async renderer=>{const phrasing=await renderer.prepareChipPhrasing();if(!phrasing.ready)throw Error(phrasing.error||'MIDI phrase data could not be prepared');return renderer.renderGameBoyRack(score(frozen),{sampleRate:ctx.sampleRate,seconds:frozen.seconds});}).catch(error=>{cache.delete(key);throw error;});
   if(cache.size>=2)cache.clear();cache.set(key,pending);
  }
  const rendered=await pending;

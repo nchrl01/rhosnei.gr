@@ -2,22 +2,24 @@
 
 Implementation record · 23 October 2026.
 
-The current local audio path uses one MAME-derived Game Boy APU. Signal, harmony, bass, texture and percussion all become register writes to its four channels. The browser and offline artwork renderer share the register compiler and sound core.
+The version 469 audio path uses two MAME-derived Game Boy APUs, four channels each. Lead, arpeggios, chords, bass, drone, texture and percussion become register writes to those eight slots. The browser and offline artwork renderer share the rack, register compiler and sound core.
 
 The host is a JavaScript adaptation of MAME's Game Boy sound device with explicit corrections informed by current Pan Docs. It is sound-only: it does not execute a Game Boy CPU or ROM. The score and market-to-register mapping remain UPIC's own implementation. MAME provenance does not establish exact MAME output or physical-hardware conformance.
 
-Source inspection, build and type checks completed. A 24-second stereo preview was rendered from 1,000 public Coinbase ETH-USD trade observations, using the shared composer and MAME-derived host. The selected window is 2026-10-23 20:26:51.401–20:27:15.401 UTC. Its 332 accepted events use all four channels; peak output is below 0.46 at the live 0.72 master gain, with finite samples throughout. This is a historical reconstruction, not a recorded live session. No subjective listening result or phone-performance result is claimed here.
+The raw single-chip version 468 was deployed at commit `a84fac4`. Version 469 adds a second instance of that unchanged four-channel core and restores pooled MIDI phrasing. Deployment status is recorded in the repository's Pages workflow.
 
-## Four channels, one instrument
+Build checks succeeded. A 32-second stereo ETH preview reconstructs the window 2026-10-23 20:26:43.401–20:27:15.401 UTC from public Coinbase trade observations. It has 231 scored events across all eight channels, peak output approximately 0.198 with the rack's fixed headroom and preview master gain, and finite samples. The final lead guard reports two revoicings and zero blocked candidates; the score count does not mean all candidates sounded unchanged. This is a historical reconstruction, not a recorded live session. No subjective audition, browser check, phone measurement or hardware comparison is claimed.
 
-| Channel | Reconstructed generator | Current score allocation |
+## Two chips, eight channels
+
+| Channel on each chip | Reconstructed generator | Foreground chip / Harmony chip |
 | --- | --- | --- |
-| CH1 | Pulse with duty, envelope, length and period sweep | Foreground signal, tonal packets, kick/tom |
-| CH2 | Pulse with duty, envelope and length | Interlocking harmony |
-| CH3 | 32 four-bit samples in 16 bytes of wave RAM | Bass and authored wave shapes |
-| CH4 | Clocked 15/7-bit noise, envelope and length | Texture, static and noise packets |
+| CH1 | Pulse with duty, envelope, length and period sweep | Lead and kick/tom / Lower chord tone |
+| CH2 | Pulse with duty, envelope and length | Arpeggio and scored echo / Upper chord tone |
+| CH3 | 32 four-bit samples in 16 bytes of wave RAM | Bass / Waveform-resonance drone |
+| CH4 | Clocked 15/7-bit noise, envelope and length | Percussion / Texture grains |
 
-Allocation happens before playback. A later event can replace the current occupant of its channel; there is no separate bank of melodic, bass or drum voices behind these four slots. A chord becomes a sequence/interlock within the available channels.
+Allocation happens before playback. A later event replaces or truncates the current occupant of its `(chip, channel)` slot. The harmony chip holds two pulse chord tones while its wave drone supplies the root; their overlap creates simultaneous harmony alongside the foreground chip. Each APU still has exactly four generators. `gb-chip-rack.js` mixes the two outputs at a fixed 0.55 gain per chip before listening-volume controls.
 
 The channel capabilities and register layout are specified by [Pan Docs: Audio](https://gbdev.io/pandocs/Audio.html) and [Audio registers](https://gbdev.io/pandocs/Audio_Registers.html). The cartridge VIN input is external analog input, not another built-in generator; UPIC does not implement it.
 
@@ -25,9 +27,13 @@ The channel capabilities and register layout are specified by [Pan Docs: Audio](
 
 | File | Responsibility |
 | --- | --- |
-| `apps/web/public/market-chip-score.js` | Normalize observed market state; create coin-specific asynchronous signal, harmony, bass and texture events; allocate hardware slots |
+| `apps/web/public/market-chip-score.js` | Normalize market state; combine learned motifs, harmonic support and asynchronous packets; allocate hardware slots |
+| `apps/web/public/midi-phrase-model.js` | Pooled lead, bass and drum statistics from 31,136 usable unique arrangements; no source songs |
+| `apps/web/public/phrase-development.js` | Repeat and develop generated two-bar material over an eight-bar form |
+| `apps/web/public/chip-ensemble-arrangement.js` | Role windows, common breaths and Envion-inspired chip-grain duration/density proposals |
+| `apps/web/public/gb-chip-rack.js` | Route eight hardware slots across two APUs and mix live/offline output with fixed headroom |
 | `apps/web/public/gameboy-drum-pattern.js` | Independent prime-period packet circuits, observed-data gates, bounded bursts and register expression |
-| `apps/web/public/gb-apu-instrument.js` | Compile events to timed register writes; manage browser ownership/cancellation; render the same instructions offline |
+| `apps/web/public/gb-apu-instrument.js` | Screen final learned lead pitches, compile timed register writes, manage ownership/cancellation and render offline |
 | `apps/web/public/gb-apu-worklet.js` | Execute bounded, frame-addressed command batches against one persistent chip |
 | `apps/web/public/mame-gb-apu.js` | MAME-derived four-channel sound core with documented Pan Docs corrections and host output reconstruction |
 | `apps/web/public/gb-apu-silence.js` | Shared rests that keep channel DACs connected instead of switching them off after each event |
@@ -35,11 +41,21 @@ The channel capabilities and register layout are specified by [Pan Docs: Audio](
 | `apps/web/public/engine-view.js` | Inspect actual chip/channel snapshots and their market inputs |
 | `packages/engine/src/index.ts` | Build a reconstruction from frozen observations and call the shared APU renderer for artwork audio |
 
-The existing `gameboy-instruments.js` tables supply original 32-step shapes that are packed into CH3 RAM. Its old WAV loader and the old sample-rendering/drum modules are not the production synthesis path. GeneralUser, Kraken bass samples, Envion/Pure Data audio, continuous FM, granular sample players and reverb/echo buses do not run alongside the APU.
+The existing `gameboy-instruments.js` tables supply original 32-step shapes packed into CH3 RAM. The drone additionally uses a custom 32-sample, four-bit waveform whose harmonic emphasis follows market motion/volume. This is waveform-resonance coloration, not an emulated resonant filter. GeneralUser, Kraken samples, Envion/Pure Data DSP, granular sample players and conventional reverb/echo buses are inactive.
 
 Ordinary playback gain controls remain available; they scale the final chip output and do not add sound generators.
 
-The earlier original `gb-apu-core.js` is retained as an inactive reference. It is not a second synthesizer or fallback running beside the MAME-derived host.
+### Phrasing inside the chip ensemble
+
+Version 469 uses 301 pooled MIDI distributions: 104 lead, 124 bass and 73 drum tables. Generated two-bar motifs recur through introduce, answer, vary and return stages. Bass timing and drum articulation consult the same corpus; harmony and phrase form are authored rules. Stable tonal fields, restrained bends and shared rests let the chip's noise and irregular packets remain audible without continually replacing the foreground melody.
+
+Harmony advances once per two bars; chord tones are held within each bar. Lead and arpeggio response windows follow the phrase stage, while the chord opening precedes drone/texture entries. Role gains are chosen at scored onsets rather than continuously ducking already sounding notes. Cadence breaths cover beats 14.5–16 and 30–32 of each 32-beat cycle, with event durations capped at their common boundary.
+
+Envion's activity-to-duration, volume-to-overlap and envelope-window ideas become short GB noise events. Their spacing uses score beats; bounded density comes from observed activity, volume and motion. They occupy the second chip's noise channel and replace its earlier occupants. This is chip-grain arrangement, not sample-buffer granular synthesis or the original Envion DSP.
+
+The browser loads and verifies the source interval index asynchronously. Chip support and packets can run while learned lead attacks wait. The shared final driver screens the learned lead after harmonic fitting and channel allocation, including nine-note windows crossing bar boundaries; matching candidates are revoiced or withheld. Offline rendering awaits index preparation and uses the same guard. This reduces indexed source runs, not every possible perceived resemblance. See [MIDI learning](../midi-learning.md) for coverage and exclusions.
+
+The earlier original `gb-apu-core.js` remains inactive. Both active APUs use `mame-gb-apu.js`.
 
 ## Hardware behavior represented in the core
 
@@ -91,9 +107,9 @@ Static is not a continuously running background recording. Without eligible obse
 
 ### Depth within the channel budget
 
-Depth comes from register, relative levels, different envelope lengths, interruptions, interlocking cycles and hard left/right/both routing. A repeated note uses channel time. A changed waveform uses CH3. Any future echo-like gesture must be a scored chip event that competes for a channel.
+Depth comes from register, relative levels, different envelope lengths, interruptions, interlocking cycles and hard left/right/both routing. Arpeggio echoes are quieter scored repeats on the foreground chip's CH2; they consume lane time and can be replaced. A changed drone waveform uses the harmony chip's CH3.
 
-There is no expanded-polyphony mode, parallel granular machine, direct FM oscillator, sample instrument, or reverb processor in this implementation.
+The extra polyphony comes from the second four-channel APU. There is no independent sample instrument, direct FM oscillator, granular PCM machine or conventional reverb processor.
 
 ## Limits that remain explicit
 
@@ -110,9 +126,11 @@ Pan Docs describes these distinctions and model-dependent behavior in [Audio det
 
 ## Live, replay and frozen output
 
-The browser and offline renderer use the same `compileGameBoyEvent` and `GameBoyApu`. Offline rendering starts from a chip reset and advances from the beginning even when exporting a later window, retaining generator history.
+The browser and offline renderer use the same `gb-chip-rack.js`, `compileGameBoyEvent` and `GameBoyApu`. Offline rendering resets both chips and advances from the beginning even when exporting a later window, retaining their generator histories.
 
 Sharing these components does not recover an unrecorded live session. Frozen observations produce a deterministic historical reconstruction under their declared input, score, model and renderer settings. Reproduction of a particular live performance additionally requires its actual accepted events and timing/state records.
+
+The collectible renderer identifies this refinement as `upic-nft-gb-v3`. Equivalence between uninterrupted playback and arbitrary live/replay seeks, including the guard's preceding-note history, remains unverified.
 
 Missing volume, trades or holder observations must remain missing. Candle aggregates must not be labeled as captured individual trades.
 
@@ -128,7 +146,7 @@ Missing volume, trades or holder observations must remain missing. Candle aggreg
 | [Tero Parviainen's stochastic machine](https://codepen.io/teropa/pen/PKoYXM) | Probability-based occupancy and performance variation, reworked into original asynchronous market packets |
 | [Ken Shirriff's amplifier analysis](https://www.righto.com/2020/05/reverse-engineering-audio-chip-in.html) | Clarifies the external AMP-MGB speaker/headphone amplification stage; it is not the four-channel APU design |
 
-The supplied chiptune tutorial, Eno/Koan, Wotja and the algorithmic-composition research remain conceptual references. The active score does not reproduce their songs or execute an imported MIDI composition.
+The supplied chiptune tutorial, Eno/Koan, Wotja and the algorithmic-composition research remain conceptual references. Pooled MIDI statistics inform newly generated phrasing; the active score does not retrieve their songs or execute an imported MIDI composition.
 
 Ken Shirriff traces a chip that receives already generated left/right audio and drives the speaker/headphones. Its transistor-level circuitry is distinct from the sound generators reconstructed here. [Amplifier analysis](https://www.righto.com/2020/05/reverse-engineering-audio-chip-in.html)
 

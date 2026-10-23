@@ -1,6 +1,7 @@
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=468';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=468';
-import {createGameBoyInstrument} from './gb-apu-instrument.js?v=468';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=469';
+import {createGameBoyRack} from './gb-chip-rack.js?v=469';
+import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=469';
 
 const unit=n=>Math.max(0,Math.min(1,Number(n)||0));
 // Compatibility name for stored mixer settings. The chip has calibrated output
@@ -10,11 +11,11 @@ export async function preloadPianoSamples(){return [];}
 export function marketResonance(cap){return Number(cap)>0?unit((Math.log10(Number(cap))-4)/4):0;}
 
 // The public transport API stays stable. All four voices are produced by one
-// persistent APU; the score, browser and visual renderer never synthesize audio.
+// pair of persistent APUs; the score, browser and visual renderer never synthesize audio.
 export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},onScoreEvent=()=>{},initialSeed=1917}={}){
  const master=ctx.createGain();master.gain.value=0;master.connect(destination);
  let chip;
- try{chip=await createGameBoyInstrument(ctx,master,{model:'dmg'});}catch(error){master.disconnect();throw error;}
+ try{chip=await createGameBoyRack(ctx,master,{model:'dmg'});}catch(error){master.disconnect();throw error;}
  let seed=initialSeed>>>0,enabled=true,running=false,closed=false,held=false,volume=.5,lab={};
  let liveBeat=0,liveAt=ctx.currentTime,tempo=100,liveUntil=-Infinity,lastPrice=null,currentCap=null;
  let pending={music:{},signal:marketChipSignal(),active:false},timeline=null,segments=[],anchor=null,resume=true;
@@ -48,8 +49,9 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const at=scoreNow(),beat=timeline&&at!==null?timeline.beatAt(at):position();
   const context=timeline&&at!==null?timeline.contextAtBeat(beat):pending;
   const inRange=timeline&&at!==null?!!context&&at>=context.start&&at<context.end:ctx.currentTime<liveUntil;
-  const signal=marketChipSignal(context||{}),active=!!(running&&enabled&&!held&&ctx.state==='running'&&inRange&&context?.active!==false&&chipSignalActive(signal));
-  return {beat,bar:Math.floor(beat/4),active,audibleTempo:context?.audibleTempo||tempo,phraseGain:1,rest:!active,restInBeats:Infinity,secondsUntilRest:Infinity,secondsUntilRestEnd:Infinity,layers:{piano:1,envion:1,data:1},signal};
+  const signal=marketChipSignal(context||{}),active=!!(!closed&&running&&enabled&&!held&&ctx.state==='running'&&inRange&&context?.active!==false&&chipSignalActive(signal));
+  const phrase=chipEnsembleArrangement(seed,beat,signal),audibleTempo=context?.audibleTempo||tempo;
+  return {...phrase,beat,bar:Math.floor(beat/4),active:active&&!phrase.rest,audibleTempo,rest:!active||phrase.rest,secondsUntilRest:phrase.restInBeats*60/audibleTempo,secondsUntilRestEnd:(phrase.restEndBeat-beat)*60/audibleTempo,signal};
  }
  function schedulerTick(){
   if(closed||!running||!enabled||held||ctx.state!=='running')return;
@@ -72,7 +74,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    }
    const plan=cached.plan;lastPlan=plan;
    for(let index=0;index<plan.events.length;index++){
-    const event=plan.events[index],id=[bar,event.kind,event.drum||'',event.seed,event.beat].join(':');
+    const event=plan.events[index],id=[bar,event.kind,event.drum||'',event.seed].join(':');
     const begin=atBeat(bar*4+event.beat),intendedEnd=atBeat(bar*4+event.beat+event.duration);
     if(scheduled.has(id)||begin>=now+lookAhead||intendedEnd<=now+.006||(!replaying&&begin>=liveUntil))continue;
     const elapsed=Math.max(0,now-begin);
@@ -83,7 +85,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     if(end-start<.006)continue;
     const amplitude=event.gain;
     const spec={...event,time:start,duration:end-start,gain:amplitude};
-    const sounded=event.kind==='drum'?chip.hit(spec,start):event.kind==='texture'?chip.texture(spec,start):chip.note(event.midi,start,amplitude,end-start,event.kind,event.expression);
+    const sounded=chip.schedule(spec,start);
     if(!sounded)continue;
     voices.add(sounded.voice);scheduled.set(id,{time:sounded.time,voice:sounded.voice});
     if(elapsed<=.025)onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,gain:amplitude,duration:sounded.voice.end-sounded.time,development:plan.development,isCancelled:()=>sounded.voice.cancelled});
@@ -114,11 +116,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   // Direct trade/price arrivals have their own audible packet. A rate budget
   // folds dense batches into the ongoing field instead of replaying a backlog.
   // No synthetic clock or changed DOM frame can manufacture these attacks.
-  if(active&&!anchor&&ctx.currentTime-lastPacketAt>=.125&&(lab.dataGain??1)>0){
+  const phrase=chipEnsembleArrangement(seed,position(),pending.signal);
+  if(active&&!anchor&&!phrase.rest&&phrase.restInBeats>.12&&ctx.currentTime-lastPacketAt>=.4&&(lab.dataGain??1)>0){
    const s=pending.signal,stamp=chipHash(seed,s.fingerprint),time=ctx.currentTime+.008;
-   const gainValue=.035*(.3+.7*Math.max(s.volume,s.activity,s.motion))*(lab.dataGain??1);
-   const duration=.025+.075*s.volume;
-   const sounded=chip.hit({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(0,Math.round(10-8*Math.max(s.motion,s.volume))),noiseWidth:stamp%2,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:1}},time);
+   const gainValue=.018*(.3+.7*Math.max(s.volume,s.activity,s.motion))*(lab.dataGain??1)*phrase.roleGains.texture;
+   const duration=Math.min(.02+.045*s.volume,phrase.restInBeats*60/tempo);
+   const sounded=chip.texture({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(0,Math.round(10-8*Math.max(s.motion,s.volume))),noiseWidth:stamp%2,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:{initial:5,direction:-1,pace:1}}},time);
    if(sounded){lastPacketAt=ctx.currentTime;voices.add(sounded.voice);onScoreEvent({id:'observation:'+String(identity??stamp),time:sounded.time,midi:sounded.midi,kind:'texture',gain:gainValue,duration,isCancelled:()=>sounded.voice.cancelled});}
   }
   return active;
@@ -126,12 +129,12 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  return {
   configure(options={}){
    const previous=JSON.stringify(lab);lab={};
-   const bounds={chipDuty:[0,3],chipEnvelope:[0,7],chipNoiseShift:[0,13],chipNoiseWidth:[0,1],chipWave:[0,3],chipStereo:[0,1],textureGain:[0,1],dataGain:[0,1],drumDensity:[0,1],drumDeviation:[0,1],drumVariation:[0,65535],drumPerformance:[0,65535],drumGain:[0,1],phraseDepth:[0,1],phraseLength:[4,16],phraseGate:[.2,1],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
+   const bounds={chipDuty:[0,3],chipEnvelope:[0,7],chipNoiseShift:[0,13],chipNoiseWidth:[0,1],chipWave:[0,3],chipStereo:[0,1],chipResonance:[0,1],textureGain:[0,1],dataGain:[0,1],drumDensity:[0,1],drumDeviation:[0,1],drumVariation:[0,65535],drumPerformance:[0,65535],drumGain:[0,1],phraseDepth:[0,1],phraseLength:[4,16],phraseGate:[.2,1],phraseVariation:[0,65535],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
    for(const [key,[min,max]] of Object.entries(bounds))if(Number.isFinite(options[key]))lab[key]=Math.max(min,Math.min(max,options[key]));
    if(options.drums===false)lab.drums=false;if(options.arpeggios===false)lab.arpeggios=false;
    chip.configure(lab);if(previous!==JSON.stringify(lab))invalidate();
   },
-  instruments(){return [{preset:0,name:'GB transmission · four channels'}];},arrangement,
+  instruments(){return [{preset:0,name:'GB transmission · two chips'}];},arrangement,
   setMaster(value){volume=unit(value);gain();},
   setRunning(value){captureBeat();running=!!value;held=!value;liveAt=ctx.currentTime;gain();if(!running)clear();},
   setEnabled(value){enabled=!!value;gain();if(!enabled)clear();},
@@ -139,7 +142,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setArpeggioPattern(){},
   setTempo(value){captureBeat();tempo=scoreTempo({tempo:value});pending.music={...pending.music,tempo};},
   resonance(cap){currentCap=cap;return marketResonance(cap);},
-  snapshot(){const state=chip.snapshot();return {name:'GB transmission',family:'Four-channel APU',error:state.error||'',loading:false,marketPhrase:'Market packet field',phraseSource:'Observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held,tempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'hardware stereo and envelopes',chip:state,signal:lastPlan?.signal??pending.signal};},
+  snapshot(){const state=chip.snapshot();return {name:'GB transmission',family:'Two Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Learned motifs / market circuits',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held,tempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'scored chip echoes, wave resonance and hardware envelopes',chip:state,signal:lastPlan?.signal??pending.signal};},
   setTimeline(value){clear();segments=value||[];timeline=createCompositionTimeline(segments,anchor?.rate||1);},
   seekTimeline(at,rate=1){held=false;clear();rate=Math.max(.1,Number(rate)||1);timeline=createCompositionTimeline(segments,rate);anchor={at,clock:ctx.currentTime,rate};gain();},
   syncTimeline(at,rate=1){if(!anchor||rate!==anchor.rate||Math.abs(scoreNow()-at)>200*Math.max(1,rate))this.seekTimeline(at,rate);},

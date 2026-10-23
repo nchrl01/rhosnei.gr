@@ -1,4 +1,4 @@
-// Inspector for the same four-channel APU that produces the application's sound.
+// Inspector for the same two four-channel APUs that produce the app's sound.
 // It consumes existing snapshots; it does not load patches, start an engine,
 // or synthesize a separate preview.
 const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
@@ -13,30 +13,32 @@ const display=value=>{
  return String(value).slice(0,220);
 };
 const channelNames=['CH1 · Pulse + sweep','CH2 · Pulse','CH3 · Wave RAM','CH4 · Noise'];
-const roles=['Signal and tonal packets','Interlocking harmony','4-bit bass and wave shapes','Texture and noise packets'];
+const chipNames=['Foreground','Harmony'];
+const roles=[['Lead / kick / tom','Arpeggio / echo','Bass','Drums'],['Chord low','Chord high','Drone','Texture / grain']];
 const duties=['12.5%','25%','50%','75%'];
 
 export function createEngineView(container,{onBundle=()=>{}}={}){
  container.innerHTML=`<details class="engine-panel" open>
-  <summary>Live engine · Game Boy APU</summary>
-  <p class="engine-note">Signal, texture and packets share four sound channels. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
-  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for a chip snapshot</span><span data-source>Four-channel reconstruction</span></div>
-  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers share the same chip. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
+  <summary>Live engine · Game Boy chip rack</summary>
+  <p class="engine-note">Two Game Boy chips provide eight sound channels for independent melody, harmony, bass and texture. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
+  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for chip snapshots</span><span data-source>Two chips · Eight hardware channels</span></div>
+  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same two-chip rack. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
   <div class="engine-overview">
    <section><small>Market observations</small><dl data-market></dl></section>
    <section><small>Chip and transport</small><dl data-chip></dl></section>
    <section><small>Visual field</small><dl data-visuals></dl></section>
   </div>
-  <div class="engine-overview" data-channels aria-label="Four hardware channels"></div>
+  <div class="engine-overview" data-channels aria-label="Two Game Boy chips with eight hardware channels"></div>
   <p class="engine-note">Activity controls occupancy, volume controls packet bursts, price changes bend pitch, and motion changes the noise clock. Missing or stale observations stop new sound. These are artistic mappings of the available data.</p>
   <details class="engine-source"><summary>Controls and accepted events</summary><div class="engine-overview"><section><small>App controls</small><dl data-controls></dl></section><section><small>Event feedback</small><dl data-events></dl></section></div></details>
   <details class="engine-console"><summary>Engine messages</summary><pre data-log>No engine messages.</pre></details>
  </details>`;
  const get=selector=>container.querySelector(selector);
- let view={},transport=null,lastPaint=0,lastFeedback=0,lastChipAt=0,lastChipSample=null,disposed=false;
+ let view={},transport=null,lastPaint=0,lastFeedback=0,disposed=false;
+ const chipProgress=[{at:0,sample:null},{at:0,sample:null}];
  const controls=new Map(),events=new Map(),messages=[],bundleState={piano:true,envion:true,data:true};
  const bundleLabels={piano:'Signal',envion:'Texture',data:'Packets'};
- const buttons=[],channelTables=[];
+ const buttons=[],channelCards=[];
  const row=(name,value)=>{
   const fragment=document.createDocumentFragment(),term=document.createElement('dt'),definition=document.createElement('dd');
   term.textContent=name;definition.textContent=display(value);fragment.append(term,definition);return fragment;
@@ -57,10 +59,11 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
  }
  const channelHost=get('[data-channels]');
  channelHost.style.gridTemplateColumns='repeat(auto-fit, minmax(min(100%, 210px), 1fr))';
- for(let index=0;index<4;index++){
+ for(let index=0;index<8;index++){
+  const chipIndex=Math.floor(index/4),channelIndex=index%4;
   const section=document.createElement('section'),title=document.createElement('small'),description=document.createElement('p'),list=document.createElement('dl');
-  title.textContent=channelNames[index];description.className='engine-note';description.textContent=roles[index];
-  section.append(title,description,list);channelHost.append(section);channelTables.push(list);
+  title.textContent='Chip '+(chipIndex+1)+' · '+channelNames[channelIndex];description.className='engine-note';description.textContent=chipNames[chipIndex]+' · '+roles[chipIndex][channelIndex];
+  section.append(title,description,list);channelHost.append(section);channelCards.push({section,title,description,list});
  }
  function channelRows(channel,index,apu){
   if(!channel)return [['State','Waiting for snapshot']];
@@ -88,12 +91,15 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
   if(disposed||container.hidden)return;
   const now=performance.now();if(!force&&now-lastPaint<250)return;lastPaint=now;
   const instrument=view.instrument||{},chip=instrument.chip||{},apu=chip.apu;
+  const chips=Array.isArray(chip.chips)&&chip.chips.length?chip.chips.slice(0,2):apu?[chip]:[{},{}];
+  const snapshots=chips.filter(state=>state.apu),channelCount=chips.length*4;
   const signal=instrument.signal||{},m=view.m||{},context=m.context||{};
-  if(apu&&apu.samples!==lastChipSample){lastChipSample=apu.samples;lastChipAt=now;}
+  chips.forEach((state,index)=>{if(state.apu&&state.apu.samples!==chipProgress[index].sample){chipProgress[index].sample=state.apu.samples;chipProgress[index].at=now;}});
+  const stale=chips.some((state,index)=>state.apu&&now-chipProgress[index].at>3000);
   const error=instrument.error||chip.error;
   get('[data-state]').textContent=error?'Engine unavailable':view.playing?'Running':'Paused';
-  get('[data-feedback]').textContent=error?String(error):!apu?'Waiting for a chip snapshot':!view.playing?'Chip paused':now-lastChipAt>3000?'Chip snapshot is stale':'Chip snapshot received';
-  get('[data-source]').textContent='Game Boy APU · '+String(chip.model||apu?.model||'DMG').toUpperCase();
+  get('[data-feedback]').textContent=error?String(error):!snapshots.length?'Waiting for chip snapshots':!view.playing?'Chips paused':stale?'A chip snapshot is stale':snapshots.length<chips.length?'Waiting for the second chip snapshot':'Chip snapshots received';
+  get('[data-source]').textContent=chips.length+' Game Boy '+(chips.length===1?'APU':'APUs')+' · '+channelCount+' channels · '+String(chip.model||apu?.model||'DMG').toUpperCase();
   const observed=signal.observed===true;
   const metric=value=>observed?percent(value):'Unavailable';
   const balanceKnown=signal.balanceKnown===true&&observed;
@@ -109,20 +115,23 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Trade rate',observed&&signal.tradeRateKnown===true&&finite(signal.tradeRate)?pretty(signal.tradeRate)+'/sec':'Unavailable'],
    ['Market cap',finite(cap)&&Number(cap)>0?'$'+Math.round(Number(cap)).toLocaleString('en')+(context.capEstimated?' (estimate)':''):'Unavailable'],
   ]);
-  const channels=Array.isArray(apu?.channels)?apu.channels:[];
+  const channels=chips.flatMap(state=>Array.isArray(state.apu?.channels)?state.apu.channels:[]);
   const sounding=channels.length?channels.filter(channel=>channel.enabled).length:null;
   const drums=instrument.drums||{};
   table('[data-chip]',[
    ['Instrument',instrument.name||'Waiting'],
-   ['Active generators',sounding===null?'Awaiting snapshot':sounding+' / 4'],
-   ['Chip clock',apu?pretty(apu.clock)+' Hz':'4,194,304 Hz'],
+   ['Hardware',chips.length+' chips · '+channelCount+' channels'],
+   ['Active generators',sounding===null?'Awaiting snapshots':sounding+' / '+channelCount+(snapshots.length<chips.length?' (partial snapshot)':'')],
+   ['Chip clock',apu?pretty(apu.clock)+' Hz per chip':'4,194,304 Hz per chip'],
    ['Transport tempo',finite(instrument.tempo??view.bpm)?pretty(instrument.tempo??view.bpm)+' BPM':'Unavailable'],
    ['Queued events',finite(chip.pending)?chip.pending:'Unavailable'],
    ['Rejected events',finite(chip.rejected)?chip.rejected:'Unavailable'],
    ['Packet identity',drums.patternId||'Waiting'],
    ['Packet density',percent(drums.density)],['Packet deviation',percent(drums.deviation)],
-   ['Stereo routing',hex(apu?.routing)],['Master register',hex(apu?.master)],
-   ['Output','Chip mixer and DC removal'],
+   ...chips.flatMap((state,index)=>[['Chip '+(index+1)+' routing',hex(state.apu?.routing)],['Chip '+(index+1)+' master',hex(state.apu?.master)]]),
+   ['MIDI phrasing',chip.phrasing?.ready?'Source checks ready':chip.phrasing?.state||'Waiting'],
+   ['Output','Chip mixers and DC removal'],
+   ['Per-chip headroom',finite(chip.outputGain)?percent(chip.outputGain):'Unavailable'],
   ]);
   const v=view.visual;
   table('[data-visuals]',v?[
@@ -137,11 +146,17 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Queued accents',finite(v.scheduledScoreEvents)?v.scheduledScoreEvents:'Unavailable'],
    ['Accent level',finite(v.scoreAccent)?pretty(v.scoreAccent):'Unavailable'],
   ]:[['Visual','Waiting for a rendered frame']]);
-  for(let i=0;i<4;i++)table(channelTables[i],channelRows(channels[i],i,apu));
+  for(let i=0;i<channelCards.length;i++){
+   const card=channelCards[i],chipIndex=Math.floor(i/4),channelIndex=i%4,state=chips[chipIndex];
+   card.section.hidden=!state;
+   if(!state)continue;
+   card.description.textContent=(state.name||chipNames[chipIndex])+' · '+(state.channelRoles?.[channelIndex]||roles[chipIndex][channelIndex]);
+   table(card.list,channelRows(state.apu?.channels?.[channelIndex],channelIndex,state.apu));
+  }
   table('[data-controls]',controls.size?[...controls]:[['Controls','No changes received']]);
   table('[data-events]',events.size?[...events]:[['Feedback','No events received']]);
   if(transport?.connected===false&&!error)get('[data-feedback]').textContent='Audio transport disconnected';
-  else if(!error&&!apu&&lastFeedback)get('[data-feedback]').textContent='Event feedback received; chip snapshot pending';
+  else if(!error&&!snapshots.length&&lastFeedback)get('[data-feedback]').textContent='Event feedback received; chip snapshots pending';
  }
  const timer=setInterval(()=>{if(!document.hidden)paint();},500);
  paint(true);
@@ -153,7 +168,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
   // Compatibility for callers from older builds; no obsolete patches load.
   setFiles(){},
   setTransport(state){if(disposed)return;transport=state;paint(true);},
-  reset(){if(disposed)return;view={};events.clear();controls.clear();lastFeedback=0;lastChipAt=0;lastChipSample=null;transport=null;paint(true);},
+  reset(){if(disposed)return;view={};events.clear();controls.clear();lastFeedback=0;for(const state of chipProgress){state.at=0;state.sample=null;}transport=null;paint(true);},
   destroy(){disposed=true;clearInterval(timer);for(const button of buttons)button.onclick=null;},
  };
 }

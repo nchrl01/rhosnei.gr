@@ -2,7 +2,8 @@
 // Stochastic gate inspiration: Tero Parviainen's Stochastic Drum Machine,
 // https://codepen.io/teropa/pen/PKoYXM. No samples or reference code are used.
 // A coin chooses a circuit of independent prime periods; observed market data
-// excites it. There are no kick anchors, backbeats, fills, or clock-based RNG.
+// excites it without rerolling that circuit at every price update. There are
+// no kick anchors, backbeats, fills, or clock-based RNG.
 const clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
 const number=(value,fallback=0)=>finite(value)?Number(value):fallback;
@@ -28,7 +29,7 @@ export function gameBoyDrumControls(context={}){
  const change=unit(Math.abs(number(signal.delta))/2);
  const energy=Math.max(activity,intensity,motion,volume,tradeRate,change);
  return {
-  density:unit(context.drumDensity,activity*.36+volume*.31+motion*.2+intensity*.18+tradeRate*.18+change*.12),
+  density:unit(context.drumDensity,activity*.3+volume*.25+motion*.17+intensity*.12+tradeRate*.15+change*.1),
   deviation:unit(context.drumDeviation,motion*.55+change*.25),
   activity,intensity,motion,volume,tradeRate,energy,
  };
@@ -44,18 +45,20 @@ export function gameBoyDrumsActive(context={}){
 
 function identity(seed,context){
  const circuit=baseSeed(seed,context),fingerprint=number(context.signal?.observationFingerprint??context.signal?.fingerprint)>>>0;
- const state=hash(circuit,fingerprint);
+ // Fingerprints identify the source observation for inspection, not a new
+ // random pattern. A market change opens more gates in the same circuit.
+ const state=hash(circuit,1927);
  return {circuit,state,fingerprint,patternId:state.toString(16).padStart(8,'0')};
 }
 
 // Absolute phase addresses keep independent circuits running across bar
 // boundaries. Performance variation changes deviations without changing the
-// circuit's prime periods or its underlying observed-data occupancy.
+// circuit's prime periods or its underlying gate thresholds.
 function packets(seed,start,end,context,performance){
  const id=identity(seed,context),controls=gameBoyDrumControls(context);
  const result={...id,...controls,packets:[]};
  if(!gameBoyDrumsActive(context)||controls.density<=0)return result;
- const signal=context.signal,variation=performance?variationValue(context.drumPerformance):0;
+ const variation=performance?variationValue(context.drumPerformance):0;
  const playbackSeed=variation===0?id.state:hash(id.state,variation+5209);
  const denominator=denominators[hash(id.circuit,7301)%denominators.length];
  const first=hash(id.circuit,7302)%primes.length;
@@ -74,12 +77,14 @@ function packets(seed,start,end,context,performance){
     if(roll(playbackSeed,address+7919)>=probability)continue;
    }else if(!base)continue;
    // Perturbation is bounded inside this lane's own cycle, not a sixteenth-
-   // note swing. Its sign/magnitude comes from the observed market state.
+   // note swing. The circuit retains its direction while market deviation
+   // controls how far this packet moves.
    const offset=performance?(roll(playbackSeed,address+8111)-.5)*period*.4*controls.deviation:0;
    const at=step*period+phase+offset;
-   // Volume controls packet multiplicity. This depends only on recorded
-   // features, never whether a UI frame happened to be the first to see them.
-   const count=1+Math.floor(controls.volume*3.99);
+   // Strong volume plus activity or motion may double one packet. Quieter
+   // observations retain isolated attacks instead of a continuous rattle.
+   const burstEnergy=unit((controls.volume-.6)/.4)*unit((Math.max(controls.activity,controls.tradeRate,controls.motion)-.45)/.55);
+   const count=1+Number(roll(playbackSeed,address+8623)<burstEnergy*.7);
    const spacing=Math.min(period*.65/(count+1),.035+.05*controls.motion+.04*controls.volume);
    for(let burst=0;burst<count;burst++){
     const absolute=at+burst*spacing;
@@ -122,14 +127,16 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
   if(beat>=cutoff)continue;
   const tonal=lane(packet.drum)==='tonal',fraction=roll(packet.seed,31);
   const duration=Math.min((tonal?.06:.025)+(.04+.12*volume)*(1-.55*motion),packet.period*.58,cutoff-beat);
-  const gain=(.026+.067*energy+.022*intensity)*(packet.burst===0?1:.72)*support*fresh;
+  const gain=(tonal?.026+.067*energy+.022*intensity:.03+.042*energy+.01*intensity)*(packet.burst===0?1:.72)*support*fresh;
   if(duration<.012||gain<=0)continue;
   const duty=(hash(plan.circuit,packet.voice+43)+Math.floor(balance*4)+(direction>0?1:0))&3;
   const pan=balance<.4?-1:balance>.6?1:0;
-  const initial=clamp(Math.round((3+9*Math.max(volume,intensity,activity))*support*fresh*(packet.burst===0?1:.72)),1,12);
+  // Noise sits beneath the pulse melody. Its register envelope decays fast
+  // enough to reveal each hit while retaining the raw LFSR texture.
+  const initial=clamp(Math.round((tonal?4+5*Math.max(volume,intensity,activity):3+3*Math.max(volume,motion,activity))*(packet.burst===0?1:.72)),1,tonal?9:6);
   const expression={
    duty,
-   envelope:{initial,direction:motion>.78&&fraction>.5?1:-1,pace:clamp(Math.round(1+(1-motion)*4+fraction*2),1,7)},
+   envelope:{initial,direction:tonal&&motion>.78&&fraction>.5?1:-1,pace:tonal?clamp(Math.round(1+(1-motion)*4+fraction*2),1,7):1+Number(motion<.45)},
    noiseShift:clamp(Math.round(9-7*motion-2*activity+2*roll(plan.circuit,packet.voice+59)),0,13),
    noiseWidth:motion>.25+.5*roll(plan.circuit,packet.voice+61)?7:15,
    noiseDivider:hash(packet.seed,67)&7,
@@ -155,9 +162,11 @@ export function composeGameBoyDrumBar(seed,bar,context={},development={}){
   if(collision<0)distinct.push(event);
   else if(event.gain>distinct[collision].gain)distinct[collision]=event;
  }
- if(distinct.length>24){
-  distinct.sort((a,b)=>Number(a.drumEmbellishment)-Number(b.drumEmbellishment)||b.gain-a.gain||a.beat-b.beat);
-  distinct.length=24;
+ if(distinct.length>12){
+  // Prefer primary packets, then a stable spread across the circuit. Do not
+  // fill the start of the bar and discard every later response.
+  distinct.sort((a,b)=>Number(a.drumEmbellishment)-Number(b.drumEmbellishment)||hash(a.seed,9539)-hash(b.seed,9539)||a.beat-b.beat);
+  distinct.length=12;
  }
  distinct.sort((a,b)=>a.beat-b.beat||priority[b.drum]-priority[a.drum]);
  const previousByLane={};

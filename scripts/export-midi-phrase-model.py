@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export aggregate lead statistics for the browser's shared phrase composer.
+"""Export aggregate voice statistics for the browser's shared phrase composer.
 
 Only marginal and first-order pitch statistics are exported. No MIDI files,
 melodies, song identifiers, second-order transitions, or source arrangements
@@ -26,11 +26,27 @@ PROBABILITY_UNITS = 10 ** PROBABILITY_DECIMALS
 NUMERIC_TABLES = (
     "lead.interval", "lead.inter_onset_beats", "lead.duration_beats",
     "lead.gate", "lead.accent", "lead.register", "lead.bar_onsets",
+    "bass.interval", "bass.inter_onset_beats", "bass.duration_beats",
+    "bass.gate", "bass.accent", "bass.register", "bass.bar_onsets",
+    "bass.beat_position", "bass.rest_beats", "bass.phrase_16_onsets",
+    "bass.phrase_32_onsets",
+    "drums.inter_onset_beats", "drums.duration_beats", "drums.gate",
+    "drums.accent", "drums.bar_onsets", "drums.beat_position",
+    "drums.rest_beats", "drums.phrase_16_onsets", "drums.phrase_32_onsets",
+)
+# Each entry is an independent probability table, never a stored motif or
+# drum arrangement. Keep the colon in the interval prefix: this deliberately
+# excludes the source model's second-order interval_next2 tables.
+ACTIVITY_PHASES = (
+    ("lead.phrase_32_activity:", 32), ("lead.quarter_beat_activity:", 16),
+    ("bass.phrase_16_activity:", 16), ("bass.phrase_32_activity:", 32),
+    ("bass.quarter_beat_activity:", 16),
+    ("drums.phrase_16_activity:", 16), ("drums.phrase_32_activity:", 32),
+    ("drums.quarter_beat_activity:", 16),
 )
 PREFIXES = (
-    "lead.interval_next:", "lead.phrase_32_activity:",
-    "lead.quarter_beat_activity:",
-)
+    "lead.interval_next:", "bass.interval_next:",
+) + tuple(prefix for prefix, _ in ACTIVITY_PHASES)
 
 
 def probability(value, name):
@@ -98,12 +114,13 @@ def export_model(source_bytes):
         if name not in tables:
             raise ValueError(f"Missing required table: {name}")
     selected = sorted(name for name in tables if name in NUMERIC_TABLES or name.startswith(PREFIXES))
-    for prefix, count in (("lead.phrase_32_activity:", 32), ("lead.quarter_beat_activity:", 16)):
+    for prefix, count in ACTIVITY_PHASES:
         for phase in range(count):
             if f"{prefix}{phase}" not in tables:
                 raise ValueError(f"Missing activity phase: {prefix}{phase}")
-    if not any(name.startswith("lead.interval_next:") for name in selected):
-        raise ValueError("Model has no first-order interval transitions")
+    for role in ("lead", "bass"):
+        if not any(name.startswith(f"{role}.interval_next:") for name in selected):
+            raise ValueError(f"Model has no first-order {role} interval transitions")
     distributions, coverage = {}, {}
     for name in selected:
         distributions[name], coverage[name] = normalize_table(name, tables[name])
@@ -118,7 +135,7 @@ def export_model(source_bytes):
         "parserVersion": source["parser_version"],
         "gridPerBeat": source["grid_per_beat"],
         "sourceUrl": "https://www.vgmusic.com/",
-        "scope": "Lead statistics only; bass and harmony remain authored by the composer.",
+        "scope": "Lead and bass interval, rhythm and articulation statistics; drum timing, articulation and activity statistics. Harmony and arrangement remain authored by the composer.",
         "method": "Aggregate statistical sampling with authored composition rules; not a neural model.",
         "weighting": source["weighting"],
         "containsSourceSequences": False,
@@ -126,7 +143,8 @@ def export_model(source_bytes):
         "limitations": [
             "Distribution sampling does not guarantee that a generated phrase is unlike every existing melody.",
             "No complete songs, source melodies, MIDI tracks, or arrangement templates are included.",
-            "Timing statistics approximate melody from the highest simultaneous voice; expressive pitch bends are not modeled.",
+            "Lead and bass statistics approximate the highest and lowest simultaneous voices; expressive pitch bends are not modeled.",
+            "Drum statistics contain independent timing and activity distributions, not source drum patterns or instrument-note sequences.",
         ],
         "export": {
             "probabilityDecimals": PROBABILITY_DECIMALS,
