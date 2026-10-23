@@ -68,9 +68,9 @@ export function earthboundMarketState(m={},coinKey='unselected'){
   tradingActivity:m.replay?.source==='candles'?unit(Number(m.replay.volume)>0||m.replay.volume==null&&m.raw?.motion>0?1:0):unit(m.tradingActivity),
   hasMarket:marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0};
 }
-export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
+export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>null}={}){
  const host=canvas?.closest('.audio-visualizer');
- if(!host)return {frame(){},event(){},pulse(){},piano(){},setImage(){},imageUnavailable(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
+ if(!host)return {frame(){},event(){},pulse(){},piano(){},scoreEvent(){},setImage(){},imageUnavailable(){},snapshot(){return null;},refresh(){},reset(){},close(){}};
  // Keep the field in the host's full rectangle, without cropping to mark bounds.
  const field=document.createElement('div');field.className='visual-content-frame';host.append(field);host.dataset.visualFrame='full';
  const loader=document.createElement('div');loader.className='visual-loader';loader.setAttribute('role','status');loader.setAttribute('aria-live','polite');
@@ -107,6 +107,24 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
  let transportTarget=0,transportFrom=0,transportElapsed=0,transportHasPlayed=false;
  let renderedAt=0,renderedPlaying=false,renderedCoinKey='',sourceCoinKey='',renderedHolderReady=false;
  let visualReady=false,loaderHasPlayed=false,loaderSignature='',loaderRevealUntil=0;
+ let scoreEvents=[],scoreAccent=0;
+ const scoreClock=()=>{const value=getClock();return Number.isFinite(value)?value:null;};
+ function clearScoreEvents(){scoreEvents=[];scoreAccent=0;}
+ function scoreActive(){return !closed&&!reduced.matches&&getState().playing&&settings.playing!==false&&!settings.seeking&&!settings.ended&&latest?.fresh>0&&identityKey(getState().coinKey)===key;}
+ function readScoreAccent(){
+  const now=scoreClock();
+  if(now===null||!scoreActive()){clearScoreEvents();return 0;}
+  // Audio lookahead can be cancelled before a voice starts. Read the actual
+  // audio clock and its cancellation handle, never the UI callback's arrival.
+  scoreEvents=scoreEvents.filter(event=>!event.isCancelled?.()&&now-event.time<.7);
+  scoreAccent=0;
+  for(const event of scoreEvents){
+   const age=now-event.time;if(age<0)continue;
+   const envelope=(1-Math.exp(-age/.012))*Math.exp(-age/.16);
+   scoreAccent=Math.max(scoreAccent,event.strength*envelope);
+  }
+  return scoreAccent;
+ }
  function syncVisualLoading(){
   if(visualReady&&loaderSignature==='hidden')return;
   const state=getState(),playing=Boolean(state.playing);
@@ -125,7 +143,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const label=revealing?'Visual ready':unavailable?'Holder data unavailable · retrying':'Loading visual';if(loaderLabel.textContent!==label)loaderLabel.textContent=label;
   host.dataset.visualLoading=String(pending&&!unavailable);host.setAttribute('aria-busy',String(pending&&!unavailable));
  }
- function reset(){clock=0;motionActivity=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
+ function reset(){clearScoreEvents();clock=0;motionActivity=0;transportPresence=transportTarget=transportFrom=transportElapsed=0;transportHasPlayed=false;imageReveal=0;presence=latest?.fresh>0?1:0;identity=identityInput=0;color=colorStart=0;colorTarget=0;staleElapsed=colorElapsed=0;sourceCursor=null;last=lastRender=0;renderedAt=0;renderedPlaying=false;renderedCoinKey=sourceCoinKey='';renderedHolderReady=false;renderer.clear();}
  function referenceSide(box){
   // CSS owns a stable viewport-sized desktop host. Use its content box so
   // sticky scrolling cannot change the artwork scale, and retain its soft edges.
@@ -157,6 +175,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   if(closed)return;raf=requestAnimationFrame(draw);
   syncVisualLoading();
   const dt=last?Math.min(.1,Math.max(0,(now-last)/1000)):0;last=now;
+  const musicalAccent=readScoreAccent();
   if(document.hidden||!visible||width<1||height<1||!latest?.hasMarket)return;
   syncHolderLoading();
   if(latest.liveHolders&&!initialHoldersReady)return;
@@ -221,7 +240,10 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
   const frameInterval=1000/(renderer.kind==='canvas'?30:60);
   if(now-lastRender<frameInterval)return;lastRender=now-(now-lastRender)%frameInterval;
   overlay?.clearRect(0,0,canvas.width,canvas.height);
-  renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence:presence*imageReveal,pixelPresence:1,inkColor:transportInk,reducedMotion:reduced.matches});
+  // A tiny luminance breath marks a performed onset. It changes no observed
+  // market field, holder geometry, colour ratio or seamless motion phase.
+  const scoreInk=1-.035*musicalAccent*latest.fresh;
+  renderer.render({width,height,time:clock,seed,inputs:latest,identity,artworkColor:color,presence:presence*imageReveal,pixelPresence:1,inkColor:transportInk*scoreInk,reducedMotion:reduced.matches});
   syncHolderLoading(true,now);
   renderedAt=Date.now();renderedPlaying=Boolean(playing&&fresh);renderedCoinKey=key;sourceCoinKey=String(state.coinKey||'unselected');
   renderedHolderReady=Boolean(initialHoldersReady&&latest.liveHolders&&(latest.totalHolders>0||latest.holderBalances.length)&&host.dataset.holderLoading!=='true');
@@ -238,6 +260,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(options.clock!==sourceValue){sourceValue=options.clock==null?null:Number(options.clock);sourceAt=performance.now();}
    if(changed){initialHoldersReady=false;initialLoadShown=false;awaitingHolderRender=false;holderRevealStarted=null;visualReady=false;loaderHasPlayed=false;loaderRevealUntil=0;}
    key=nextKey;seed=seedFor(key);settings=options;marketFrameAt=performance.now();latest=earthboundMarketState(m,key);latest.change=Math.sign(Number(getState().markDirection)||0);
+   if(!scoreActive())clearScoreEvents();
    syncHolderLoading();
    if(changed&&imageCoinKey!==key){identitySource=null;imageSettled=false;renderer.setImage(null);}
    if(changed||backwards||options.seeking){reset();presence=latest.fresh>0?1:0;identity=identityInput=marketCapIdentity(latest.marketCap);color=colorTarget=latest.marketCap>=5e7?1:0;}
@@ -246,7 +269,15 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
    if(!latest.hasMarket){renderer.clear();renderedAt=0;renderedPlaying=false;renderedHolderReady=false;}
    syncVisualLoading();
   },
-  // Keep the app's audio callback interface without coupling sound to ink.
+  scoreEvent(event={}){
+   const now=scoreClock();
+   if(now===null||!scoreActive()||!Number.isFinite(event.time)||event.time<now-.7||event.time>now+2||event.isCancelled?.())return;
+   const strength=unit(Number(event.gain)/.085)*(event.kind==='chord'?.5:event.kind==='bass'?.75:1);
+   if(!strength)return;
+   scoreEvents.push({time:event.time,strength,isCancelled:event.isCancelled});
+   if(scoreEvents.length>128)scoreEvents.splice(0,scoreEvents.length-128);
+  },
+  // Raw market and legacy meter callbacks do not invent musical onsets.
   event(){},pulse(){},piano(){},
   setImage(image){
    identitySource=image;imageCoinKey=identityKey(getState().coinKey);imageSettled=Boolean(image);imageReveal=0;
@@ -304,8 +335,8 @@ export function createEarthboundVisual(canvas,{getState=()=>({})}={}){
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,scoreReactive:true,scoreAccent,scheduledScoreEvents:scoreEvents.length,marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
   refresh(){lastRender=0;size();},reset,
-  close(){closed=true;cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
+  close(){closed=true;clearScoreEvents();cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };
 }

@@ -25,13 +25,13 @@ import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
 import {PIANO_MOVE_PCT} from './piano-policy.js?v=208';
-import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=461';
+import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visual.js?v=464';
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=458';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=448';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
 import {createDataSonification} from './data-sonification.js?v=449';
 import {createArpeggioAI} from './ai-instruments.js?v=209';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=463';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=465';
 import {prepareLearnedPhrases} from './learned-market-phrase.js?v=455';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle,replaySpeed} from './market-replay.js?v=462';
@@ -111,7 +111,7 @@ createUpicBrand($('upic-mark'),$('upic-mark-fallback'));
 const transportIndicator=createTransportIndicator($('transport-status'));
 const arpeggioAI=createArpeggioAI({onStatus:text=>$('arp-ai-status').textContent=text,onPattern:pattern=>{piano?.setArpeggioPattern(pattern);}});
 const displaySettings={dither:false};
-const dataVisual=createAudioDots($('audio-dots'),{getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
+const dataVisual=createAudioDots($('audio-dots'),{getClock:()=>ctx?.state==='running'?ctx.currentTime:null,getAudio:()=>outputMeters?{context:ctx,channels:outputMeters,scopes:audioScopes}:outputTap,getState:()=>({playing:playing||captureMode,coinKey:market?imageKey(market):null,master:Number($('master').value),...displaySettings,markDirection:({up:1,down:-1})[$('coin-cap').dataset.direction]||0})});
 const replayVisualHistory=createReplayVisualHistory($('audio-dots').closest('.audio-visualizer'));
 const coinSummary=createCoinSummary($('nft-owner-preview'));
 const nftOwnerPreview=createNftOwnerPreview($('nft-owner-preview'));
@@ -462,7 +462,7 @@ async function initialize(){
  const epoch=audioEpoch,context=ctx,destination=instrumentTap;
  if(!piano&&!pianoLoading){
   audioErrors.piano='';
-  pianoLoading=createTradePiano(context,audioScopes[0]?.input||destination,{initialSeed:seed,onVoice:event=>{if(epoch===audioEpoch){sharedHarmony=event.harmony;if(event.audible!==false)pianoChordCount++;if(event.audible!==false&&event.time!=null)dataVisual.piano(event.time,1);}},onArpeggio:event=>{if(epoch===audioEpoch&&event.time!=null)dataVisual.piano(event.time,.65);}}).then(instrument=>{
+  pianoLoading=createTradePiano(context,audioScopes[0]?.input||destination,{initialSeed:seed,onScoreEvent:event=>{if(epoch===audioEpoch&&playing)dataVisual.scoreEvent(event);},onVoice:event=>{if(epoch===audioEpoch){sharedHarmony=event.harmony;if(event.audible!==false)pianoChordCount++;if(event.audible!==false&&event.time!=null)dataVisual.piano(event.time,1);}},onArpeggio:event=>{if(epoch===audioEpoch&&event.time!=null)dataVisual.piano(event.time,.65);}}).then(instrument=>{
    if(epoch!==audioEpoch){instrument.close();throw Error('Audio loading cancelled');}
    piano=instrument;piano.setArpeggioPattern(arpeggioAI.snapshot());piano.setEnabled(pianoEnabled);piano.setMaster(1);piano.reset(seed);piano.resonance(liveMetrics().context?.latestCap);piano.setRunning(playing);
    if(playing){flushPianoTrade();if(replay.state.active)tick();}audioStatus();return piano;

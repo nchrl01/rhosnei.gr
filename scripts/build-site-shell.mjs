@@ -10,9 +10,9 @@ const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
 const version = 448;
 // Audio and navigation updates have independent cache revisions.
-const audioVersion = 463;
+const audioVersion = 465;
 const searchVersion = 456;
-const visualVersion = 462;
+const visualVersion = 464;
 const navigationVersion = 457;
 const foundationVersion = 454;
 const pages = [
@@ -23,6 +23,7 @@ const pages = [
   { file: 'help.html', type: 'public', active: 'help', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'about.css'] },
   { file: 'upic/marketplace/index.html', type: 'public', active: 'marketplace', volume: true, footer: true, styles: ['style.css', 'vendor/ui/upic-ui.css?v=391', 'ui-controls.css', 'marketplace.css'] },
   { file: 'credits.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css'] },
+  { file: 'research.html', type: 'technology', volume: true, footer: true, styles: ['style.css', 'ui-controls.css', 'research.css'] },
   { file: 'visual-lab.html', type: 'lab', styles: ['visual-lab.css'] },
   { file: 'audio-lab.html', type: 'lab', styles: ['visual-lab.css', `audio-lab.css?v=${audioVersion}`] },
   { file: 'av-lab.html', type: 'lab', styles: ['visual-lab.css', `audio-lab.css?v=${audioVersion}`, 'av-lab.css'] },

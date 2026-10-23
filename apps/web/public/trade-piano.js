@@ -1,4 +1,7 @@
-import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=455';
+import {composeMarketBar,createCompositionTimeline,scoreTempo} from './market-composition.js?v=465';
+import {createGameBoyDrums} from './gameboy-drums.js?v=465';
+import {gameBoyDrumsActive} from './gameboy-drum-pattern.js?v=465';
+import {compositionContext} from './composition-context.js?v=464';
 import {marketPhraseIdentity} from './market-phrase.js?v=453';
 import {prepareLearnedPhrases,createMelodyOriginalityGuard} from './learned-market-phrase.js?v=455';
 import {phraseArrangement} from './phrase-arrangement.js?v=449';
@@ -39,7 +42,7 @@ export function marketResonance(cap){
  const value=Number(cap);
  return value>0&&Number.isFinite(value)?unit((Math.log10(value)-4)/4):0;
 }
-export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},initialSeed=1917}={}){
+export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},onScoreEvent=()=>{},initialSeed=1917}={}){
  // The melody stays gated until its source-sequence index has been verified.
  // Load alongside samples; harmony and bass need not wait for this download.
  void prepareLearnedPhrases().catch(()=>{});
@@ -65,6 +68,9 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  room.normalize=false;
  room.buffer=impulse;instrumentFilter.connect(dry);instrumentFilter.connect(instrumentSend);instrumentSend.connect(roomInput);roomInput.connect(room);room.connect(wet);dry.connect(tailGate);wet.connect(tailGate);tailGate.connect(master);master.connect(destination);
  const bassFilter=ctx.createBiquadFilter(),bassGain=ctx.createGain();bassFilter.type='lowpass';bassFilter.frequency.value=900;bassGain.gain.value=.7;bassFilter.connect(bassGain);bassGain.connect(tailGate);
+ // Chip percussion shares the score and output gate, with its own dry path.
+ const drumBus=ctx.createGain();drumBus.connect(tailGate);
+ const drums=createGameBoyDrums(ctx,drumBus);
  const reflections=[];
  let lastMarketCue=null;
  let enabled=true,running=false,volume=.5,seed=initialSeed>>>0,closed=false,pattern=[],roomDirty=false,roomTimer=null,reopenAt=0,lastResonance=-1;
@@ -91,7 +97,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  }
  let lab={};
  let timeline=null,timelineSegments=[],replayAnchor=null,lastObservedPrice=null,liveBeat=0,liveAt=ctx.currentTime,liveTempo=100,pendingContext={music:{},cap:0,active:false},liveUntil=-Infinity;
- let scheduled=new Set(),barCache=new Map(),resumeNotes=true,lastHarmonyBar=null,transportHeld=false;
+ let scheduled=new Set(),barCache=new Map(),liveContexts=new Map(),resumeNotes=true,lastHarmonyBar=null,transportHeld=false;
  function labRoom(){for(const [key,param] of [['cutoff',instrumentFilter.frequency],['q',instrumentFilter.Q],['roomSend',instrumentSend.gain],['dry',dry.gain],['wet',wet.gain]])if(Number.isFinite(lab[key]))param.setTargetAtTime(lab[key],ctx.currentTime,.05);}
  function updateGain(){master.gain.setTargetAtTime(enabled&&running?volume*EARTHBOUND_OUTPUT_GAIN:0,ctx.currentTime,.025);}
  function hold(param,time){
@@ -114,6 +120,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  }
  function clear(){
   scheduled.clear();resumeNotes=true;
+  drums.clear();
   melodyGuard.cancelAfter(ctx.currentTime);
   for(const voice of voices)stopVoice(voice);
   if(!roomDirty||roomTimer!==null)return;
@@ -167,7 +174,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   if(!source.loop&&offset>=source.buffer.duration){source.disconnect();gain.disconnect();voices.delete(voice);return null;}
   source.start(time,offset);source.stop(end);
   if(kind==='arp')melodyGuard.remember(midi,time,voice);
-  return {time,midi};
+  return {time,midi,voice};
  }
  // Stable score clock: no pattern restarts when a new chart frame arrives.
  function queueContext(selection,event,cap,music){
@@ -203,7 +210,10 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const active=replaying?!!activeContext&&position>=activeContext.start&&position<activeContext.end&&activeContext.active!==false:pendingContext.active&&now<liveUntil;
   // Quiet periods stop new attacks; already sounding notes and room tails
   // finish their scored envelopes instead of being chopped at the gate.
-  if(!active){resumeNotes=false;return;}
+  if(!active){drums.cancelAfter(now);if(!replaying)liveContexts.clear();resumeNotes=false;return;}
+  // Smoothing and cached bars must not reopen the raw market activity gate.
+  const drumsActive=gameBoyDrumsActive(activeContext);
+  if(!drumsActive)drums.cancelAfter(now);
   const rate=replaying?replayAnchor.rate:1;
   const atBeat=b=>replaying?now+(timeline.atBeat(b)-position)/1000/rate:now+(b-beat)*60/liveTempo;
   const lastBeat=replaying?timeline.beatAt(position+lookAhead*1000*rate):beat+lookAhead*liveTempo/60;
@@ -212,17 +222,28 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   for(let bar=currentBar;bar<=Math.min(currentBar+24,Math.floor(lastBeat/4));bar++){
    let plan=barCache.get(bar);
    if(!plan){
-    const context=replaying?timeline.contextAtBeat(bar*4):{...pendingContext,active:pendingContext.active&&now<liveUntil};
-    if(!context)continue;
+    const rawContext=replaying?timeline.contextAtBeat(bar*4):{...pendingContext,music:{...pendingContext.music},active:pendingContext.active&&now<liveUntil};
+    if(!rawContext)continue;
+    if(!replaying)liveContexts.set(bar,rawContext);
+    const previous=[];
+    for(let offset=1;offset<=Math.min(3,bar);offset++)previous.push(replaying?timeline.contextAtBeat((bar-offset)*4):liveContexts.get(bar-offset));
+    const context=compositionContext(rawContext,previous);
     if(!replaying&&bar===currentBar){liveTempo=scoreTempo(context.music);}
-    plan=composeMarketBar(seed,bar,{...context,active:true,pitchLow:Math.max(profile.low,60),pitchHigh:profile.high,arpeggios:lab.arpeggios,phraseDepth:lab.phraseDepth,phraseLength:lab.phraseLength,phraseGate:lab.phraseGate,phraseShape:lab.phraseShape,phraseLearning:lab.phraseLearning,phraseVariation:lab.phraseVariation,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
+    plan=composeMarketBar(seed,bar,{...context,active:context.active!==false,pitchLow:Math.max(profile.low,60),pitchHigh:profile.high,arpeggios:lab.arpeggios,drums:lab.drums!==false&&gameBoyDrumsActive(rawContext),drumDensity:lab.drumDensity,drumDeviation:lab.drumDeviation,drumVariation:lab.drumVariation,phraseDepth:lab.phraseDepth,phraseLength:lab.phraseLength,phraseGate:lab.phraseGate,phraseShape:lab.phraseShape,phraseLearning:lab.phraseLearning,phraseVariation:lab.phraseVariation,landmarkBar:replaying&&context.music?.movement?.event?Math.ceil(timeline.beatAt(context.music.movement.event.at)/4):context.music?.movement?.event?.id!==lastMarketCue?bar:null},pattern);
     if(context.music?.movement?.event)lastMarketCue=context.music.movement.event.id;
     barCache.set(bar,plan);
    }
    for(let index=0;index<plan.events.length;index++){
     const e=plan.events[index],id=bar+':'+index;
     if(e.kind==='arp'&&lab.arpeggios===false)continue;
+    if(e.kind==='drum'&&(!drumsActive||lab.drums===false||lab.drumGain===0||(replaying&&!gameBoyDrumsActive(timeline.contextAtBeat(bar*4+e.beat)))))continue;
     if(replaying&&timeline.contextAtBeat(bar*4+e.beat)?.active===false)continue;
+    if(replaying&&e.kind==='drum'){
+     const eventAt=timeline.atBeat(bar*4+e.beat),eventContext=timeline.contextAtBeat(bar*4+e.beat);
+     // The timeline lookup retains its final row beyond the capture's end.
+     // Do not turn that convenient lookup into new percussion after history.
+     if(!eventContext||eventAt<eventContext.start||eventAt>=eventContext.end)continue;
+    }
     const begin=atBeat(bar*4+e.beat),end=atBeat(bar*4+e.beat+e.duration);
     if(scheduled.has(id)||begin>=now+lookAhead||end<=now+.015||(!replaying&&begin>=liveUntil))continue;
     if(begin<now-.06&&!resumeNotes)continue;
@@ -230,7 +251,14 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     // an earlier attack or walk through a backlog on a seek.
     const elapsed=Math.max(0,now-begin),start=Math.max(now+.012,begin);
     scheduled.add(id);
-    const sounded=note(e.midi,start,e.gain,end-start,e.kind,.012,elapsed,e.expression,e.allowedPitches);
+    // Percussion has no held state to reconstruct when seeking into a hit.
+    if(e.kind==='drum'&&elapsed>.06)continue;
+    const gain=e.gain*(e.kind==='drum'?(lab.drumGain??1):1);
+    const drumStart=Math.max(start,reopenAt);
+    const sounded=e.kind==='drum'?drums.hit({drum:e.drum,time:drumStart,duration:end-drumStart,gain:e.gain,seed:e.seed??seed}):note(e.midi,start,gain,end-start,e.kind,.012,elapsed,e.expression,e.allowedPitches);
+    // Publish only accepted attacks at their actual AudioContext onset. A
+    // sustained note reconstructed after a seek is not a new visual accent.
+    if(sounded&&elapsed<.06)onScoreEvent({id,time:sounded.time,beat:bar*4+e.beat,midi:sounded.midi,kind:e.kind,drum:e.drum,gain,duration:sounded.voice.end-sounded.time,development:plan.development,isCancelled:()=>sounded.voice.fading});
     if(sounded&&e.kind==='arp')onArpeggio({midi:sounded.midi,step:bar*16+e.beat*4,time:sounded.time,tempo:replaying?timeline.contextAtBeat(bar*4).audibleTempo:liveTempo,instrument:instrument.name});
    }
    if(bar===currentBar&&lastHarmonyBar!==bar){
@@ -242,27 +270,33 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   resumeNotes=false;
   // Bounded memory on long sessions. The score itself can always reconstruct a bar.
   for(const key of barCache.keys())if(key<currentBar-2||key>currentBar+26)barCache.delete(key);
+  for(const key of liveContexts.keys())if(key<currentBar-4||key>currentBar+26)liveContexts.delete(key);
   for(const key of scheduled)if(Number(key.split(':')[0])<currentBar-2)scheduled.delete(key);
  },25);
  return {
   // Optional audition controls. No overrides are installed by the main site.
   configure(options={}){
-   const previousPhrase=JSON.stringify([lab.phraseDepth,lab.phraseLength,lab.phraseGate,lab.phraseShape,lab.phraseLearning,lab.phraseVariation,lab.arpeggios]);
-   lab={};const bounds={phraseDepth:[0,1],phraseLength:[4,16],phraseGate:[.2,1],phraseShape:[-1,22],phraseLearning:[0,1],phraseVariation:[0,65535],cutoff:[100,16000],q:[.1,5],roomSend:[0,1],dry:[0,1.5],wet:[0,2],attack:[.003,.3],decay:[.02,.6],sustain:[.01,.95],release:[.02,.5],phraseMax:[.15,3],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
+   const previousPhrase=JSON.stringify([lab.phraseDepth,lab.phraseLength,lab.phraseGate,lab.phraseShape,lab.phraseLearning,lab.phraseVariation,lab.arpeggios,lab.drums,lab.drumDensity,lab.drumDeviation,lab.drumVariation]);
+   lab={};const bounds={drumDensity:[0,1],drumDeviation:[0,1],drumVariation:[0,65535],drumGain:[0,1],phraseDepth:[0,1],phraseLength:[4,16],phraseGate:[.2,1],phraseShape:[-1,22],phraseLearning:[0,1],phraseVariation:[0,65535],cutoff:[100,16000],q:[.1,5],roomSend:[0,1],dry:[0,1.5],wet:[0,2],attack:[.003,.3],decay:[.02,.6],sustain:[.01,.95],release:[.02,.5],phraseMax:[.15,3],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
    for(const [key,[min,max]] of Object.entries(bounds))if(Number.isFinite(options[key]))lab[key]=Math.max(min,Math.min(max,options[key]));
    if(options.arpeggios===false){lab.arpeggios=false;}
-   const currentPhrase=JSON.stringify([lab.phraseDepth,lab.phraseLength,lab.phraseGate,lab.phraseShape,lab.phraseLearning,lab.phraseVariation,lab.arpeggios]);
+   if(options.drums===false){lab.drums=false;}
+   drumBus.gain.setTargetAtTime(lab.drums===false?0:(lab.drumGain??1),ctx.currentTime,.008);
+   const currentPhrase=JSON.stringify([lab.phraseDepth,lab.phraseLength,lab.phraseGate,lab.phraseShape,lab.phraseLearning,lab.phraseVariation,lab.arpeggios,lab.drums,lab.drumDensity,lab.drumDeviation,lab.drumVariation]);
    if(previousPhrase!==currentPhrase){
     const state=arrangement(),currentBar=Math.floor(state.beat/4),position=scoreNow();
     const boundary=ctx.currentTime+(timeline&&position!==null?(timeline.atBeat((currentBar+1)*4)-position)/1000/replayAnchor.rate:((currentBar+1)*4-state.beat)*60/liveTempo);
     // Finish the current bar; replace both its next-bar plan and any attacks
     // already queued by lookahead, including their screening history entries.
     for(const voice of voices)if(voice.start>=boundary)stopVoice(voice);
+    drums.cancelAfter(boundary);
     melodyGuard.cancelAfter(boundary);
     for(const key of barCache.keys())if(key>currentBar)barCache.delete(key);
+    for(const key of liveContexts.keys())if(key>currentBar)liveContexts.delete(key);
     for(const key of scheduled)if(Number(key.split(':')[0])>currentBar)scheduled.delete(key);
    }
    if(lab.arpeggios===false)for(const voice of voices)if(voice.kind==='arp')stopVoice(voice);
+   if(lab.drums===false||lab.drumGain===0)drums.clear();
    const target=EARTHBOUND_PRESETS.includes(options.preset)&&![145,146].includes(options.preset)?options.preset:earthboundPreset(seed);
    void selectBank(target);
    profile={...instrumentProfile(instrument.preset),...Object.fromEntries(['attack','decay','sustain','release','phraseMax'].filter(key=>key in lab).map(key=>[key,lab[key]]))};
@@ -273,11 +307,11 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setMaster(value){volume=unit(value);updateGain();},
   setRunning(value){transportHeld=!value;if(!value&&running&&!replayAnchor)livePosition();running=Boolean(value);liveAt=ctx.currentTime;updateGain();if(!running)clear();else void prepareLearnedPhrases().catch(()=>{});},
   setEnabled(value){enabled=Boolean(value);updateGain();if(!enabled)clear();},
-  reset(value=seed){clear();melodyGuard.reset();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;timelineSegments=[];replayAnchor=null;lastObservedPrice=null;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
+  reset(value=seed){clear();melodyGuard.reset();lastMarketCue=null;seed=Number(value)>>>0;void selectBank(earthboundPreset(seed));profile=instrumentProfile(instrument.preset);lastResonance=-1;this.resonance(currentCap);policy.reset(seed);timeline=null;timelineSegments=[];replayAnchor=null;lastObservedPrice=null;liveBeat=0;liveAt=ctx.currentTime;barCache.clear();liveContexts.clear();lastHarmonyBar=null;pendingContext={music:{},cap:0,active:false};liveUntil=-Infinity;},
   setArpeggioPattern(value){pattern=Array.isArray(value)?value.map(row=>[...row]):[];},
   setTempo(value){pendingContext.music={...pendingContext.music,tempo:scoreTempo({tempo:value})};},
   resonance(cap){currentCap=cap;const r=marketResonance(cap);if(Math.abs(r-lastResonance)>.0001){lastResonance=r;const clarity=unit((Math.log10(Math.max(1000,Number(cap)||1000))-4)/3);instrumentFilter.frequency.setTargetAtTime(profile.cutoff*(.7+.3*clarity),ctx.currentTime,.2);instrumentSend.gain.setTargetAtTime(.25,ctx.currentTime,.4);dry.gain.setTargetAtTime(.7,ctx.currentTime,.4);wet.gain.setTargetAtTime(.6,ctx.currentTime,.4);}labRoom();return r;},
-  snapshot(){return {name:bankLoading?'Loading GB instruments…':bankError?'Instrument unavailable':instrument.name,error:bankError,loading:bankLoading,family:profile.family,marketPhrase:marketPhraseIdentity(seed,lab.phraseShape).name,phraseSource:(lab.phraseLearning??1)>0?'Learned MIDI phrasing':'Function contour',originality:melodyGuard.snapshot(),preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:running,tempo:liveTempo,bass:'Kraken Sine '+(1+seed%2),roomSend:instrumentSend.gain.value,wetReturn:wet.gain.value,spaceEffect:'short-chip-echo'};},
+  snapshot(){const plan=barCache.get(Math.floor(arrangement().beat/4));return {name:bankLoading?'Loading GB instruments…':bankError?'Instrument unavailable':instrument.name,error:bankError,loading:bankLoading,family:profile.family,marketPhrase:marketPhraseIdentity(seed,lab.phraseShape).name,phraseSource:(lab.phraseLearning??1)>0?'Learned MIDI phrasing':'Function contour',development:plan?.development??null,drums:{...plan?.drums,...drums.snapshot(),enabled:lab.drums!==false,gain:lab.drumGain??1},originality:melodyGuard.snapshot(),preset:instrument.preset,fallback:instrument.preset!==earthboundPreset(seed),voices:[...voices].filter(v=>!v.fading&&v.end>ctx.currentTime).length,phrase:running,tempo:liveTempo,bass:'Kraken Sine '+(1+seed%2),roomSend:instrumentSend.gain.value,wetReturn:wet.gain.value,spaceEffect:'short-chip-echo'};},
   setTimeline(segments){timelineSegments=segments;timeline=createCompositionTimeline(segments,replayAnchor?.rate||1);barCache.clear();scheduled.clear();lastHarmonyBar=null;},
   seekTimeline(at,rate=1){transportHeld=false;clear();barCache.clear();lastHarmonyBar=null;rate=Math.max(.1,Number(rate)||1);if(!replayAnchor||replayAnchor.rate!==rate)timeline=createCompositionTimeline(timelineSegments,rate);replayAnchor={at,clock:ctx.currentTime,rate};},
   syncTimeline(at,rate=1){if(!replayAnchor||rate!==replayAnchor.rate||Math.abs(scoreNow()-at)>250*Math.max(1,rate))this.seekTimeline(at,rate);},
@@ -303,14 +337,15 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   frame(m,{playing=false,seeking=false,ended=false,at,price,known=false,quiet=false,referencePrice}={}){
    if(closed)return false;
    transportHeld=seeking||ended||!playing;
-   if(seeking||ended||!playing){if(voices.size||roomDirty)clear();return false;}
+   if(seeking||ended||!playing){if(voices.size||drums.snapshot().voices||roomDirty)clear();return false;}
    if(!enabled||!running||ctx.state!=='running')return false;
    this.resonance(m.context?.latestCap);this.setTempo(m.music?.tempo);
    if(m.replay)return false;
    const active=ctx.currentTime<liveUntil;
    pendingContext={...pendingContext,music:{...m.music,activity:m.activity},cap:m.context?.latestCap,active};
+   if(!gameBoyDrumsActive(pendingContext))drums.cancelAfter(ctx.currentTime);
    return false;
   },
-  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);master.gain.setTargetAtTime(0,ctx.currentTime,.012);for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [instrumentFilter,instrumentSend,roomInput,dry,wet,room,tailGate,master,bassFilter,bassGain,...reflections])node.disconnect();},50);},
+  close(){closed=true;clearInterval(scheduler);clearTimeout(roomTimer);master.gain.setTargetAtTime(0,ctx.currentTime,.012);drums.close();for(const voice of voices)stopVoice(voice);setTimeout(()=>{for(const node of [instrumentFilter,instrumentSend,roomInput,dry,wet,room,tailGate,master,bassFilter,bassGain,drumBus,...reflections])node.disconnect();},50);},
  };
 }

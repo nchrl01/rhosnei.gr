@@ -1,6 +1,8 @@
 # UPIC audio, visual, and market engine map
 
-Source review: 23 October 2026. This describes the current main player, including the Earthbound visual loop change. It is a starting point for redesigning the audio; the audio implementation has not been changed by this review.
+> Historical source review. Several audio details below predate the later GB, phrase-development, drum and onset-coupling changes. For the current local baseline and proposed redesign, see [UPIC transmission instrument design](design/TRANSMISSION-INSTRUMENT.md). This earlier map is retained as context, not as the current runtime specification.
+
+Source review: 23 October 2026. This describes the main player at the time of the review, including the Earthbound visual loop change. It was a starting point for redesigning the audio; that review itself did not change the audio implementation.
 
 ## The current connection
 
