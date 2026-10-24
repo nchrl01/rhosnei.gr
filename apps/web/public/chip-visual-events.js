@@ -2,8 +2,8 @@ import {chipAdsrLevel} from './chip-envelope.js?v=480';
 // Performed chip events share the output clock with the visual. This is not
 // an invented beat detector: rejected, cancelled and silent voices never cue.
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
-const empty=()=>({attack:0,sustain:0,echo:0,texture:0,arp:0,bass:0,chord:0,lead:0,drum:0,direction:0,pitch:.5,events:0});
-const roleFor=event=>event.kind?.startsWith('chord')||event.kind==='drone'?'chord':event.kind==='note'?'lead':event.kind;
+const empty=()=>({attack:0,sustain:0,echo:0,texture:0,arp:0,bass:0,chord:0,lead:0,drum:0,resonance:0,direction:0,pitch:.5,events:0});
+const roleFor=event=>event.kind==='drone'?'texture':(event.kind?.startsWith('chord')||event.kind==='interlock')?'chord':event.kind==='note'?'lead':event.kind;
 
 export function audioPresentationTime(context,now=globalThis.performance?.now?.()??0){
  if(!context||context.state!=='running')return null;
@@ -39,14 +39,21 @@ export function createChipVisualEvents(){
     if(end<=event.time)continue;
     // A short noise hit gets a visible after-image; held notes keep a softer
     // deformation for their real lifetime. Neither creates another onset.
-    const shaped=event.adsr?chipAdsrLevel(age,event.duration,event.adsr)*(now<end?1:Math.exp(-(now-end)/.075)):null;
+    const native=event.hardwareEnvelope;
+    const nativeSteps=native?.pace>0?Math.floor(age*64/native.pace):0;
+    const nativeLevel=native?.initial>0?unit((native.initial+(native.increasing?nativeSteps:-nativeSteps))/native.initial):0;
+    const shaped=event.adsr?chipAdsrLevel(age,event.duration,event.adsr)*(now<end?1:Math.exp(-(now-end)/.075)):native?nativeLevel*Math.min(1,age/.008)*(now<end?1:Math.exp(-(now-end)/.075)):null;
     const attack=event.strength*(shaped??Math.min(1,age/.02))*Math.exp(-age/.13);
     const held=shaped!==null?event.strength*.48*shaped:now<end?event.strength*.48*Math.min(1,age/.035):event.strength*.28*Math.exp(-(now-end)/.075);
     const amount=Math.max(attack,held);
     pulse.attack=Math.max(pulse.attack,attack);pulse.sustain=Math.max(pulse.sustain,held);
     if(Object.hasOwn(pulse,event.role))pulse[event.role]=Math.max(pulse[event.role],amount);
     const direction=Math.sign(Number(event.direction)||0);
-    weightedDirection+=direction*amount;weightedPitch+=unit(((Number(event.midi)||60)-36)/60)*amount;weight+=amount;
+    const gesture=event.gesture||{},vibrato=gesture.vibrato||{};
+    pulse.resonance=Math.max(pulse.resonance,amount*unit(gesture.resonance));
+    const slide=(Number(gesture.slide)||0)*Math.min(1,age/Math.max(.004,gesture.slideTime||.1));
+    const bend=(Number(vibrato.depth)||0)/100*Math.sin(2*Math.PI*(vibrato.cycles||1)*age/event.duration)*Math.sin(Math.PI*Math.min(1,age/event.duration));
+    weightedDirection+=direction*amount;weightedPitch+=unit(((Number(event.midi)||60)+slide+bend-36)/60)*amount;weight+=amount;
     pulse.events++;
    }
    if(weight>0){pulse.direction=weightedDirection/weight;pulse.pitch=weightedPitch/weight;}

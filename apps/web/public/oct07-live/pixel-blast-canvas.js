@@ -1,7 +1,7 @@
 import {originalArtworkPalette} from '../upic-artwork-palette.js';
 import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=427';
 import {EARTHBOUND_LOOP_DURATION,TAU,loopTime,loopPhase} from './earthbound-loop.js?v=427';
-import {earthboundMotionFrame,earthboundFieldWarp,earthboundSoundWarp} from './earthbound-presentation.js?v=480';
+import {earthboundMotionFrame,earthboundFieldWarp} from './earthbound-presentation.js?v=492';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -190,8 +190,7 @@ export function createPixelBlastCanvas(host){
     const warpX=mix(mix(a.warpX,b.warpX,tx),mix(cc.warpX,dd.warpX,tx),ty),warpY=mix(mix(a.warpY,b.warpY,tx),mix(cc.warpY,dd.warpY,tx),ty);
     let maskInk=0;
     if(identity>0){
-     const [soundX,soundY]=earthboundSoundWarp(fx/cssHeight,fy/cssHeight,presentationMotion);
-     maskInk=identityInk(identityMask,soundX*cssHeight+warpX*cssHeight*(1-identity),soundY*cssHeight+warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
+     maskInk=identityInk(identityMask,fx+warpX*cssHeight*(1-identity),fy+warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
      const imageFeed=mix(-.05,1.05,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
@@ -243,18 +242,6 @@ export function createPixelBlastCanvas(host){
    canvas.dataset.markDiameterRange=selectedCount?minDiameter+','+maxDiameter:'0,0';
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
-   const soundRows=mask&&presentationMotion.sound?new Float32Array(h*3):null;
-   const soundColumns=soundRows?new Float32Array(w*2):null;
-   if(soundRows){
-    const f=presentationMotion;
-    for(let y=0;y<h;y++){
-     const v=(y-h/2)/h;
-     soundRows[y*3]=.65*Math.sin(v*TAU*(2+f.pitch*.25)+f.a)+.35*f.arp*Math.sin(v*TAU*5+f.b)*Math.sin(v*TAU*.5+f.c);
-     soundRows[y*3+1]=.16*f.texture*Math.sin(v*TAU*11+f.b);
-     soundRows[y*3+2]=.45*f.chord*Math.sin(v*TAU+f.c)+.45*f.drum*Math.sin(v*TAU*3+f.a);
-    }
-    for(let x=0;x<w;x++){const u=(x-w/2)/h;soundColumns[x*2]=Math.sin(u*TAU*2+f.a);soundColumns[x*2+1]=.3*f.bass*Math.sin(u*TAU+f.b);}
-   }
    // Only pixels belonging to resolved directional glyphs carry an accent.
    // Dots, including small-size fallbacks and every transitional shape, retain
    // the existing baseline/milestone palette.
@@ -262,10 +249,8 @@ export function createPixelBlastCanvas(host){
    for(let pixel=0;pixel<occupied;pixel++){
     const n=occupiedPixels[pixel],i=n*4;let r=1,g=1,b=1,quiet=0;
     if(mask&&(color||identity>0&&mask.backgroundTone?.empty)){
-     const px=n%w,py=Math.floor(n/w),amount=.055*presentationMotion.sound;
-     const soundX=(px-w/2)/h+(soundRows?amount*(soundRows[py*3]+soundRows[py*3+1]*soundColumns[px*2])*(presentationMotion.direction||1):0);
-     const soundY=(py-h/2)/h+(soundRows?amount*(soundRows[py*3+2]+soundColumns[px*2+1]):0);
-     const u=.5+soundX*h/side,v=.5+soundY*h/side;
+     const px=n%w,py=Math.floor(n/w);
+     const u=.5+(px-w/2)/side,v=.5+(py-h/2)/side;
      if(u>=0&&u<1&&v>=0&&v<1){
       const m=Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width),amount=color*mask.rgba[m*4+3]/255,c=m*3;
       if(color&&mask.colors){r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);}

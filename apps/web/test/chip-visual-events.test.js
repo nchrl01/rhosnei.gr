@@ -25,7 +25,7 @@ describe('performed chip voices drive visible events',()=>{
  });
  it.each(['lead','arp','bass','texture','drum','echo','chord_high','drone'])('shows accepted %s events',kind=>{
   const cues=createChipVisualEvents();cues.enqueue({...note,kind},.9);
-  const role=kind.startsWith('chord')||kind==='drone'?'chord':kind;
+  const role=kind==='drone'?'texture':kind.startsWith('chord')?'chord':kind;
   expect(cues.sample(1.03)[role]).toBeGreaterThan(0);
  });
  it.each([{active:false},{reducedMotion:true}])('clears on transport or motion restrictions %j',options=>{

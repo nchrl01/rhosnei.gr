@@ -1,51 +1,58 @@
-import {composePreDrumBar} from './pre-drum-arrangement.js?v=481';
+import {gameBoyDrumControls} from './friday-transmission-packets.js?v=489';
+import {composeChipBar as composeFridayBar} from './friday-transmission-score.js?v=491';
 import {marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=480';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
-import {chartCharacter} from './music-context.js?v=208';
 import {phraseArrangement} from './phrase-arrangement.js?v=449';
+import {chipVoiceEnvelope,resonantChipWave} from './chip-voice-timbre.js?v=486';
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
 
 export function performedArrangement(seed,beat,signal={}){
  const phrase=phraseArrangement(seed,beat),active=chipSignalActive(signal);
- return {...phrase,active:active&&!phrase.rest,roleGains:{texture:active?phrase.layers.envion:0},
-  grainDensity:0,grainDurationBeats:0,grainOverlap:0};
+ return {...phrase,active:active&&!phrase.rest,roleGains:{texture:active?phrase.layers.envion:0},grainDensity:0,grainDurationBeats:0,grainOverlap:0};
 }
 
-// The approved pre-drum score, performed by three real GB APUs. A score
-// address reconstructs its own chord slots, so seek/export need no RNG history.
+// The complete Friday process remains the source of clocks, note proposals,
+// observation-driven pattern changes and four-channel interruption. Research
+// informs low-register dialogue and per-packet articulation, not a substitute
+// bar grid: https://musictech.com/features/squarepusher-interview/
 export function composePerformedBar(seed,bar,context={}){
  const signal=marketChipSignal(context),mapping=marketMusicalMapping(signal);
  const active=context.active!==false&&chipSignalActive(signal);
- const delta=mapping.known.change?signal.delta:0;
- const tempo=context.audibleTempo||(signal.source==='lab'?context.music?.tempo:null)||mapping.tempo.bpm;
- const character=chartCharacter({group:delta<0?'down':'up',capChangePct:delta,intensity:signal.intensity,volatility:signal.motion});
- const music={...context.music,character,group:delta<0?'down':'up',tempo,activity:signal.activity,intensity:signal.intensity,changePct:delta};
- const high=mapping.known.holders?55+mapping.arpeggio.span:76;
- const plan=composePreDrumBar(seed,bar,{...context,music,cap:signal.marketCap,active,pitchLow:55,pitchHigh:Math.min(79,high),phraseLearning:1});
- const events=[],presence=signal.fresh*Math.sqrt(unit(signal.tradingActivity));let chordIndex=0;
- for(const [index,event] of plan.events.entries()){
-  const base={...event,seed:chipHash(seed,bar*257+index),expression:{}};
-  const gain=event.gain*presence;
-  if(event.kind==='chord'){
-   const slot=chordIndex++%4,channel=slot%2;
-   Object.assign(base,{chip:1+Math.floor(slot/2),channel,kind:channel?'chord_high':'chord_low',gain:gain*(context.chordGain??1),
-    expression:{duty:channel?2:1,pan:channel?1:-1,envelope:{initial:10,pace:0},adsr:{attack:.035,decay:.12,sustain:.78+.12*(mapping.harmony.musicality-.5),release:.22*(.75+.5*mapping.harmony.musicality)}}});
-  }else if(event.kind==='bass'){
-   Object.assign(base,{chip:0,channel:2,midi:Math.max(28,event.midi),gain:gain*.5*(context.noteGain??1),expression:{wave:4,pan:0,adsr:{attack:.01,decay:.09,sustain:.7,release:.15}}});
-  }else{
-   Object.assign(base,{chip:0,channel:0,kind:'arp',gain:gain*.7*(context.arpGain??1)*(context.dataGain??1),expression:{allowedPitches:event.allowedPitches,duty:2,pan:0,envelope:{initial:9,pace:0},adsr:{attack:.012,decay:.07,sustain:.72,release:.12}}});
+ const packetDensity=gameBoyDrumControls({...context,signal}).density;
+ const drumDensity=context.drumDensity??(mapping.known.marketCap?packetDensity*mapping.rhythm.rate:packetDensity);
+ const plan=composeFridayBar(seed,bar,{...context,signal,active,drumDensity,octaves:true,deepRegister:true});
+ const phase=((bar%8)+8)%8,section=['current','current','fracture','fracture','suspension','response','return','return'][phase];
+ const events=[],liquidity=mapping.harmony.musicality,recency=Math.sqrt(unit(signal.tradingActivity));
+ const resonance=Number.isFinite(context.chipResonance)?unit(context.chipResonance):.12+.38*mapping.change.magnitude+.18*liquidity;
+ for(const event of plan.events){
+  const state=performedArrangement(seed,bar*4+event.beat,signal);
+  if(!active||state.rest)continue;
+  const e={...event,chip:0,expression:{...event.expression}},variation=chipHash(seed,event.seed^Math.imul(bar+1,193))/4294967296;
+  e.duration=Math.min(e.duration,state.restInBeats);
+  const noise=e.channel===3;
+  // Measured holder population opens more of the existing arp proposals.
+  // An estimated visual population never becomes a musical observation.
+  if(e.kind==='arp'&&mapping.known.holders&&variation>.6+.4*mapping.arpeggio.population)continue;
+  // Noise breathes around the low pitched line, with no high-register hook
+  // or new drum pattern replacing the original asynchronous proposals.
+  e.gain*=recency*(noise?(section==='suspension'?.46:section==='response'?.65:.85):1);
+  if(!noise){
+   e.expression.resonance=resonance;
+   e.expression.cents=Math.sign(signal.delta)*(variation-.5)*16;
+   if(e.kind==='bass'&&variation>.45)e.expression.wave=resonantChipWave({resonance,harmonic:2+phase%3,phase:variation,grit:mapping.change.magnitude*.3});
+   // Leave most hardware-decay packets untouched. Only longer voices swell;
+   // fitting ADSR into every tiny grain would erase Friday's articulation.
+   if(e.duration>.24&&variation>.72)e.expression.adsr=chipVoiceEnvelope(e.kind==='bass'?'bass':e.kind==='chord'?'chord':'arp',
+    {variation,liquidity,activity:mapping.tempo.activity,tension:mapping.change.magnitude,phrase:phase});
+   if(e.channel<2&&variation>.55)e.expression.dutyShift={duty:(Number(e.expression.duty)+1)%4,at:.3+.4*variation};
   }
-  if(base.gain>0&&base.duration>=.025)events.push(base);
+  if(e.duration>=.012&&e.gain>0)events.push(e);
  }
- const room=performedArrangement(seed,bar*4+1.5,signal);
- const resonance=Number.isFinite(context.chipResonance)?unit(context.chipResonance):0;
- const textureWave=resonance?Array.from({length:32},(_,i)=>Math.round(7.5+7*(Math.sin(i*Math.PI/16)+.3*resonance*Math.sin(i*Math.PI*3/16))/(1+.3*resonance))):4;
- if(active&&!room.rest&&bar%2===1){
-  const duration=Math.min(3,room.restInBeats),gain=.012*room.layers.envion*presence*(context.textureGain??1);
-  if(duration>.05&&gain>0)events.push({kind:'drone',chip:2,channel:2,beat:1.5,midi:plan.harmony.root-12,duration,gain,seed:chipHash(seed,bar*257+251),
-   expression:{wave:textureWave,cents:Math.sign(delta)*8,vibrato:{depth:5,cycles:1},adsr:{attack:.08,decay:.2,sustain:.75,release:.3}}});
- }
- return {...plan,signal,events:events.sort((a,b)=>a.beat-b.beat),
-  development:{stage:'pre-drum',motifId:chipHash(seed,113).toString(16),supportGain:1,cadenceBeat:null,sourceBar:bar},
-  drums:{enabled:false,patternId:'pre-drum',density:0,deviation:0},musicalMapping:mapping};
+ // Any phrase breath changed the last gate; reassert mono ownership after
+ // modulation. The next note always interrupts the same physical channel.
+ events.sort((a,b)=>a.beat-b.beat);const last=[null,null,null,null];
+ for(const event of events){const previous=last[event.channel];if(previous)previous.duration=Math.min(previous.duration,event.beat-previous.beat);last[event.channel]=event;}
+ return {...plan,signal,events:events.filter(e=>e.duration>=.012),musicalMapping:mapping,
+  development:{...plan.development,stage:section,source:'Friday four-channel process',register:'low',resonance},
+  drums:{...plan.drums,enabled:events.some(e=>e.drum),density:plan.drums.density}};
 }

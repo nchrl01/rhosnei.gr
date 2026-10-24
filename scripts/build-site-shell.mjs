@@ -10,10 +10,10 @@ const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
 const version = 448;
 // Audio and navigation updates have independent cache revisions.
-const audioVersion = 481;
+const audioVersion = 492;
 const searchVersion = 456;
 const marketplaceVersion = 483;
-const visualVersion = 483;
+const visualVersion = 492;
 const navigationVersion = 457;
 const foundationVersion = 454;
 const pages = [
@@ -130,6 +130,7 @@ for (const page of pages) {
     html = html.replace(/<script\b[^>]*\bsrc=["'](?:footer-prices|shared-header|wallet-connect)\.js(?:\?[^"']*)?["'][^>]*><\/script>\s*/g, '');
     html = html.replace('</body>', region('scripts', sharedScripts) + '\n</body>');
   }
+  html = html.replace(/src="(audio-lab|av-lab)\.js\?v=\d+"/g, (_, name) => `src="${name}.js?v=${audioVersion}"`);
   if (page.type === 'instrument') html = html.replace(/src="app\.js\?v=\d+"/, `src="app.js?v=${Math.max(audioVersion,searchVersion,visualVersion)}"`);
   html = html.replaceAll('href="fonts/Unifont/Unifont-ui.woff2"', 'href="fonts/Unifont/Unifont.woff2"');
   if (page.active === 'marketplace') html = html.replace(/src="marketplace\.js\?v=\d+"/, `src="marketplace.js?v=${marketplaceVersion}"`);
