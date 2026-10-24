@@ -5,7 +5,7 @@ import {
 
 // Three independent Game Boy APUs. Extra harmony voices come from another
 // hardware model, with fixed mixing headroom and no added synth or effects.
-export const GAME_BOY_RACK_GAIN = .35;
+export const GAME_BOY_RACK_GAIN = .26;
 export const GAME_BOY_CHIP_COUNT = 3;
 export const prepareChipPhrasing = () => prepareDriverPhrasing();
 const DRUMS = new Set(['kick', 'tom', 'snare', 'hat', 'texture']);

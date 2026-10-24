@@ -1,7 +1,7 @@
-import {composePerformedBar as composeChipBar,performedArrangement as chipEnsembleArrangement} from './performed-market-score.js?v=491';
+import {composePerformedBar as composeChipBar,performedArrangement as chipEnsembleArrangement} from './performed-market-score.js?v=494';
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
 import {marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=480';
-import {createGameBoyRack} from './friday-performance-rack.js?v=491';
+import {createGameBoyRack} from './gb-chip-rack.js?v=494';
 import {marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 
@@ -13,7 +13,7 @@ export async function preloadPianoSamples(){return [];}
 export function marketResonance(cap){return Number(cap)>0?unit((Math.log10(Number(cap))-4)/4):0;}
 
 // The public transport API stays stable. Every voice is produced by one
-// one persistent four-channel APU; the score, browser and visual renderer never synthesize audio.
+// three persistent four-channel APUs; the score, browser and visual renderer never synthesize audio.
 export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},onScoreEvent=()=>{},initialSeed=1917}={}){
  const master=ctx.createGain();master.gain.value=0;master.connect(destination);
  let chip;
@@ -154,7 +154,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
    if(options.drums===false)lab.drums=false;if(options.arpeggios===false)lab.arpeggios=false;
    chip.configure(lab);if(previous!==JSON.stringify(lab))invalidate();
   },
-  instruments(){return [{preset:0,name:'Friday GB transmission · four channels'}];},arrangement,
+  instruments(){return [{preset:0,name:'GB musical transmission · three chips'}];},arrangement,
   setMaster(value){volume=unit(value);gain();},
   setRunning(value){captureBeat();running=!!value;held=!value;liveAt=ctx.currentTime;gain();if(!running)clear();},
   setEnabled(value){enabled=!!value;gain();if(!enabled)clear();},
@@ -162,7 +162,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setArpeggioPattern(){},
   setTempo(value){captureBeat();tempo=scoreTempo({tempo:value});pending.music={...pending.music,tempo};},
   resonance(cap){currentCap=cap;return marketResonance(cap);},
-  snapshot(){const state=chip.snapshot(),performance=arrangement();return {name:'GB transmission',family:'One Game Boy APU · four competing channels',error:state.error||'',loading:false,marketPhrase:'Friday independent clocks / low-register dialogue',phraseSource:'Original Friday process + observed market data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo:performance.audibleTempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'detuned chord shadows, wave resonance and stereo phrase replies',chip:state,signal:performance.signal,musicalMapping:marketMusicalMapping(performance.signal)};},
+  snapshot(){const state=chip.snapshot(),performance=arrangement();return {name:'GB transmission',family:'Three Game Boy APUs · musical layers and countervoice',error:state.error||'',loading:false,marketPhrase:'Learned phrases and harmony / Friday circuit countervoice',phraseSource:'Original Friday process + observed market data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo:performance.audibleTempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'detuned chord shadows, wave resonance and stereo phrase replies',chip:state,signal:performance.signal,musicalMapping:marketMusicalMapping(performance.signal)};},
   setTimeline(value){clear();segments=value||[];timeline=createCompositionTimeline(segments,anchor?.rate||1);},
   seekTimeline(at,rate=1){held=false;clear();rate=Math.max(.1,Number(rate)||1);timeline=createCompositionTimeline(segments,rate);anchor={at,clock:ctx.currentTime,rate};gain();},
   syncTimeline(at,rate=1){if(!anchor||rate!==anchor.rate||Math.abs(scoreNow()-at)>200*Math.max(1,rate))this.seekTimeline(at,rate);},

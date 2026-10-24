@@ -20,15 +20,15 @@ const duties=['12.5%','25%','50%','75%'];
 export function createEngineView(container,{onBundle=()=>{}}={}){
  container.innerHTML=`<details class="engine-panel" open>
   <summary>Live engine · Game Boy chip rack</summary>
-  <p class="engine-note">One Game Boy chip supplies four competing channels for low pulse phrases, bass and noise packets. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
+  <p class="engine-note">Three Game Boy chips give harmony, bass and learned melodic phrases their own channels, with a quieter Friday circuit countervoice. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
   <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for chip snapshots</span><span data-source>One chip · Four hardware channels</span></div>
-  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same four-channel core. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
+  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same Game Boy cores. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
   <div class="engine-overview">
    <section><small>Market observations</small><dl data-market></dl></section>
    <section><small>Chip and transport</small><dl data-chip></dl></section>
    <section><small>Visual field</small><dl data-visuals></dl></section>
   </div>
-  <div class="engine-overview" data-channels aria-label="One Game Boy chip with four hardware channels"></div>
+  <div class="engine-overview" data-channels aria-label="Three Game Boy chips with twelve hardware channels"></div>
   <p class="engine-note">Market cap shapes rhythm; liquidity shapes harmonic stability and sustain; holders shape arpeggio length and range; rising and falling prices shape contour and tone; activity sets tempo. Learned MIDI phrasing supplies motif, timing and articulation. Audible attacks, holds and echoes also move the visual. Missing measurements stay neutral; missing or stale activity stops new sound.</p>
   <details class="engine-source"><summary>Controls and accepted events</summary><div class="engine-overview"><section><small>App controls</small><dl data-controls></dl></section><section><small>Event feedback</small><dl data-events></dl></section></div></details>
   <details class="engine-console"><summary>Engine messages</summary><pre data-log>No engine messages.</pre></details>
