@@ -47,7 +47,7 @@ function render(append=false){
  $('coin-gallery-empty').hidden=items.length>0;more.hidden=items.length<=visible;more.textContent='Load more · '+Math.min(visible,items.length)+' / '+items.length.toLocaleString();
 }
 const networkGroup=document.querySelector('.marketplace-networks');
-// Keep the complete server-rendered network row while the manifest loads.
+// Reserve row space, then reveal only the manifest-resolved network filters.
 networkGroup.inert=true;networkGroup.setAttribute('aria-busy','true');
 function networkButton(chain,name,imageURL){const button=element('button');button.type='button';button.dataset.chain=chain;button.setAttribute('aria-pressed',String(chain==='all'));button.setAttribute('aria-label',name);if(imageURL){const image=element('img',null,'network-mark');image.src=imageURL;image.alt='';image.width=32;image.height=32;image.draggable=false;image.addEventListener('error',()=>{image.remove();button.prepend(element('span',chain.slice(0,2).toUpperCase(),'network-fallback'));},{once:true});button.append(image,element('span',name,'network-name'));}else{button.textContent=chain==='all'?'All':name;button.title=name;}button.addEventListener('click',()=>{if(![...network.options].some(o=>o.value===chain)){const option=element('option',name);option.value=chain;network.append(option);}network.value=chain;for(const item of networkGroup.querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===button));network.dispatchEvent(new Event('change'));});networkGroup.append(button);}
 // Manifest metadata determines the initial collection. Images load naturally

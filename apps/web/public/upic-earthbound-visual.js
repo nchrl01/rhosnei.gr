@@ -1,6 +1,6 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // drive motion. Missing holder counts use an explicitly labelled visual estimate.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=482';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=483';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';

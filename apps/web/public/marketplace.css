@@ -125,4 +125,4 @@ body.marketplace-page>main{padding-bottom:0}
 .coin-placeholder>div{aspect-ratio:1;background:#101010;border-bottom:1px solid #202020}
 .coin-placeholder>span{display:block;width:42%;height:12px;margin:16px 16px 0;background:#252525}
 .coin-placeholder>span:last-child{width:64%;height:8px;margin-top:10px;background:#1b1b1b}
-.marketplace-networks[aria-busy=true]{opacity:.65}
+.marketplace-networks[aria-busy=true]{visibility:hidden}
