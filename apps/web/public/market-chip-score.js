@@ -1,3 +1,6 @@
+import {fridayCarrier} from './friday-carrier.js?v=480';
+import {chipOrchestration} from './chip-orchestration.js?v=480';
+import {pianoHarmony,chartCharacter} from './music-context.js?v=480';
 import {marketPerformance} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=473';
@@ -54,35 +57,39 @@ export function chipPhraseArrangement(seed,beat){
 export function composeChipBar(seed,bar,context={}){
  const signal=marketChipSignal(context),active=context.active!==false&&chipSignalActive(signal);
  const identity=chipHash(seed,113),events=[],start=bar*4;
- const root=36+identity%12,minor=chipHash(identity,19)%3!==0;
- const scale=minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
- const degree=[0,5,3,0][Math.floor(bar/2)%4];
- const tone=n=>root+scale[n%7]+12*Math.floor(n/7);
- const notes=[tone(degree)+12,tone(degree+2)+12,tone(degree+4)+12];
- const harmony={root,index:degree,notes,name:minor?'Minor transmission':'Major transmission',character:'machine',group:minor?'down':'up'};
+ // Reuse the established market-selected harmonic characters and compact
+ // voice leading. The seed owns the key; observed direction owns the mood.
+ const mapping=marketMusicalMapping(signal),direction=mapping.change.direction;
+ const character=chartCharacter({group:direction<0?'down':'up',capChangePct:signal.deltaKnown?signal.delta:0,intensity:0,volatility:0});
+ const harmony=pianoHarmony(seed,{chordStep:Math.floor(bar/2)},{character,tonic:identity%12});
+ const {notes}=harmony,root=harmony.root-12;
+ const bassRoot=root+((notes[0]-root)%12+12)%12;
+ const held=kind=>kind.startsWith('chord')||kind==='drone';
  const development=phraseDevelopment(seed,bar,context);
- const meta={signal,development,harmony,groove:'Learned phrases / asynchronous market circuits'};
+ const orchestra=chipOrchestration(bar,signal,mapping);
+ const meta={signal,development,harmony,orchestra,groove:'Learned phrases / asynchronous market circuits'};
  if(!active)return {...meta,events,drums:{patternId:identity.toString(16),density:0,deviation:0}};
  const {energy,pace,volume,motion,intensity,tradingActivity}=chipMarketExpression(signal);
- const mapping=marketMusicalMapping(signal),direction=mapping.change.direction;
  const {stability,musicality,gate:liquidityGate}=mapping.harmony;
  const fracture=unit(context.phraseDepth??.82),gate=clamp(number(context.phraseGate,.72),.2,1);
- const pulseGain=number(context.dataGain,1),textureGain=number(context.textureGain,.55);
+ const pulseGain=number(context.dataGain,1),textureGain=number(context.textureGain,.35);
  const expression=(kind,id)=>({
   // A coin keeps its voice while activity changes its articulation. Only a
   // strong move bends a selected note; normal phrases retain definite pitch.
-  duty:1+chipHash(identity,['chord_low','chord_high'].includes(kind)?29:23)%2,
+  duty:kind==='chord_low'?1:kind==='chord_high'?2:kind==='arp'&&orchestra.section===2?1:2,
+  attack:kind.startsWith('chord')?.018:.012,
+  adsr:kind.startsWith('chord')?{attack:.035,decay:.12,sustain:.78,release:.24}:kind==='drone'?{attack:.06,decay:.16,sustain:.8,release:.3}:kind==='bass'?{attack:.008,decay:.07,sustain:.72,release:.09}:kind==='arp'?{attack:.008,decay:.045,sustain:.7,release:.08}:kind==='texture'?{attack:.03,decay:.05,sustain:.5,release:.12}:{attack:.015,decay:.075,sustain:.7,release:.13},
   envelope:['bass','drone'].includes(kind)?0:{initial:kind.startsWith('chord')?9+Math.round(2*volume):7+Math.round(3*intensity),direction:-1,pace:kind.startsWith('chord')?0:2+Math.floor((1-pace)*3)},
   // Register routing creates space inside the chips. Root/bass stay central;
   // the two chord tones occupy opposite sides, independently of trade bias.
-  wave:chipHash(identity,31)%2,pan:kind==='bass'||kind==='drone'?0:kind==='chord_low'?-1:kind==='chord_high'?1:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
+  wave:kind==='bass'?4:chipHash(identity,31)%2,pan:kind==='bass'||kind==='drone'?0:kind==='chord_low'?-1:kind==='chord_high'?1:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
   slide:['lead','arp'].includes(kind)&&mapping.change.magnitude>.2&&roll(identity,id+83)<.22?direction*fracture*mapping.change.magnitude*(1.4-.8*stability):0,
-  noiseWidth:15,noiseShift:clamp(Math.round(8-3*energy-motion-mapping.change.signed),3,11),
+  noiseWidth:15,noiseShift:clamp(Math.round(9-2*energy-motion-mapping.change.signed),5,11),
  });
  const add=(beat,midi,duration,gain,kind,id,extra={})=>{
   gain*=kind.startsWith('chord')||kind==='drone'?(context.chordGain??1):['arp','echo','lead'].includes(kind)?(context.arpGain??1):(context.noteGain??1);
   if(beat<0||beat>=4||gain<=0)return;
-  const event={beat,midi,duration:['arp','echo'].includes(kind)?duration:Math.min(duration,4-beat),gain:gain*signal.fresh,kind,expression:{...expression(kind,id),...extra},seed:chipHash(identity,id)};
+  const event={beat,midi,duration:['arp','echo'].includes(kind)||held(kind)?duration:Math.min(duration,4-beat),gain:gain*signal.fresh,kind,expression:{...expression(kind,id),...extra},seed:chipHash(identity,id)};
   events.push(event);return event;
  };
  // Stable, newly generated two-bar material. Price ticks change expression,
@@ -93,14 +100,18 @@ export function composeChipBar(seed,bar,context={}){
  const motifMusic={intensity:1,activity:1,group:harmony.group};
  const groove={events:[0,.75,1.5,2.5,3.25].map(beat=>({beat,duration:.5,accent:1}))};
  const phrase=learnedMarketMelody(seed,development.sourceBar,{harmony,groove,music:motifMusic,
-  phraseLearning:1,phraseVariation:context.phraseVariation??0,phraseLength:context.phraseLength??8,
-  phraseDepth:.4,pitchLow:56+identity%5,pitchHigh:73+identity%5,phraseGate:gate});
+  phraseLearning:1,phraseVariation:(context.phraseVariation??0)+orchestra.variation,phraseLength:context.phraseLength??8,
+  phraseDepth:.4,pitchLow:53+identity%5,pitchHigh:69+identity%5,phraseGate:gate});
  if(context.arpeggios!==false){
-  const developed=developPhraseEvents(phrase,development);
+  const carrier=fridayCarrier(seed,bar,signal);
+  const developed=developPhraseEvents(phrase,development).map((event,index)=>{
+   const packet=carrier[index];
+   return packet?{...event,beat:packet.beat,carrierDuty:packet.duty}:event;
+  }).sort((a,b)=>a.beat-b.beat);
   // A recognizable question and a shorter answer. Keep the learned timing
   // and pitch sets, but leave punctuation instead of filling every opening.
-  const leadLimit=development.stage==='answer'?3:development.stage==='vary'?5:4;
-  let lastLeadEnd=-Infinity;
+  const leadLimit=orchestra.section===0||orchestra.section===3?3:development.stage==='answer'?3:4;
+  let lastLeadEnd=-Infinity,lastLeadPitch=notes[0];
   for(const [i,event] of developed.slice(0,leadLimit).entries()){
    const id=development.sourceBar*101+i;
    if(roll(identity,id+10007)>=tradingActivity*unit(.32+.5*energy+.18*intensity)||event.beat<lastLeadEnd+.12)continue;
@@ -110,17 +121,26 @@ export function composeChipBar(seed,bar,context={}){
    // motif development and final source-originality screen still apply.
    const settle=event.beat%1<.15&&roll(identity,id+10009)<stability*.4;
    const target=nearest(event.midi,notes.flatMap(note=>[note,note+12,note+24]));
-   const midi=settle&&event.allowedPitches?.length?nearest(target,event.allowedPitches):event.midi;
-   const duration=Math.max(.16,Math.min(1.5,event.duration*articulation));
-   add(event.beat,midi,duration,.06*(.45+.35*energy+.2*intensity)*event.accent*pulseGain,'lead',id,
-    {allowedPitches:event.allowedPitches,...(event.duration>.65?{sustain:{hold:.62+.16*musicality,steps:1}}:{})});
+   let midi=settle&&event.allowedPitches?.length?nearest(target,event.allowedPitches):event.midi;
+   // Shape the whole phrase in the measured direction, using only the
+   // generated motif's permitted notes. Liquidity still selects settlement.
+   if(direction&&event.allowedPitches?.length){
+    const centre=nearest(notes.at(-1),event.allowedPitches);
+    midi=nearest(centre*.6+event.midi*.4+orchestra.contour*(i/Math.max(1,leadLimit-1)-.5),event.allowedPitches);
+   }
+   const nearby=event.allowedPitches?.filter(note=>Math.abs(note-lastLeadPitch)<=7);
+   if(Math.abs(midi-lastLeadPitch)>7&&nearby?.length)midi=nearest(midi,nearby);
+   lastLeadPitch=midi;
+   const duration=Math.max(.16,Math.min(2,event.duration*articulation*orchestra.release));
+   add(event.beat,midi,duration,.048*(.45+.35*energy+.2*intensity)*event.accent*pulseGain,'lead',id,
+    {duty:event.carrierDuty??2,allowedPitches:event.allowedPitches,sustain:{hold:.48+.16*musicality,steps:2}});
    lastLeadEnd=event.beat+duration;
   }
  }
  if(context.arpeggios!==false&&development.cadenceBeat!==null&&events.some(event=>event.kind==='lead')){
   const ending=development.cadenceBeat-.5,last=events.filter(e=>e.kind==='lead').at(-1)?.midi??72;
   const tonic=[root+24,root+36].filter(n=>n>=55&&n<=90);
-  add(ending,nearest(last,tonic),.5,.056*(.55+.45*energy)*pulseGain,'lead',919,{allowedPitches:tonic});
+  add(ending,nearest(last,tonic),.5,.056*(.55+.45*energy)*pulseGain,'lead',919,{allowedPitches:tonic,sustain:{hold:.6,steps:2}});
  }
  // Sparse harmony is a phrase decision, not another low-probability gate on
  // each note. An eligible observation gets one seeded entrance every four
@@ -131,7 +151,7 @@ export function composeChipBar(seed,bar,context={}){
  const chordSlot=bar%4===chordPhase||(energy>=.55&&bar%4===(chordPhase+2)%4);
  const chordEntrance=chordSlot&&roll(identity,bar+21001)<Math.sqrt(tradingActivity);
  const chordBeat=(chipHash(identity,chordCycle+21101)%4)*.25;
- const chordDuration=(.65+1.25*(1-motion)+.25*volume)*(.65+.45*liquidityGate);
+ const chordDuration=(3.2+2.4*(1-pace)+.8*volume)*(.75+.25*liquidityGate);
  // Match the visual's smooth market-cap identity range. This changes only
  // harmonic colour in legal wave RAM at an onset; it cannot activate sound,
  // change the root or retune an already sounding voice. Unknown is neutral.
@@ -142,19 +162,19 @@ export function composeChipBar(seed,bar,context={}){
   const phase=i/32*2*Math.PI,peak=2+chipHash(identity,797)%4;
   // Resonance is baked into legal 4-bit wave RAM. It is a changing harmonic
   // peak in the waveform, not an extra filter or oscillator outside the APU.
-  const colour=.08+.16*capColour;
-  const value=Math.sin(phase)+resonance*.65*Math.sin(phase*peak)+colour*Math.sin(phase*3);
-  return Math.round(clamp(7.5+value*7/(1+resonance*.65+colour),0,15));
+  const colour=.04+.07*capColour+.09*orchestra.colour;
+  const value=Math.sin(phase)+motion*resonance*(.18+.17*orchestra.colour)*Math.sin(phase*peak)+motion*colour*Math.sin(phase*3);
+  return Math.round(clamp(7.5+value*7/(1+motion*(resonance*.35+colour)),0,15));
  });
  if(chordEntrance){
   [notes[1],notes[2]].forEach((midi,i)=>add(chordBeat+i*.025,midi,chordDuration-i*.025,
    .032*(.7+.3*energy),'chord_'+(i?'high':'low'),211+i,
-   {sustain:{hold:.65+.15*musicality,steps:1}}));
-  const ground=add(chordBeat,tone(degree)+12,chordDuration,.03*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0,sustain:{hold:.65,steps:2}});
+   {cents:i?2:-14*musicality,vibrato:{depth:3+5*motion,cycles:1},sustain:{hold:.55+.15*musicality,steps:3}}));
+  const ground=add(chordBeat,bassRoot+12,chordDuration,.03*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0,cents:direction*12*mapping.change.magnitude,vibrato:{depth:5+12*(1-musicality)*motion,cycles:1.5},sustain:{hold:.65,steps:2}});
   if(ground)ground.ensembleRole='chord'; // Root plus two pulses form a true chord.
- }else if((bar+chipHash(identity,217))%2===0&&roll(identity,bar+21801)<tradingActivity*(.12+.35*volume+.25*(1-pace))){
+ }else if((bar+chipHash(identity,217))%2===0&&roll(identity,bar+21801)<tradingActivity*(.25+.35*volume+.3*(1-pace))){
   const beat=1.65+.25*(chipHash(identity,bar+21803)%3);
-  add(beat,tone(degree)+12,.8+1.25*volume+.65*(1-pace),.034*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0,sustain:{hold:.5+.25*musicality,steps:2}});
+  add(beat,bassRoot+12,2.5+1.5*volume+1.5*(1-pace),.034*(.7+.3*energy),'drone',218,{wave:resonantWave,pan:0,cents:direction*12*mapping.change.magnitude,vibrato:{depth:5+12*(1-musicality)*motion,cycles:1.5},sustain:{hold:.5+.25*musicality,steps:2}});
  }
  // One coherent answer gesture occupies the actual response window. Its
  // pooled timing remains stable within the coin/score pair. Observed holder
@@ -183,9 +203,9 @@ export function composeChipBar(seed,bar,context={}){
   const beat=arpStart+i*arpGap-start;
   const midi=arpPitches[i],pooledGate=statistic('lead.gate',arpSeed,i+41,.72,n=>n>=.5&&n<=1);
   const accent=statistic('lead.accent',arpSeed,i+51,.95,n=>n>=.8&&n<=1.15);
-  const duration=Math.min(.45,Math.max(.2,arpGap*pooledGate*(.75+.35*liquidityGate))),gain=.038*(.5+.5*energy)*accent*pulseGain;
+  const duration=Math.min(.65,Math.max(.25,arpGap*pooledGate*(.85+.35*liquidityGate))),gain=.058*(.5+.5*energy)*accent*pulseGain;
   const envelope={initial:9+Math.round(2*intensity),direction:-1,pace:3};
-  add(beat,midi,duration,gain,'arp',301+i,{envelope});
+  add(beat,midi,duration,gain,'arp',301+i,{envelope,sustain:{hold:.55,steps:2}});
   if(i===arpCount-1)echoSource={beat:arpStart+i*arpGap,midi,duration,gain,envelope};
  }
  if(echoSource){
@@ -210,24 +230,25 @@ export function composeChipBar(seed,bar,context={}){
   const gap=statistic('bass.inter_onset_beats',bassSeed,i+1,1.5,n=>n>=.75&&n<=2.5);
   const duration=statistic('bass.duration_beats',bassSeed,i+9,1,n=>n>=.35&&n<=2);
   const articulation=statistic('bass.gate',bassSeed,i+17,.8,n=>n>=.5&&n<=1);
-  const bass=tone(degree)+(i===1&&energy>.4?7:0);
-  if(roll(identity,development.sourceBar*11+i+40101)<tradingActivity*(.45+.35*pace+.2*volume))add(beat,bass,Math.min(duration,gap*articulation),.025*(.75+.25*energy),'bass',401+i);
+  const bass=bassRoot+(i===1&&energy>.4?7:0);
+  const overlapsLead=events.some(e=>e.kind==='lead'&&beat>e.beat-.1&&beat<e.beat+e.duration);
+  if((i===0||!overlapsLead)&&roll(identity,development.sourceBar*11+i+40101)<tradingActivity*(.45+.35*pace+.2*volume))add(beat,bass,Math.min(duration,gap*articulation),.025*(.75+.25*energy),'bass',401+i);
   beat+=gap/mapping.rhythm.rate;
  }
- // Envion's density/overlap logic becomes short legal noise grains on
+ // Envion's density/overlap logic becomes held noise ribbons and wave tones on
  // the second chip. Candidate times are local, stable bar addresses. Market
  // data alters eligibility, duration and overlap, never the whole clock grid.
- const spacing=.38+.18*roll(identity,71),phase=roll(identity,bar+706)*spacing;
+ const spacing=(.75+.5*(1-pace)+.25*roll(identity,71))*(1.15-.3*orchestra.breath),phase=roll(identity,bar+706)*spacing;
  if(textureGain>0)for(let step=0;step*spacing+phase<4;step++){
   const beat=step*spacing+phase,address=bar*32+step;
   const cloud=chipEnsembleArrangement(seed,start+beat,signal);
   // Noise answers the tonal phrase; it does not sit on every lead attack.
-  const spoken=events.some(event=>['lead','arp'].includes(event.kind)&&beat>event.beat-.12&&beat<event.beat+event.duration+.15);
+  const spoken=events.some(event=>['lead','arp'].includes(event.kind)&&Math.abs(beat-event.beat)<.18);
   if(spoken||roll(identity,address+601)>=cloud.grainDensity*.65)continue;
-  const duration=Math.min(cloud.grainDurationBeats*(.7+.3*cloud.grainOverlap),spacing*2);
+  const duration=Math.min((.4+cloud.grainDurationBeats*2)*(.7+.3*cloud.grainOverlap),spacing*1.8);
   events.push({kind:'texture',drum:'texture',beat,duration,
-   gain:.018*textureGain*(.35+.65*cloud.textureWeight)*signal.fresh,seed:chipHash(identity,address+601),
-   expression:{...expression('texture',address+601),noiseWidth:development.stage==='vary'&&motion>.75&&roll(identity,address+609)<.1?7:15,noiseDivider:3+chipHash(identity,address+607)%5,envelope:{initial:3+Math.round(2*cloud.textureWeight),direction:-1,pace:1}}});
+   gain:.014*textureGain*(.35+.65*cloud.textureWeight)*signal.fresh,seed:chipHash(identity,address+601),
+   expression:{...expression('texture',address+601),noiseWidth:15,noiseDivider:3+chipHash(identity,address+607)%5,envelope:{initial:5+Math.round(2*cloud.textureWeight),direction:-1,pace:0},sustain:{hold:.4,steps:3}}});
  }
  const drums=composeGameBoyDrumBar(seed,bar,{...context,signal},development);
  const melody=events.filter(event=>event.kind==='lead'&&chipEnsembleArrangement(seed,start+event.beat,signal).roleGains.lead>0);
@@ -236,7 +257,7 @@ export function composeChipBar(seed,bar,context={}){
   if(['kick','tom'].includes(event.drum)&&melody.some(note=>event.beat<note.beat+note.duration+.04&&event.beat+event.duration>note.beat-.06))continue;
   const accent=statistic('drums.accent',identity,event.seed,.85,n=>n>=.45&&n<=1.15);
   const articulation=statistic('drums.gate',identity,event.seed+1,.75,n=>n>=.3&&n<=1);
-  events.push({...event,gain:event.gain*accent*(context.drumGain??1),duration:event.duration*(.65+.35*articulation)});
+  events.push({...event,gain:event.gain*accent*.42*(context.drumGain??1),duration:event.duration*(.65+.35*articulation)});
  }
  // All eight slots breathe together, including the irregular noise circuits.
  const phrased=[];
@@ -246,9 +267,13 @@ export function composeChipBar(seed,bar,context={}){
   // A response run may cross its middle bar line. Its last pre-line note
   // still gets a complete gate; shared rests and the next channel owner
   // remain the actual release limits.
-  event.duration=Math.min(event.duration,['arp','echo'].includes(event.kind)?Infinity:4-event.beat,arrangement.restInBeats);
+  event.duration=Math.min(event.duration,['arp','echo'].includes(event.kind)||held(event.kind)?Infinity:4-event.beat,arrangement.restInBeats);
   const role=event.ensembleRole??(event.kind.startsWith('chord')?'chord':event.kind==='echo'?'arp':event.kind);
   event.gain*=role==='tail'?event.sourceRoleGain:(arrangement.roleGains[role]??arrangement.phraseGain);
+  event.gain*=orchestra.roles[role==='tail'?'arp':role]??1;
+  // Accompaniment yields at melodic/chord entrances instead of stacking
+  // competing transients. Held sound can continue underneath a phrase.
+  if(event.kind==='drum'&&events.some(e=>(e.kind==='lead'||e.kind.startsWith('chord'))&&Math.abs(e.beat-event.beat)<.2))event.gain*=.35;
   if(event.gain<=0)continue;
   if(development.cadenceBeat!==null){
    if(event.beat>=development.cadenceBeat)continue;

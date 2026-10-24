@@ -1,11 +1,11 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
-// enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=473';
+// drive motion. Missing holder counts use an explicitly labelled visual estimate.
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=482';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
-import {createChipVisualEvents} from './chip-visual-events.js?v=472';
+import {createChipVisualEvents} from './chip-visual-events.js?v=480';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
 // the legacy audio/metadata-driven visual parameter path.
@@ -65,8 +65,15 @@ export function earthboundMarketState(m={},coinKey='unselected'){
  const performance=marketPerformance(m);
  const marketCap=finite(m.context?.latestCap),liquidity=m.availability?.liquidity===false?null:finite(m.observation?.liquidity);
  const holders=observedHolderSnapshot(m),holderBalances=holders.balances;
+ const observedHolders=finite(m.audience?.holders);
+ const hasMarket=marketCap>0||finite(m.context?.latestPrice)>0||finite(m.replay?.price)>0||finite(m.context?.path?.at(-1)?.close)>0;
+ // A visual population estimate, never a fabricated wallet list or trade signal.
+ // Stable across polls and seeds; real holder counts replace it when available.
+ const holderEstimated=!(observedHolders>0)&&!holderBalances.length&&hasMarket;
+ const totalHolders=observedHolders>0?observedHolders:holderBalances.length||
+  (holderEstimated?Math.round(Math.max(256,Math.min(10000,Math.sqrt(Math.max(1,marketCap||liquidity||262144))*2))):null);
  return {coinKey,chartHistory:m.replay?.source==='candles'?m.replay.chart:null,marketCap:marketCap>0?marketCap:null,liquidity:liquidity!==null&&liquidity>=0?liquidity:null,
-  holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holders.settled,holderFetchLoading:holders.loading,liveHolders:!m.replay,holderSource:'observed',holderBalanceSource:holders.source,totalHolders:finite(m.audience?.holders),holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holders.coverage,change:0,
+  holderBalances,holderFetchedAt:holders.fetchedAt,marketObservedAt:finite(m.context?.path?.at(-1)?.time),holderFetchSettled:holderEstimated||holders.settled,holderFetchLoading:!holderEstimated&&holders.loading,liveHolders:!m.replay,holderSource:holderEstimated?'estimated':'observed',holderEstimated,observedHolders,holderBalanceSource:holders.source,totalHolders,holderProviderState:holders.providerState,holderPrimaryProviderState:holders.primaryProviderState,holderCoverage:holderEstimated?'estimated-population':holders.coverage,change:0,
   tempo:finite(m.arrangement?.audibleTempo)??marketMusicalMapping(performance).tempo.bpm,fresh:performance.fresh,activity:performance.activity,
   volume:performance.volume,motion:performance.motion,pressure:performance.pressure,balance:performance.balance,
   direction:performance.direction,delta:performance.delta,
@@ -254,7 +261,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
   syncVisualLoading();
   host.dataset.pixelBlast=renderer.kind==='canvas'?'canvas':'ready';
   host.dataset.visible='true';
-  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String((playing||transportPresence>0)&&!reduced.matches),motion:clock.toFixed(4),motionRate:motionRate.toFixed(4),marketActivity:motionActivity.toFixed(4),level:'0',holderSource:latest.holderBalances.length?'observed-wallet-sample':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
+  Object.assign(canvas.dataset,{composition:'earthbound',active:String(playing),visible:'true',moving:String((playing||transportPresence>0)&&!reduced.matches),motion:clock.toFixed(4),motionRate:motionRate.toFixed(4),marketActivity:motionActivity.toFixed(4),level:'0',holderSource:latest.holderEstimated?'estimated':latest.holderBalances.length?'observed-wallet-sample':latest.totalHolders>0?'observed-count':'unavailable',marketCapState:latest.marketCap===null?'unavailable':'observed',liquidityState:latest.liquidity===null?'unavailable':'observed'});
  }
  raf=requestAnimationFrame(draw);
  return {
@@ -348,7 +355,7 @@ export function createEarthboundVisual(canvas,{getState=()=>({}),getClock=()=>nu
     close(){capture.close();output.width=output.height=1;},
    };
   },
-  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:renderedHolderReady?'observed-wallet-sample':'unavailable',totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,scoreReactive:true,scoreAccent,scheduledScoreEvents:scoreEvents.snapshot().queued,scorePulse:scoreEvents.snapshot(),marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
+  snapshot(){return {...renderer.snapshot(),contentFrame:{mode:'full',x:0,y:0,side:width,referenceSide:width},renderer:'earthbound',time:clock,renderedAt,renderedPlaying,renderedCoinKey,sourceCoinKey,holderSnapshotReady:renderedHolderReady,holderFetchedAt:latest?.holderFetchedAt??null,marketObservedAt:latest?.marketObservedAt??null,marketCap:latest?.marketCap??null,liquidity:latest?.liquidity??null,holderSource:latest?.holderEstimated?'estimated':renderedHolderReady?'observed':'unavailable',holderEstimated:latest?.holderEstimated??false,totalHolders:latest?.totalHolders??null,holderBalanceSource:latest?.holderBalanceSource??'unavailable',holderPrimaryProviderState:latest?.holderPrimaryProviderState??'unavailable',holderProviderState:latest?.holderProviderState??'unavailable',holderLoading:host.dataset.holderLoading==='true',holderCoverage:latest?.holderCoverage??'unavailable',audioReactive:false,scoreReactive:true,scoreAccent,scheduledScoreEvents:scoreEvents.snapshot().queued,scorePulse:scoreEvents.snapshot(),marketActivity:motionActivity,motionRate:.12+.88*motionActivity,transportPresence};},
   refresh(){lastRender=0;size();},reset,
   close(){closed=true;clearScoreEvents();cancelAnimationFrame(raf);fullscreen.close();renderer.close();field.remove();loader.remove();delete host.dataset.visualLoading;delete host.dataset.visualFrame;host.style.removeProperty('--visual-reference-side');host.style.removeProperty('--visual-transport-ink');delete host.dataset.visualState;delete host.dataset.holderLoading;host.removeAttribute('aria-busy');resize.disconnect();observer?.disconnect();mobile.removeEventListener('change',arrange);window.removeEventListener('resize',size);document.removeEventListener('visibilitychange',visibility);anchor.parentNode?.insertBefore(host,anchor);anchor.remove();}
  };

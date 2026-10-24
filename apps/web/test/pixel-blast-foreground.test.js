@@ -145,3 +145,18 @@ describe('stable directional accents',()=>{
   }
  });
 });
+
+it('uses one diameter across solid artwork, edges and empty areas',()=>{
+ const {renderer,render}=accentRenderer();renderer.setImage(preparePixelIdentity(artwork(0,255)));
+ for(const dotSize of [2,4,8]){
+  render([1,0,0],{identity:.68,dotSize});
+  expect(new Set(renderer.canvas.dataset.markDiameterRange.split(',')).size).toBe(1);
+  expect(renderer.canvas.dataset.markCount).toBe('100');
+ }
+});
+
+it('keeps the fallback lattice uniform without a holder count',()=>{
+ const {renderer,render}=accentRenderer();
+ render([1,0,0],{holderCount:0,dotSize:8,jitter:1,identity:.7});
+ expect(new Set(renderer.canvas.dataset.markDiameterRange.split(',')).size).toBe(1);
+});

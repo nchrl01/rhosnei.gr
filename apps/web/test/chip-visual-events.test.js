@@ -45,3 +45,11 @@ describe('performed chip voices drive visible events',()=>{
   expect(audioPresentationTime({...ctx,state:'suspended'},1000)).toBe(null);
  });
 });
+
+it('makes EarthBound sustain follow the same ADSR phases and actual voice end',()=>{
+ const cues=createChipVisualEvents();let end=2;
+ cues.enqueue({id:'adsr',time:1,kind:'chord_low',duration:1,gain:.055,midi:60,adsr:{attack:.06,decay:.12,sustain:.5,release:.15},getEnd:()=>end},.9);
+ const start=cues.sample(1.005).sustain,peak=cues.sample(1.06).sustain,held=cues.sample(1.4).sustain,release=cues.sample(1.95).sustain;
+ expect(start).toBeLessThan(peak);expect(held).toBeLessThan(peak);expect(release).toBeLessThan(held);
+ end=1.95;expect(cues.sample(2.3).sustain).toBe(0);
+});

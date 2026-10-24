@@ -1,7 +1,7 @@
 import {originalArtworkPalette} from '../upic-artwork-palette.js';
 import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=427';
 import {EARTHBOUND_LOOP_DURATION,TAU,loopTime,loopPhase} from './earthbound-loop.js?v=427';
-import {earthboundMotionFrame,earthboundFieldWarp} from './earthbound-presentation.js?v=472';
+import {earthboundMotionFrame,earthboundFieldWarp,earthboundSoundWarp} from './earthbound-presentation.js?v=480';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -187,29 +187,15 @@ export function createPixelBlastCanvas(host){
     const warpX=mix(mix(a.warpX,b.warpX,tx),mix(cc.warpX,dd.warpX,tx),ty),warpY=mix(mix(a.warpY,b.warpY,tx),mix(cc.warpY,dd.warpY,tx),ty);
     let maskInk=0;
     if(identity>0){
-     maskInk=identityInk(identityMask,fx+warpX*cssHeight*(1-identity),fy+warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
+     const [soundX,soundY]=earthboundSoundWarp(fx/cssHeight,fy/cssHeight,presentationMotion);
+     maskInk=identityInk(identityMask,soundX*cssHeight+warpX*cssHeight*(1-identity),soundY*cssHeight+warpY*cssHeight*(1-identity),cssWidth,cssHeight,time,offset,params);
      const imageFeed=mix(-.05,1.05,maskInk);
      feed=mix(feed,imageFeed,identity);
     }
     if(!requested&&feed+b8(px,py)-.5<.5)continue;
-    const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
-    const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const localSize=1; // Wallet-driven jitter owns size variation.
-    // Artwork-aligned liquidity growth. Never use the rectangular edge taper
-    // to size these marks; it belongs only to the unchanged selection score.
-    let artworkSize=1;
-    if(requested&&identityMask?.sizeData){
-     const side=(params.fullscreen?Math.max(cssWidth,cssHeight):.82*Math.min(cssWidth,cssHeight)),u=.5+fx/side,v=.5-fy/side;
-     artworkSize=0;
-     if(u>=0&&v>=0&&u<1&&v<1){
-      const x=u*(identityMask.width-1),y=v*(identityMask.height-1),x0=Math.floor(x),y0=Math.floor(y);
-      const x1=Math.min(x0+1,identityMask.width-1),y1=Math.min(y0+1,identityMask.height-1),d=identityMask.sizeData,W=identityMask.width;
-      artworkSize=mix(mix(d[y0*W+x0],d[y0*W+x1],x-x0),mix(d[y1*W+x0],d[y1*W+x1],x-x0),y-y0);
-     }
-    }
-    const dotSize=requested?1+Math.max(0,params.dotSize-1)*artworkSize:
-      (params.dotSize*localSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
-    const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
+    // Artwork, edge taper and jitter choose occupancy, never mark dimensions.
+    // Keep at least one physical pixel of separation on every lattice path.
+    const diameter=Math.min(Math.max(1,grid-1),Math.max(1,Math.round(params.dotSize*ratio)));
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
     const score=feed+(threshold-.5)*selectionNoise+Math.log(Math.max(.000001,taper*taper))*.35;
@@ -229,9 +215,11 @@ export function createPixelBlastCanvas(host){
     }
    }
    const selectedCount=requested?Math.min(requested,candidates.length):candidates.length;
-   canvas.dataset.markCount=String(selectedCount);let accentMarkCount=0;
+   canvas.dataset.markCount=String(selectedCount);
+   let accentMarkCount=0,minDiameter=Infinity,maxDiameter=0;
    for(let selectedIndex=0;selectedIndex<selectedCount;selectedIndex++){
     const {centerX,centerY,diameter,accent}=candidates[selectedIndex];
+    if(diameter<minDiameter)minDiameter=diameter;if(diameter>maxDiameter)maxDiameter=diameter;
     const accentGlyph=accent&&diameter>=3&&accentDirection!==0;
     if(accentGlyph)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
@@ -249,8 +237,21 @@ export function createPixelBlastCanvas(host){
     }
    }
    canvas.dataset.accentMarkCount=String(accentMarkCount);
+   canvas.dataset.markDiameterRange=selectedCount?minDiameter+','+maxDiameter:'0,0';
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
+   const soundRows=mask&&presentationMotion.sound?new Float32Array(h*3):null;
+   const soundColumns=soundRows?new Float32Array(w*2):null;
+   if(soundRows){
+    const f=presentationMotion;
+    for(let y=0;y<h;y++){
+     const v=(y-h/2)/h;
+     soundRows[y*3]=.65*Math.sin(v*TAU*(2+f.pitch*.25)+f.a)+.35*f.arp*Math.sin(v*TAU*5+f.b)*Math.sin(v*TAU*.5+f.c);
+     soundRows[y*3+1]=.16*f.texture*Math.sin(v*TAU*11+f.b);
+     soundRows[y*3+2]=.45*f.chord*Math.sin(v*TAU+f.c)+.45*f.drum*Math.sin(v*TAU*3+f.a);
+    }
+    for(let x=0;x<w;x++){const u=(x-w/2)/h;soundColumns[x*2]=Math.sin(u*TAU*2+f.a);soundColumns[x*2+1]=.3*f.bass*Math.sin(u*TAU+f.b);}
+   }
    // Only pixels belonging to resolved directional glyphs carry an accent.
    // Dots, including small-size fallbacks and every transitional shape, retain
    // the existing baseline/milestone palette.
@@ -258,7 +259,10 @@ export function createPixelBlastCanvas(host){
    for(let pixel=0;pixel<occupied;pixel++){
     const n=occupiedPixels[pixel],i=n*4;let r=1,g=1,b=1,quiet=0;
     if(mask&&(color||identity>0&&mask.backgroundTone?.empty)){
-     const u=.5+(n%w-w/2)/side,v=.5+(Math.floor(n/w)-h/2)/side;
+     const px=n%w,py=Math.floor(n/w),amount=.055*presentationMotion.sound;
+     const soundX=(px-w/2)/h+(soundRows?amount*(soundRows[py*3]+soundRows[py*3+1]*soundColumns[px*2])*(presentationMotion.direction||1):0);
+     const soundY=(py-h/2)/h+(soundRows?amount*(soundRows[py*3+2]+soundColumns[px*2+1]):0);
+     const u=.5+soundX*h/side,v=.5+soundY*h/side;
      if(u>=0&&u<1&&v>=0&&v<1){
       const m=Math.floor(v*mask.height)*mask.width+Math.floor(u*mask.width),amount=color*mask.rgba[m*4+3]/255,c=m*3;
       if(color&&mask.colors){r=mix(1,mask.colors[c],amount);g=mix(1,mask.colors[c+1],amount);b=mix(1,mask.colors[c+2],amount);}

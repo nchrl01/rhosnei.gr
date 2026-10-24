@@ -1,6 +1,46 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v7`.
+Current engine version: `upic-nft-gb-v12`.
+
+Version 481 promotes the approved pre-drum arrangement to the live, replay
+and collectible score via performed-market-score.js. Three persistent GB APUs
+provide four independent rolled chord slots, a MIDI-screened melodic line,
+sine bass and sustained wave texture. The drum sequencer and extra arrival
+noise are absent from this arrangement. Output gain .35 matches the preview.
+Market freshness/recency/availability gates remain mandatory; measured cap
+selects rhythm, activity controls tempo, liquidity shapes sustain, holder count
+shapes melody range, and measured direction selects harmonic character. Every
+accepted channel voice still emits the output-clock/ADSR EarthBound event.
+
+Version 480 adds register-stepped ADSR for pulse, noise and wave voices.
+Attack/decay/release are seconds inside the total scored gate; sustain is a
+0..1 level ratio. Phases compress together for short notes. Owner-checked
+register updates remain within the 16-command budget, including pitch motion.
+Manual envelope settings retain their override. Wave table 4 exposes the
+existing 32-sample/4-bit sine preset and becomes the automatic bass tone.
+Distinct chord pulse widths and MIDI role occupancy shape accompaniment
+without replacing the approved carrier clocks. Holder marks now have one
+uniform diameter controlled by liquidity, independent of artwork coverage.
+
+Version 478 recovers the asynchronous carrier clock/coin timbre logic from
+a84fac4 (Friday 23:40, nearest saved revision to the requested 23:38). The
+newer generated pitch guard, harmony, market mapping and shared rests remain.
+Noise/percussion levels and observation bursts are reduced at source, with
+15-bit noise and slower noise clocks. Vinyl start/stop is retained.
+
+Version 477 adds a seek-addressable 32-bar orchestration form, shared entrance
+spacing, evolving wave colour, and measured-direction melodic contours. Each
+cycle varies the generated MIDI-informed phrase while keeping its coin key.
+
+Version 476 uses a brief two-level pulse-register attack, softer releases,
+50% duty pulses, a narrower lead register and quieter percussion. Melodic
+leaps choose nearby pitches from the generated phrase’s allowed palette; the
+final originality guard still screens them. The score reconnects market-selected harmonic characters and compact voice leading,
+allows held chords/drone notes across bar boundaries until a shared breath, and
+uses fractional register tuning, slow bounded pitch motion and held noise textures.
+Availability-labelled market controls and silence gates remain mandatory. The
+original vinyl start/stop transport is restored in the homepage and audio lab;
+normal playback passes through without resampling.
 
 Version 473 gives learned phrases shorter answers and clearer rests, lowers the
 lead/arp register, roots tonal percussion in the same harmony, and spaces noise

@@ -1,5 +1,6 @@
 import {type ArtworkInput,type MarketFrame,ENGINE_VERSION,assertArtwork} from '@upic/domain';
-import {composeChipBar,marketChipSignal} from '../../../apps/web/public/market-chip-score.js';
+import {marketChipSignal} from '../../../apps/web/public/market-chip-score.js';
+import {composePerformedBar as composeChipBar} from '../../../apps/web/public/performed-market-score.js';
 import {marketMusicalMapping} from '../../../apps/web/public/market-musical-mapping.js';
 import {battlePattern,battlePatternFeed} from './legacy/earthbound-pattern.js';
 export {ENGINE_VERSION};
@@ -61,7 +62,7 @@ type ChipRenderer={prepareChipPhrasing:()=>Promise<{ready:boolean;error?:string|
 const chipModules=new Map<string,Promise<ChipRenderer>>();
 const chipRenders=new WeakMap<ArtworkInput,Map<string,Promise<{left:Float32Array;right:Float32Array}>>>();
 function chipModule(assetBase:string){
- const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=472';
+ const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=481';
  let pending=chipModules.get(url);
  if(!pending){pending=import(/* @vite-ignore */ url).catch(error=>{chipModules.delete(url);throw error;});chipModules.set(url,pending!);}
  return pending!;

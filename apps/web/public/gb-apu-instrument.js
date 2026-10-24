@@ -1,3 +1,4 @@
+import {chipAdsr} from './chip-envelope.js?v=480';
 import {GB_INSTRUMENTS} from './gameboy-instruments.js?v=451';
 import {GameBoyApu} from './mame-gb-apu.js?v=468';
 import {silenceGameBoyChannel} from './gb-apu-silence.js?v=468';
@@ -15,7 +16,7 @@ const integer = (value, fallback, low, high) => Math.round(clamp(number(value, f
 const frameAt = (ctx, time) => Math.ceil(time * ctx.sampleRate);
 const periodFor = (midi, wave=false) => integer(2048 - (wave ? 65536 : 131072) / (440 * 2 ** ((midi - 69) / 12)), 0, 0, 2047);
 const MIDI_CHANNEL = kind => kind === 'bass' ? 2 : ['chord', 'harmony', 'interlock'].includes(kind) ? 1 : 0;
-const WAVE_PRESETS = [31, 30, 35, 139];
+const WAVE_PRESETS = [31, 30, 35, 139, 34];
 const DEFAULTS = Object.freeze({preset:36, chipDuty:2, chipEnvelope:2, chipNoiseShift:3, chipNoiseWidth:0, chipWave:0, chipStereo:1, model:'dmg'});
 
 // Aggregate MIDI phrasing is optional: chip percussion and other original
@@ -31,7 +32,7 @@ function screenLearnedLead(event, guard) {
 
 function waveTable(wave, preset) {
  if ((Array.isArray(wave) || ArrayBuffer.isView(wave)) && wave.length === 32) return Array.from(wave, value => integer(value, 0, 0, 15));
- const selected = Number.isFinite(wave) ? WAVE_PRESETS[integer(wave, 0, 0, 3)] : preset;
+ const selected = Number.isFinite(wave) ? WAVE_PRESETS[integer(wave, 0, 0, 4)] : preset;
  return (GB_INSTRUMENTS.find(item => item.preset === selected) || GB_INSTRUMENTS.find(item => item.preset === 31)).wave;
 }
 
@@ -90,17 +91,20 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
  const envelopeValue = envelope(expression, settings, dynamics);
  if (!envelopeValue.volume) return null;
  const manualEnvelope = Object.hasOwn(configured, 'chipEnvelope') && Number.isFinite(configured.chipEnvelope);
- const sustain = !noise && !manualEnvelope && expression.sustain && typeof expression.sustain === 'object' ? expression.sustain : null;
+ const adsr=!manualEnvelope&&expression.adsr&&typeof expression.adsr==='object'?expression.adsr:null;
+ const sustain = !manualEnvelope && expression.sustain && typeof expression.sustain === 'object' ? expression.sustain : null;
  const manualDuty = Object.hasOwn(configured, 'chipDuty') && Number.isFinite(configured.chipDuty);
  const dutyShift = channel < 2 && !manualDuty && expression.dutyShift && typeof expression.dutyShift === 'object' ? expression.dutyShift : null;
- if (sustain) envelopeValue.register = envelopeValue.volume << 4;
+ if (sustain||adsr) envelopeValue.register = envelopeValue.volume << 4;
  // Register macros share the note's owner and explicit end. A duty write or
  // release retrigger must not accidentally reload the hardware length clock.
- const length = sustain || dutyShift ? {value:0, enable:0} : lengthControl(durationFrames / sampleRate, channel === 2 ? 256 : 64);
+ const length = sustain || adsr || dutyShift ? {value:0, enable:0} : lengthControl(durationFrames / sampleRate, channel === 2 ? 256 : 64);
  const writes = [], updates = [];
  const slide = number(expression.slide, 0);
+ const tunedMidi=midi+clamp(number(expression.cents,0),-50,50)/100;
+ const vibrato=expression.vibrato||{},depth=clamp(number(vibrato.depth,0),0,25)/100,cycles=clamp(number(vibrato.cycles,1),.25,3);
  const slideSeconds = Math.min(duration, Math.max(.004, number(expression.slideTime, Math.min(.12, duration * .7))));
- const pitchAt = seconds => midi + clamp(slide, -24, 24) * Math.min(1, seconds / slideSeconds);
+ const pitchAt = seconds => tunedMidi + clamp(slide, -24, 24) * Math.min(1, seconds / slideSeconds) + depth*Math.sin(2*Math.PI*cycles*seconds/duration)*Math.sin(Math.PI*seconds/duration);
  if (noise) {
   const widthValue = expression.noiseWidth ?? (drum === 'hat' ? 7 : settings.chipNoiseWidth);
   const width = widthValue === 7 || widthValue === 1 ? 1 : 0;
@@ -113,16 +117,27 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
   writes.push([0xff1a, 0]);
   for (let i = 0; i < 16; i++) writes.push([0xff30 + i, (table[i * 2] << 4) | table[i * 2 + 1]]);
   const level = envelopeValue.volume <= 3 ? 3 : envelopeValue.volume <= 7 ? 2 : 1;
-  writes.push([0xff1b, length.value], [0xff1c, level << 5], [0xff1a, 0x80], ...frequencyWrites(channel, midi, 0x80 | length.enable));
+  writes.push([0xff1b, length.value], [0xff1c, level << 5], [0xff1a, 0x80], ...frequencyWrites(channel, tunedMidi, 0x80 | length.enable));
  } else {
   const duty = integer(expression.duty, settings.chipDuty, 0, 3);
   const volumeRegister = channel === 0 ? 0xff12 : 0xff17;
   const sweep = tonalDrum && !number(expression.slide, 0) ? integer(expression.sweep, 0x19, 0, 127) : 0;
   if (channel === 0) writes.push([0xff10, sweep]);
   writes.push([volumeRegister - 1, (duty << 6) | length.value], [volumeRegister, envelopeValue.register],
-   ...frequencyWrites(channel, midi, 0x80 | length.enable));
+   ...frequencyWrites(channel, tunedMidi, 0x80 | length.enable));
  }
- if (sustain) {
+ // A short, two-level attack stays inside the pulse registers. The core
+ // retains duty phase across triggers; no external envelope/filter is added.
+ const attackSeconds=!noise&&channel<2&&!manualEnvelope&&!adsr?clamp(number(expression.attack,0),0,.025):0;
+ const attackFrame=Math.round(Math.min(attackSeconds,duration*.15)*sampleRate);
+ if(attackFrame>0&&attackFrame<durationFrames&&envelopeValue.volume>1){
+  const reg=channel===0?0xff12:0xff17;
+  const initial=Math.max(1,Math.floor(envelopeValue.volume*.5));
+  const write=writes.find(([address])=>address===reg);
+  if(write)write[1]=(initial<<4)|(envelopeValue.register&15);
+  updates.push({frame:attackFrame,writes:[[reg,envelopeValue.register],...frequencyWrites(channel,pitchAt(attackFrame/sampleRate),0x80|length.enable)]});
+ }
+ if (sustain&&!adsr) {
   const hold = clamp(number(sustain.hold, .6), .25, .9);
   const steps = integer(sustain.steps, 3, 1, 3);
   const initialLevel = envelopeValue.volume <= 3 ? 3 : envelopeValue.volume <= 7 ? 2 : 1;
@@ -141,28 +156,50 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
    } else {
     const level = Math.floor(envelopeValue.volume * (steps + 1 - i) / (steps + 1));
     if (level <= 0 || level === previousLevel) continue;
-    const volumeRegister = channel === 0 ? 0xff12 : 0xff17;
+    const volumeRegister = noise?0xff21:channel === 0 ? 0xff12 : 0xff17;
     // Explicitly retrigger the lower held envelope. Merely writing NRx2
     // while running relies on model-specific "zombie" envelope behaviour.
-    updates.push({frame, writes:[[volumeRegister, level << 4], ...frequencyWrites(channel, pitchAt(seconds), 0x80)]});
+    updates.push({frame, writes:[[volumeRegister, level << 4], ...(noise?[[0xff23,0x80]]:frequencyWrites(channel, pitchAt(seconds), 0x80))]});
     previousLevel = level;
    }
   }
+ }
+ // ADSR uses the APU's own stepped levels. Pulse/noise updates retrigger
+ // the envelope explicitly; wave updates use NR32 without touching wave RAM.
+ // Seconds describe phases inside the note's complete lifetime, including R.
+ if(adsr){
+  const {attack,decay,release,releaseAt,sustain:sustainRatio}=chipAdsr(adsr,duration);
+  const wavePeak=envelopeValue.volume<=3?3:envelopeValue.volume<=7?2:1;
+  const levelFor=fraction=>channel===2?(fraction<=0?0:Math.min(3,wavePeak+Math.max(0,Math.round(-Math.log2(fraction))))):Math.max(0,Math.round(envelopeValue.volume*fraction));
+  const reg=channel===2?0xff1c:noise?0xff21:channel===0?0xff12:0xff17;
+  const initial=levelFor(channel===2?0:1/Math.max(2,envelopeValue.volume));
+  const entry=writes.find(([address])=>address===reg);if(entry)entry[1]=initial<<(channel===2?5:4);
+  let previous=initial;
+  const step=(at,fraction)=>{
+   const level=levelFor(fraction),frame=Math.round(at*sampleRate);
+   if(level===previous||frame<=0||frame>=durationFrames)return;
+   const commands=[[reg,level<<(channel===2?5:4)]];
+   if(channel!==2&&level>0)commands.push(...(noise?[[0xff23,0x80]]:frequencyWrites(channel,pitchAt(at),0x80)));
+   updates.push({frame,writes:commands});previous=level;
+  };
+  for(let i=1;i<=3;i++)step(attack*i/3,i/3);
+  for(let i=1;i<=3;i++)step(attack+decay*i/3,1-(1-sustainRatio)*i/3);
+  for(let i=1;i<=4;i++)step(releaseAt+release*i/4,sustainRatio*(1-i/4));
  }
  if (dutyShift) {
   const duty = integer(expression.duty, settings.chipDuty, 0, 3), next = integer(dutyShift.duty, duty, 0, 3);
   const frame = Math.round(duration * clamp(number(dutyShift.at, .35), .1, .85) * sampleRate);
   if (next !== duty && frame > 0 && frame < durationFrames) updates.push({frame, writes:[[channel === 0 ? 0xff11 : 0xff16, next << 6]]});
  }
- if (!noise && Math.abs(slide) > .001) {
-  const target = midi + clamp(slide, -24, 24);
+ if (!noise && (Math.abs(slide) > .001||depth>0)) {
+  const gestureSeconds=depth>0?duration:slideSeconds;
   // The worklet accepts sixteen owner-checked updates per voice. Reserve
   // those required by release/duty before sampling the pitch gesture.
-  const count = Math.min(16 - updates.length, Math.max(1, Math.floor(slideSeconds * 128)));
+  const count = Math.min(16 - updates.length, Math.max(1, Math.floor(gestureSeconds * 128)));
   for (let i = 1; i <= count; i++) {
-   const frame = Math.round(slideSeconds * sampleRate * i / count);
+   const frame = Math.round(gestureSeconds * sampleRate * i / count);
    if (frame >= durationFrames) break;
-   updates.push({frame, writes:frequencyWrites(channel, midi + (target - midi) * i / count, length.enable)});
+   updates.push({frame, writes:frequencyWrites(channel, pitchAt(frame/sampleRate), length.enable)});
   }
  }
  updates.sort((a, b) => a.frame - b.frame);
@@ -411,7 +448,7 @@ export async function createGameBoyInstrument(ctx, destination, options={}) {
   const previousModel = settings.model;
   Object.assign(settings, DEFAULTS);
   overrides = {};
-  for (const [key, maximum] of [['chipDuty', 3], ['chipEnvelope', 7], ['chipNoiseShift', 13], ['chipNoiseWidth', 1], ['chipWave', 3], ['chipStereo', 1]]) {
+  for (const [key, maximum] of [['chipDuty', 3], ['chipEnvelope', 7], ['chipNoiseShift', 13], ['chipNoiseWidth', 1], ['chipWave', 4], ['chipStereo', 1]]) {
    if (Number.isFinite(changes[key])) overrides[key] = settings[key] = integer(changes[key], settings[key], 0, maximum);
   }
   if (Number.isFinite(changes.preset)) overrides.preset = settings.preset = changes.preset;

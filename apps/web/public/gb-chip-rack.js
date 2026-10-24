@@ -1,22 +1,24 @@
 import {
  createGameBoyInstrument, renderGameBoyScore,
  prepareChipPhrasing as prepareDriverPhrasing,
-} from './gb-apu-instrument.js?v=472';
+} from './gb-apu-instrument.js?v=480';
 
-// Two independent Game Boy APUs. Extra harmony voices come from another
+// Three independent Game Boy APUs. Extra harmony voices come from another
 // hardware model, with fixed mixing headroom and no added synth or effects.
-export const GAME_BOY_RACK_GAIN = .55;
+export const GAME_BOY_RACK_GAIN = .35;
+export const GAME_BOY_CHIP_COUNT = 3;
 export const prepareChipPhrasing = () => prepareDriverPhrasing();
 const DRUMS = new Set(['kick', 'tom', 'snare', 'hat', 'texture']);
 const ROLES = Object.freeze({
  note:[0, 0], lead:[0, 0], arp:[0, 1], arpeggio:[0, 1], echo:[0, 1], bass:[0, 2],
  chord_low:[1, 0], chord_high:[1, 1], chord:[1, 1], harmony:[1, 1],
- interlock:[1, 1], drone:[1, 2],
+ interlock:[1, 1], drone:[2, 2],
 });
-const CHIP_NAMES = ['Foreground', 'Harmony'];
+const CHIP_NAMES = ['Melody and bass', 'Harmony A', 'Harmony B and texture'];
 const CHANNEL_ROLES = [
- ['Lead / kick / tom', 'Arpeggio / echo', 'Bass', 'Drums'],
- ['Chord low', 'Chord high', 'Drone', 'Texture / grain'],
+ ['Melodic phrase', 'Reserved', 'Sine bass', 'Reserved'],
+ ['Chord low A', 'Chord high A', 'Reserved', 'Reserved'],
+ ['Chord low B', 'Chord high B', 'Drone', 'Texture / grain'],
 ];
 const index = (value, maximum) => Number.isInteger(value) && value >= 0 && value <= maximum ? value : null;
 
@@ -27,7 +29,7 @@ function routeEvent(event) {
  const drum = event.drum || (DRUMS.has(role) ? role : role === 'drum' ? 'texture' : null);
  if (drum && !DRUMS.has(drum)) return null;
  const fallback = drum ? [drum === 'texture' ? 1 : 0, drum === 'kick' || drum === 'tom' ? 0 : 3] : ROLES[role] || ROLES.note;
- const chip = index(event.chip, 1) ?? index(expression.chip, 1) ?? fallback[0];
+ const chip = index(event.chip, 2) ?? index(expression.chip, 2) ?? fallback[0];
  const channel = index(event.channel, 3) ?? index(expression.channel, 3) ?? fallback[1];
  const routed = {...event, expression, chip, channel};
  if (channel === 3) {
@@ -48,7 +50,7 @@ function aggregatePhrasing(states) {
  const available = states.filter(Boolean);
  const first = available[0] || {};
  const errors = [...new Set(available.map(state => state.error).filter(Boolean))];
- const ready = available.length === 2 && available.every(state => state.ready);
+ const ready = available.length === GAME_BOY_CHIP_COUNT && available.every(state => state.ready);
  return {...first, ready,
   state:ready ? 'ready' : errors.length ? 'error' : available.some(state => state.state === 'loading') ? 'loading' : first.state || 'idle',
   error:errors.join('; ') || null,
@@ -59,7 +61,7 @@ function aggregatePhrasing(states) {
 }
 
 export async function createGameBoyRack(ctx, destination, options={}) {
- const buses = [ctx.createGain(), ctx.createGain()];
+ const buses = Array.from({length:GAME_BOY_CHIP_COUNT},()=>ctx.createGain());
  for (const bus of buses) { bus.gain.value = GAME_BOY_RACK_GAIN; bus.connect(destination); }
  const results = await Promise.allSettled(buses.map(bus => createGameBoyInstrument(ctx, bus, options)));
  const failed = results.find(result => result.status === 'rejected');
@@ -116,7 +118,7 @@ export async function createGameBoyRack(ctx, destination, options={}) {
  function cancelVoice(voiceOrId, when=ctx.currentTime) {
   if (closed) return;
   const id = typeof voiceOrId === 'object' ? voiceOrId?.id : voiceOrId;
-  const match = typeof id === 'string' ? /^gb([01])\/(.+)$/.exec(id) : null;
+  const match = typeof id === 'string' ? /^gb([012])\/(.+)$/.exec(id) : null;
   if (match) chips[Number(match[1])].cancelVoice(match[2], when);
  }
 
@@ -131,12 +133,12 @@ export async function createGameBoyRack(ctx, destination, options={}) {
   snapshot() {
    const states = chips.map((chip, id) => ({...chip.snapshot(), id, name:CHIP_NAMES[id], channelRoles:[...CHANNEL_ROLES[id]]}));
    const primary = states[0];
-   return {...primary, engine:'Game Boy chip rack', chipCount:2, channelCount:8, outputGain:GAME_BOY_RACK_GAIN,
+   return {...primary, engine:'Game Boy chip rack', chipCount:GAME_BOY_CHIP_COUNT, channelCount:GAME_BOY_CHIP_COUNT*4, outputGain:GAME_BOY_RACK_GAIN,
     error:[...new Set(states.map(state => state.error).filter(Boolean))].join('; '),
     voices:states.reduce((sum, state) => sum + state.voices, 0),
     pending:states.reduce((sum, state) => sum + state.pending, 0),
     rejected:states.reduce((sum, state) => sum + state.rejected, 0),
-    apu:primary.apu, apu0:primary.apu, apu1:states[1].apu,
+    apu:primary.apu, apu0:primary.apu, apu1:states[1].apu, apu2:states[2].apu,
     chips:states, phrasing:aggregatePhrasing(states.map(state => state.phrasing)),
    };
   },
@@ -151,7 +153,7 @@ export async function createGameBoyRack(ctx, destination, options={}) {
 
 export function renderGameBoyRack(events, options={}) {
  if (!Array.isArray(events) || events.length > 8192) throw new RangeError('Invalid or oversized Game Boy rack render');
- const scores = [[], []];
+ const scores = Array.from({length:GAME_BOY_CHIP_COUNT},()=>[]);
  for (const event of events) {
   const routed = routeEvent(event);
   if (routed) scores[routed.chip].push(routed);
@@ -159,10 +161,10 @@ export function renderGameBoyRack(events, options={}) {
  const rendered = scores.map(score => renderGameBoyScore(score, options));
  const {left, right} = rendered[0];
  for (let frame = 0; frame < left.length; frame++) {
-  left[frame] = (left[frame] + rendered[1].left[frame]) * GAME_BOY_RACK_GAIN;
-  right[frame] = (right[frame] + rendered[1].right[frame]) * GAME_BOY_RACK_GAIN;
+  let l=0,r=0;for(const chip of rendered){l+=chip.left[frame];r+=chip.right[frame];}
+  left[frame] = l * GAME_BOY_RACK_GAIN;right[frame] = r * GAME_BOY_RACK_GAIN;
  }
- return {left, right, chipCount:2, channelCount:8, outputGain:GAME_BOY_RACK_GAIN,
+ return {left, right, chipCount:GAME_BOY_CHIP_COUNT, channelCount:GAME_BOY_CHIP_COUNT*4, outputGain:GAME_BOY_RACK_GAIN,
   phrasing:aggregatePhrasing(rendered.map(chip => chip.phrasing)),
  };
 }

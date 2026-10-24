@@ -1,6 +1,7 @@
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {resolve,dirname} from 'node:path';
-import {composeChipBar,chipHash,marketChipSignal} from '../apps/web/public/market-chip-score.js';
+import {chipHash,marketChipSignal} from '../apps/web/public/market-chip-score.js';
+import {composePerformedBar as composeChipBar} from '../apps/web/public/performed-market-score.js';
 import {marketMusicalMapping} from '../apps/web/public/market-musical-mapping.js';
 import {renderGameBoyRack} from '../apps/web/public/gb-chip-rack.js';
 
@@ -60,7 +61,7 @@ const path=resolve(args['--out']);await mkdir(dirname(path),{recursive:true});aw
 const metadata={coin,source:'https://api.exchange.coinbase.com/products/'+coin+'/trades',
  type:'Deterministic reconstruction from public trade observations; not a historical audio recording',
  from:new Date(origin).toISOString(),to:new Date(end).toISOString(),seconds,sampleRate,seed,events:notes.length,
- chips:2,channels:[...new Set(notes.map(event=>(event.chip||0)*4+event.channel+1))].sort((a,b)=>a-b),roles:[...new Set(notes.map(event=>event.kind))],peak,rms:Math.sqrt(power/(frames*2)),
+ chips:3,channels:[...new Set(notes.map(event=>(event.chip||0)*4+event.channel+1))].sort((a,b)=>a-b),roles:[...new Set(notes.map(event=>event.kind))],peak,rms:Math.sqrt(power/(frames*2)),
  renderIdentity:chipHash(seed,notes.length).toString(16),phrasing,observations};
 await writeFile(path.replace(/\.wav$/i,'')+'.json',JSON.stringify(metadata,null,2)+'\n');
 console.log(JSON.stringify({path,...metadata,observations:observations.length},null,2));
