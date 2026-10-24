@@ -1,7 +1,7 @@
+import {composePerformedBar as composeChipBar,performedArrangement as chipEnsembleArrangement} from './performed-market-score.js?v=481';
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=480';
-import {createGameBoyRack} from './gb-chip-rack.js?v=480';
-import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
+import {marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=480';
+import {createGameBoyRack} from './gb-chip-rack.js?v=481';
 import {marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 
@@ -13,7 +13,7 @@ export async function preloadPianoSamples(){return [];}
 export function marketResonance(cap){return Number(cap)>0?unit((Math.log10(Number(cap))-4)/4):0;}
 
 // The public transport API stays stable. Every voice is produced by one
-// pair of persistent APUs; the score, browser and visual renderer never synthesize audio.
+// three persistent APUs; the score, browser and visual renderer never synthesize audio.
 export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggio=()=>{},onScoreEvent=()=>{},initialSeed=1917}={}){
  const master=ctx.createGain();master.gain.value=0;master.connect(destination);
  let chip;
@@ -116,7 +116,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const sounded=chip.schedule(spec,start);
     if(!sounded)continue;
     voices.add(sounded.voice);scheduled.set(id,{time:sounded.time,voice:sounded.voice});
-    onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,adsr:Object.hasOwn(lab,'chipEnvelope')?null:event.expression?.adsr,gain:amplitude,duration:sounded.voice.end-sounded.time,direction:barSignal.direction,development:plan.development,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});
+    onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,chip:sounded.chip,channel:event.channel,adsr:Object.hasOwn(lab,'chipEnvelope')?null:event.expression?.adsr,gain:amplitude,duration:sounded.voice.end-sounded.time,direction:barSignal.direction,development:plan.development,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});
     if(event.kind==='arp')onArpeggio({midi:sounded.midi,step:bar*4+event.beat,time:sounded.time,tempo:raw.audibleTempo||tempo,instrument:'GB transmission'});
    }
    const voiceKey=bar+':'+key;
@@ -144,17 +144,6 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const metrics={...(event.metrics||{}),price,referencePrice:reference,observed:true,source};
   if(event.metrics==null){metrics.activity=music.activity??pending.signal.activity;metrics.volume=pending.signal.volume;metrics.fresh=1;}
   const active=updateContext({music,metrics,cap,active:true},{observation:true});
-  // Direct trade/price arrivals have their own audible packet. A rate budget
-  // folds dense batches into the ongoing field instead of replaying a backlog.
-  // No synthetic clock or changed DOM frame can manufacture these attacks.
-  const phrase=chipEnsembleArrangement(seed,position(),pending.signal);
-  if(active&&!anchor&&!phrase.rest&&phrase.restInBeats>.12&&ctx.currentTime-lastPacketAt>=.4&&(lab.dataGain??1)>0){
-   const s=pending.signal,stamp=chipHash(seed,s.fingerprint),time=ctx.currentTime+.008;
-   const gainValue=.009*(.3+.7*Math.max(s.volume,s.activity,s.motion))*s.fresh*(lab.dataGain??1)*phrase.roleGains.texture;
-   const duration=Math.min(.02+.045*s.volume,phrase.restInBeats*60/tempo);
-   const sounded=chip.texture({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(5,Math.round(10-3*Math.max(s.motion,s.volume))),noiseWidth:15,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:{initial:5,direction:-1,pace:1}}},time);
-   if(sounded){lastPacketAt=ctx.currentTime;voices.add(sounded.voice);onScoreEvent({id:'observation:'+String(identity??stamp),time:sounded.time,midi:sounded.midi,kind:'texture',gain:gainValue,duration,direction:s.direction,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});}
-  }
   return active;
  }
  return {
@@ -173,7 +162,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   setArpeggioPattern(){},
   setTempo(value){captureBeat();tempo=scoreTempo({tempo:value});pending.music={...pending.music,tempo};},
   resonance(cap){currentCap=cap;return marketResonance(cap);},
-  snapshot(){const state=chip.snapshot(),performance=arrangement();return {name:'GB transmission',family:'Two Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Learned motifs / market circuits',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:lab.drums!==false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo:performance.audibleTempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'scored chip echoes, wave resonance and hardware envelopes',chip:state,signal:performance.signal,musicalMapping:marketMusicalMapping(performance.signal)};},
+  snapshot(){const state=chip.snapshot(),performance=arrangement();return {name:'GB transmission',family:'Three Game Boy APUs',error:state.error||'',loading:false,marketPhrase:'Rolled harmony / learned MIDI phrasing',phraseSource:'Aggregate MIDI phrasing + observed data',development:lastPlan?.development??null,drums:{...lastPlan?.drums,enabled:false,gain:lab.drumGain??1},preset:0,fallback:false,voices:state.voices??voices.size,phrase:running&&!held&&marketAudible,tempo:performance.audibleTempo,bass:'CH3 · 4-bit wave',roomSend:0,wetReturn:0,spaceEffect:'rolled harmony, GB ADSR and sustained wave texture',chip:state,signal:performance.signal,musicalMapping:marketMusicalMapping(performance.signal)};},
   setTimeline(value){clear();segments=value||[];timeline=createCompositionTimeline(segments,anchor?.rate||1);},
   seekTimeline(at,rate=1){held=false;clear();rate=Math.max(.1,Number(rate)||1);timeline=createCompositionTimeline(segments,rate);anchor={at,clock:ctx.currentTime,rate};gain();},
   syncTimeline(at,rate=1){if(!anchor||rate!==anchor.rate||Math.abs(scoreNow()-at)>200*Math.max(1,rate))this.seekTimeline(at,rate);},

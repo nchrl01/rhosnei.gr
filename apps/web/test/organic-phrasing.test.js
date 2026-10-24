@@ -144,7 +144,7 @@ function audioContextFixture(){
  return {ctx,sources,processors,modules};
 }
 
-async function pianoFixture(){
+async function pianoFixture(onScoreEvent=()=>{}){
  vi.useFakeTimers();vi.setSystemTime(0);vi.resetModules();
  const index=await readFile(new URL('../public/midi-originality-index.bin',import.meta.url));
  const {installOriginalityIndex}=await import('../public/midi-originality.js?v=455');
@@ -152,10 +152,10 @@ async function pianoFixture(){
  vi.stubGlobal('fetch',vi.fn(()=>{throw Error('The installed index and register-driven host require no sample fetches');}));
  const {createTradePiano}=await import('../public/trade-piano.js');
  const {marketChipSignal}=await import('../public/market-chip-score.js?v=471');
- const {chipEnsembleArrangement}=await import('../public/chip-ensemble-arrangement.js?v=471');
+ const {performedArrangement:chipEnsembleArrangement}=await import('../public/performed-market-score.js?v=481');
  const fixture=audioContextFixture();
  fixture.arrangementAt=beat=>chipEnsembleArrangement(seed,beat,marketChipSignal(context));
- fixture.piano=await createTradePiano(fixture.ctx,fixture.ctx.createGain(),{initialSeed:seed});return fixture;
+ fixture.piano=await createTradePiano(fixture.ctx,fixture.ctx.createGain(),{initialSeed:seed,onScoreEvent});return fixture;
 }
 
 afterEach(()=>{vi.clearAllTimers();vi.useRealTimers();vi.unstubAllGlobals();});
@@ -274,8 +274,8 @@ describe('shared chip arrangement clock',()=>{
    expect(source.writes.every(([address,value])=>Number.isInteger(address)&&address>=0xff10&&address<=0xff3f&&Number.isInteger(value)&&value>=0&&value<=255)).toBe(true);
   }
   expect(modules).toHaveLength(1);expect(modules[0]).toContain('gb-apu-worklet.js');
-  expect(processors).toHaveLength(2);
-  expect(piano.snapshot().chip).toMatchObject({chipCount:2,channelCount:8});
+  expect(processors).toHaveLength(3);
+  expect(piano.snapshot().chip).toMatchObject({chipCount:3,channelCount:12});
   expect(fetch).not.toHaveBeenCalled();piano.close();
  });
  it('keeps genuine activity gating independent of phrase dynamics',async()=>{
@@ -286,4 +286,15 @@ describe('shared chip arrangement clock',()=>{
   vi.advanceTimersByTime(500);expect(piano.arrangement().active).toBe(false);expect(sources).toHaveLength(0);
   piano.close();
  });
+});
+
+it('forwards played third-chip chord events and ADSR to the EarthBound bridge',async()=>{
+ const events=[],{piano}=await pianoFixture(event=>events.push(event));
+ piano.setRunning(true);piano.trade({kind:'swap',id:'three-chip',priceUsd:101,referencePrice:100},context.cap,context.music);
+ await vi.advanceTimersByTimeAsync(2200);
+ const third=events.filter(e=>e.chip===2&&e.kind.startsWith('chord'));
+ expect(third.length).toBeGreaterThan(0);
+ expect(third.every(e=>e.adsr&&e.gain>0&&typeof e.isCancelled==='function'&&typeof e.getEnd==='function')).toBe(true);
+ expect(events.some(e=>e.kind==='drum')).toBe(false);
+ piano.close();
 });

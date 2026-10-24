@@ -10,7 +10,7 @@ const publicRoot = path.join(webRoot, 'public');
 const partialRoot = path.join(webRoot, 'legacy/site');
 const version = 448;
 // Audio and navigation updates have independent cache revisions.
-const audioVersion = 480;
+const audioVersion = 481;
 const searchVersion = 456;
 const marketplaceVersion = 473;
 const visualVersion = 480;

@@ -18,7 +18,7 @@ import {sameToken,orientPair,fetchJSON,findOnchainMarkets} from './market-search
 import {rollingText} from './coin-readout.js?v=53';
 import {loadSharedScore} from './take-share.js?v=220';
 import {isCoinSaved,toggleSavedCoin,savedCoinForMarket,savedCoinsState} from './saved-coins.js?v=448';
-import {createEngineView} from './engine-view.js?v=472';
+import {createEngineView} from './engine-view.js?v=481';
 import {createCoinDither} from './coin-dither.js?v=390';
 import {createUpicBrand} from './upic-brand.js?v=115';
 import {createTransportIndicator} from './transport-indicator.js?v=391';
@@ -27,7 +27,7 @@ import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visua
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=458';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=448';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=480';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=481';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle,replaySpeed,replayObservationForBar} from './market-replay.js?v=472';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';

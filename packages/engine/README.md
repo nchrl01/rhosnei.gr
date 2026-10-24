@@ -1,6 +1,16 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v11`.
+Current engine version: `upic-nft-gb-v12`.
+
+Version 481 promotes the approved pre-drum arrangement to the live, replay
+and collectible score via performed-market-score.js. Three persistent GB APUs
+provide four independent rolled chord slots, a MIDI-screened melodic line,
+sine bass and sustained wave texture. The drum sequencer and extra arrival
+noise are absent from this arrangement. Output gain .35 matches the preview.
+Market freshness/recency/availability gates remain mandatory; measured cap
+selects rhythm, activity controls tempo, liquidity shapes sustain, holder count
+shapes melody range, and measured direction selects harmonic character. Every
+accepted channel voice still emits the output-clock/ADSR EarthBound event.
 
 Version 480 adds register-stepped ADSR for pulse, noise and wave voices.
 Attack/decay/release are seconds inside the total scored gate; sustain is a

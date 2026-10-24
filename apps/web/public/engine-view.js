@@ -1,4 +1,4 @@
-// Inspector for the same two four-channel APUs that produce the app's sound.
+// Inspector for the same three four-channel APUs that produce the app's sound.
 // It consumes existing snapshots; it does not load patches, start an engine,
 // or synthesize a separate preview.
 const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
@@ -13,29 +13,29 @@ const display=value=>{
  return String(value).slice(0,220);
 };
 const channelNames=['CH1 · Pulse + sweep','CH2 · Pulse','CH3 · Wave RAM','CH4 · Noise'];
-const chipNames=['Foreground','Harmony'];
-const roles=[['Lead / kick / tom','Arpeggio / echo','Bass','Drums'],['Chord low','Chord high','Drone','Texture / grain']];
+const chipNames=['Melody and bass','Harmony A','Harmony B and texture'];
+const roles=[['Melodic phrase','Reserved','Sine bass','Reserved'],['Chord low A','Chord high A','Reserved','Reserved'],['Chord low B','Chord high B','Sustained texture','Reserved']];
 const duties=['12.5%','25%','50%','75%'];
 
 export function createEngineView(container,{onBundle=()=>{}}={}){
  container.innerHTML=`<details class="engine-panel" open>
   <summary>Live engine · Game Boy chip rack</summary>
-  <p class="engine-note">Two Game Boy chips provide eight sound channels for independent melody, harmony, bass and texture. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
-  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for chip snapshots</span><span data-source>Two chips · Eight hardware channels</span></div>
-  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same two-chip rack. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
+  <p class="engine-note">Three Game Boy chips provide twelve sound channels for independent melody, harmony, bass and texture. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
+  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for chip snapshots</span><span data-source>Three chips · Twelve hardware channels</span></div>
+  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same three-chip rack. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
   <div class="engine-overview">
    <section><small>Market observations</small><dl data-market></dl></section>
    <section><small>Chip and transport</small><dl data-chip></dl></section>
    <section><small>Visual field</small><dl data-visuals></dl></section>
   </div>
-  <div class="engine-overview" data-channels aria-label="Two Game Boy chips with eight hardware channels"></div>
+  <div class="engine-overview" data-channels aria-label="Three Game Boy chips with twelve hardware channels"></div>
   <p class="engine-note">Market cap shapes rhythm; liquidity shapes harmonic stability and sustain; holders shape arpeggio length and range; rising and falling prices shape contour and tone; activity sets tempo. Learned MIDI phrasing supplies motif, timing and articulation. Audible attacks, holds and echoes also move the visual. Missing measurements stay neutral; missing or stale activity stops new sound.</p>
   <details class="engine-source"><summary>Controls and accepted events</summary><div class="engine-overview"><section><small>App controls</small><dl data-controls></dl></section><section><small>Event feedback</small><dl data-events></dl></section></div></details>
   <details class="engine-console"><summary>Engine messages</summary><pre data-log>No engine messages.</pre></details>
  </details>`;
  const get=selector=>container.querySelector(selector);
  let view={},transport=null,lastPaint=0,lastFeedback=0,disposed=false;
- const chipProgress=[{at:0,sample:null},{at:0,sample:null}];
+ const chipProgress=Array.from({length:3},()=>({at:0,sample:null}));
  const controls=new Map(),events=new Map(),messages=[],bundleState={piano:true,envion:true,data:true};
  const bundleLabels={piano:'Signal',envion:'Texture',data:'Packets'};
  const buttons=[],channelCards=[];
@@ -59,7 +59,7 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
  }
  const channelHost=get('[data-channels]');
  channelHost.style.gridTemplateColumns='repeat(auto-fit, minmax(min(100%, 210px), 1fr))';
- for(let index=0;index<8;index++){
+ for(let index=0;index<12;index++){
   const chipIndex=Math.floor(index/4),channelIndex=index%4;
   const section=document.createElement('section'),title=document.createElement('small'),description=document.createElement('p'),list=document.createElement('dl');
   title.textContent='Chip '+(chipIndex+1)+' · '+channelNames[channelIndex];description.className='engine-note';description.textContent=chipNames[chipIndex]+' · '+roles[chipIndex][channelIndex];
@@ -91,14 +91,14 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
   if(disposed||container.hidden)return;
   const now=performance.now();if(!force&&now-lastPaint<250)return;lastPaint=now;
   const instrument=view.instrument||{},chip=instrument.chip||{},apu=chip.apu;
-  const chips=Array.isArray(chip.chips)&&chip.chips.length?chip.chips.slice(0,2):apu?[chip]:[{},{}];
+  const chips=Array.isArray(chip.chips)&&chip.chips.length?chip.chips.slice(0,3):apu?[chip]:[{},{},{}];
   const snapshots=chips.filter(state=>state.apu),channelCount=chips.length*4;
   const signal=instrument.signal||{},m=view.m||{},context=m.context||{};
   chips.forEach((state,index)=>{if(state.apu&&state.apu.samples!==chipProgress[index].sample){chipProgress[index].sample=state.apu.samples;chipProgress[index].at=now;}});
   const stale=chips.some((state,index)=>state.apu&&now-chipProgress[index].at>3000);
   const error=instrument.error||chip.error;
   get('[data-state]').textContent=error?'Engine unavailable':view.playing?'Running':'Paused';
-  get('[data-feedback]').textContent=error?String(error):!snapshots.length?'Waiting for chip snapshots':!view.playing?'Chips paused':stale?'A chip snapshot is stale':snapshots.length<chips.length?'Waiting for the second chip snapshot':'Chip snapshots received';
+  get('[data-feedback]').textContent=error?String(error):!snapshots.length?'Waiting for chip snapshots':!view.playing?'Chips paused':stale?'A chip snapshot is stale':snapshots.length<chips.length?'Waiting for all chip snapshots':'Chip snapshots received';
   get('[data-source]').textContent=chips.length+' Game Boy '+(chips.length===1?'APU':'APUs')+' · '+channelCount+' channels · '+String(chip.model||apu?.model||'DMG').toUpperCase();
   const observed=signal.observed===true;
   const metric=value=>observed?percent(value):'Unavailable';
@@ -129,9 +129,9 @@ export function createEngineView(container,{onBundle=()=>{}}={}){
    ['Rejected events',finite(chip.rejected)?chip.rejected:'Unavailable'],
    ['Packet identity',drums.patternId||'Waiting'],
    ['Packet density',percent(drums.density)],['Packet deviation',percent(drums.deviation)],
-   ['Cap → rhythm',mapping?.known?.marketCap?pretty(mapping.rhythm.rate)+'× spacing rate':'Neutral · cap unavailable'],
-   ['Liquidity → stability',mapping?.known?.liquidity?percent(mapping.harmony.stability):'Neutral · liquidity unavailable'],
-   ['Holders → arpeggio',mapping?.known?.holders?mapping.arpeggio.notes+' notes · '+mapping.arpeggio.span+' semitones':'Neutral · holders unavailable'],
+   ['Cap → rhythm',mapping?.known?.marketCap?signal.marketCap>=1e6?'Denser chord and bass rhythm':'Spacious chord and bass rhythm':'Neutral · cap unavailable'],
+   ['Liquidity → sustain',mapping?.known?.liquidity?percent(.78+.12*(mapping.harmony.musicality-.5)):'Neutral · liquidity unavailable'],
+   ['Holders → arpeggio',mapping?.known?.holders?mapping.arpeggio.span+' semitone melody range':'Neutral · holders unavailable'],
    ['Price → contour',mapping?.known?.change?mapping.change.direction>0?'Rising':mapping.change.direction<0?'Falling':'Level':'Neutral · change unavailable'],
    ['Activity → tempo',mapping?.known?.activity?pretty(mapping.tempo.bpm)+' BPM before replay folding':'Neutral · activity unavailable'],
    ...chips.flatMap((state,index)=>[['Chip '+(index+1)+' routing',hex(state.apu?.routing)],['Chip '+(index+1)+' master',hex(state.apu?.master)]]),

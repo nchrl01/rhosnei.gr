@@ -1,5 +1,5 @@
 // Recovered pre-GB-drum arrangement from e516f11, 23 October 21:30 Athens.
-// Preview-only: original rolled harmony, learned phrasing and bass timing.
+// Shared production score: original rolled harmony, learned phrasing and bass timing.
 import {arpRhythm} from './arp-rhythm.js?v=211';
 import {marketPhraseTone} from './market-phrase.js?v=453';
 import {pianoHarmony} from './music-context.js?v=208';
