@@ -1,3 +1,4 @@
+import {createVinylTransport} from './vinyl-transport.js?v=476';
 import {nativeContractReference} from './native-contracts.js?v=448';
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
@@ -26,7 +27,7 @@ import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visua
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=458';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=448';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=473';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=476';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle,replaySpeed,replayObservationForBar} from './market-replay.js?v=472';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';
@@ -293,12 +294,12 @@ function updateReplayUI(m){
  $('replay-state').title=$('replay-info').textContent;
  if(active&&replay.state.bar){chart.tickView?.setReplayTime(replay.state.bar.time);display();}
 }
-let outputGateOpen=null;
+let outputGateOpen=null,vinylTransport=null,vinylStopping=false;
 function syncLevels(m){
 
  m={...m,arrangement:m.arrangement??piano?.arrangement?.(),music:{...pianoMusic(m),harmony:sharedHarmony}};
  // The final candle gets its existing one-second hold to sound before pause.
- const audibleTransport=playing&&!replay.state.dragging&&!replay.state.ended;
+ const audibleTransport=(playing||vinylStopping)&&!replay.state.dragging&&!replay.state.ended;
  if(gain&&outputGateOpen!==audibleTransport){outputGateOpen=audibleTransport;gain.gain.setTargetAtTime(audibleTransport?1:0,ctx.currentTime,.025);}
  updateCoinReadout(m);
  replayVisualHistory.frame(m,replay.state.active?replay.state.cursor:null);
@@ -429,7 +430,8 @@ async function initialize(){
   gain=ctx.createGain();gain.gain.value=0;
   const analyser=ctx.createAnalyser();analyser.fftSize=2048;analyser.minDecibels=-85;analyser.maxDecibels=-15;analyser.smoothingTimeConstant=.65;
   const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=0;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;
-  gain.connect(limiter);limiter.connect(analyser);
+  vinylTransport=await createVinylTransport(ctx);
+  gain.connect(vinylTransport.node);vinylTransport.node.connect(limiter);limiter.connect(analyser);
   listeningGain=ctx.createGain();listeningGain.gain.value=Number($('master').value);
   const recordTap=ctx.createAnalyser();recordTap.fftSize=2048;
   analyser.connect(listeningGain);listeningGain.connect(recordTap);recordTap.connect(ctx.destination);outputTap=recordTap;
@@ -456,6 +458,7 @@ async function initialize(){
 }
 async function closeAudio(){
  clearTimeout(idleAudioTimer);
+ vinylTransport?.close();vinylTransport=null;vinylStopping=false;
  stopLegacyPlayback();audioEpoch++;pianoLoading=null;pendingPianoTrade=null;
  piano?.close();piano=null;const context=ctx;ctx=null;gain=null;listeningGain=null;outputGateOpen=null;outputTap=null;outputMeters=null;instrumentTap=null;audioScopes=[];
  for(const name of Object.keys(audioErrors))audioErrors[name]='';
@@ -500,18 +503,19 @@ $('play').onclick=async()=>{
  if(playing){
   if(replay.state.active){replay.advance(chart.renderedBars,chart.interval,true);replay.metrics(chart.renderedBars,market,chart.interval);}
   playing=false;pendingPianoTrade=null;clearTimeout(timer);setPlayState(false);
-  // Pause the chip and chart together; the master gain closes smoothly.
+  // Let the original vinyl transport spin down before clearing chip voices.
+  vinylStopping=true;
   const stopped=()=>{
    if(playing||starting)return;
-   stopLegacyPlayback();piano?.setRunning(false);
+   vinylStopping=false;stopLegacyPlayback();piano?.setRunning(false);
    if(gain)gain.gain.setTargetAtTime(0,ctx.currentTime,.025);outputGateOpen=false;
    idleAudioTimer=setTimeout(()=>{if(!playing&&!starting&&ctx?.state==='running')void ctx.suspend().catch(()=>{});},100);
   };
-  stopped();
+  if(vinylTransport)vinylTransport.pause(stopped);else stopped();
   status(replay.state.active?'History replay paused':'Paused');updateReplayUI(replay.state.controls||{});return;
  }
  audioBusy(true);status('Loading sounds…');
- try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();loop();setPlayState(true);audioStatus();}
+ try{await unlocked;if(!market)throw Error('Trending market is still loading.');if(!piano)await initialize();if(replay.state.active)await prepareReplayAudio();resetEnsemble({preserveVisual:true});if(ctx&&ctx.state!=='running'){const error=Error('Audio is interrupted · tap Listen again');error.name='AudioUnlockError';throw error;}if(gain)gain.gain.setTargetAtTime(1,ctx.currentTime,.04);vinylStopping=false;vinylTransport?.play();playing=true;piano?.setRunning(true);flushPianoTrade();replay.state.clock=performance.now();loop();setPlayState(true);audioStatus();}
  catch(e){audioLoadFailed=true;playing=false;clearTimeout(timer);setPlayState(false);status('Unable to start audio: '+e.message);if(e.name!=='AudioUnlockError')await closeAudio();}
  finally{audioBusy(false);}
 };

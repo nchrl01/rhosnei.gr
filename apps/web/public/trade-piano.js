@@ -1,6 +1,6 @@
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=473';
-import {createGameBoyRack} from './gb-chip-rack.js?v=472';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=476';
+import {createGameBoyRack} from './gb-chip-rack.js?v=476';
 import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
 import {marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
@@ -85,7 +85,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const currentBar=Math.floor(beat/4),rate=anchor?.rate||1;
   const atBeat=b=>replaying?now+(timeline.atBeat(b)-at)/1000/rate:now+(b-beat)*60/tempo;
   const lastBeat=replaying?timeline.beatAt(at+lookAhead*1000*rate):beat+lookAhead*tempo/60;
-  for(let bar=currentBar;bar<=Math.min(currentBar+8,Math.floor(lastBeat/4));bar++){
+  for(let bar=resume?Math.max(0,currentBar-2):currentBar;bar<=Math.min(currentBar+8,Math.floor(lastBeat/4));bar++){
    const raw=replaying?timeline.contextAtBeat(Math.max(beat,bar*4)):pending;
    if(!raw)continue;
    const barSignal=currentSignal(raw,replaying),key=revision+':'+barSignal.fingerprint;

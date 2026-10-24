@@ -90,7 +90,7 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
  const envelopeValue = envelope(expression, settings, dynamics);
  if (!envelopeValue.volume) return null;
  const manualEnvelope = Object.hasOwn(configured, 'chipEnvelope') && Number.isFinite(configured.chipEnvelope);
- const sustain = !noise && !manualEnvelope && expression.sustain && typeof expression.sustain === 'object' ? expression.sustain : null;
+ const sustain = !manualEnvelope && expression.sustain && typeof expression.sustain === 'object' ? expression.sustain : null;
  const manualDuty = Object.hasOwn(configured, 'chipDuty') && Number.isFinite(configured.chipDuty);
  const dutyShift = channel < 2 && !manualDuty && expression.dutyShift && typeof expression.dutyShift === 'object' ? expression.dutyShift : null;
  if (sustain) envelopeValue.register = envelopeValue.volume << 4;
@@ -99,8 +99,10 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
  const length = sustain || dutyShift ? {value:0, enable:0} : lengthControl(durationFrames / sampleRate, channel === 2 ? 256 : 64);
  const writes = [], updates = [];
  const slide = number(expression.slide, 0);
+ const tunedMidi=midi+clamp(number(expression.cents,0),-50,50)/100;
+ const vibrato=expression.vibrato||{},depth=clamp(number(vibrato.depth,0),0,25)/100,cycles=clamp(number(vibrato.cycles,1),.25,3);
  const slideSeconds = Math.min(duration, Math.max(.004, number(expression.slideTime, Math.min(.12, duration * .7))));
- const pitchAt = seconds => midi + clamp(slide, -24, 24) * Math.min(1, seconds / slideSeconds);
+ const pitchAt = seconds => tunedMidi + clamp(slide, -24, 24) * Math.min(1, seconds / slideSeconds) + depth*Math.sin(2*Math.PI*cycles*seconds/duration)*Math.sin(Math.PI*seconds/duration);
  if (noise) {
   const widthValue = expression.noiseWidth ?? (drum === 'hat' ? 7 : settings.chipNoiseWidth);
   const width = widthValue === 7 || widthValue === 1 ? 1 : 0;
@@ -113,14 +115,25 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
   writes.push([0xff1a, 0]);
   for (let i = 0; i < 16; i++) writes.push([0xff30 + i, (table[i * 2] << 4) | table[i * 2 + 1]]);
   const level = envelopeValue.volume <= 3 ? 3 : envelopeValue.volume <= 7 ? 2 : 1;
-  writes.push([0xff1b, length.value], [0xff1c, level << 5], [0xff1a, 0x80], ...frequencyWrites(channel, midi, 0x80 | length.enable));
+  writes.push([0xff1b, length.value], [0xff1c, level << 5], [0xff1a, 0x80], ...frequencyWrites(channel, tunedMidi, 0x80 | length.enable));
  } else {
   const duty = integer(expression.duty, settings.chipDuty, 0, 3);
   const volumeRegister = channel === 0 ? 0xff12 : 0xff17;
   const sweep = tonalDrum && !number(expression.slide, 0) ? integer(expression.sweep, 0x19, 0, 127) : 0;
   if (channel === 0) writes.push([0xff10, sweep]);
   writes.push([volumeRegister - 1, (duty << 6) | length.value], [volumeRegister, envelopeValue.register],
-   ...frequencyWrites(channel, midi, 0x80 | length.enable));
+   ...frequencyWrites(channel, tunedMidi, 0x80 | length.enable));
+ }
+ // A short, two-level attack stays inside the pulse registers. The core
+ // retains duty phase across triggers; no external envelope/filter is added.
+ const attackSeconds=!noise&&channel<2&&!manualEnvelope?clamp(number(expression.attack,0),0,.025):0;
+ const attackFrame=Math.round(Math.min(attackSeconds,duration*.15)*sampleRate);
+ if(attackFrame>0&&attackFrame<durationFrames&&envelopeValue.volume>1){
+  const reg=channel===0?0xff12:0xff17;
+  const initial=Math.max(1,Math.floor(envelopeValue.volume*.5));
+  const write=writes.find(([address])=>address===reg);
+  if(write)write[1]=(initial<<4)|(envelopeValue.register&15);
+  updates.push({frame:attackFrame,writes:[[reg,envelopeValue.register],...frequencyWrites(channel,pitchAt(attackFrame/sampleRate),0x80|length.enable)]});
  }
  if (sustain) {
   const hold = clamp(number(sustain.hold, .6), .25, .9);
@@ -141,10 +154,10 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
    } else {
     const level = Math.floor(envelopeValue.volume * (steps + 1 - i) / (steps + 1));
     if (level <= 0 || level === previousLevel) continue;
-    const volumeRegister = channel === 0 ? 0xff12 : 0xff17;
+    const volumeRegister = noise?0xff21:channel === 0 ? 0xff12 : 0xff17;
     // Explicitly retrigger the lower held envelope. Merely writing NRx2
     // while running relies on model-specific "zombie" envelope behaviour.
-    updates.push({frame, writes:[[volumeRegister, level << 4], ...frequencyWrites(channel, pitchAt(seconds), 0x80)]});
+    updates.push({frame, writes:[[volumeRegister, level << 4], ...(noise?[[0xff23,0x80]]:frequencyWrites(channel, pitchAt(seconds), 0x80))]});
     previousLevel = level;
    }
   }
@@ -154,15 +167,15 @@ export function compileGameBoyEvent(event, configured={}, sampleRate=48000) {
   const frame = Math.round(duration * clamp(number(dutyShift.at, .35), .1, .85) * sampleRate);
   if (next !== duty && frame > 0 && frame < durationFrames) updates.push({frame, writes:[[channel === 0 ? 0xff11 : 0xff16, next << 6]]});
  }
- if (!noise && Math.abs(slide) > .001) {
-  const target = midi + clamp(slide, -24, 24);
+ if (!noise && (Math.abs(slide) > .001||depth>0)) {
+  const gestureSeconds=depth>0?duration:slideSeconds;
   // The worklet accepts sixteen owner-checked updates per voice. Reserve
   // those required by release/duty before sampling the pitch gesture.
-  const count = Math.min(16 - updates.length, Math.max(1, Math.floor(slideSeconds * 128)));
+  const count = Math.min(16 - updates.length, Math.max(1, Math.floor(gestureSeconds * 128)));
   for (let i = 1; i <= count; i++) {
-   const frame = Math.round(slideSeconds * sampleRate * i / count);
+   const frame = Math.round(gestureSeconds * sampleRate * i / count);
    if (frame >= durationFrames) break;
-   updates.push({frame, writes:frequencyWrites(channel, midi + (target - midi) * i / count, length.enable)});
+   updates.push({frame, writes:frequencyWrites(channel, pitchAt(frame/sampleRate), length.enable)});
   }
  }
  updates.sort((a, b) => a.frame - b.frame);

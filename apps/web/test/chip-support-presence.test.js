@@ -46,7 +46,11 @@ function soundAt(compiled,seconds){
  for(const [address,value] of compiled.writes)apu.write(address,value);
  const sample=new Float64Array(2),frames=Math.floor(seconds*sampleRate),window=Math.min(frames,480);
  let energy=0;
+ const updates=[...(compiled.updates||[])].sort((a,b)=>a.frame-b.frame);let next=0;
  for(let frame=0;frame<frames;frame++){
+  while(next<updates.length&&updates[next].frame<=frame){
+   for(const [address,value] of updates[next++].writes)apu.write(address,value);
+  }
   apu.sample(sample);
   if(frame>=frames-window)energy+=sample[0]**2+sample[1]**2;
  }
@@ -73,8 +77,9 @@ describe('audible chip support from real candle controls',()=>{
      expect(event.at).toBeGreaterThan(response.start);
      expect(event.at+event.duration).toBeLessThanOrEqual(response.end+1e-9);
      const {compiled,volume,pace}=compiledPulse(event);
-     expect(volume).toBeGreaterThanOrEqual(2);
-     expect(pace).toBe(3);
+     expect(volume).toBeGreaterThanOrEqual(1);
+     expect(soundAt(compiled,.025).channel.volume).toBeGreaterThanOrEqual(2);
+     expect(pace).toBe(0);
      expect(compiled.durationFrames/sampleRate).toBeGreaterThanOrEqual(.06);
      const late=soundAt(compiled,.06);
      expect(late.channel.enabled).toBe(true);
@@ -97,12 +102,13 @@ describe('audible chip support from real candle controls',()=>{
     expect(plans[bar].events.some(event=>event.kind==='drone'&&event.ensembleRole==='chord')).toBe(true);
     for(const event of chord){
      const {compiled,volume,pace}=compiledPulse(event);
-     expect(volume).toBeGreaterThanOrEqual(2);
+     expect(volume).toBeGreaterThanOrEqual(1);
+     expect(soundAt(compiled,.025).channel.volume).toBeGreaterThanOrEqual(2);
      expect(pace).toBe(0);
      expect(compiled.durationFrames/sampleRate).toBeGreaterThan(.3);
      const held=soundAt(compiled,.25);
      expect(held.channel.enabled).toBe(true);
-     expect(held.channel.volume).toBe(volume);
+     expect(held.channel.volume).toBe(soundAt(compiled,.025).channel.volume);
      expect(held.rms).toBeGreaterThan(.001);
     }
    }

@@ -153,7 +153,9 @@ describe('score echoes retain their source voice and respect silence',()=>{
    const sourceCompiled=pulseFor(source),compiled=pulseFor(echo);
    if(!compiled)continue; // A level-one source has no quieter chip step.
    expect(sourceCompiled).not.toBeNull();
-   const sourceLevel=register(sourceCompiled,0xff17)>>>4,level=register(compiled,0xff17)>>>4;
+   const sourcePlayer=processor(),echoPlayer=processor();
+   sourcePlayer.schedule(sourceCompiled);echoPlayer.schedule(compiled);
+   const sourceLevel=sourcePlayer.advance(.025).state.channels[1].volume,level=echoPlayer.advance(.025).state.channels[1].volume;
    expect(level).toBeGreaterThan(0);expect(level).toBeLessThan(sourceLevel);
    expect(compiled.durationFrames/sampleRate).toBeGreaterThanOrEqual(.1);
    const f=processor();f.schedule(compiled);

@@ -1,6 +1,16 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v7`.
+Current engine version: `upic-nft-gb-v8`.
+
+Version 476 uses a brief two-level pulse-register attack, softer releases,
+50% duty pulses, a narrower lead register and quieter percussion. Melodic
+leaps choose nearby pitches from the generated phrase’s allowed palette; the
+final originality guard still screens them. The score reconnects market-selected harmonic characters and compact voice leading,
+allows held chords/drone notes across bar boundaries until a shared breath, and
+uses fractional register tuning, slow bounded pitch motion and held noise textures.
+Availability-labelled market controls and silence gates remain mandatory. The
+original vinyl start/stop transport is restored in the homepage and audio lab;
+normal playback passes through without resampling.
 
 Version 473 gives learned phrases shorter answers and clearer rests, lowers the
 lead/arp register, roots tonal percussion in the same harmony, and spaces noise

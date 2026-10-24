@@ -1,15 +1,16 @@
+import {createVinylTransport} from './vinyl-transport.js?v=476';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=469';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {createTradePiano} from './trade-piano.js?v=473';
+import {createTradePiano} from './trade-piano.js?v=476';
 import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=473';
-import {marketChipSignal} from './market-chip-score.js?v=473';
+import {marketChipSignal} from './market-chip-score.js?v=476';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:[...pianoSpecs,...phraseSpecs,...drumSpecs,...chipSpecs]};
 const defaults=()=>({schema:'upic-audio-lab',version:1,market:Object.fromEntries(marketSpecs.map(s=>[s[0],s[5]])),mix:Object.fromEntries(mixSpecs.map(s=>[s[0],s[5]])),piano:{},enabled:Object.fromEntries(mixSpecs.map(([key])=>[key,true])),master:.5,autoTrades:true,arpeggios:true,drums:true,notes:''});
 let state=defaults(),ctx,piano,running=false,starting=false,closed=false,timer,saveTimer;
-let transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,paints=[],lastUI=0;
+let vinylTransport,transport,master,musicMeter,meter,meterData,musicData,elapsed=0,lastTime=null,nextTrade=0,tradeIndex=0,price=1,paints=[],lastUI=0;
 let idleSuspend=null,seedTimer=null;
 let solo=null,buses={},engineStatus={'GB chip':'Not loaded'},statuses={};
 const report=text=>{$('status').textContent=text;};
@@ -59,11 +60,11 @@ async function loadEngines(){
   }catch(error){setStatus('GB chip',error.message);throw error;}
  })();try{await loadJob;}finally{loadJob=null;if(!running&&!closed)stop();}
 }
-function setup(){
+async function setup(){
  ctx=createMusicContext();transport=ctx.createGain();transport.gain.value=0;master=ctx.createGain();master.gain.value=state.master;
  const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-3;limiter.knee.value=0;limiter.ratio.value=20;limiter.attack.value=.003;limiter.release.value=.12;
  musicMeter=ctx.createAnalyser();musicMeter.fftSize=1024;musicData=new Float32Array(1024);musicMeter.connect(transport);
- transport.connect(limiter);limiter.connect(master);meter=ctx.createAnalyser();meter.fftSize=1024;master.connect(meter);meter.connect(ctx.destination);meterData=new Float32Array(1024);
+ vinylTransport=await createVinylTransport(ctx);transport.connect(vinylTransport.node);vinylTransport.node.connect(limiter);limiter.connect(master);meter=ctx.createAnalyser();meter.fftSize=1024;master.connect(meter);meter.connect(ctx.destination);meterData=new Float32Array(1024);
  for(const key of ['earthbound']){const bus=ctx.createGain();bus.gain.value=1;bus.connect(musicMeter);buses[key]=bus;}
  ctx.addEventListener('statechange',()=>{if(ctx.state==='interrupted'||ctx.state==='suspended'){if(running)stop();report('Audio paused. Tap Start audio to resume.');}});
  timer=setInterval(tick,50);
@@ -72,7 +73,7 @@ async function start(){
  if(starting||closed)return;clearTimeout(idleSuspend);if(running){stop();return;}
  starting=true;$('play').disabled=true;
  try{
-  if(!ctx)setup();await unlockPlayback(ctx);running=true;lastTime=ctx.currentTime;nextTrade=elapsed;transport.gain.setTargetAtTime(1,ctx.currentTime,.04);
+  if(!ctx)await setup();await unlockPlayback(ctx);running=true;vinylTransport?.play();lastTime=ctx.currentTime;nextTrade=elapsed;transport.gain.setTargetAtTime(1,ctx.currentTime,.04);
   piano?.setRunning(true);
   $('play').textContent='Pause audio';$('chord').disabled=false;$('trade').disabled=false;
   void loadEngines().then(()=>{if(!closed&&running){nextTrade=elapsed;report('GB ensemble ready. Every tone, packet and noise voice comes from the two Game Boy chips.');}}).catch(error=>{if(!closed){stop();report('GB chip could not start: '+error.message);}});
@@ -80,8 +81,10 @@ async function start(){
  }catch(error){stop();report(error.message);}finally{starting=false;$('play').disabled=false;}
 }
 function stop(){
- running=false;lastTime=null;transport?.gain.setTargetAtTime(0,ctx.currentTime,.025);piano?.setRunning(false);stopLegacyPlayback();
- $('play').textContent='Start audio';$('chord').disabled=true;$('trade').disabled=true;clearTimeout(idleSuspend);if(ctx&&!closed&&!loadJob)idleSuspend=setTimeout(()=>{if(!running)void ctx.suspend().catch(()=>{});},120);paint();
+ running=false;lastTime=null;
+ const finish=()=>{if(running)return;transport?.gain.setTargetAtTime(0,ctx.currentTime,.025);piano?.setRunning(false);stopLegacyPlayback();};
+ if(vinylTransport&&!closed&&ctx?.state==='running')vinylTransport.pause(finish);else finish();
+ $('play').textContent='Start audio';$('chord').disabled=true;$('trade').disabled=true;clearTimeout(idleSuspend);if(ctx&&!closed&&!loadJob)idleSuspend=setTimeout(()=>{if(!running)void ctx.suspend().catch(()=>{});},1050);paint();
 }
 function trigger(force=false){
  if(!running||!ctx||ctx.state!=='running')return;
@@ -176,7 +179,7 @@ function build(){
  const drumVariation=action(drumGrid,'New variation',()=>{randomizeDrum('drumPerformance');report('New skips and ornaments selected for the next bar; the base groove stays the same.');});
  paints.push(()=>{drumVariation.disabled=(state.piano.drumDeviation??pianoAuto('drumDeviation'))<=0;drumVariation.title=drumVariation.disabled?'Raise Deviations above zero to vary the groove.':'';});
  action(drumGrid,'Reset drum controls',()=>{for(const [key] of drumSpecs)delete state.piano[key];state.drums=true;changed();report('Automatic market-driven drums restored.');});
- const chip=section('05 / Chip registers','Two pulse channels, one 32-step wave channel and one noise channel make the whole transmission. Duty, stepped envelope, wave table, noise clock and stereo routing change those channels directly. AUTO lets the score choose registers per event; the displayed values are fallback settings. Manual controls override those choices until reset.',true);
+ const chip=section('05 / Chip registers','Each of the two chips supplies two pulse channels, one 32-step wave channel and one noise channel. Duty, stepped envelope, wave table, noise clock and stereo routing change those channels directly. AUTO lets the score choose registers per event; the displayed values are fallback settings. Manual controls override those choices until reset.',true);
  chip.parentElement.id='chip-controls';
  for(const spec of chipSpecs){const key=spec[0];addKnob(chip,spec,()=>state.piano[key]??pianoAuto(key),v=>state.piano[key]=v,()=>delete state.piano[key],()=>Object.hasOwn(state.piano,key));}
  action(chip,'Reset chip controls',()=>{for(const [key] of chipSpecs)delete state.piano[key];changed();report('Automatic chip settings restored.');});
@@ -186,7 +189,7 @@ function build(){
 }
 function paint(){
  for(const fn of paints)fn();
- const s=piano?.snapshot();$('instrument').textContent=s?.name||'One chip. Four channels.';$('harmony').textContent=state.market.tempo+' BPM · two pulses · wave · noise';
+ const s=piano?.snapshot();$('instrument').textContent=s?.name||'Two chips. One ensemble.';$('harmony').textContent=state.market.tempo+' BPM · harmony · texture · bass · rhythm';
  $('clock').textContent=String(Math.floor(elapsed/60)).padStart(2,'0')+':'+String(Math.floor(elapsed%60)).padStart(2,'0');
  const canvas=$('scope'),draw=canvas.getContext('2d'),width=Math.max(1,Math.round(canvas.clientWidth)),height=Math.max(1,Math.round(canvas.clientHeight)),ratio=Math.min(2,devicePixelRatio||1);
  if(canvas.width!==Math.round(width*ratio)||canvas.height!==Math.round(height*ratio)){canvas.width=Math.round(width*ratio);canvas.height=Math.round(height*ratio);}draw.setTransform(ratio,0,0,ratio,0,0);draw.clearRect(0,0,width,height);
@@ -208,7 +211,7 @@ $('load').onchange=async event=>{const file=event.target.files?.[0];if(!file)ret
 $('reset').onclick=()=>{connectionBaselines.clear();stop();state=defaults();solo=null;resetScore();build();save();report('Control defaults restored. Press Start audio.');};
 // Hidden pages stop expensive DSP and sequencing; return requires a deliberate tap.
 document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();void ctx?.suspend().catch(()=>{});}});
-window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);piano?.close();void ctx?.close();});
+window.addEventListener('pagehide',()=>{closed=true;stop();clearInterval(timer);clearTimeout(saveTimer);clearTimeout(idleSuspend);clearTimeout(seedTimer);vinylTransport?.close();piano?.close();void ctx?.close();});
 build();
 
 window.addEventListener('pageshow',event=>{if(event.persisted&&closed)location.reload();});
