@@ -8,7 +8,9 @@ const render=source.slice(source.indexOf('function render('),source.indexOf('con
 const catalogue=JSON.parse(readFileSync(new URL('../public/marketplace-coin-catalogue.json',import.meta.url),'utf8'));
 class Node{
  constructor(tag='div',text='',className=''){Object.assign(this,{tag,textContent:text,className,children:[],attributes:{},style:{},hidden:false});this.classList={toggle(){}};}
- append(...nodes){this.children.push(...nodes);}
+ append(...nodes){for(const node of nodes){node.remove();node.parent=this;this.children.push(node);}}
+ remove(){if(this.parent){this.parent.children=this.parent.children.filter(node=>node!==this);this.parent=null;}}
+ querySelectorAll(selector){return this.children.flatMap(node=>[...(selector[0]==='.'?node.className===selector.slice(1):node.tag===selector)?[node]:[],...node.querySelectorAll(selector)]);}
  replaceChildren(...nodes){this.children=nodes;}
  addEventListener(){}
  setAttribute(name,value){this.attributes[name]=value;}
@@ -21,7 +23,7 @@ describe('marketplace gallery',()=>{
  it('renders the first 40 cards and appends all 100 without a missing-name crash',()=>{
   const grid=new Node(),count=new Node(),more=new Node(),empty=new Node();
   const records=genesisCollectibles(catalogue.coins).map(coin=>{const selection=collectiblePreview(coin).selection;return {...coin,captures:{[selection.key]:{chain:selection.chain,address:selection.address,snapshot:'https://images.example/'+coin.id+'.webp'}}};});
-  const context=vm.createContext({records,network:{value:'all'},visible:40,grid,count,more,cardUpdates:new Map(),supportedCoinNetwork,collectiblePreview,coinPlayerURL:contractPlayerURL,rememberRecentCoin(){},element:(...args)=>new Node(...args),money:()=> '—',$:()=>empty});
+  const context=vm.createContext({records,network:{value:'all'},visible:40,grid,count,more,cards:new Map(),rejectedPreviews:new Set(),supportedCoinNetwork,collectiblePreview,coinPlayerURL:contractPlayerURL,rememberRecentCoin(){},element:(...args)=>new Node(...args),money:()=> '—',$:()=>empty});
   vm.runInContext(render+';render();',context);
   expect(grid.children).toHaveLength(40);expect(count.textContent).toBe('100 coins');
   expect(grid.children[0].children[0].querySelector('.coin-full-name').textContent).toBeTruthy();

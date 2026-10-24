@@ -1,6 +1,12 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v9`.
+Current engine version: `upic-nft-gb-v10`.
+
+Version 478 recovers the asynchronous carrier clock/coin timbre logic from
+a84fac4 (Friday 23:40, nearest saved revision to the requested 23:38). The
+newer generated pitch guard, harmony, market mapping and shared rests remain.
+Noise/percussion levels and observation bursts are reduced at source, with
+15-bit noise and slower noise clocks. Vinyl start/stop is retained.
 
 Version 477 adds a seek-addressable 32-bar orchestration form, shared entrance
 spacing, evolving wave colour, and measured-direction melodic contours. Each

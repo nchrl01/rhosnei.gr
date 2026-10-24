@@ -1,6 +1,6 @@
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=477';
-import {createGameBoyRack} from './gb-chip-rack.js?v=477';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=478';
+import {createGameBoyRack} from './gb-chip-rack.js?v=478';
 import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
 import {marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
@@ -150,9 +150,9 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
   const phrase=chipEnsembleArrangement(seed,position(),pending.signal);
   if(active&&!anchor&&!phrase.rest&&phrase.restInBeats>.12&&ctx.currentTime-lastPacketAt>=.4&&(lab.dataGain??1)>0){
    const s=pending.signal,stamp=chipHash(seed,s.fingerprint),time=ctx.currentTime+.008;
-   const gainValue=.018*(.3+.7*Math.max(s.volume,s.activity,s.motion))*s.fresh*(lab.dataGain??1)*phrase.roleGains.texture;
+   const gainValue=.009*(.3+.7*Math.max(s.volume,s.activity,s.motion))*s.fresh*(lab.dataGain??1)*phrase.roleGains.texture;
    const duration=Math.min(.02+.045*s.volume,phrase.restInBeats*60/tempo);
-   const sounded=chip.texture({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(0,Math.round(10-8*Math.max(s.motion,s.volume))),noiseWidth:stamp%2,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:{initial:5,direction:-1,pace:1}}},time);
+   const sounded=chip.texture({drum:'texture',gain:gainValue,duration,expression:{noiseShift:Math.max(5,Math.round(10-3*Math.max(s.motion,s.volume))),noiseWidth:15,noiseDivider:stamp%8,pan:s.balance<.4?-1:s.balance>.6?1:0,envelope:{initial:5,direction:-1,pace:1}}},time);
    if(sounded){lastPacketAt=ctx.currentTime;voices.add(sounded.voice);onScoreEvent({id:'observation:'+String(identity??stamp),time:sounded.time,midi:sounded.midi,kind:'texture',gain:gainValue,duration,direction:s.direction,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});}
   }
   return active;

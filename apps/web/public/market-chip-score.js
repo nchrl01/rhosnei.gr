@@ -1,5 +1,6 @@
-import {chipOrchestration} from './chip-orchestration.js?v=477';
-import {pianoHarmony,chartCharacter} from './music-context.js?v=477';
+import {fridayCarrier} from './friday-carrier.js?v=478';
+import {chipOrchestration} from './chip-orchestration.js?v=478';
+import {pianoHarmony,chartCharacter} from './music-context.js?v=478';
 import {marketPerformance} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=473';
@@ -59,7 +60,7 @@ export function composeChipBar(seed,bar,context={}){
  // Reuse the established market-selected harmonic characters and compact
  // voice leading. The seed owns the key; observed direction owns the mood.
  const mapping=marketMusicalMapping(signal),direction=mapping.change.direction;
- const character=chartCharacter({group:direction<0?'down':'up',capChangePct:signal.deltaKnown?signal.delta:0,intensity:signal.intensity,volatility:signal.motion});
+ const character=chartCharacter({group:direction<0?'down':'up',capChangePct:signal.deltaKnown?signal.delta:0,intensity:0,volatility:0});
  const harmony=pianoHarmony(seed,{chordStep:Math.floor(bar/2)},{character,tonic:identity%12});
  const {notes}=harmony,root=harmony.root-12;
  const bassRoot=root+((notes[0]-root)%12+12)%12;
@@ -82,7 +83,7 @@ export function composeChipBar(seed,bar,context={}){
   // the two chord tones occupy opposite sides, independently of trade bias.
   wave:chipHash(identity,31)%2,pan:kind==='bass'||kind==='drone'?0:kind==='chord_low'?-1:kind==='chord_high'?1:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
   slide:['lead','arp'].includes(kind)&&mapping.change.magnitude>.2&&roll(identity,id+83)<.22?direction*fracture*mapping.change.magnitude*(1.4-.8*stability):0,
-  noiseWidth:15,noiseShift:clamp(Math.round(8-3*energy-motion-mapping.change.signed),3,11),
+  noiseWidth:15,noiseShift:clamp(Math.round(9-2*energy-motion-mapping.change.signed),5,11),
  });
  const add=(beat,midi,duration,gain,kind,id,extra={})=>{
   gain*=kind.startsWith('chord')||kind==='drone'?(context.chordGain??1):['arp','echo','lead'].includes(kind)?(context.arpGain??1):(context.noteGain??1);
@@ -101,7 +102,11 @@ export function composeChipBar(seed,bar,context={}){
   phraseLearning:1,phraseVariation:(context.phraseVariation??0)+orchestra.variation,phraseLength:context.phraseLength??8,
   phraseDepth:.4,pitchLow:53+identity%5,pitchHigh:69+identity%5,phraseGate:gate});
  if(context.arpeggios!==false){
-  const developed=developPhraseEvents(phrase,development);
+  const carrier=fridayCarrier(seed,bar,signal);
+  const developed=developPhraseEvents(phrase,development).map((event,index)=>{
+   const packet=carrier[index];
+   return packet?{...event,beat:packet.beat,carrierDuty:packet.duty}:event;
+  }).sort((a,b)=>a.beat-b.beat);
   // A recognizable question and a shorter answer. Keep the learned timing
   // and pitch sets, but leave punctuation instead of filling every opening.
   const leadLimit=orchestra.section===0||orchestra.section===3?3:development.stage==='answer'?3:4;
@@ -127,7 +132,7 @@ export function composeChipBar(seed,bar,context={}){
    lastLeadPitch=midi;
    const duration=Math.max(.16,Math.min(2,event.duration*articulation*orchestra.release));
    add(event.beat,midi,duration,.048*(.45+.35*energy+.2*intensity)*event.accent*pulseGain,'lead',id,
-    {allowedPitches:event.allowedPitches,sustain:{hold:.48+.16*musicality,steps:2}});
+    {duty:event.carrierDuty??2,allowedPitches:event.allowedPitches,sustain:{hold:.48+.16*musicality,steps:2}});
    lastLeadEnd=event.beat+duration;
   }
  }
@@ -241,8 +246,8 @@ export function composeChipBar(seed,bar,context={}){
   if(spoken||roll(identity,address+601)>=cloud.grainDensity*.65)continue;
   const duration=Math.min((.4+cloud.grainDurationBeats*2)*(.7+.3*cloud.grainOverlap),spacing*1.8);
   events.push({kind:'texture',drum:'texture',beat,duration,
-   gain:.028*textureGain*(.35+.65*cloud.textureWeight)*signal.fresh,seed:chipHash(identity,address+601),
-   expression:{...expression('texture',address+601),noiseWidth:development.stage==='vary'&&motion>.75&&roll(identity,address+609)<.1?7:15,noiseDivider:3+chipHash(identity,address+607)%5,envelope:{initial:5+Math.round(2*cloud.textureWeight),direction:-1,pace:0},sustain:{hold:.4,steps:3}}});
+   gain:.014*textureGain*(.35+.65*cloud.textureWeight)*signal.fresh,seed:chipHash(identity,address+601),
+   expression:{...expression('texture',address+601),noiseWidth:15,noiseDivider:3+chipHash(identity,address+607)%5,envelope:{initial:5+Math.round(2*cloud.textureWeight),direction:-1,pace:0},sustain:{hold:.4,steps:3}}});
  }
  const drums=composeGameBoyDrumBar(seed,bar,{...context,signal},development);
  const melody=events.filter(event=>event.kind==='lead'&&chipEnsembleArrangement(seed,start+event.beat,signal).roleGains.lead>0);
@@ -251,7 +256,7 @@ export function composeChipBar(seed,bar,context={}){
   if(['kick','tom'].includes(event.drum)&&melody.some(note=>event.beat<note.beat+note.duration+.04&&event.beat+event.duration>note.beat-.06))continue;
   const accent=statistic('drums.accent',identity,event.seed,.85,n=>n>=.45&&n<=1.15);
   const articulation=statistic('drums.gate',identity,event.seed+1,.75,n=>n>=.3&&n<=1);
-  events.push({...event,gain:event.gain*accent*.65*(context.drumGain??1),duration:event.duration*(.65+.35*articulation)});
+  events.push({...event,gain:event.gain*accent*.42*(context.drumGain??1),duration:event.duration*(.65+.35*articulation)});
  }
  // All eight slots breathe together, including the irregular noise circuits.
  const phrased=[];

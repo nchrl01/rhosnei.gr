@@ -61,7 +61,7 @@ type ChipRenderer={prepareChipPhrasing:()=>Promise<{ready:boolean;error?:string|
 const chipModules=new Map<string,Promise<ChipRenderer>>();
 const chipRenders=new WeakMap<ArtworkInput,Map<string,Promise<{left:Float32Array;right:Float32Array}>>>();
 function chipModule(assetBase:string){
- const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=477';
+ const url=assetBase.replace(/\/$/,'')+'/gb-chip-rack.js?v=478';
  let pending=chipModules.get(url);
  if(!pending){pending=import(/* @vite-ignore */ url).catch(error=>{chipModules.delete(url);throw error;});chipModules.set(url,pending!);}
  return pending!;
