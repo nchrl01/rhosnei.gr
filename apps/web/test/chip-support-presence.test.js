@@ -103,12 +103,13 @@ describe('audible chip support from real candle controls',()=>{
     for(const event of chord){
      const {compiled,volume,pace}=compiledPulse(event);
      expect(volume).toBeGreaterThanOrEqual(1);
-     expect(soundAt(compiled,.025).channel.volume).toBeGreaterThanOrEqual(2);
+     expect(soundAt(compiled,.05).channel.volume).toBeGreaterThanOrEqual(2);
      expect(pace).toBe(0);
      expect(compiled.durationFrames/sampleRate).toBeGreaterThan(.3);
      const held=soundAt(compiled,.25);
      expect(held.channel.enabled).toBe(true);
-     expect(held.channel.volume).toBe(soundAt(compiled,.025).channel.volume);
+     expect(held.channel.volume).toBeGreaterThan(0);
+     expect(held.channel.volume).toBeLessThanOrEqual(soundAt(compiled,.05).channel.volume);
      expect(held.rms).toBeGreaterThan(.001);
     }
    }

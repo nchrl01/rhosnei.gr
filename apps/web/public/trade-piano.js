@@ -1,6 +1,6 @@
 import {createCompositionTimeline,scoreTempo} from './chip-timeline.js?v=471';
-import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=478';
-import {createGameBoyRack} from './gb-chip-rack.js?v=478';
+import {composeChipBar,marketChipSignal,chipSignalActive,chipHash} from './market-chip-score.js?v=480';
+import {createGameBoyRack} from './gb-chip-rack.js?v=480';
 import {chipEnsembleArrangement} from './chip-ensemble-arrangement.js?v=471';
 import {marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
@@ -116,7 +116,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
     const sounded=chip.schedule(spec,start);
     if(!sounded)continue;
     voices.add(sounded.voice);scheduled.set(id,{time:sounded.time,voice:sounded.voice});
-    onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,gain:amplitude,duration:sounded.voice.end-sounded.time,direction:barSignal.direction,development:plan.development,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});
+    onScoreEvent({id,time:sounded.time,beat:bar*4+event.beat,midi:sounded.midi,kind:event.kind,drum:event.drum,adsr:Object.hasOwn(lab,'chipEnvelope')?null:event.expression?.adsr,gain:amplitude,duration:sounded.voice.end-sounded.time,direction:barSignal.direction,development:plan.development,isCancelled:()=>sounded.voice.cancelled,getEnd:()=>sounded.voice.end});
     if(event.kind==='arp')onArpeggio({midi:sounded.midi,step:bar*4+event.beat,time:sounded.time,tempo:raw.audibleTempo||tempo,instrument:'GB transmission'});
    }
    const voiceKey=bar+':'+key;
@@ -160,7 +160,7 @@ export async function createTradePiano(ctx,destination,{onVoice=()=>{},onArpeggi
  return {
   configure(options={}){
    const previous=JSON.stringify(lab);lab={};
-   const bounds={chipDuty:[0,3],chipEnvelope:[0,7],chipNoiseShift:[0,13],chipNoiseWidth:[0,1],chipWave:[0,3],chipStereo:[0,1],chipResonance:[0,1],textureGain:[0,1],dataGain:[0,1],drumDensity:[0,1],drumDeviation:[0,1],drumVariation:[0,65535],drumPerformance:[0,65535],drumGain:[0,1],phraseDepth:[0,1],phraseLength:[4,16],phraseGate:[.2,1],phraseVariation:[0,65535],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
+   const bounds={chipDuty:[0,3],chipEnvelope:[0,7],chipNoiseShift:[0,13],chipNoiseWidth:[0,1],chipWave:[0,4],chipStereo:[0,1],chipResonance:[0,1],textureGain:[0,1],dataGain:[0,1],drumDensity:[0,1],drumDeviation:[0,1],drumVariation:[0,65535],drumPerformance:[0,65535],drumGain:[0,1],phraseDepth:[0,1],phraseLength:[4,16],phraseGate:[.2,1],phraseVariation:[0,65535],noteGain:[0,2],chordGain:[0,2],arpGain:[0,2]};
    for(const [key,[min,max]] of Object.entries(bounds))if(Number.isFinite(options[key]))lab[key]=Math.max(min,Math.min(max,options[key]));
    if(options.drums===false)lab.drums=false;if(options.arpeggios===false)lab.arpeggios=false;
    chip.configure(lab);if(previous!==JSON.stringify(lab))invalidate();

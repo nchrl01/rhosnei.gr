@@ -1,3 +1,4 @@
+import {MIDI_PHRASE_MODEL} from './midi-phrase-model.js?v=469';
 // A deterministic 32-bar form, reconstructed from score position on seek.
 // This conducts existing APU voices; it never creates an oscillator or activity.
 export function chipOrchestration(bar,signal,mapping){
@@ -9,9 +10,20 @@ export function chipOrchestration(bar,signal,mapping){
   {lead:.55,arp:1,chord:.85,bass:.85,drone:1.3,texture:1.2,drum:.8},
   {lead:.65,arp:1,chord:1,bass:.7,drone:1.1,texture:.65,drum:.35},
  ][section];
+ // Relative eight-bar occupancy is learned separately for each role.
+ // It changes emphasis modestly, retaining the approved circuit and timbres.
+ const learned={};
+ for(const [role,source] of [['lead','lead'],['bass','bass'],['drum','drums']]){
+  const rows=Array.from({length:32},(_,i)=>MIDI_PHRASE_MODEL.distributions[`${source}.phrase_32_activity:${i}`]?.active??1);
+  const mean=rows.reduce((a,b)=>a+b,0)/32,current=rows[(bar*4)%32];
+  learned[role]=Math.max(.9,Math.min(1.1,current/Math.max(.001,mean)));
+  roles[role]*=learned[role];
+ }
+ // Accompaniment answers the learned lead contour rather than cresting with it.
+ roles.chord*=Math.max(.94,Math.min(1.06,2-learned.lead));
  const direction=mapping.change.direction;
  const strength=mapping.change.magnitude;
- return {cycle,section,names:['emerge','speak','transform','settle'],phase,breath,
+ return {cycle,section,learned,names:['emerge','speak','transform','settle'],phase,breath,
   roles,variation:cycle%16,
   // Sign is audible even for modest measured movement. Magnitude controls
   // interval width; absent/zero movement stays level, never invented upward.

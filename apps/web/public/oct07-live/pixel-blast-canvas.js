@@ -1,7 +1,7 @@
 import {originalArtworkPalette} from '../upic-artwork-palette.js';
 import {battlePattern,battlePatternFeed} from './earthbound-pattern.js?v=427';
 import {EARTHBOUND_LOOP_DURATION,TAU,loopTime,loopPhase} from './earthbound-loop.js?v=427';
-import {earthboundMotionFrame,earthboundFieldWarp,earthboundSoundWarp} from './earthbound-presentation.js?v=479';
+import {earthboundMotionFrame,earthboundFieldWarp,earthboundSoundWarp} from './earthbound-presentation.js?v=480';
 import {holderClusterFeed} from './holder-cluster-field.js?v=169';
 import {capitalFeed} from './capital-field.js?v=167';
 // Canvas rendition of the PixelBlast noise/Bayer field for mobile and lost GPUs.
@@ -196,19 +196,9 @@ export function createPixelBlastCanvas(host){
     const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
     const backgroundScale=mix(1,.7+.3*maskInk,identity);
     const localSize=1; // Wallet-driven jitter owns size variation.
-    // Artwork-aligned liquidity growth. Never use the rectangular edge taper
-    // to size these marks; it belongs only to the unchanged selection score.
-    let artworkSize=1;
-    if(requested&&identityMask?.sizeData){
-     const side=(params.fullscreen?Math.max(cssWidth,cssHeight):.82*Math.min(cssWidth,cssHeight)),u=.5+fx/side,v=.5-fy/side;
-     artworkSize=0;
-     if(u>=0&&v>=0&&u<1&&v<1){
-      const x=u*(identityMask.width-1),y=v*(identityMask.height-1),x0=Math.floor(x),y0=Math.floor(y);
-      const x1=Math.min(x0+1,identityMask.width-1),y1=Math.min(y0+1,identityMask.height-1),d=identityMask.sizeData,W=identityMask.width;
-      artworkSize=mix(mix(d[y0*W+x0],d[y0*W+x1],x-x0),mix(d[y1*W+x0],d[y1*W+x1],x-x0),y-y0);
-     }
-    }
-    const dotSize=requested?1+Math.max(0,params.dotSize-1)*artworkSize:
+    // Every represented holder uses the same liquidity-controlled diameter.
+    // Artwork chooses where ink appears, never an individual mark's size.
+    const dotSize=requested?params.dotSize:
       (params.dotSize*localSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
     const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
@@ -230,9 +220,11 @@ export function createPixelBlastCanvas(host){
     }
    }
    const selectedCount=requested?Math.min(requested,candidates.length):candidates.length;
-   canvas.dataset.markCount=String(selectedCount);let accentMarkCount=0;
+   canvas.dataset.markCount=String(selectedCount);
+   let accentMarkCount=0,minDiameter=Infinity,maxDiameter=0;
    for(let selectedIndex=0;selectedIndex<selectedCount;selectedIndex++){
     const {centerX,centerY,diameter,accent}=candidates[selectedIndex];
+    if(diameter<minDiameter)minDiameter=diameter;if(diameter>maxDiameter)maxDiameter=diameter;
     const accentGlyph=accent&&diameter>=3&&accentDirection!==0;
     if(accentGlyph)accentMarkCount++;
     const left=Math.round(centerX-diameter*.5),bottom=Math.round(centerY-diameter*.5),top=h-bottom-diameter;
@@ -250,6 +242,7 @@ export function createPixelBlastCanvas(host){
     }
    }
    canvas.dataset.accentMarkCount=String(accentMarkCount);
+   canvas.dataset.markDiameterRange=selectedCount?minDiameter+','+maxDiameter:'0,0';
    const ink=(params.inkColor??1)*255,color=clamp(params.artworkColor||0);
    const side=params.fullscreen?Math.max(w,h):.82*Math.min(w,h),mask=identityMask;
    const soundRows=mask&&presentationMotion.sound?new Float32Array(h*3):null;

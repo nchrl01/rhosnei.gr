@@ -1,10 +1,10 @@
-import {createVinylTransport} from './vinyl-transport.js?v=478';
+import {createVinylTransport} from './vinyl-transport.js?v=480';
 import {knob} from './lab-knob.js?v=1';
-import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=469';
+import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=480';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {createTradePiano} from './trade-piano.js?v=478';
+import {createTradePiano} from './trade-piano.js?v=480';
 import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=473';
-import {marketChipSignal} from './market-chip-score.js?v=478';
+import {marketChipSignal} from './market-chip-score.js?v=480';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:[...pianoSpecs,...phraseSpecs,...drumSpecs,...chipSpecs]};
@@ -179,7 +179,7 @@ function build(){
  const drumVariation=action(drumGrid,'New variation',()=>{randomizeDrum('drumPerformance');report('New skips and ornaments selected for the next bar; the base groove stays the same.');});
  paints.push(()=>{drumVariation.disabled=(state.piano.drumDeviation??pianoAuto('drumDeviation'))<=0;drumVariation.title=drumVariation.disabled?'Raise Deviations above zero to vary the groove.':'';});
  action(drumGrid,'Reset drum controls',()=>{for(const [key] of drumSpecs)delete state.piano[key];state.drums=true;changed();report('Automatic market-driven drums restored.');});
- const chip=section('05 / Chip registers','Each of the two chips supplies two pulse channels, one 32-step wave channel and one noise channel. Duty, stepped envelope, wave table, noise clock and stereo routing change those channels directly. AUTO lets the score choose registers per event; the displayed values are fallback settings. Manual controls override those choices until reset.',true);
+ const chip=section('05 / Chip registers','Each of the two chips supplies two pulse channels, one 32-step wave channel and one noise channel. Duty, stepped envelope, wave table, noise clock and stereo routing change those channels directly. AUTO lets the score choose registers per event; the displayed values are fallback settings. Automatic voices use role-specific ADSR. Manual Envelope step overrides it until reset. Wave choices: 0 triangle, 1 hollow, 2 bright, 3 pad, 4 sine. Manual controls override those choices until reset.',true);
  chip.parentElement.id='chip-controls';
  for(const spec of chipSpecs){const key=spec[0];addKnob(chip,spec,()=>state.piano[key]??pianoAuto(key),v=>state.piano[key]=v,()=>delete state.piano[key],()=>Object.hasOwn(state.piano,key));}
  action(chip,'Reset chip controls',()=>{for(const [key] of chipSpecs)delete state.piano[key];changed();report('Automatic chip settings restored.');});

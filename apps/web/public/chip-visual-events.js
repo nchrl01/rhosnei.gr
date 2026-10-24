@@ -1,3 +1,4 @@
+import {chipAdsrLevel} from './chip-envelope.js?v=480';
 // Performed chip events share the output clock with the visual. This is not
 // an invented beat detector: rejected, cancelled and silent voices never cue.
 const unit=value=>Math.max(0,Math.min(1,Number(value)||0));
@@ -38,8 +39,9 @@ export function createChipVisualEvents(){
     if(end<=event.time)continue;
     // A short noise hit gets a visible after-image; held notes keep a softer
     // deformation for their real lifetime. Neither creates another onset.
-    const attack=event.strength*Math.min(1,age/.02)*Math.exp(-age/.13);
-    const held=now<end?event.strength*.48*Math.min(1,age/.035):event.strength*.28*Math.exp(-(now-end)/.075);
+    const shaped=event.adsr?chipAdsrLevel(age,event.duration,event.adsr)*(now<end?1:Math.exp(-(now-end)/.075)):null;
+    const attack=event.strength*(shaped??Math.min(1,age/.02))*Math.exp(-age/.13);
+    const held=shaped!==null?event.strength*.48*shaped:now<end?event.strength*.48*Math.min(1,age/.035):event.strength*.28*Math.exp(-(now-end)/.075);
     const amount=Math.max(attack,held);
     pulse.attack=Math.max(pulse.attack,attack);pulse.sustain=Math.max(pulse.sustain,held);
     if(Object.hasOwn(pulse,event.role))pulse[event.role]=Math.max(pulse[event.role],amount);

@@ -1,6 +1,16 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v10`.
+Current engine version: `upic-nft-gb-v11`.
+
+Version 480 adds register-stepped ADSR for pulse, noise and wave voices.
+Attack/decay/release are seconds inside the total scored gate; sustain is a
+0..1 level ratio. Phases compress together for short notes. Owner-checked
+register updates remain within the 16-command budget, including pitch motion.
+Manual envelope settings retain their override. Wave table 4 exposes the
+existing 32-sample/4-bit sine preset and becomes the automatic bass tone.
+Distinct chord pulse widths and MIDI role occupancy shape accompaniment
+without replacing the approved carrier clocks. Holder marks now have one
+uniform diameter controlled by liquidity, independent of artwork coverage.
 
 Version 478 recovers the asynchronous carrier clock/coin timbre logic from
 a84fac4 (Friday 23:40, nearest saved revision to the requested 23:38). The

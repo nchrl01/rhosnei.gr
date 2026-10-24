@@ -1,6 +1,6 @@
-import {fridayCarrier} from './friday-carrier.js?v=478';
-import {chipOrchestration} from './chip-orchestration.js?v=478';
-import {pianoHarmony,chartCharacter} from './music-context.js?v=478';
+import {fridayCarrier} from './friday-carrier.js?v=480';
+import {chipOrchestration} from './chip-orchestration.js?v=480';
+import {pianoHarmony,chartCharacter} from './music-context.js?v=480';
 import {marketPerformance} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
 import {composeGameBoyDrumBar} from './gameboy-drum-pattern.js?v=473';
@@ -76,12 +76,13 @@ export function composeChipBar(seed,bar,context={}){
  const expression=(kind,id)=>({
   // A coin keeps its voice while activity changes its articulation. Only a
   // strong move bends a selected note; normal phrases retain definite pitch.
-  duty:kind==='lead'&&development.stage==='vary'&&motion>.65?1:2,
+  duty:kind==='chord_low'?1:kind==='chord_high'?2:kind==='arp'&&orchestra.section===2?1:2,
   attack:kind.startsWith('chord')?.018:.012,
+  adsr:kind.startsWith('chord')?{attack:.035,decay:.12,sustain:.78,release:.24}:kind==='drone'?{attack:.06,decay:.16,sustain:.8,release:.3}:kind==='bass'?{attack:.008,decay:.07,sustain:.72,release:.09}:kind==='arp'?{attack:.008,decay:.045,sustain:.7,release:.08}:kind==='texture'?{attack:.03,decay:.05,sustain:.5,release:.12}:{attack:.015,decay:.075,sustain:.7,release:.13},
   envelope:['bass','drone'].includes(kind)?0:{initial:kind.startsWith('chord')?9+Math.round(2*volume):7+Math.round(3*intensity),direction:-1,pace:kind.startsWith('chord')?0:2+Math.floor((1-pace)*3)},
   // Register routing creates space inside the chips. Root/bass stay central;
   // the two chord tones occupy opposite sides, independently of trade bias.
-  wave:chipHash(identity,31)%2,pan:kind==='bass'||kind==='drone'?0:kind==='chord_low'?-1:kind==='chord_high'?1:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
+  wave:kind==='bass'?4:chipHash(identity,31)%2,pan:kind==='bass'||kind==='drone'?0:kind==='chord_low'?-1:kind==='chord_high'?1:signal.balanceKnown&&signal.balance<.3?-1:signal.balanceKnown&&signal.balance>.7?1:0,
   slide:['lead','arp'].includes(kind)&&mapping.change.magnitude>.2&&roll(identity,id+83)<.22?direction*fracture*mapping.change.magnitude*(1.4-.8*stability):0,
   noiseWidth:15,noiseShift:clamp(Math.round(9-2*energy-motion-mapping.change.signed),5,11),
  });
@@ -162,8 +163,8 @@ export function composeChipBar(seed,bar,context={}){
   // Resonance is baked into legal 4-bit wave RAM. It is a changing harmonic
   // peak in the waveform, not an extra filter or oscillator outside the APU.
   const colour=.04+.07*capColour+.09*orchestra.colour;
-  const value=Math.sin(phase)+resonance*(.18+.17*orchestra.colour)*Math.sin(phase*peak)+colour*Math.sin(phase*3);
-  return Math.round(clamp(7.5+value*7/(1+resonance*.35+colour),0,15));
+  const value=Math.sin(phase)+motion*resonance*(.18+.17*orchestra.colour)*Math.sin(phase*peak)+motion*colour*Math.sin(phase*3);
+  return Math.round(clamp(7.5+value*7/(1+motion*(resonance*.35+colour)),0,15));
  });
  if(chordEntrance){
   [notes[1],notes[2]].forEach((midi,i)=>add(chordBeat+i*.025,midi,chordDuration-i*.025,

@@ -220,3 +220,30 @@ describe('pooled MIDI phrasing still reaches the final chip driver',()=>{
   expect(rendered.left.some(sample=>Math.abs(sample)>.001)).toBe(true);
  });
 });
+
+describe('explicit chip ADSR and sine wave',()=>{
+ it('rises, decays, sustains and releases in the actual pulse channel',()=>{
+  const compiled=compileGameBoyEvent({kind:'chord',midi:60,gain:.12,duration:1,
+   expression:{envelope:{initial:12,pace:0},adsr:{attack:.06,decay:.12,sustain:.5,release:.15}}},{},sampleRate);
+  const f=processor();f.schedule(compiled);
+  expect(f.advance(.005).state.channels[1].volume).toBe(1);
+  expect(f.advance(.025).state.channels[1].volume).toBe(4);
+  expect(f.advance(.065).state.channels[1].volume).toBe(12);
+  expect(f.advance(.19).state.channels[1].volume).toBe(6);
+  expect(f.advance(.8).state.channels[1].volume).toBe(6);
+  expect(f.advance(.92).state.channels[1].volume).toBeLessThan(6);
+  expect(f.advance(.99).state.channels[1].volume).toBeLessThanOrEqual(2);
+  expect(f.advance(1.01).state.channels[1].volume).toBe(0);
+  expect(compiled.updates.length).toBeLessThanOrEqual(16);
+ });
+ it('loads the sine approximation as 32 legal 4-bit wave samples',()=>{
+  const compiled=compileGameBoyEvent({kind:'bass',midi:48,gain:.08,duration:.5,expression:{wave:4}},{},sampleRate);
+  const ram=compiled.writes.filter(([address])=>address>=0xff30&&address<=0xff3f).flatMap(([,value])=>[value>>>4,value&15]);
+  expect(ram).toEqual(Array.from({length:32},(_,i)=>Math.round(7.5+7.5*Math.sin(i*Math.PI/16))));
+ });
+ it('keeps wave ADSR in NR32 and does not rewrite the playing wave RAM',()=>{
+  const c=compileGameBoyEvent({kind:'bass',midi:48,gain:.12,duration:1,expression:{wave:4,adsr:{attack:.06,decay:.12,sustain:.5,release:.15}}},{},sampleRate);
+  expect(c.updates.length).toBeGreaterThan(0);
+  expect(c.updates.every(u=>u.writes.every(([address])=>address===0xff1c))).toBe(true);
+ });
+});

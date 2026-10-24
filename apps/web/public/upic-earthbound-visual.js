@@ -1,11 +1,11 @@
 // App integration of the agreed Earthbound engine. Only observed market inputs
 // enter this path. The study's simulated liquidity/holder generator is not used.
-import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=479';
+import {createEarthboundRenderer} from './upic-oct07-renderer.js?v=480';
 import {createVisualFullscreen} from './visual-fullscreen.js?v=421';
 import {normalizeIdentity} from './upic-identity.js?v=earthbound-5';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';
 import {marketMusicalMapping} from './market-musical-mapping.js?v=472';
-import {createChipVisualEvents} from './chip-visual-events.js?v=479';
+import {createChipVisualEvents} from './chip-visual-events.js?v=480';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 // Preserve UPIC's image-reveal and stale-release curves without importing
 // the legacy audio/metadata-driven visual parameter path.
