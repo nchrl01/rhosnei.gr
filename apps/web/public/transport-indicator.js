@@ -37,11 +37,11 @@ export function createTransportIndicator(host) {
         detail = 'Replaying this market’s history.';
       } else {
         text = playing ? 'Tap Play to resume' : 'Paused';
-        detail = playing ? 'Tap Resume to continue the replay.' : 'Replay paused.';
+        detail = playing ? 'Tap Play to continue the replay.' : 'Replay paused.';
       }
     } else if (!running) {
       text = playing ? 'Tap Play to resume' : hasPlayed ? 'Paused' : 'Ready to play';
-      detail = playing ? 'Tap Resume to continue.' : hasPlayed ? 'Tap Play to resume.' : 'Tap Play to experience this market.';
+      detail = playing ? 'Tap Play to continue.' : hasPlayed ? 'Tap Play to resume.' : 'Tap Play to experience this market.';
     } else if (streamConnected && (streamKind === 'swap' || streamKind === 'rpc-poll' || streamKind === 'exchange')) {
       text = 'Playing live';
       kind = 'live';

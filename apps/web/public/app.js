@@ -188,7 +188,7 @@ const rand=()=>{state=(Math.imul(1664525,state)+1013904223)>>>0;return state/429
 const status=s=>{if($('status').textContent!==s)$('status').textContent=s;};
 function audioStatus(){
  if(!playing)return;
- if(ctx&&ctx.state!=='running'){status('Audio interrupted · tap Resume');return;}
+ if(ctx&&ctx.state!=='running'){status('Audio interrupted · tap Play');return;}
  const parts=[audioErrors.piano?'Instrument unavailable: '+audioErrors.piano:!piano?'Loading instrument…':(replay.state.active?'Listening to history':'Listening to '+(market?.baseToken?.symbol||'market'))+' · '+piano.snapshot().name];
  status(parts.join(' · '));
 }
@@ -468,7 +468,7 @@ function updatePlayAvailability(active=playing){
  const button=$('play'),waiting=!market,interrupted=active&&ctx?.state!=='running';
  button.disabled=starting||waiting;
  button.title=waiting?'Loading coin':interrupted?'Resume':active?'Pause':'Play';
- button.setAttribute('aria-label',waiting?'Loading coin':interrupted?'Resume interrupted audio':active?'Pause experience':'Play audiovisual experience');
+ button.setAttribute('aria-label',waiting?'Loading coin':interrupted?'Play audiovisual experience':active?'Pause experience':'Play audiovisual experience');
  button.setAttribute('aria-busy',String(starting||waiting));
 }
 const playbackShortcuts=bindPlaybackShortcuts({button:$('play'),getState:()=>({ready:!!market,starting,playing:playing&&ctx?.state==='running'}),getMetadata:()=>market?{title:market.baseToken.symbol+(market.baseToken.name&&market.baseToken.name!==market.baseToken.symbol?' · '+market.baseToken.name:''),artist:'UPIC',album:'Live market artwork'}:null});
@@ -495,7 +495,7 @@ $('play').onclick=async()=>{
  if(!playing||ctx?.state!=='running'){try{unlocked=unlockPlayback(audioContext());}catch(error){status(error.message);return;}}
  if(wasInterrupted){
   audioBusy(true);
-  try{await unlocked;if(ctx.state!=='running')throw Error('Tap Resume again to enable audio');flushPianoTrade();setPlayState(true);audioStatus();}
+  try{await unlocked;if(ctx.state!=='running')throw Error('Tap Play again to enable audio');flushPianoTrade();setPlayState(true);audioStatus();}
   catch(error){audioLoadFailed=true;status('Audio interrupted · '+error.message);}
   finally{audioBusy(false);}
   return;
@@ -941,7 +941,7 @@ function audioContext(){
   context.onstatechange=()=>{
    if(context!==ctx||!playing)return;
    if(context.state==='running'){replay.state.clock=performance.now();flushPianoTrade();setPlayState(true);}
-   else{$('play').dataset.playing='false';$('play').setAttribute('aria-pressed','false');$('play').textContent='Resume';$('play').setAttribute('aria-label','Resume interrupted audio');}
+   else{setPlayState(true);}
    audioStatus();playbackShortcuts.update();
   };
  }
