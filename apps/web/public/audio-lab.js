@@ -1,10 +1,10 @@
-import {createVinylTransport} from './vinyl-transport.js?v=476';
+import {createVinylTransport} from './vinyl-transport.js?v=477';
 import {knob} from './lab-knob.js?v=1';
 import {marketSpecs,mixSpecs,pianoSpecs,phraseSpecs,drumSpecs,chipSpecs} from './audio-lab-specs.js?v=469';
 import {createMusicContext,unlockPlayback,stopLegacyPlayback} from './audio-unlock.js?v=220';
-import {createTradePiano} from './trade-piano.js?v=476';
+import {createTradePiano} from './trade-piano.js?v=477';
 import {gameBoyDrumControls,gameBoyDrumPattern} from './gameboy-drum-pattern.js?v=473';
-import {marketChipSignal} from './market-chip-score.js?v=476';
+import {marketChipSignal} from './market-chip-score.js?v=477';
 const $=id=>document.getElementById(id),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const connectionBaselines=new Map();
 const KEY='upic-audio-lab-v1',groups={market:marketSpecs,mix:mixSpecs,piano:[...pianoSpecs,...phraseSpecs,...drumSpecs,...chipSpecs]};

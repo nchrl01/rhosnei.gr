@@ -1,7 +1,7 @@
 import {
  createGameBoyInstrument, renderGameBoyScore,
  prepareChipPhrasing as prepareDriverPhrasing,
-} from './gb-apu-instrument.js?v=476';
+} from './gb-apu-instrument.js?v=477';
 
 // Two independent Game Boy APUs. Extra harmony voices come from another
 // hardware model, with fixed mixing headroom and no added synth or effects.

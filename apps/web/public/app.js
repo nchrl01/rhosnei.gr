@@ -1,4 +1,4 @@
-import {createVinylTransport} from './vinyl-transport.js?v=476';
+import {createVinylTransport} from './vinyl-transport.js?v=477';
 import {nativeContractReference} from './native-contracts.js?v=448';
 import {catalogueCoinArtwork,catalogueNativeArtwork} from './coin-artwork.js?v=349';
 import {createReplayVisualHistory} from './replay-visual-history.js?v=351';
@@ -27,7 +27,7 @@ import {createEarthboundVisual as createAudioDots} from './upic-earthbound-visua
 import {createHolderMetadata,holderCountReadout} from './holder-metadata.js?v=458';
 import {createNftOwnerPreview} from './nft-owner-preview.js?v=448';
 import {rememberPoolLiquidity,poolLiquiditySnapshot,loadPoolLiquidity} from './pool-liquidity.js?v=303';
-import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=476';
+import {createTradePiano,marketResonance,preloadPianoSamples} from './trade-piano.js?v=477';
 import {contextualizeMarket} from './market-state.js?v=208';
 import {createMarketReplay,candleEnd,scoreCandle,replaySpeed,replayObservationForBar} from './market-replay.js?v=472';
 import {marketPerformance,marketActivityDecay} from './market-performance.js?v=472';

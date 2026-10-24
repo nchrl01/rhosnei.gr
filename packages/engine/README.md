@@ -1,6 +1,10 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v8`.
+Current engine version: `upic-nft-gb-v9`.
+
+Version 477 adds a seek-addressable 32-bar orchestration form, shared entrance
+spacing, evolving wave colour, and measured-direction melodic contours. Each
+cycle varies the generated MIDI-informed phrase while keeping its coin key.
 
 Version 476 uses a brief two-level pulse-register attack, softer releases,
 50% duty pulses, a narrower lead register and quieter percussion. Melodic
