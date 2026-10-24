@@ -154,3 +154,9 @@ it('uses one diameter across solid artwork, edges and empty areas',()=>{
   expect(renderer.canvas.dataset.markCount).toBe('100');
  }
 });
+
+it('keeps the fallback lattice uniform without a holder count',()=>{
+ const {renderer,render}=accentRenderer();
+ render([1,0,0],{holderCount:0,dotSize:8,jitter:1,identity:.7});
+ expect(new Set(renderer.canvas.dataset.markDiameterRange.split(',')).size).toBe(1);
+});

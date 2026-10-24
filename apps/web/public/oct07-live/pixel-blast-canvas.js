@@ -193,14 +193,9 @@ export function createPixelBlastCanvas(host){
      feed=mix(feed,imageFeed,identity);
     }
     if(!requested&&feed+b8(px,py)-.5<.5)continue;
-    const jitter=1+(hash(px*127.1+py*311.7)-.5)*params.jitter;
-    const backgroundScale=mix(1,.7+.3*maskInk,identity);
-    const localSize=1; // Wallet-driven jitter owns size variation.
-    // Every represented holder uses the same liquidity-controlled diameter.
-    // Artwork chooses where ink appears, never an individual mark's size.
-    const dotSize=requested?params.dotSize:
-      (params.dotSize*localSize*jitter*backgroundScale*Math.sqrt(pixelPresence))*taper;
-    const diameter=Math.min(requested?Math.max(1,grid-1):Infinity,Math.max(1,Math.round(dotSize*ratio)));
+    // Artwork, edge taper and jitter choose occupancy, never mark dimensions.
+    // Keep at least one physical pixel of separation on every lattice path.
+    const diameter=Math.min(Math.max(1,grid-1),Math.max(1,Math.round(params.dotSize*ratio)));
     // A stable continuous threshold avoids Bayer tiles turning into solid blocks
     // when selecting an exact population. Pattern motion still drives feed.
     const score=feed+(threshold-.5)*selectionNoise+Math.log(Math.max(.000001,taper*taper))*.35;

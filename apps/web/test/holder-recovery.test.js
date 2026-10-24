@@ -42,10 +42,10 @@ describe('holder lookup recovery',()=>{
   expect(observedHolderBalances({context:{latestPrice:2},audience:data.snapshot()})).toEqual([{id:mint,balance:1000}]);
   expect(data.snapshot(Date.now()+3600001)).toMatchObject({weight:0,holderBalances:[]});
  });
- it('keeps the visual loading while the aggregate count request is still pending',()=>{
+ it('uses a labelled estimate while the aggregate count request is pending',()=>{
   const base={context:{latestPrice:1},audience:{state:'loading',holders:null,holdings:{state:'unavailable',weight:0,records:[]},relationships:{state:'unavailable',weight:0,clusters:[]}}};
-  expect(earthboundMarketState(base)).toMatchObject({holderFetchLoading:true,holderFetchSettled:false});
-  expect(earthboundMarketState({...base,audience:{...base.audience,state:'unavailable'}})).toMatchObject({holderFetchLoading:false,holderFetchSettled:true});
+  expect(earthboundMarketState(base)).toMatchObject({holderFetchLoading:false,holderFetchSettled:true,holderEstimated:true,totalHolders:1024});
+  expect(earthboundMarketState({...base,audience:{...base.audience,state:'unavailable'}})).toMatchObject({holderFetchLoading:false,holderFetchSettled:true,holderEstimated:true});
  });
  it('renders the recovered 76-holder population through the production visual adapter',()=>{
   const canvas=()=>{
@@ -103,4 +103,11 @@ describe('shared holder failure cache',()=>{
   expect(await f.relay.count('solana',mint)).toEqual(result);
   expect(JSON.parse(f.writes[0][1])).toEqual(result);
  });
+});
+
+it('does not invent holder balances or activity for an estimated population',()=>{
+ const state=earthboundMarketState({context:{latestCap:1000000},audience:{state:'unavailable'}});
+ expect(state).toMatchObject({totalHolders:2000,holderEstimated:true,holderSource:'estimated',holderBalances:[],tradingActivity:0});
+ expect(earthboundMarketState({context:{latestCap:1000000},audience:{holders:73}})).toMatchObject({totalHolders:73,holderEstimated:false});
+ expect(earthboundMarketState({})).toMatchObject({totalHolders:null,holderEstimated:false});
 });
