@@ -1,8 +1,8 @@
 // Production adapter for the approved October 7 pattern-count lab.
-import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=473';
+import {createPixelBlastCanvas,preparePixelIdentity} from './oct07-live/pixel-blast-canvas.js?v=479';
 import {pixelBlastParameters} from './oct07-live/pixel-blast-parameters.js';
 import {labVisualMappings} from './oct07-live/lab-visual-mappings.js';
-import {earthboundPresentation} from './oct07-live/earthbound-presentation.js?v=472';
+import {earthboundPresentation} from './oct07-live/earthbound-presentation.js?v=479';
 const unit=x=>Math.max(0,Math.min(1,Number(x)||0));
 export function createEarthboundRenderer(host,{maxDimension=1024}={}){
  const renderer=createPixelBlastCanvas(host),canvas=renderer.canvas;

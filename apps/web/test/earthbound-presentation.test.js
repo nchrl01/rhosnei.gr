@@ -1,5 +1,7 @@
+import {createPixelBlastCanvas,preparePixelIdentity} from '../public/oct07-live/pixel-blast-canvas.js';
+import {pixelBlastParameters} from '../public/oct07-live/pixel-blast-parameters.js';
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {earthboundPresentation,earthboundMotionFrame,earthboundFieldWarp} from '../public/oct07-live/earthbound-presentation.js';
+import {earthboundPresentation,earthboundMotionFrame,earthboundFieldWarp,earthboundSoundWarp} from '../public/oct07-live/earthbound-presentation.js';
 import {EARTHBOUND_LOOP_DURATION} from '../public/oct07-live/earthbound-loop.js';
 import {createEarthboundRenderer} from '../public/upic-oct07-renderer.js';
 
@@ -37,8 +39,8 @@ describe('readable EarthBound presentation',()=>{
   const idle=earthboundPresentation(),active=earthboundPresentation({activity:1});
   const struck=earthboundPresentation({activity:1,scorePulse:{attack:1,sustain:1,texture:1,echo:1}});
   expect(idle.patternWarp).toBe(.016);expect(active.patternWarp).toBeGreaterThan(idle.patternWarp);
-  expect(struck.patternWarp).toBeGreaterThan(active.patternWarp);expect(struck.patternWarp).toBeLessThan(.12);
-  expect(struck.patternContrast).toBeGreaterThan(active.patternContrast);
+  expect(struck.patternWarp).toBe(active.patternWarp);expect(struck.patternSound).toBeGreaterThan(0);
+  expect(struck.patternContrast).toBe(active.patternContrast);
   expect(earthboundPresentation({activity:1,scorePulse:{attack:1,sustain:1},reducedMotion:true}).patternWarp).toBe(0);
   expect(struck.patternNoiseOctaves).toBeLessThan(5);
  });
@@ -66,4 +68,36 @@ describe('readable EarthBound presentation',()=>{
   expect(f.renderer.surface.dataset.dotSize).toBe(quietSize);
   expect(f.render(3)).toEqual(quiet);
  });
+});
+
+describe('EarthBound sound deformation',()=>{
+ it('gives percussion, chords and arps different bounded image deformations',()=>{
+  const coords=[.17,-.26],points=['drum','chord','arp'].map(role=>{
+   const params=earthboundPresentation({scorePulse:{attack:.8,sustain:.5,[role]:1}});
+   return earthboundSoundWarp(...coords,earthboundMotionFrame(3,1917,params));
+  });
+  expect(new Set(points.map(p=>p.join(','))).size).toBe(3);
+  for(const p of points)expect(Math.hypot(p[0]-coords[0],p[1]-coords[1])).toBeLessThan(.1);
+ });
+ it('leaves image coordinates untouched without a performed sound and under reduced motion',()=>{
+  for(const options of [{},{scorePulse:{attack:1,drum:1},reducedMotion:true}]){
+   const params=earthboundPresentation(options);
+   expect(earthboundSoundWarp(.2,.3,earthboundMotionFrame(3,1917,params))).toEqual([.2,.3]);
+  }
+ });
+});
+
+it('deforms the image even when the procedural pattern is completely hidden',()=>{
+ fixture(); // install the headless canvas/document adapter
+ const renderer=createPixelBlastCanvas({append(){}}),pixels=new Uint8ClampedArray(16*16*4);
+ for(let y=0;y<16;y++)for(let x=0;x<16;x++)pixels.set([255,255,255,x>=4&&x<12&&y>=3&&y<13?255:0],(y*16+x)*4);
+ renderer.setImage(preparePixelIdentity({width:16,height:16,pixels}));
+ const base={...pixelBlastParameters({marketCap:5e7,referenceCap:1e5,seed:1917,activity:.5,active:true}),
+  ...earthboundPresentation({image:true,activity:.5}),identity:1,identityMotion:0,patternWarp:0,holderCount:600,
+  dotSize:1,pixelPresence:1,inkColor:1,artworkColor:0,fullscreen:true};
+ const render=params=>{renderer.render({width:160,height:192,time:3,seed:1917,params});return new Uint8ClampedArray(renderer.canvas.getContext().pixels.data);};
+ const quiet=render(base),struck=render({...base,patternSound:1,patternChord:1,patternDrum:1});
+ expect(struck).not.toEqual(quiet);
+ expect(renderer.canvas.dataset.markCount).toBe('600');
+ expect(render(base)).toEqual(quiet);
 });

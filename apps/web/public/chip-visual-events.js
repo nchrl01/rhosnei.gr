@@ -38,7 +38,7 @@ export function createChipVisualEvents(){
     if(end<=event.time)continue;
     // A short noise hit gets a visible after-image; held notes keep a softer
     // deformation for their real lifetime. Neither creates another onset.
-    const attack=event.strength*Math.exp(-age/.13);
+    const attack=event.strength*Math.min(1,age/.02)*Math.exp(-age/.13);
     const held=now<end?event.strength*.48*Math.min(1,age/.035):event.strength*.28*Math.exp(-(now-end)/.075);
     const amount=Math.max(attack,held);
     pulse.attack=Math.max(pulse.attack,attack);pulse.sustain=Math.max(pulse.sustain,held);
