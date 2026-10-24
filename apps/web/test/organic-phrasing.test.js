@@ -274,8 +274,8 @@ describe('shared chip arrangement clock',()=>{
    expect(source.writes.every(([address,value])=>Number.isInteger(address)&&address>=0xff10&&address<=0xff3f&&Number.isInteger(value)&&value>=0&&value<=255)).toBe(true);
   }
   expect(modules).toHaveLength(1);expect(modules[0]).toContain('gb-apu-worklet.js');
-  expect(processors).toHaveLength(3);
-  expect(piano.snapshot().chip).toMatchObject({chipCount:3,channelCount:12});
+  expect(processors).toHaveLength(1);
+  expect(piano.snapshot().chip).toMatchObject({chipCount:1,channelCount:4});
   expect(fetch).not.toHaveBeenCalled();piano.close();
  });
  it('keeps genuine activity gating independent of phrase dynamics',async()=>{
@@ -288,13 +288,13 @@ describe('shared chip arrangement clock',()=>{
  });
 });
 
-it('forwards played third-chip chord events and ADSR to the EarthBound bridge',async()=>{
+it('forwards played Friday chip events and envelopes to the EarthBound bridge',async()=>{
  const events=[],{piano}=await pianoFixture(event=>events.push(event));
  piano.setRunning(true);piano.trade({kind:'swap',id:'three-chip',priceUsd:101,referencePrice:100},context.cap,context.music);
  await vi.advanceTimersByTimeAsync(2200);
- const third=events.filter(e=>e.chip===2&&e.kind.startsWith('chord'));
+ const third=events.filter(e=>e.chip===0&&(e.kind==='chord'||e.kind==='arp'));
  expect(third.length).toBeGreaterThan(0);
- expect(third.every(e=>e.adsr&&e.gain>0&&typeof e.isCancelled==='function'&&typeof e.getEnd==='function')).toBe(true);
- expect(events.some(e=>e.kind==='drum')).toBe(false);
+ expect(third.every(e=>(e.adsr||e.hardwareEnvelope)&&e.gain>0&&typeof e.isCancelled==='function'&&typeof e.getEnd==='function')).toBe(true);
+ expect(events.filter(e=>e.kind==='drum').every(e=>[0,3].includes(e.channel)&&e.drum)).toBe(true);
  piano.close();
 });

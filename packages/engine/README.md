@@ -1,6 +1,25 @@
 # Shared collectible engine
 
-Current engine version: `upic-nft-gb-v12`.
+Current local engine version: `upic-nft-gb-v13`.
+
+Version 491 restores the complete Friday asynchronous composer as the active
+live/replay/collectible score. One persistent MAME-derived GB APU owns all four
+channels, including original voice interruptions. Pulse voices occupy MIDI
+36–47 and the wave bass 24–35. The output bus is attenuated by 8 dB.
+Selective ADSR/duty changes and resonant wave tables decorate longer packets;
+most packets retain their native hardware envelopes. Shared phrase rests and
+modern observation/freshness/recency gates remain mandatory. Market cap
+modulates packet density, measured holders open arp proposals, liquidity
+shapes articulation/resonance, activity sets tempo, and signed movement
+continues to change Friday's circuit proposals. Estimated visual holder
+counts are never promoted to musical observations.
+
+The live player, lab and collectible renderer use friday-performance-rack.js.
+Accepted events expose actual channel ownership and hardware envelope steps
+for EarthBound. Audio articulation is confined to the procedural bands;
+artwork and palette coordinates remain stable.
+
+## Earlier versions
 
 Version 481 promotes the approved pre-drum arrangement to the live, replay
 and collectible score via performed-market-score.js. Three persistent GB APUs

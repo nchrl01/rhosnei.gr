@@ -1,4 +1,4 @@
-// Inspector for the same three four-channel APUs that produce the app's sound.
+// Inspector for the same four-channel APU that produce the app's sound.
 // It consumes existing snapshots; it does not load patches, start an engine,
 // or synthesize a separate preview.
 const finite=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value));
@@ -14,21 +14,21 @@ const display=value=>{
 };
 const channelNames=['CH1 · Pulse + sweep','CH2 · Pulse','CH3 · Wave RAM','CH4 · Noise'];
 const chipNames=['Melody and bass','Harmony A','Harmony B and texture'];
-const roles=[['Melodic phrase','Reserved','Sine bass','Reserved'],['Chord low A','Chord high A','Reserved','Reserved'],['Chord low B','Chord high B','Sustained texture','Reserved']];
+const roles=[['Displaced melody','Stereo replies','Sine / resonant bass','11-step packets'],['Chord low A','Chord high A','Detuned chord shadow','13-step packets'],['Chord low B','Chord high B','Sustained texture','Reserved']];
 const duties=['12.5%','25%','50%','75%'];
 
 export function createEngineView(container,{onBundle=()=>{}}={}){
  container.innerHTML=`<details class="engine-panel" open>
   <summary>Live engine · Game Boy chip rack</summary>
-  <p class="engine-note">Three Game Boy chips provide twelve sound channels for independent melody, harmony, bass and texture. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
-  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for chip snapshots</span><span data-source>Three chips · Twelve hardware channels</span></div>
-  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same three-chip rack. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
+  <p class="engine-note">One Game Boy chip supplies four competing channels for low pulse phrases, bass and noise packets. Each coin has its own circuit; observed market changes control when it sounds and how it changes.</p>
+  <div class="engine-status"><span data-state>Paused</span><span data-feedback>Waiting for chip snapshots</span><span data-source>One chip · Four hardware channels</span></div>
+  <section class="engine-bundles" aria-label="Sound layers"><small>Sound layers</small><p>These layers use the same four-channel core. Turning a layer off removes its events from the composition.</p><div data-bundles></div></section>
   <div class="engine-overview">
    <section><small>Market observations</small><dl data-market></dl></section>
    <section><small>Chip and transport</small><dl data-chip></dl></section>
    <section><small>Visual field</small><dl data-visuals></dl></section>
   </div>
-  <div class="engine-overview" data-channels aria-label="Three Game Boy chips with twelve hardware channels"></div>
+  <div class="engine-overview" data-channels aria-label="One Game Boy chip with four hardware channels"></div>
   <p class="engine-note">Market cap shapes rhythm; liquidity shapes harmonic stability and sustain; holders shape arpeggio length and range; rising and falling prices shape contour and tone; activity sets tempo. Learned MIDI phrasing supplies motif, timing and articulation. Audible attacks, holds and echoes also move the visual. Missing measurements stay neutral; missing or stale activity stops new sound.</p>
   <details class="engine-source"><summary>Controls and accepted events</summary><div class="engine-overview"><section><small>App controls</small><dl data-controls></dl></section><section><small>Event feedback</small><dl data-events></dl></section></div></details>
   <details class="engine-console"><summary>Engine messages</summary><pre data-log>No engine messages.</pre></details>
