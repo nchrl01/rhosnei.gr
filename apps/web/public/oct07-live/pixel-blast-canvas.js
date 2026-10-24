@@ -158,7 +158,10 @@ export function createPixelBlastCanvas(host){
     for(let py=firstY;py<lastY;py++)for(let px=firstX;px<lastX;px++){
     if(pixelPresence<=.0001||hash(px*73.17+py*193.41+7.3)>pixelPresence)continue;
     const fx=(px+.5)*cellSize,fy=(py+.5)*cellSize;
-    const centerX=originX+fx*ratio,centerY=originY+fy*ratio;
+    // Position directly on the integer backing-pixel lattice. Multiplying
+    // fractional source cells by their reciprocal scale drifts around .5,
+    // making Math.round alternate between narrower and wider row gaps.
+    const centerX=originX+(px+.5)*grid,centerY=originY+(py+.5)*grid;
     const edge=Math.min(centerX/w,1-centerX/w,centerY/h,1-centerY/h);
     const edgeT=params.edgeFade>0?clamp(edge/params.edgeFade):1;
     let taper=edgeT*edgeT*(3-2*edgeT);

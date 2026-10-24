@@ -160,3 +160,26 @@ it('keeps the fallback lattice uniform without a holder count',()=>{
  render([1,0,0],{holderCount:0,dotSize:8,jitter:1,identity:.7});
  expect(new Set(renderer.canvas.dataset.markDiameterRange.split(',')).size).toBe(1);
 });
+
+it.each([1,2])('keeps identical row and column gaps with fractional cells at DPR %s',dpr=>{
+ const {renderer}=accentRenderer();vi.stubGlobal('devicePixelRatio',dpr);
+ renderer.setImage({width:4,height:4,data:new Uint8Array(16).fill(255)});
+ const base=pixelBlastParameters({active:true,fresh:1,seed:205});
+ renderer.render({width:512,height:512,time:0,seed:205,params:{...base,cellSize:6.17,holderCount:0,pixelPresence:1,edgeFade:0,dotSize:3,identity:1,identityMotion:0,fullscreen:true,shapeWeights:[1,0,0],inkColor:1,pixelBudget:2000000}});
+ const {width,height,data}=renderer.canvas.context.pixels;
+ for(const axis of ['row','column']){
+  const length=axis==='row'?height:width,starts=[];let previous=false;
+  for(let n=2;n<length-2;n++){
+   let on=false;
+   for(let k=Math.floor(length*.25);k<length*.75;k++){
+    const x=axis==='row'?k:n,y=axis==='row'?n:k;
+    if(data[(y*width+x)*4+3]){on=true;break;}
+   }
+   if(on&&!previous)starts.push(n);previous=on;
+  }
+  // Ignore the first potentially clipped mark at the scan boundary.
+  const gaps=starts.slice(2).map((x,i)=>x-starts[i+1]);
+  expect(gaps.length).toBeGreaterThan(10);
+  expect([...new Set(gaps)]).toEqual([Math.round(6.17*dpr)]);
+ }
+});
